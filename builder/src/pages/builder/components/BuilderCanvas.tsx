@@ -1,7 +1,19 @@
-import { Box, Typography } from "@mui/material"
+import { Box, IconButton } from "@mui/material"
+import { Frame, Element, useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
+import { Block } from "../../../craft/Block.tsx";
 
 export const BuilderCanvas = () => {
+  const { actions } = useEditor()
+
+  const handleUndo = () => {
+    actions.history.undo()
+  }
+
+  const handleRedo = () => {
+    actions.history.redo()
+  }
+
   return (
     <Box
       sx={{
@@ -23,12 +35,21 @@ export const BuilderCanvas = () => {
           backgroundColor: COLORS.white,
         }}
       >
-        <Typography variant="body2" color={COLORS.gray600}>
-          ↶ ↷
-        </Typography>
+        <IconButton
+          onClick={handleUndo}
+          sx={{ padding: 0, mr: 1 }}
+        >
+          {"↶"}
+        </IconButton>
+        <IconButton
+          onClick={handleRedo}
+          sx={{ padding: 0 }}
+        >
+          {"↷"}
+        </IconButton>
       </Box>
 
-      {/* Сам холст */}
+      {/* Сам холст, подключённый к Craft.js */}
       <Box
         sx={{
           flex: 1,
@@ -42,13 +63,15 @@ export const BuilderCanvas = () => {
             height: "100%",
             backgroundColor: COLORS.white,
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
           }}
         >
-          <Typography variant="body1" color={COLORS.gray600}>
-            Здесь будет холст страницы.
-          </Typography>
+          <Frame>
+            <Element
+              is={Block}
+              canvas
+              fullSize
+            />
+          </Frame>
         </Box>
       </Box>
     </Box>

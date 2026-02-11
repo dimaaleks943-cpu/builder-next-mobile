@@ -1,7 +1,13 @@
 import { Box, Typography } from "@mui/material"
+import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
+import { Block } from "../../../craft/Block"
 
 export const BuilderLeftPanel = () => {
+  const {
+    connectors: { create },
+  } = useEditor()
+
   return (
     <Box
       sx={{
@@ -26,9 +32,31 @@ export const BuilderLeftPanel = () => {
       <Box
         sx={{
           flex: 1,
+          padding: "8px",
         }}
       >
-        {/* TODO: список блоков/элементов конструктора */}
+        {/* Элемент палитры: Блок */}
+        <Box
+          ref={(ref: HTMLDivElement | null) => {
+            if (!ref) return
+            create(ref, <Block />)
+          }}
+          sx={{
+            padding: "8px 10px",
+            borderRadius: 2,
+            backgroundColor: COLORS.white,
+            border: `1px dashed ${COLORS.gray300}`,
+            cursor: "grab",
+            fontSize: 14,
+            color: COLORS.gray800,
+            userSelect: "none",
+            "&:hover": {
+              backgroundColor: COLORS.gray100,
+            },
+          }}
+        >
+          Блок
+        </Box>
       </Box>
     </Box>
   )
