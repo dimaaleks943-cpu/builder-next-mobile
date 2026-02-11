@@ -1,7 +1,7 @@
-import { BrowserRouter, Route, Routes, useNavigate } from 'react-router-dom'
-import { CssBaseline, ThemeProvider, createTheme } from '@mui/material'
-import { HomePage } from './pages/HomePage'
-import { BuilderPage } from './pages/BuilderPage'
+import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom"
+import { CssBaseline, ThemeProvider, createTheme } from "@mui/material"
+import { HomePage } from "./pages/HomePage"
+import { BuilderPage } from "./pages/builder/BuilderPage"
 
 const theme = createTheme()
 
@@ -10,7 +10,7 @@ const AppRouter = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<HomePage onOpenBuilder={() => navigate('/builder')} />} />
+      <Route path="/" element={<HomePage onOpenBuilder={() => navigate("/builder")} />} />
       <Route path="/builder" element={<BuilderPage />} />
     </Routes>
   )
