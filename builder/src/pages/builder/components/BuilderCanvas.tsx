@@ -14,6 +14,15 @@ export const BuilderCanvas = () => {
     actions.history.redo()
   }
 
+  const handleCanvasBackgroundClick = (
+    event: React.MouseEvent<HTMLDivElement, MouseEvent>,
+  ) => {
+    // Снимаем выделение, только если кликнули именно по фону холста, а не по внутренним элементам
+    if (event.target === event.currentTarget) {
+      actions.clearEvents()
+    }
+  }
+
   return (
     <Box
       sx={{
@@ -56,6 +65,7 @@ export const BuilderCanvas = () => {
           padding: "0 8px 8px",
           display: "flex",
         }}
+        onClick={handleCanvasBackgroundClick}
       >
         <Box
           sx={{

@@ -1,9 +1,15 @@
 import { Box, IconButton } from "@mui/material"
 import { useNavigate } from "react-router-dom"
+import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
 
 export const BuilderHeader = () => {
   const navigate = useNavigate()
+  const { actions } = useEditor()
+
+  const handleClick = () => {
+    actions.clearEvents()
+  }
 
   return (
     <Box
@@ -17,6 +23,7 @@ export const BuilderHeader = () => {
         borderBottom: `1px solid ${COLORS.purple100}`,
         boxSizing: "border-box",
       }}
+      onClick={handleClick}
     >
       <IconButton
         onClick={() => navigate(-1)}
