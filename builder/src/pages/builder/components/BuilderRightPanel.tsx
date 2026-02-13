@@ -6,16 +6,33 @@ import emptySelectionImg from "../assets/dontSelectedElement.png"
 import { SpacingAccordion } from "./SpacingAccordion.tsx"
 import { BordersAccordion } from "./BordersAccordion.tsx"
 import { LayoutAccordion } from "./LayoutAccordion.tsx"
+import { TextSettingsAccordion } from "./TextSettingsAccordion.tsx"
 
 export const BuilderRightPanel = () => {
   const [tabIndex, setTabIndex] = useState(0)
 
-  const { hasSelection } = useEditor((state) => {
+  const { hasSelection, selectedType } = useEditor((state) => {
     const [id] = Array.from(state.events.selected)
+    const node = id ? state.nodes[id] : null
+
+    let resolvedName: string | null = null
+    const type = node?.data.type
+
+    // type в Craft может быть строкой ИЛИ React-компонентом с полем resolvedName
+    if (typeof type === "string") {
+      resolvedName = type
+    } else if (type && typeof (type as any).resolvedName === "string") {
+      resolvedName = (type as any).resolvedName
+    }
+
+    // Альтернативная проверка: если есть проп text, это Text компонент
+    const isText = node?.data.props?.text !== undefined
+
     return {
       hasSelection: Boolean(id),
+      selectedType: resolvedName === "Text" || isText ? "Text" : resolvedName,
     }
-  }) as any
+  })
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabIndex(newValue)
@@ -67,6 +84,21 @@ export const BuilderRightPanel = () => {
                 <SpacingAccordion/>
 
                 <BordersAccordion/>
+              </Box>
+            )}
+
+            {tabIndex === 1 && (
+              <Box
+                sx={{
+                  flex: 1,
+                  padding: "12px 16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                  overflowY: "auto",
+                }}
+              >
+                {selectedType === "Text" && <TextSettingsAccordion />}
               </Box>
             )}
           </>

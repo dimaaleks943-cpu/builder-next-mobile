@@ -1,7 +1,46 @@
-import { Box, Typography } from "@mui/material"
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  Typography,
+} from "@mui/material"
+import type { ReactElement } from "react"
 import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
 import { Block } from "../../../craft/Block"
+import { Text } from "../../../craft/Text"
+
+interface ComponentItem {
+  name: string;
+  component: ReactElement;
+}
+
+interface Category {
+  title: string
+  items: ComponentItem[]
+}
+
+const categories: Category[] = [
+  {
+    title: "Базовые",
+    items: [
+      {
+        name: "Div-блок",
+        component: <Block />,
+      },
+    ],
+  },
+  {
+    title: "Типографика",
+    items: [
+      {
+        name: "Текст",
+        component: <Text />,
+      },
+    ],
+  },
+]
 
 export const BuilderLeftPanel = () => {
   const {
@@ -25,7 +64,7 @@ export const BuilderLeftPanel = () => {
         }}
       >
         <Typography variant="subtitle2" color={COLORS.gray700}>
-          Блоки
+          Материалы для холста
         </Typography>
       </Box>
 
@@ -33,32 +72,105 @@ export const BuilderLeftPanel = () => {
         sx={{
           flex: 1,
           padding: "8px",
+          overflowY: "auto",
         }}
       >
-        {/* Элемент палитры: Блок */}
-        <Box
-          ref={(ref: HTMLDivElement | null) => {
-            if (!ref) return
-            create(ref, <Block />)
-          }}
-          sx={{
-            padding: "8px 10px",
-            borderRadius: 2,
-            backgroundColor: COLORS.white,
-            border: `1px dashed ${COLORS.gray300}`,
-            cursor: "grab",
-            fontSize: 14,
-            color: COLORS.gray800,
-            userSelect: "none",
-            "&:hover": {
-              backgroundColor: COLORS.gray100,
-            },
-          }}
-        >
-          Блок
-        </Box>
+        {categories.map((category) => (
+          <Accordion
+            key={category.title}
+            defaultExpanded
+            disableGutters
+            sx={{
+              backgroundColor: "transparent",
+              boxShadow: "none",
+              "&:before": {
+                display: "none",
+              },
+            }}
+          >
+            <AccordionSummary
+              sx={{
+                minHeight: 40,
+                padding: "0 8px",
+                "& .MuiAccordionSummary-content": {
+                  margin: 0,
+                },
+              }}
+            >
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  color: COLORS.gray700,
+                  fontWeight: 600,
+                }}
+              >
+                {category.title}
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails
+              sx={{
+                padding: "8px",
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "8px",
+              }}
+            >
+              {category.items.map((item) => (
+                <Box
+                  key={item.name}
+                  ref={(ref: HTMLDivElement | null) => {
+                    if (!ref) return
+                    create(ref, item.component)
+                  }}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "4px",
+                    cursor: "grab",
+                    userSelect: "none",
+                    "&:hover": {
+                      backgroundColor: COLORS.gray100,
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: "65px",
+                      height: "65px",
+                      aspectRatio: "1",
+                      backgroundColor: COLORS.blue100,
+                      borderRadius: 0.5,
+                      padding: "8px",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        backgroundColor: COLORS.white,
+                        width: "100%",
+                        height: "100%"
+                      }}
+                    />
+                  </Box>
+                  <Typography
+                    sx={{
+                      color: COLORS.gray600,
+                      fontSize: "8px",
+                      lineHeight: "10px",
+                      textAlign: "center",
+                    }}
+                  >
+                    {item.name}
+                  </Typography>
+                </Box>
+              ))}
+            </AccordionDetails>
+          </Accordion>
+        ))}
       </Box>
     </Box>
   )
 }
+
+export default BuilderLeftPanel
 

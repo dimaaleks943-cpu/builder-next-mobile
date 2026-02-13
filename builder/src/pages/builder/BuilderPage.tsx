@@ -5,13 +5,15 @@ import { BuilderLeftPanel } from "./components/BuilderLeftPanel"
 import { BuilderCanvas } from "./components/BuilderCanvas"
 import { BuilderRightPanel } from "./components/BuilderRightPanel"
 import { COLORS } from "../../theme/colors"
-import { Block } from "../../craft/Block.tsx";
+import { Block } from "../../craft/Block.tsx"
+import { Text } from "../../craft/Text.tsx"
 
 export const BuilderPage = () => {
   return (
     <Editor
       resolver={{
         Block,
+        Text,
       }}
     >
       <Box

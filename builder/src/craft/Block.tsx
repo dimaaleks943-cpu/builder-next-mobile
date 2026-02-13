@@ -85,6 +85,7 @@ export const Block = ({
     selected,
   } = useNode((node) => ({
     selected: node.events.selected,
+    id: node.id,
   }))
 
   const hasCustomBorder =
@@ -136,6 +137,7 @@ export const Block = ({
 }
 
 ;(Block as any).craft = {
+  displayName: "Block",
   props: {
     fullSize: false,
     layout: "block" as BlockLayoutMode,
@@ -156,5 +158,9 @@ export const Block = ({
     borderStyle: "solid" as const,
     borderOpacity: 1,
   },
+  rules: {
+    canMoveIn: () => true,
+  },
+  isCanvas: true,
 }
 
