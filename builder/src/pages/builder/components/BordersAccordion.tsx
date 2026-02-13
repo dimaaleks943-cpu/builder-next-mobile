@@ -110,13 +110,19 @@ export const BordersAccordion = () => {
       </AccordionSummary>
 
       <AccordionDetails>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px",
+          }}
+        >
           <Box>
             <Box
               sx={{
                 display: "flex",
                 alignItems: "center",
-                gap: 1,
+                gap: "4px",
               }}
             >
               <Typography
@@ -160,7 +166,7 @@ export const BordersAccordion = () => {
             <Box
               sx={{
                 display: "flex",
-                gap: 1.5,
+                gap: "12px",
                 alignItems: "flex-start",
               }}
             >
@@ -270,8 +276,8 @@ export const BordersAccordion = () => {
                   flex: 1,
                   display: "grid",
                   gridTemplateColumns: "minmax(60px,auto) minmax(0,1fr)",
-                  rowGap: 0.5,
-                  columnGap: 1,
+                  rowGap: "4px",
+                  columnGap: "8px",
                   alignItems: "center",
                   overflow: "hidden",
                 }}
@@ -283,7 +289,7 @@ export const BordersAccordion = () => {
                 <Box
                   sx={{
                     display: "flex",
-                    gap: 0.5,
+                    gap: "4px",
                     minWidth: 0,
                   }}
                 >
@@ -361,7 +367,7 @@ export const BordersAccordion = () => {
                 <Box
                   sx={{
                     display: "flex",
-                    gap: 0.5,
+                    gap: "4px",
                     alignItems: "center",
                     minWidth: 0,
                   }}
