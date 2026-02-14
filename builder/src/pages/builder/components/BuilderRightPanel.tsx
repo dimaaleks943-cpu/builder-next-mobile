@@ -7,6 +7,7 @@ import { SpacingAccordion } from "./SpacingAccordion.tsx"
 import { BordersAccordion } from "./BordersAccordion.tsx"
 import { LayoutAccordion } from "./LayoutAccordion.tsx"
 import { TextSettingsAccordion } from "./TextSettingsAccordion.tsx"
+import { LinkSettingsAccordion } from "./LinkSettingsAccordion.tsx"
 
 export const BuilderRightPanel = () => {
   const [tabIndex, setTabIndex] = useState(0)
@@ -25,12 +26,12 @@ export const BuilderRightPanel = () => {
       resolvedName = (type as any).resolvedName
     }
 
-    // Альтернативная проверка: если есть проп text, это Text компонент
-    const isText = node?.data.props?.text !== undefined
+    const hasTextProp = node?.data.props?.text !== undefined
+    const isLinkText = resolvedName === "LinkText" || node?.data.props?.href !== undefined
 
     return {
       hasSelection: Boolean(id),
-      selectedType: resolvedName === "Text" || isText ? "Text" : resolvedName,
+      selectedType: isLinkText ? "LinkText" : resolvedName === "Text" || hasTextProp ? "Text" : resolvedName,
     }
   })
 
@@ -98,7 +99,10 @@ export const BuilderRightPanel = () => {
                   overflowY: "auto",
                 }}
               >
-                {selectedType === "Text" && <TextSettingsAccordion />}
+                {(selectedType === "Text" || selectedType === "LinkText") && (
+                  <TextSettingsAccordion />
+                )}
+                {selectedType === "LinkText" && <LinkSettingsAccordion />}
               </Box>
             )}
           </>

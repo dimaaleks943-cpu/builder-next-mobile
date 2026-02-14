@@ -10,6 +10,7 @@ import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
 import { Block } from "../../../craft/Block"
 import { Text } from "../../../craft/Text"
+import { LinkText } from "../../../craft/LinkText"
 
 interface ComponentItem {
   name: string;
@@ -37,6 +38,10 @@ const categories: Category[] = [
       {
         name: "Текст",
         component: <Text />,
+      },
+      {
+        name: "Текст-ссылка",
+        component: <LinkText />,
       },
     ],
   },
@@ -171,6 +176,3 @@ export const BuilderLeftPanel = () => {
     </Box>
   )
 }
-
-export default BuilderLeftPanel
-

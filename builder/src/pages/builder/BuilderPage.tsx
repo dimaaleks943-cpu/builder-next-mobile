@@ -7,6 +7,7 @@ import { BuilderRightPanel } from "./components/BuilderRightPanel"
 import { COLORS } from "../../theme/colors"
 import { Block } from "../../craft/Block.tsx"
 import { Text } from "../../craft/Text.tsx"
+import { LinkText } from "../../craft/LinkText.tsx"
 
 export const BuilderPage = () => {
   return (
@@ -14,6 +15,7 @@ export const BuilderPage = () => {
       resolver={{
         Block,
         Text,
+        LinkText,
       }}
     >
       <Box
@@ -45,4 +47,3 @@ export const BuilderPage = () => {
     </Editor>
   )
 }
-
