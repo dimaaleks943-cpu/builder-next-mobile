@@ -6,6 +6,7 @@ import { BuilderCanvas } from "./components/BuilderCanvas"
 import { BuilderRightPanel } from "./components/BuilderRightPanel"
 import { COLORS } from "../../theme/colors"
 import { Block } from "../../craft/Block.tsx"
+import { Body } from "../../craft/Body.tsx"
 import { Text } from "../../craft/Text.tsx"
 import { LinkText } from "../../craft/LinkText.tsx"
 
@@ -14,6 +15,7 @@ export const BuilderPage = () => {
     <Editor
       resolver={{
         Block,
+        Body,
         Text,
         LinkText,
       }}

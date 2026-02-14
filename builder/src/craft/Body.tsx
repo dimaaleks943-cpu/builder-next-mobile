@@ -3,23 +3,19 @@ import type { ReactNode } from "react"
 import { COLORS } from "../theme/colors"
 import { withOpacity } from "../utils/colorUtils"
 
-export type BlockLayoutMode = "block" | "flex" | "grid" | "absolute"
+export type BodyLayoutMode = "block" | "flex" | "grid" | "absolute"
 
-export type BlockProps = {
+export type BodyProps = {
   children?: ReactNode
-  fullSize?: boolean
-  layout?: BlockLayoutMode
-  // margins
+  layout?: BodyLayoutMode
   marginTop?: number
   marginRight?: number
   marginBottom?: number
   marginLeft?: number
-  // paddings
   paddingTop?: number
   paddingRight?: number
   paddingBottom?: number
   paddingLeft?: number
-  // borders
   borderRadius?: number
   borderTopWidth?: number
   borderRightWidth?: number
@@ -27,13 +23,12 @@ export type BlockProps = {
   borderLeftWidth?: number
   borderColor?: string
   borderStyle?: "none" | "solid" | "dashed"
-  /** 0–1, применяется к цвету бордера */
   borderOpacity?: number
 }
 
-export const Block = ({
+// Root component используется только как стартовый элемент холста, не удаляется
+export const Body = ({
   children,
-  fullSize,
   layout = "block",
   marginTop = 0,
   marginRight = 0,
@@ -51,13 +46,12 @@ export const Block = ({
   borderColor = COLORS.gray400,
   borderStyle = "solid",
   borderOpacity = 1,
-}: BlockProps) => {
+}: BodyProps) => {
   const {
     connectors: { connect, drag },
     selected,
   } = useNode((node) => ({
     selected: node.events.selected,
-    id: node.id,
   }))
 
   const hasCustomBorder =
@@ -77,12 +71,12 @@ export const Block = ({
         connect(drag(ref))
       }}
       style={{
+        width: "100%",
+        height: "100%",
+        minHeight: 80,
         display:
           layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block",
         position: layout === "absolute" ? "absolute" : "relative",
-        width: fullSize ? "100%" : undefined,
-        height: fullSize ? "100%" : undefined,
-        minHeight: fullSize ? undefined : 80,
         marginTop,
         marginRight,
         marginBottom,
@@ -91,7 +85,7 @@ export const Block = ({
         paddingRight,
         paddingBottom,
         paddingLeft,
-        borderRadius: fullSize ? 0 : borderRadius,
+        borderRadius,
         borderStyle: selected ? "solid" : hasCustomBorder ? (borderStyle || "solid") : "solid",
         borderColor: selected ? COLORS.purple400 : effectiveBorderColor,
         borderTopWidth: selected ? 2 : hasCustomBorder ? borderTopWidth : 0,
@@ -99,7 +93,6 @@ export const Block = ({
         borderBottomWidth: selected ? 2 : hasCustomBorder ? borderBottomWidth : 0,
         borderLeftWidth: selected ? 2 : hasCustomBorder ? borderLeftWidth : 0,
         backgroundColor: COLORS.white,
-        boxShadow: fullSize ? "none" : "0 1px 2px rgba(15, 23, 42, 0.08)",
         boxSizing: "border-box",
       }}
     >
@@ -108,11 +101,10 @@ export const Block = ({
   )
 }
 
-;(Block as any).craft = {
-  displayName: "Block",
+;(Body as any).craft = {
+  displayName: "Body",
   props: {
-    fullSize: false,
-    layout: "block" as BlockLayoutMode,
+    layout: "block" as BodyLayoutMode,
     marginTop: 0,
     marginRight: 0,
     marginBottom: 0,
@@ -135,4 +127,3 @@ export const Block = ({
   },
   isCanvas: true,
 }
-

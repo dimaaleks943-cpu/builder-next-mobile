@@ -1,10 +1,17 @@
+import { useEffect, useRef } from "react"
 import { Box, IconButton } from "@mui/material"
 import { Frame, Element, useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
-import { Block } from "../../../craft/Block.tsx";
+import { Body } from "../../../craft/Body.tsx"
 
 export const BuilderCanvas = () => {
   const { actions } = useEditor()
+  const { selectedId, canDeleteSelected } = useEditor((state, query) => {
+    const [id] = Array.from(state.events.selected)
+    if (!id) return { selectedId: null as string | null, canDeleteSelected: false }
+    const isRootNode = query.node(id).isRoot()
+    return { selectedId: id, canDeleteSelected: !isRootNode }
+  })
 
   /**
    * Рекурсивно собираем историю вложености предков через parent
@@ -60,6 +67,33 @@ export const BuilderCanvas = () => {
 
     return { breadcrumb: names }
   })
+
+  const canvasRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (selectedId && canvasRef.current) {
+      canvasRef.current.focus()
+    }
+  }, [selectedId])
+
+  /**
+   * Удаление выбранного элемента по Delete/Backspace.
+   * Игнорируем нажатие, если фокус в поле редактирования (contentEditable, input, textarea),
+   * чтобы не удалять элемент при удалении символов в тексте.
+   */
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "Delete" && e.key !== "Backspace") return
+    const target = e.target as HTMLElement
+    const isEditingText =
+      target.getAttribute("contenteditable") === "true" ||
+      target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA"
+    if (isEditingText) return
+    if (!selectedId || !canDeleteSelected) return
+    e.preventDefault()
+    e.stopPropagation()
+    actions.delete(selectedId)
+  }
 
   const handleUndo = () => {
     actions.history.undo()
@@ -143,12 +177,16 @@ export const BuilderCanvas = () => {
 
       {/* Сам холст, подключённый к Craft.js */}
       <Box
+        ref={canvasRef}
+        tabIndex={-1}
         sx={{
           flex: 1,
           padding: "0 8px 8px",
           display: "flex",
+          outline: "none",
         }}
         onClick={handleCanvasBackgroundClick}
+        onKeyDown={handleKeyDown}
       >
         <Box
           sx={{
@@ -160,9 +198,8 @@ export const BuilderCanvas = () => {
         >
           <Frame>
             <Element
-              is={Block}
+              is={Body}
               canvas
-              fullSize
             />
           </Frame>
         </Box>
