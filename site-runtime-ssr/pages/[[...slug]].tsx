@@ -1,68 +1,75 @@
 import type { GetServerSideProps, GetServerSidePropsResult } from "next"
 import Head from "next/head"
-import { getSiteConfig } from "@/lib/siteConfig"
-import type { PageConfig } from "@/lib/siteConfig"
 import { renderPage } from "@/lib/renderer"
+import type { ComponentNode } from "@/lib/interface"
+import { getSitePages } from "@/lib/sitePages"
+import { craftContentToComponents } from "@/lib/craftContentToComponents"
 
 interface PageProps {
-  page: PageConfig
   domain: string
-  metadata?: {
-    title?: string
-    description?: string
-  }
+  slug: string
+  components: ComponentNode[]
 }
 
 export const getServerSideProps: GetServerSideProps<PageProps> = async (
   context,
 ): Promise<GetServerSidePropsResult<PageProps>> => {
-  // берем домен из загаловка
-  const domain = context.req.headers.host || "localhost:3000"
+  // 1. Определяем домен из заголовка Host (marketflow.store, example.com и т.п.)
+  const domain = context.req.headers.host || "asdqe"
 
-  console.log(`[SSR] Rendering page for domain: ${domain}`)
+  // 2. Определяем slug из catch-all-роута:
+  // "/" -> slug пустой -> считаем, что это корень "/"
+  const rawSlug = (context.params?.slug as string[] | undefined)?.join("/") ?? ""
+  const slugPath =
+    rawSlug.length === 0 ? "/" : rawSlug.startsWith("/") ? rawSlug : `/${rawSlug}`
 
-  // Запрашиваем конфигурацию для этого домена (пока мокавые)
-  const siteConfig = await getSiteConfig(domain)
+  console.log(`[SSR] Rendering page for domain=${domain}, slug=${slugPath}`)
 
-  if (!siteConfig) {
+  // 3. Получаем с бэкенда список страниц для домена
+  const pages = await getSitePages(domain)
+
+  if (!pages) {
     return { notFound: true }
   }
 
-  // Определяем slug страницы (catch-all: "/" -> slug пустой -> "index")
-  const slug = (context.params?.slug as string[] | undefined)?.length
-    ? (context.params?.slug as string[]).join("/")
-    : "index"
+  // 4. Ищем нужную страницу по slug. Как корень используем "/"
+  const page =
+    pages.find((p) => p.slug === slugPath) ||
+    (slugPath === "/" ? pages.find((p) => p.slug === "/") : undefined)
 
-  // Находим нужную страницу
-  const page = siteConfig.pages[slug] || siteConfig.pages["index"]
-
-  if (!page) {
+  if (!page || !page.content) {
     return { notFound: true }
   }
 
-  // отдаём данные — Next.js рендерит HTML на сервере
+  // 5. Преобразуем content из формата Craft.js в ComponentNode[],
+  // который уже умеет рендерить site-runtime-ssr
+  const components = craftContentToComponents(page.content)
+
+  if (components.length === 0) {
+    return { notFound: true }
+  }
+
   return {
     props: {
-      page,
       domain,
-      metadata: siteConfig.metadata,
+      slug: slugPath,
+      components,
     },
   }
 }
 
-export default function Page({ page, domain, metadata }: PageProps) {
+export default function Page({ domain, slug, components }: PageProps) {
+  const urlPath = slug === "/" ? "" : slug
+
   return (
     <>
       <Head>
-        <title>{metadata?.title || domain}</title>
-        {metadata?.description && (
-          <meta name="description" content={metadata.description} />
-        )}
-        <meta property="og:title" content={metadata?.title || domain} />
-        <meta property="og:url" content={`https://${domain}`} />
+        <title>{`Страница ${slug} — ${domain}`}</title>
+        <meta property="og:title" content={`Страница ${slug} — ${domain}`} />
+        <meta property="og:url" content={`https://${domain}${urlPath}`} />
       </Head>
       <main style={{ minHeight: "100vh", padding: "20px" }}>
-        {renderPage(page.components)}
+        {renderPage(components)}
       </main>
     </>
   )
