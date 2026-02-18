@@ -10,8 +10,23 @@ const AppRouter = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<HomePage onOpenBuilder={() => navigate("/builder")} />} />
+      <Route
+        path="/"
+        element={
+          <HomePage
+            onOpenBuilder={(id) => {
+              if (!id) {
+                navigate("/builder")
+                return
+              }
+
+              navigate(`/builder/${id}`)
+            }}
+          />
+        }
+      />
       <Route path="/builder" element={<BuilderPage />} />
+      <Route path="/builder/:id" element={<BuilderPage />} />
     </Routes>
   )
 }

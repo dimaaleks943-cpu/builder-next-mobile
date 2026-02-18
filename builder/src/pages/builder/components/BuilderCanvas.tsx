@@ -1,10 +1,14 @@
 import { useEffect, useRef } from "react"
 import { Box, IconButton } from "@mui/material"
-import { Frame, Element, useEditor } from "@craftjs/core"
+import { Frame, Element, useEditor, type SerializedNodes } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
 import { Body } from "../../../craft/Body.tsx"
 
-export const BuilderCanvas = () => {
+interface BuilderCanvasProps {
+  initialContent: SerializedNodes | null
+}
+
+export const BuilderCanvas = ({ initialContent }: BuilderCanvasProps) => {
   const { actions } = useEditor()
   const { selectedId, canDeleteSelected } = useEditor((state, query) => {
     const [id] = Array.from(state.events.selected)
@@ -75,6 +79,17 @@ export const BuilderCanvas = () => {
       canvasRef.current.focus()
     }
   }, [selectedId])
+
+  // Если пришёл initialContent из API — десериализуем его в дерево Craft.
+  useEffect(() => {
+    if (!initialContent) return
+    try {
+      actions.deserialize(initialContent)
+    } catch (e) {
+      console.error("Не удалось десериализовать initialContent в Canvas:", e)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialContent])
 
   /**
    * Удаление выбранного элемента по Delete/Backspace.
@@ -187,7 +202,7 @@ export const BuilderCanvas = () => {
         }}
         onClick={handleCanvasBackgroundClick}
         onKeyDown={handleKeyDown}
-      >
+        >
         <Box
           sx={{
             width: "100%",
