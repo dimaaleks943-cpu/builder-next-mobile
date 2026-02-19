@@ -75,7 +75,10 @@ const typesMatch = (a: unknown, b: unknown): boolean => {
   return false
 }
 
-export type ContentListProps = {}
+export type ContentListProps = {
+  selectedSource?: string
+  itemsPerRow?: number
+}
 
 /**
  * Список контента (коллекция) с шаблоном ячеек и синхронизацией.
@@ -85,10 +88,6 @@ export type ContentListProps = {}
  */
 export const ContentList = ({}: ContentListProps) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  // ключ выбранной коллекции из селекта "Source"
-  const [selectedSource, setSelectedSource] = useState<string>("")
-  // настройка layout: сколько элементов отображать в строке/ряду
-  const [itemsPerRow, setItemsPerRow] = useState<number>(1) // 1 = построчно, 2-5 = столбики
   const modalRef = useRef<HTMLDivElement>(null)
   const syncInProgressRef = useRef(false)
   const prevSignaturePartsRef = useRef<string[]>([])
@@ -97,9 +96,11 @@ export const ContentList = ({}: ContentListProps) => {
     connectors: { connect, drag },
     selected,
     id: contentListId,
+    props,
   } = useNode((node) => ({
     selected: node.events.selected,
     id: node.id,
+    props: node.data.props as ContentListProps,
   }))
 
   const { actions, query } = useEditor()
@@ -132,6 +133,11 @@ export const ContentList = ({}: ContentListProps) => {
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [isSettingsOpen])
+
+    // Текущий выбранный source и layout берём из props узла Craft.js,
+    // чтобы настройки сохранялись в JSON и восстанавливались при загрузке
+    const selectedSource = props.selectedSource ?? ""
+    const itemsPerRow = props.itemsPerRow ?? 1
 
   // Массив элементов активной коллекции (items выбранного source),
   // уже "разрешённый" из CollectionsContext по selectedSource
@@ -596,10 +602,12 @@ export const ContentList = ({}: ContentListProps) => {
             onChange={(e) => {
               const value = e.target.value
               startTransition(() => {
-                setSelectedSource(value)
-                if (!value) {
-                  setItemsPerRow(1) // сбрасываем layout при отключении коллекции
-                }
+                actions.setProp(contentListId, (nodeProps: ContentListProps) => {
+                  nodeProps.selectedSource = value
+                  if (!value) {
+                    nodeProps.itemsPerRow = 1 // сбрасываем layout при отключении коллекции
+                  }
+                })
               })
             }}
           >
@@ -640,7 +648,11 @@ export const ContentList = ({}: ContentListProps) => {
                   <button
                     key={count}
                     type="button"
-                    onClick={() => setItemsPerRow(count)}
+                    onClick={() => {
+                      actions.setProp(contentListId, (nodeProps: ContentListProps) => {
+                        nodeProps.itemsPerRow = count
+                      })
+                    }}
                     style={{
                       flex: 1,
                       padding: "6px 4px",
@@ -724,7 +736,10 @@ export const ContentList = ({}: ContentListProps) => {
 
 ;(ContentList as any).craft = {
   displayName: "ContentList",
-  props: {},
+  props: {
+    selectedSource: "",
+    itemsPerRow: 1,
+  },
   rules: {
     canMoveIn: (nodes: { data: { type: { resolvedName?: string } } }[]) =>
       nodes.every((n) => n.data?.type?.resolvedName === "ContentListCell"),
