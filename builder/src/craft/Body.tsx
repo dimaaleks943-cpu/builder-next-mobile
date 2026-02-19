@@ -72,7 +72,6 @@ export const Body = ({
       }}
       style={{
         width: "100%",
-        height: "100%",
         minHeight: 80,
         display:
           layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block",

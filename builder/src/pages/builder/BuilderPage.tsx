@@ -6,15 +6,28 @@ import { BuilderHeader } from "./components/BuilderHeader"
 import { BuilderLeftPanel } from "./components/BuilderLeftPanel"
 import { BuilderCanvas } from "./components/BuilderCanvas"
 import { BuilderRightPanel } from "./components/BuilderRightPanel"
+import { RightPanelContext } from "./RightPanelContext"
+import { CollectionsContext } from "./CollectionsContext"
 import { COLORS } from "../../theme/colors"
 import { Block } from "../../craft/Block.tsx"
 import { Body } from "../../craft/Body.tsx"
 import { Text } from "../../craft/Text.tsx"
 import { LinkText } from "../../craft/LinkText.tsx"
-import { EXTRANET_API_TOKEN, type ExtranetPageResponse } from "../../api/extranet"
+import { ContentList } from "../../craft/ContentList.tsx"
+import { ContentListCell } from "../../craft/ContentListCell.tsx"
+import {
+  EXTRANET_API_TOKEN,
+  type ExtranetPageResponse,
+  fetchProductsCollection,
+} from "../../api/extranet"
 
 export const BuilderPage = () => {
   const { id } = useParams<{ id: string }>()
+  /** для управления правой боковой панели */
+  const [rightPanelTabIndex, setRightPanelTabIndex] = useState(0)
+  const [collections, setCollections] = useState<
+    { key: string; label: string; items: any[] }[]
+  >([])
   const [initialContent, setInitialContent] = useState<SerializedNodes | null>(null)
 
   useEffect(() => {
@@ -65,6 +78,23 @@ export const BuilderPage = () => {
     void fetchPage()
   }, [id])
 
+  useEffect(() => {
+    const fetchCollections = async () => {
+      const products = await fetchProductsCollection()
+      if (products) {
+        setCollections([
+          {
+            key: "products",
+            label: "Products",
+            items: products.data,
+          },
+        ])
+      }
+    }
+
+    void fetchCollections()
+  }, [])
+
   return (
     <Editor
       resolver={{
@@ -72,34 +102,50 @@ export const BuilderPage = () => {
         Body,
         Text,
         LinkText,
+        ContentList,
+        ContentListCell,
       }}
     >
-      <Box
-        sx={{
-          position: "fixed",
-          inset: 0,
-          zIndex: (theme) => theme.zIndex.modal + 1,
-          width: "100vw",
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          backgroundColor: COLORS.gray100,
+      <RightPanelContext.Provider
+        value={{
+          tabIndex: rightPanelTabIndex,
+          setTabIndex: setRightPanelTabIndex,
         }}
       >
-        <BuilderHeader pageId={id}  />
-
-        <Box
-          sx={{
-            flex: 1,
-            display: "flex",
-            backgroundColor: COLORS.white,
+        <CollectionsContext.Provider
+          value={{
+            collections,
           }}
         >
-          <BuilderLeftPanel />
-          <BuilderCanvas initialContent={initialContent} />
-          <BuilderRightPanel />
-        </Box>
-      </Box>
+          <Box
+            sx={{
+              position: "fixed",
+              inset: 0,
+              zIndex: (theme) => theme.zIndex.modal + 1,
+              width: "100vw",
+              height: "100vh",
+              display: "flex",
+              flexDirection: "column",
+              backgroundColor: COLORS.gray100,
+            }}
+          >
+            <BuilderHeader pageId={id}  />
+
+            <Box
+              sx={{
+                flex: 1,
+                display: "flex",
+                backgroundColor: COLORS.white,
+                minHeight: 0,
+              }}
+            >
+              <BuilderLeftPanel />
+              <BuilderCanvas initialContent={initialContent} />
+              <BuilderRightPanel />
+            </Box>
+          </Box>
+        </CollectionsContext.Provider>
+      </RightPanelContext.Provider>
     </Editor>
   )
 }

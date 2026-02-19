@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { Box, Tab, Tabs } from "@mui/material"
 import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
@@ -8,9 +7,11 @@ import { BordersAccordion } from "./BordersAccordion.tsx"
 import { LayoutAccordion } from "./LayoutAccordion.tsx"
 import { TextSettingsAccordion } from "./TextSettingsAccordion.tsx"
 import { LinkSettingsAccordion } from "./LinkSettingsAccordion.tsx"
+import { useRightPanelContext } from "../RightPanelContext"
 
 export const BuilderRightPanel = () => {
-  const [tabIndex, setTabIndex] = useState(0)
+  const rightPanelContext = useRightPanelContext()
+  const tabIndex = rightPanelContext?.tabIndex ?? 0
 
   const { hasSelection, selectedType } = useEditor((state) => {
     const [id] = Array.from(state.events.selected)
@@ -36,7 +37,7 @@ export const BuilderRightPanel = () => {
   })
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setTabIndex(newValue)
+    rightPanelContext?.setTabIndex(newValue)
   }
 
   return (

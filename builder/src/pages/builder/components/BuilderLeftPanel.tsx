@@ -11,6 +11,7 @@ import { COLORS } from "../../../theme/colors"
 import { Block } from "../../../craft/Block"
 import { Text } from "../../../craft/Text"
 import { LinkText } from "../../../craft/LinkText"
+import { ContentList } from "../../../craft/ContentList"
 
 interface ComponentItem {
   name: string;
@@ -42,6 +43,15 @@ const categories: Category[] = [
       {
         name: "Текст-ссылка",
         component: <LinkText />,
+      },
+    ],
+  },
+  {
+    title: "CMS",
+    items: [
+      {
+        name: "Список контента",
+        component: <ContentList />,
       },
     ],
   },
@@ -77,7 +87,6 @@ export const BuilderLeftPanel = () => {
         sx={{
           flex: 1,
           padding: "8px",
-          overflowY: "auto",
         }}
       >
         {categories.map((category) => (

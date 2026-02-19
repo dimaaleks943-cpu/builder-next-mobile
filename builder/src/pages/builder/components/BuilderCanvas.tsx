@@ -199,6 +199,23 @@ export const BuilderCanvas = ({ initialContent }: BuilderCanvasProps) => {
           padding: "0 8px 8px",
           display: "flex",
           outline: "none",
+          overflowY: "auto",
+          overflowX: "hidden",
+          scrollbarWidth: "thin",
+          scrollbarColor: `${COLORS.gray300} transparent`,
+          "&::-webkit-scrollbar": {
+            width: "6px",
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "transparent",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: COLORS.gray300,
+            borderRadius: "3px",
+            "&:hover": {
+              backgroundColor: COLORS.gray400,
+            },
+          },
         }}
         onClick={handleCanvasBackgroundClick}
         onKeyDown={handleKeyDown}
@@ -206,7 +223,6 @@ export const BuilderCanvas = ({ initialContent }: BuilderCanvasProps) => {
         <Box
           sx={{
             width: "100%",
-            height: "100%",
             backgroundColor: COLORS.white,
             display: "flex",
           }}
