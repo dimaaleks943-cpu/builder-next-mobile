@@ -3,6 +3,7 @@ import { Box, IconButton } from "@mui/material"
 import { Frame, Element, useEditor, type SerializedNodes } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
 import { Body } from "../../../craft/Body.tsx"
+import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
 
 interface BuilderCanvasProps {
   initialContent: SerializedNodes | null
@@ -41,33 +42,9 @@ export const BuilderCanvas = ({ initialContent }: BuilderCanvasProps) => {
     const ancestorIds = collectAncestors(selectedId, [])
     const allIds = [...ancestorIds, selectedId]
 
-    const names = allIds.map((id) => {
-      const node = state.nodes[id]
-      if (!node) {
-        return "Element"
-      }
-
-      // TODO Craft сам кладёт displayName узла в node.data.displayName, пока только для Block.tsx
-      const displayName = node.data.displayName as string | undefined
-      if (displayName) {
-        return displayName
-      }
-
-      const type = node.data.type
-      if (typeof type === "string") {
-        return type
-      }
-
-      if (type && typeof (type as any).resolvedName === "string") {
-        return (type as any).resolvedName as string
-      }
-
-      if (type && typeof (type as any).craft?.displayName === "string") {
-        return (type as any).craft.displayName as string
-      }
-
-      return "Element"
-    })
+    const names = allIds.map((id) =>
+      resolveNodeDisplayName(state.nodes[id]),
+    )
 
     return { breadcrumb: names }
   })

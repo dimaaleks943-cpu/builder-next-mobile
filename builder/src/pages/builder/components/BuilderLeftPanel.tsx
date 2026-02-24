@@ -12,6 +12,7 @@ import { Block } from "../../../craft/Block"
 import { Text } from "../../../craft/Text"
 import { LinkText } from "../../../craft/LinkText"
 import { ContentList } from "../../../craft/ContentList"
+import { BuilderNavigator } from "./BuilderNavigator"
 
 interface ComponentItem {
   name: string;
@@ -82,11 +83,13 @@ export const BuilderLeftPanel = () => {
           Материалы для холста
         </Typography>
       </Box>
-
+      {/* Навигатор структуры страницы */}
+      <BuilderNavigator />
       <Box
         sx={{
           flex: 1,
           padding: "8px",
+          overflowY: "auto",
         }}
       >
         {categories.map((category) => (
