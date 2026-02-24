@@ -116,7 +116,9 @@ export const BuilderNavigator: React.FC = () => {
   const toggleExpanded = useCallback((id: string) => {
     setExpanded((prev) => ({
       ...prev,
-      [id]: !(prev[id] ?? true),
+      // По умолчанию узел свернут; первый клик должен раскрыть его.
+      // Если состояния ещё нет (undefined) — считаем, что было false.
+      [id]: !(prev[id] ?? false),
     }))
   }, [])
 
