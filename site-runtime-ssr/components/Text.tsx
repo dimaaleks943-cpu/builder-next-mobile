@@ -1,5 +1,9 @@
+import React from "react"
+import { useContentData } from "./ContentDataContext"
+
 interface TextProps {
   text?: string
+  collectionField?: string | null
   fontSize?: number
   fontWeight?: "normal" | "bold"
   textAlign?: "left" | "center" | "right"
@@ -16,6 +20,7 @@ interface TextProps {
 
 export const Text = ({
   text = "Text",
+  collectionField = null,
   fontSize = 14,
   fontWeight = "normal",
   textAlign = "left",
@@ -29,6 +34,23 @@ export const Text = ({
   paddingBottom = 0,
   paddingLeft = 0,
 }: TextProps) => {
+  const contentData = useContentData()
+
+  // Если выбрано поле коллекции, подставляем значение из itemData
+  const displayText = React.useMemo(() => {
+    if (collectionField && contentData?.itemData) {
+      const fieldValue = contentData.itemData[collectionField]
+      if (fieldValue !== null && fieldValue !== undefined) {
+        // Преобразуем значение в строку
+        if (typeof fieldValue === "object") {
+          return JSON.stringify(fieldValue)
+        }
+        return String(fieldValue)
+      }
+    }
+    return text
+  }, [collectionField, contentData?.itemData, text])
+
   return (
     <span
       style={{
@@ -47,7 +69,7 @@ export const Text = ({
         paddingLeft,
       }}
     >
-      {text}
+      {displayText}
     </span>
   )
 }

@@ -15,7 +15,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
   context,
 ): Promise<GetServerSidePropsResult<PageProps>> => {
   // 1. Определяем домен из заголовка Host (marketflow.store, example.com и т.п.)
-  const domain = context.req.headers.host || "asdqe"
+  const domain = context.req.headers.host || "marketflow.store"
 
   // 2. Определяем slug из catch-all-роута:
   // "/" -> slug пустой -> считаем, что это корень "/"

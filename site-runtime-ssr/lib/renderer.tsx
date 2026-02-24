@@ -3,25 +3,57 @@ import { Block } from "@/components/Block"
 import { Body } from "@/components/Body"
 import { Text } from "@/components/Text"
 import { LinkText } from "@/components/LinkText"
-import type { ComponentNode } from "./siteConfig"
+import { ContentList } from "@/components/ContentList"
+import type { ComponentNode } from "./interface"
 
 const componentMap: Record<string, React.ComponentType<any>> = {
   Block,
   Body,
   Text,
   LinkText,
+  ContentList,
 }
 
 export function renderComponent(
   node: ComponentNode,
 ): React.ReactElement {
-  const Component = componentMap[node.type]
+  // В рантайме Craft/SSR сюда иногда попадает либо строковое имя компонента,
+  // либо сам React-компонент (function). Если обрабатывать только строку,
+  // часть узлов (например, потомков ContentList) рендерится неправильно,
+  // поэтому здесь сознательно поддерживаем оба варианта и для функции
+  // вытаскиваем имя через displayName/name.
+  const rawType: any = (node as any).type
+  let componentType: string
+
+  if (typeof rawType === "string") {
+    componentType = rawType
+  } else if (typeof rawType === "function") {
+    const fn = rawType as { displayName?: string; name?: string }
+    componentType = fn.displayName ?? fn.name ?? "Unknown"
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[renderer] Component type is function, extracted name:",
+      componentType,
+    )
+  } else {
+    componentType = String(rawType)
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[renderer] Component type is not a string:",
+      typeof rawType,
+      rawType,
+      "converted to:",
+      componentType,
+    )
+  }
+
+  const Component = componentMap[componentType]
 
   if (!Component) {
     return React.createElement(
       "div",
       null,
-      `Unknown component: ${node.type}`,
+      `Unknown component: ${componentType}`,
     )
   }
 
@@ -33,7 +65,7 @@ export function renderComponent(
 
   return React.createElement(
     Component,
-    { ...node.props, key: node.type },
+    { ...node.props, key: componentType },
     children,
   )
 }
