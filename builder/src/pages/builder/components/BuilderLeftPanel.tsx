@@ -12,6 +12,7 @@ import { Block } from "../../../craft/Block"
 import { Text } from "../../../craft/Text"
 import { LinkText } from "../../../craft/LinkText"
 import { ContentList } from "../../../craft/ContentList"
+import { Image } from "../../../craft/Image"
 import { BuilderNavigator } from "./BuilderNavigator"
 
 interface ComponentItem {
@@ -56,6 +57,15 @@ const categories: Category[] = [
       },
     ],
   },
+  {
+    title: "Медиа",
+    items: [
+      {
+        name: "Изображение",
+        component: <Image />,
+      },
+    ],
+  },
 ]
 
 export const BuilderLeftPanel = () => {
@@ -83,8 +93,7 @@ export const BuilderLeftPanel = () => {
           Материалы для холста
         </Typography>
       </Box>
-      {/* Навигатор структуры страницы */}
-      <BuilderNavigator />
+
       <Box
         sx={{
           flex: 1,
@@ -185,6 +194,9 @@ export const BuilderLeftPanel = () => {
           </Accordion>
         ))}
       </Box>
+
+      {/* Навигатор структуры страницы */}
+      <BuilderNavigator />
     </Box>
   )
 }

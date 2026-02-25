@@ -15,6 +15,7 @@ import { Text } from "../../craft/Text.tsx"
 import { LinkText } from "../../craft/LinkText.tsx"
 import { ContentList } from "../../craft/ContentList.tsx"
 import { ContentListCell } from "../../craft/ContentListCell.tsx"
+import { Image } from "../../craft/Image.tsx"
 import {
   EXTRANET_API_TOKEN,
   type ExtranetPageResponse,
@@ -104,6 +105,7 @@ export const BuilderPage = () => {
         LinkText,
         ContentList,
         ContentListCell,
+        Image,
       }}
     >
       <RightPanelContext.Provider
