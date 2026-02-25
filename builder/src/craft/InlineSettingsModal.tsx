@@ -23,6 +23,34 @@ export const InlineSettingsModal = ({
 }: InlineSettingsModalProps) => {
   const modalRef = useRef<HTMLDivElement | null>(null)
 
+  // 1) Гасим события внутри модалки в capture phase, чтобы Craft.js и другие
+  // обработчики не перехватывали клики/mousedown и не меняли выделение.
+  useEffect(() => {
+    if (!open) return
+    const modal = modalRef.current
+    if (!modal) return
+
+    // @ts-ignore
+    const handleCapture = (event: Event) => {
+      event.stopPropagation()
+      // есть не во всех реализациях, но если есть — используем
+      if (typeof event.stopImmediatePropagation === "function") {
+        event.stopImmediatePropagation()
+      }
+    }
+
+    modal.addEventListener("mousedown", handleCapture, true)
+    // modal.addEventListener("click", handleCapture, true)
+    // modal.addEventListener("pointerdown", handleCapture, true)
+
+    return () => {
+      modal.removeEventListener("mousedown", handleCapture, true)
+      // modal.removeEventListener("click", handleCapture, true)
+      // modal.removeEventListener("pointerdown", handleCapture, true)
+    }
+  }, [open])
+
+  // 2) Клик вне модалки — закрываем
   useEffect(() => {
     if (!open) return
 

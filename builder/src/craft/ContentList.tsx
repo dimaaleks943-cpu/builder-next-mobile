@@ -6,6 +6,7 @@ import { useCollectionsContext } from "../pages/builder/CollectionsContext"
 import { ContentListCell } from "./ContentListCell"
 import { ContentListDataContext } from "./ContentListDataContext"
 import { InlineSettingsModal } from "./InlineSettingsModal"
+import { InlineSettingsBadge } from "./InlineSettingsBadge"
 
 /** Клонирует дерево узлов с новыми id, чтобы не было дубликатов ключей при добавлении в несколько ячеек.
  *  Типы здесь намеренно ослаблены до any, чтобы не тянуть внутрь все внутренние типы Craft.js (NodeTree/Nodes).
@@ -370,46 +371,13 @@ export const ContentList = ({}: ContentListProps) => {
         position: "relative",
       }}
     >
-      {/* Бирка с именем компонента, не влияет на layout, только визуальный оверлей */}
       {selected && (
-        <div
+        <InlineSettingsBadge
           ref={badgeRef}
-          style={{
-            position: "absolute",
-            top: -12,
-            left: 8,
-            padding: "2px 6px",
-            backgroundColor: COLORS.purple400,
-            color: COLORS.white,
-            fontSize: 10,
-            borderRadius: 4,
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            pointerEvents: "auto",
-            zIndex: 10,
-          }}
-          onMouseDown={(e) => {
-            // не даём перетаскиванию/кликам по бирке сбивать выделение
-            e.stopPropagation()
-          }}
-        >
-          <span>Collection List Wrapper</span>
-          <button
-            type="button"
-            style={{
-              border: "none",
-              background: "transparent",
-              color: COLORS.white,
-              cursor: "pointer",
-              padding: 0,
-              fontSize: 10,
-            }}
-            onClick={openSettings}
-          >
-            ⚙
-          </button>
-        </div>
+          icon={<span>CL</span>}
+          label="ContentList"
+          onSettingsClick={openSettings}
+        />
       )}
 
       {/* Основная область: либо 3 плейсхолдера, либо реальные элементы коллекции */}

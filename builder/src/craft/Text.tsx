@@ -7,6 +7,7 @@ import { useInsideContentListCell } from "./ContentListCellContext"
 import { useContentListData } from "./ContentListDataContext"
 import { useCollectionsContext } from "../pages/builder/CollectionsContext"
 import { InlineSettingsModal } from "./InlineSettingsModal"
+import { InlineSettingsBadge } from "./InlineSettingsBadge"
 
 export type TextAlign = "left" | "center" | "right"
 
@@ -45,26 +46,20 @@ export const Text = ({
 }: TextProps) => {
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(text)
+  // Последнее выбранное поле коллекции, чтобы можно было вернуться к нему
+  // после временного переключения в режим Manual.
+  const [savedCollectionField, setSavedCollectionField] = useState<string | null>(
+    collectionField,
+  )
   const [isTextModalOpen, setIsTextModalOpen] = useState(false)
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
   const spanRef = useRef<HTMLSpanElement | null>(null)
-  // ref с актуальным флагом открытия модалки, чтобы обработчики событий на document
-  // не зависели от «устаревшего» значения isTextModalOpen из замыкания
-  const isTextModalOpenRef = useRef(false)
 
   // Режим: "manual" для ручного ввода, "collection" для поля коллекции
   const inputMode = collectionField ? "collection" : "manual"
 
-  // Синхронно обновляем ref при каждом изменении isTextModalOpen,
-  // чтобы обработчики кликов (outside-click) всегда видели текущее состояние модалки
-  useEffect(() => {
-    isTextModalOpenRef.current = isTextModalOpen
-  }, [isTextModalOpen])
-
-  // DOM-элемент бирки Text (используем для позиционирования модалки и поиска кнопки-шестерёнки)
+  // DOM-элемент бирки Text (используем для позиционирования модалки)
   const badgeRef = useRef<HTMLDivElement | null>(null)
-  // Корневой DOM-элемент модалки (нужен для outside-click логики и перехвата событий)
-  const textModalRef = useRef<HTMLDivElement>(null)
 
   const {
     connectors: { connect, drag },
@@ -119,6 +114,13 @@ export const Text = ({
     return text
   }, [collectionField, contentListData?.itemData, text])
 
+  // Обновляем сохранённое поле коллекции, когда prop меняется на ненулевое значение.
+  useEffect(() => {
+    if (collectionField) {
+      setSavedCollectionField(collectionField)
+    }
+  }, [collectionField])
+
   /**
    / Синхронизируем локальное состояние с пропсами, когда не редактируем
    */
@@ -151,98 +153,6 @@ export const Text = ({
     }
     setIsTextModalOpen(true)
   }, [id, actions])
-
-  // Настраиваем переработку событий для модалки:
-  // 1) гасим события внутри модалки (capture), чтобы Craft.js/другие обработчики не мешали
-  // 2) отслеживаем клики по документу и закрываем модалку только при «клике снаружи»
-  useEffect(() => {
-    const modalElement = textModalRef.current
-    if (!modalElement) return
-
-    // Обработчик на самой модалке в capture phase - останавливаем события
-    const handleModalCapture = (event: Event) => {
-      event.stopPropagation()
-      event.stopImmediatePropagation()
-    }
-
-    // Добавляем обработчики на саму модалку в capture phase
-    modalElement.addEventListener("mousedown", handleModalCapture, true)
-    // modalElement.addEventListener("click", handleModalCapture, true)
-    // modalElement.addEventListener("pointerdown", handleModalCapture, true)
-
-    // Обработчик для кликов вне модалки
-    const handleClickOutside = (event: MouseEvent) => {
-      // Используем ref для синхронной проверки состояния
-      if (!isTextModalOpenRef.current) {
-        return
-      }
-
-      // Сохраняем ссылку на элемент модалки в момент события
-      const currentModalElement = textModalRef.current
-
-      // Проверяем что модалка все еще существует в DOM
-      if (!currentModalElement || !document.body.contains(currentModalElement)) {
-        return
-      }
-
-      // Используем composedPath для проверки пути события
-      const path = event.composedPath() as HTMLElement[]
-      const clickedInsideModal = path.some(
-        (el) => el === currentModalElement || (el.nodeType === 1 && currentModalElement.contains(el))
-      )
-
-      const badgeElement = badgeRef.current
-      const clickedOnBadge = badgeElement && path.some(
-        (el) => el === badgeElement || (el.nodeType === 1 && badgeElement.contains(el))
-      )
-
-      if (clickedInsideModal || clickedOnBadge) {
-        return
-      }
-
-      // Клик был вне модалки - закрываем только если модалка все еще открыта
-      if (isTextModalOpenRef.current && textModalRef.current && document.body.contains(textModalRef.current)) {
-        setIsTextModalOpen(false)
-      }
-    }
-
-    // Используем обычный bubbling phase, не capture
-    document.addEventListener("mousedown", handleClickOutside)
-
-    return () => {
-      modalElement.removeEventListener("mousedown", handleModalCapture, true)
-      // modalElement.removeEventListener("click", handleModalCapture, true)
-      // modalElement.removeEventListener("pointerdown", handleModalCapture, true)
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [isTextModalOpen])
-
-  // Вешаем обработчики на кнопку-шестерёнку в бирке Text (в capture phase),
-  // чтобы гарантированно открыть нашу модалку и не дать Craft.js перехватить клик
-  useEffect(() => {
-    const shouldShow = isInsideContentList && selected
-    if (!badgeRef.current || !shouldShow) return
-    const badge = badgeRef.current
-    const gearButton = badge.querySelector("button")
-    if (!gearButton) return
-
-    const handleGearClick = (e: Event) => {
-      e.stopPropagation()
-      e.preventDefault()
-      openTextModal()
-    }
-
-    //Позволяет октрывать модалку после клика на шестеренку
-    gearButton.addEventListener("click", handleGearClick, true) // capture phase
-    gearButton.addEventListener("mousedown", handleGearClick, true)
-    // gearButton.addEventListener("pointerdown", handleGearClick, true)
-
-    return () => {
-      gearButton.removeEventListener("click", handleGearClick, true)
-      gearButton.removeEventListener("mousedown", handleGearClick, true)
-      // gearButton.removeEventListener("pointerdown", handleGearClick, true)
-    }
-  }, [isInsideContentList, selected, openTextModal])
 
   const handleShowAllSettings = () => {
     rightPanelContext?.setTabIndex(1)
@@ -291,12 +201,29 @@ export const Text = ({
           // Переключаемся на ручной ввод - сбрасываем поле коллекции
           props.collectionField = null
         } else {
-          // Переключаемся на коллекцию - выбираем первое поле если доступно
-          if (collectionFields.length > 0 && !props.collectionField) {
-            props.collectionField = collectionFields[0]
-            // Обновляем текст на значение первого поля
-            if (contentListData?.itemData) {
-              const fieldValue = contentListData.itemData[collectionFields[0]]
+          // Переключаемся на коллекцию.
+          // 1) Если уже есть выбранное поле, оставляем его.
+          // 2) Если поля нет, но раньше было выбрано (savedCollectionField) и оно
+          //    всё ещё есть в списке полей коллекции — восстанавливаем его.
+          // 3) Иначе берём первое поле, если оно доступно.
+          if (!props.collectionField) {
+            let nextField: string | null = null
+
+            if (
+              savedCollectionField &&
+              collectionFields.includes(savedCollectionField)
+            ) {
+              nextField = savedCollectionField
+            } else if (collectionFields.length > 0) {
+              nextField = collectionFields[0]
+            }
+
+            props.collectionField = nextField
+
+            // Обновляем текст на значение выбранного поля, чтобы первая ячейка
+            // сразу показывала корректное значение.
+            if (nextField && contentListData?.itemData) {
+              const fieldValue = contentListData.itemData[nextField]
               if (fieldValue !== null && fieldValue !== undefined) {
                 if (typeof fieldValue === "object") {
                   props.text = JSON.stringify(fieldValue)
@@ -390,56 +317,13 @@ export const Text = ({
           }
         >
           {showContentListUi && (
-            <div
+            <InlineSettingsBadge
               ref={badgeRef}
-              data-text-badge="true"
-              style={{
-                position: "absolute",
-                top: -12,
-                left: 0,
-                padding: "2px 6px",
-                backgroundColor: COLORS.purple400,
-                color: COLORS.white,
-                fontSize: 10,
-                borderRadius: 4,
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                pointerEvents: "auto",
-                zIndex: 10,
-                maxWidth: 120,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              <span style={{ flexShrink: 0 }}>T</span>
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-                {displayText || "Текст"}
-              </span>
-              <button
-                type="button"
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  color: COLORS.white,
-                  cursor: "pointer",
-                  padding: "2px",
-                  fontSize: 10,
-                  flexShrink: 0,
-                  position: "relative",
-                  zIndex: 11,
-                  pointerEvents: "auto",
-                }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  e.preventDefault()
-                  openTextModal(e)
-                }}
-              >
-                ⚙
-              </button>
-            </div>
+              icon={<span style={{ fontSize: 11 }}>T</span>}
+              label={displayText || "Текст"}
+              maxWidth={120}
+              onSettingsClick={() => openTextModal()}
+            />
           )}
           <span
             ref={(ref) => {
