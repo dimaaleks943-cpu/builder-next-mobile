@@ -5,6 +5,7 @@ import { useRightPanelContext } from "../pages/builder/RightPanelContext"
 import { useCollectionsContext } from "../pages/builder/CollectionsContext"
 import { ContentListCell } from "./ContentListCell"
 import { ContentListDataContext } from "./ContentListDataContext"
+import { InlineSettingsModal } from "./InlineSettingsModal"
 
 /** Клонирует дерево узлов с новыми id, чтобы не было дубликатов ключей при добавлении в несколько ячеек.
  *  Типы здесь намеренно ослаблены до any, чтобы не тянуть внутрь все внутренние типы Craft.js (NodeTree/Nodes).
@@ -44,7 +45,9 @@ const CELL_IDS_PENDING = { cellIds: [] as string[], signature: "__pending__" } a
 
 /** Собирает id, type и props узлов поддерева в порядке depth-first (узел, затем дети) */
 const getDescendantsWithProps = (
-  query: { node: (id: string) => { get: () => { data: { nodes?: string[]; type: unknown; props: Record<string, unknown> } } } },
+  query: {
+    node: (id: string) => { get: () => { data: { nodes?: string[]; type: unknown; props: Record<string, unknown> } } }
+  },
   nodeId: string,
 ): { id: string; type: unknown; props: Record<string, unknown> }[] => {
   const result: { id: string; type: unknown; props: Record<string, unknown> }[] = []
@@ -88,7 +91,8 @@ export type ContentListProps = {
  */
 export const ContentList = ({}: ContentListProps) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const modalRef = useRef<HTMLDivElement>(null)
+  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
+  const badgeRef = useRef<HTMLDivElement | null>(null)
   const syncInProgressRef = useRef(false)
   const prevSignaturePartsRef = useRef<string[]>([])
 
@@ -110,6 +114,13 @@ export const ContentList = ({}: ContentListProps) => {
 
   const openSettings = (e: React.MouseEvent) => {
     e.stopPropagation()
+    if (badgeRef.current) {
+      const rect = badgeRef.current.getBoundingClientRect()
+      setModalPosition({
+        top: rect.bottom + 6,
+        left: rect.left,
+      })
+    }
     setIsSettingsOpen(true)
   }
 
@@ -118,26 +129,10 @@ export const ContentList = ({}: ContentListProps) => {
     setIsSettingsOpen(false)
   }
 
-  // Закрываем модалку при клике вне её
-  useEffect(() => {
-    if (!isSettingsOpen) return
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        setIsSettingsOpen(false)
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [isSettingsOpen])
-
-    // Текущий выбранный source и layout берём из props узла Craft.js,
-    // чтобы настройки сохранялись в JSON и восстанавливались при загрузке
-    const selectedSource = props.selectedSource ?? ""
-    const itemsPerRow = props.itemsPerRow ?? 1
+  // Текущий выбранный source и layout берём из props узла Craft.js,
+  // чтобы настройки сохранялись в JSON и восстанавливались при загрузке
+  const selectedSource = props.selectedSource ?? ""
+  const itemsPerRow = props.itemsPerRow ?? 1
 
   // Массив элементов активной коллекции (items выбранного source),
   // уже "разрешённый" из CollectionsContext по selectedSource
@@ -153,7 +148,10 @@ export const ContentList = ({}: ContentListProps) => {
   // 1) фактические id всех ячеек (cellIds)
   // 2) "подпись" структуры каждой ячейки (signature), чтобы отслеживать изменения шаблона
   const cellIdsAndSignature = useEditor((state, q) => {
-    if (!contentListId || !state.nodes[contentListId] || cellCount === 0) return { cellIds: [] as string[], signature: "" }
+    if (!contentListId || !state.nodes[contentListId] || cellCount === 0) return {
+      cellIds: [] as string[],
+      signature: ""
+    }
     try {
       const contentListNode = state.nodes[contentListId]
       const linkedNodes = (contentListNode?.data?.linkedNodes ?? {}) as Record<string, string>
@@ -375,6 +373,7 @@ export const ContentList = ({}: ContentListProps) => {
       {/* Бирка с именем компонента, не влияет на layout, только визуальный оверлей */}
       {selected && (
         <div
+          ref={badgeRef}
           style={{
             position: "absolute",
             top: -12,
@@ -423,58 +422,58 @@ export const ContentList = ({}: ContentListProps) => {
       >
         {hasCollection
           ? (() => {
-              const rows: any[][] = []
-              for (let i = 0; i < resolvedItems.length; i += itemsPerRow) {
-                rows.push(resolvedItems.slice(i, i + itemsPerRow))
-              }
+            const rows: any[][] = []
+            for (let i = 0; i < resolvedItems.length; i += itemsPerRow) {
+              rows.push(resolvedItems.slice(i, i + itemsPerRow))
+            }
 
-              return rows.map((row, rowIndex) => (
-                <div
-                  key={rowIndex}
-                  style={{
-                    display: "flex",
-                    flexDirection: itemsPerRow === 1 ? "column" : "row",
-                    borderBottom:
-                      rowIndex === rows.length - 1
-                        ? "none"
-                        : "1px dashed rgba(108, 93, 211, 0.3)",
-                  }}
-                >
-                  {row.map((_, itemIndex) => {
-                    const flatIndex = rowIndex * itemsPerRow + itemIndex
-                    const cellId = `${contentListId}-cell-${flatIndex}`
-                    const itemData = resolvedItems[flatIndex] || null
-                    return (
-                      <ContentListDataContext.Provider
-                        key={flatIndex}
-                        value={{
-                          collectionKey: selectedSource || null,
-                          itemData: itemData,
+            return rows.map((row, rowIndex) => (
+              <div
+                key={rowIndex}
+                style={{
+                  display: "flex",
+                  flexDirection: itemsPerRow === 1 ? "column" : "row",
+                  borderBottom:
+                    rowIndex === rows.length - 1
+                      ? "none"
+                      : "1px dashed rgba(108, 93, 211, 0.3)",
+                }}
+              >
+                {row.map((_, itemIndex) => {
+                  const flatIndex = rowIndex * itemsPerRow + itemIndex
+                  const cellId = `${contentListId}-cell-${flatIndex}`
+                  const itemData = resolvedItems[flatIndex] || null
+                  return (
+                    <ContentListDataContext.Provider
+                      key={flatIndex}
+                      value={{
+                        collectionKey: selectedSource || null,
+                        itemData: itemData,
+                      }}
+                    >
+                      <div
+                        style={{
+                          flex: itemsPerRow === 1 ? "none" : 1,
+                          position: "relative",
+                          display: "flex",
+                          borderRight:
+                            itemsPerRow > 1 && itemIndex < row.length - 1
+                              ? "1px dashed rgba(108, 93, 211, 0.3)"
+                              : "none",
                         }}
                       >
-                        <div
-                          style={{
-                            flex: itemsPerRow === 1 ? "none" : 1,
-                            position: "relative",
-                            display: "flex",
-                            borderRight:
-                              itemsPerRow > 1 && itemIndex < row.length - 1
-                                ? "1px dashed rgba(108, 93, 211, 0.3)"
-                                : "none",
-                          }}
-                        >
-                          <Element
-                            is={ContentListCell}
-                            id={cellId}
-                            canvas
-                          />
-                        </div>
-                      </ContentListDataContext.Provider>
-                    )
-                  })}
-                </div>
-              ))
-            })()
+                        <Element
+                          is={ContentListCell}
+                          id={cellId}
+                          canvas
+                        />
+                      </div>
+                    </ContentListDataContext.Provider>
+                  )
+                })}
+              </div>
+            ))
+          })()
           : (
             <>
               {/* Строка 1 плейсхолдер */}
@@ -551,190 +550,146 @@ export const ContentList = ({}: ContentListProps) => {
       </div>
 
       {/* Небольшое окно настроек коллекции, отображается рядом с биркой */}
-      {isSettingsOpen && (
-        <div
-          ref={modalRef}
+      <InlineSettingsModal
+        open={isSettingsOpen}
+        title="Настройки списка контента"
+        top={modalPosition.top}
+        left={modalPosition.left}
+        onClose={() => setIsSettingsOpen(false)}
+        onShowAllSettings={handleShowAllSettings}
+      >
+        <label
           style={{
-            position: "absolute",
-            top: 4,
-            left: 8,
-            transform: "translateY(18px)", // чуть ниже бирки
-            backgroundColor: COLORS.white,
-            padding: "12px 14px",
-            borderRadius: 8,
-            minWidth: 260,
-            maxWidth: 320,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-            fontSize: 13,
-            zIndex: 20,
+            display: "block",
+            marginBottom: 4,
+            fontSize: 12,
+            color: COLORS.gray700,
           }}
-          onClick={(e) => e.stopPropagation()}
         >
+          Source
+        </label>
+        <select
+          style={{
+            width: "100%",
+            padding: "6px 8px",
+            fontSize: 13,
+            borderRadius: 4,
+            border: `1px solid ${COLORS.gray300}`,
+            marginBottom: selectedSource ? 12 : 8,
+          }}
+          value={selectedSource}
+          onChange={(e) => {
+            const value = e.target.value
+            startTransition(() => {
+              actions.setProp(contentListId, (nodeProps: ContentListProps) => {
+                nodeProps.selectedSource = value
+                if (!value) {
+                  nodeProps.itemsPerRow = 1 // сбрасываем layout при отключении коллекции
+                }
+              })
+            })
+          }}
+        >
+          <option value="">None</option>
+          {collectionsContext?.collections.map((collection) => (
+            <option key={collection.key} value={collection.key}>
+              {collection.label}
+            </option>
+          ))}
+        </select>
+
+        {selectedSource ? (
           <div
             style={{
-              fontWeight: 600,
-              marginBottom: 10,
+              marginTop: 8,
             }}
           >
-            Collection list settings
-          </div>
-
-          <label
-            style={{
-              display: "block",
-              marginBottom: 4,
-              fontSize: 12,
-              color: COLORS.gray700,
-            }}
-          >
-            Source
-          </label>
-          <select
-            style={{
-              width: "100%",
-              padding: "6px 8px",
-              fontSize: 13,
-              borderRadius: 4,
-              border: `1px solid ${COLORS.gray300}`,
-              marginBottom: selectedSource ? 12 : 8,
-            }}
-            value={selectedSource}
-            onChange={(e) => {
-              const value = e.target.value
-              startTransition(() => {
-                actions.setProp(contentListId, (nodeProps: ContentListProps) => {
-                  nodeProps.selectedSource = value
-                  if (!value) {
-                    nodeProps.itemsPerRow = 1 // сбрасываем layout при отключении коллекции
-                  }
-                })
-              })
-            }}
-          >
-            <option value="">None</option>
-            {collectionsContext?.collections.map((collection) => (
-              <option key={collection.key} value={collection.key}>
-                {collection.label}
-              </option>
-            ))}
-          </select>
-
-          {selectedSource ? (
             <div
               style={{
-                marginTop: 8,
+                fontSize: 12,
+                fontWeight: 600,
+                color: COLORS.gray800,
+                marginBottom: 8,
               }}
             >
-              <div
-                style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: COLORS.gray800,
-                  marginBottom: 8,
-                }}
-              >
-                Layout
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  gap: 4,
-                  backgroundColor: COLORS.gray100,
-                  padding: 4,
-                  borderRadius: 4,
-                }}
-              >
-                {[1, 2, 3, 4, 5].map((count) => (
-                  <button
-                    key={count}
-                    type="button"
-                    onClick={() => {
-                      actions.setProp(contentListId, (nodeProps: ContentListProps) => {
-                        nodeProps.itemsPerRow = count
-                      })
-                    }}
+              Layout
+            </div>
+            <div
+              style={{
+                display: "flex",
+                gap: 4,
+                backgroundColor: COLORS.gray100,
+                padding: 4,
+                borderRadius: 4,
+              }}
+            >
+              {[1, 2, 3, 4, 5].map((count) => (
+                <button
+                  key={count}
+                  type="button"
+                  onClick={() => {
+                    actions.setProp(contentListId, (nodeProps: ContentListProps) => {
+                      nodeProps.itemsPerRow = count
+                    })
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: "6px 4px",
+                    border: "none",
+                    borderRadius: 4,
+                    backgroundColor:
+                      itemsPerRow === count ? COLORS.gray300 : "transparent",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minHeight: 32,
+                  }}
+                >
+                  <div
                     style={{
-                      flex: 1,
-                      padding: "6px 4px",
-                      border: "none",
-                      borderRadius: 4,
-                      backgroundColor:
-                        itemsPerRow === count ? COLORS.gray300 : "transparent",
-                      cursor: "pointer",
                       display: "flex",
+                      gap: 2,
                       alignItems: "center",
-                      justifyContent: "center",
-                      minHeight: 32,
                     }}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 2,
-                        alignItems: "center",
-                      }}
-                    >
-                      {Array.from({ length: count }).map((_, i) => (
-                        <div
-                          key={i}
-                          style={{
-                            width: 3,
-                            height: 12,
-                            backgroundColor:
-                              itemsPerRow === count
-                                ? COLORS.gray800
-                                : COLORS.gray500,
-                            borderRadius: 1,
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </button>
-                ))}
-              </div>
+                    {Array.from({ length: count }).map((_, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          width: 3,
+                          height: 12,
+                          backgroundColor:
+                            itemsPerRow === count
+                              ? COLORS.gray800
+                              : COLORS.gray500,
+                          borderRadius: 1,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </button>
+              ))}
             </div>
-          ) : (
-            <div
-              style={{
-                marginTop: 4,
-                fontSize: 12,
-                color: COLORS.gray600,
-              }}
-            >
-              To create a Collection of products to sell, go to the Ecommerce panel.
-            </div>
-          )}
-
+          </div>
+        ) : (
           <div
             style={{
-              marginTop: 10,
-              display: "flex",
-              justifyContent: "flex-end",
+              marginTop: 4,
+              fontSize: 12,
+              color: COLORS.gray600,
             }}
           >
-            <button
-              type="button"
-              style={{
-                padding: "6px 12px",
-                borderRadius: 4,
-                border: "none",
-                backgroundColor: COLORS.purple400,
-                color: COLORS.white,
-                fontSize: 12,
-                cursor: "pointer",
-              }}
-              onClick={handleShowAllSettings}
-            >
-              Show All Settings
-            </button>
+            To create a Collection of products to sell, go to the Ecommerce panel.
           </div>
-        </div>
-      )}
+        )}
+        {/* Кнопка "Показать все настройки" рендерится в InlineSettingsModal через onShowAllSettings */}
+      </InlineSettingsModal>
     </div>
   )
-}
+};
 
-;(ContentList as any).craft = {
+(ContentList as any).craft = {
   displayName: "ContentList",
   props: {
     selectedSource: "",
