@@ -5,9 +5,9 @@ import emptySelectionImg from "../assets/dontSelectedElement.png"
 import { SpacingAccordion } from "./SpacingAccordion.tsx"
 import { BordersAccordion } from "./BordersAccordion.tsx"
 import { LayoutAccordion } from "./LayoutAccordion.tsx"
-import { TextSettingsAccordion } from "./TextSettingsAccordion.tsx"
 import { LinkSettingsAccordion } from "./LinkSettingsAccordion.tsx"
 import { ImageSettingsFields } from "../settingsCraftComponents/ImageSettingsFields.tsx"
+import { TextSettingsFields } from "../settingsCraftComponents/TextSettingsFields"
 import { useRightPanelContext } from "../RightPanelContext"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts";
 
@@ -98,7 +98,7 @@ export const BuilderRightPanel = () => {
                 }}
               >
                 {(selectedType === "Text" || selectedType === "LinkText") && (
-                  <TextSettingsAccordion />
+                  <TextSettingsFields asAccordion />
                 )}
                 {selectedType === "LinkText" && <LinkSettingsAccordion />}
                 {selectedType === "Image" && (

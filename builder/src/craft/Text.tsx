@@ -5,9 +5,9 @@ import { COLORS } from "../theme/colors"
 import { useRightPanelContext } from "../pages/builder/RightPanelContext"
 import { useInsideContentListCell } from "./ContentListCellContext"
 import { useContentListData } from "./ContentListDataContext"
-import { useCollectionsContext } from "../pages/builder/CollectionsContext"
 import { InlineSettingsModal } from "./InlineSettingsModal"
 import { InlineSettingsBadge } from "./InlineSettingsBadge"
+import { TextSettingsFields } from "../pages/builder/settingsCraftComponents/TextSettingsFields"
 
 export type TextAlign = "left" | "center" | "right"
 
@@ -46,17 +46,9 @@ export const Text = ({
 }: TextProps) => {
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(text)
-  // Последнее выбранное поле коллекции, чтобы можно было вернуться к нему
-  // после временного переключения в режим Manual.
-  const [savedCollectionField, setSavedCollectionField] = useState<string | null>(
-    collectionField,
-  )
   const [isTextModalOpen, setIsTextModalOpen] = useState(false)
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
   const spanRef = useRef<HTMLSpanElement | null>(null)
-
-  // Режим: "manual" для ручного ввода, "collection" для поля коллекции
-  const inputMode = collectionField ? "collection" : "manual"
 
   // DOM-элемент бирки Text (используем для позиционирования модалки)
   const badgeRef = useRef<HTMLDivElement | null>(null)
@@ -74,30 +66,6 @@ export const Text = ({
   const rightPanelContext = useRightPanelContext()
   const isInsideContentList = useInsideContentListCell()
   const contentListData = useContentListData()
-  const collectionsContext = useCollectionsContext()
-
-  // Получаем список полей коллекции для селекта
-  const collectionFields = useMemo(() => {
-    if (!contentListData?.collectionKey || !collectionsContext) {
-      return []
-    }
-    const collection = collectionsContext.collections.find(
-      (c) => c.key === contentListData.collectionKey
-    )
-    if (!collection || !collection.items || collection.items.length === 0) {
-      return []
-    }
-    // Берем первый элемент и извлекаем все ключи (поля)
-    const firstItem = collection.items[0]
-    if (!firstItem || typeof firstItem !== "object") {
-      return []
-    }
-    return Object.keys(firstItem).filter((key) => {
-      // Исключаем функции
-      const value = firstItem[key]
-      return typeof value !== "function"
-    })
-  }, [contentListData?.collectionKey, collectionsContext])
 
   // Вычисляем отображаемый текст: либо значение поля коллекции, либо статический текст
   const displayText = useMemo(() => {
@@ -113,13 +81,6 @@ export const Text = ({
     }
     return text
   }, [collectionField, contentListData?.itemData, text])
-
-  // Обновляем сохранённое поле коллекции, когда prop меняется на ненулевое значение.
-  useEffect(() => {
-    if (collectionField) {
-      setSavedCollectionField(collectionField)
-    }
-  }, [collectionField])
 
   /**
    / Синхронизируем локальное состояние с пропсами, когда не редактируем
@@ -157,85 +118,6 @@ export const Text = ({
   const handleShowAllSettings = () => {
     rightPanelContext?.setTabIndex(1)
     setIsTextModalOpen(false)
-  }
-
-  const handleModalTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value
-    setDraft(value)
-    if (id) {
-      actions.setProp(id, (props: any) => {
-        props.text = value
-        // Сбрасываем поле коллекции при ручном редактировании текста
-        props.collectionField = null
-      })
-    }
-  }
-
-  const handleCollectionFieldChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value || null
-    if (id) {
-      actions.setProp(id, (props: any) => {
-        props.collectionField = value
-        // Если выбрано поле коллекции, обновляем текст на значение поля
-        if (value && contentListData?.itemData) {
-          const fieldValue = contentListData.itemData[value]
-          if (fieldValue !== null && fieldValue !== undefined) {
-            if (typeof fieldValue === "object") {
-              props.text = JSON.stringify(fieldValue)
-            } else {
-              props.text = String(fieldValue)
-            }
-          }
-        } else {
-          // Если поле не выбрано, используем текущий текст
-          props.text = text
-        }
-      })
-    }
-  }
-
-  const handleModeSwitch = (mode: "manual" | "collection") => {
-    if (id) {
-      actions.setProp(id, (props: any) => {
-        if (mode === "manual") {
-          // Переключаемся на ручной ввод - сбрасываем поле коллекции
-          props.collectionField = null
-        } else {
-          // Переключаемся на коллекцию.
-          // 1) Если уже есть выбранное поле, оставляем его.
-          // 2) Если поля нет, но раньше было выбрано (savedCollectionField) и оно
-          //    всё ещё есть в списке полей коллекции — восстанавливаем его.
-          // 3) Иначе берём первое поле, если оно доступно.
-          if (!props.collectionField) {
-            let nextField: string | null = null
-
-            if (
-              savedCollectionField &&
-              collectionFields.includes(savedCollectionField)
-            ) {
-              nextField = savedCollectionField
-            } else if (collectionFields.length > 0) {
-              nextField = collectionFields[0]
-            }
-
-            props.collectionField = nextField
-
-            // Обновляем текст на значение выбранного поля, чтобы первая ячейка
-            // сразу показывала корректное значение.
-            if (nextField && contentListData?.itemData) {
-              const fieldValue = contentListData.itemData[nextField]
-              if (fieldValue !== null && fieldValue !== undefined) {
-                if (typeof fieldValue === "object") {
-                  props.text = JSON.stringify(fieldValue)
-                } else {
-                  props.text = String(fieldValue)
-                }
-              }
-            }
-          }
-        }
-      })
-    }
   }
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLSpanElement>) => {
@@ -355,143 +237,7 @@ export const Text = ({
           onClose={() => setIsTextModalOpen(false)}
           onShowAllSettings={handleShowAllSettings}
         >
-          {/* Переключатель режимов */}
-          {collectionFields.length > 0 && (
-            <div
-              style={{
-                display: "flex",
-                gap: 4,
-                marginBottom: 12,
-                backgroundColor: COLORS.gray100,
-                padding: 4,
-                borderRadius: 4,
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => handleModeSwitch("manual")}
-                style={{
-                  flex: 1,
-                  padding: "6px 8px",
-                  border: "none",
-                  borderRadius: 4,
-                  backgroundColor: inputMode === "manual" ? COLORS.white : "transparent",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                  fontSize: 12,
-                  color: inputMode === "manual" ? COLORS.gray800 : COLORS.gray600,
-                  boxShadow: inputMode === "manual" ? "0 1px 2px rgba(0,0,0,0.1)" : "none",
-                }}
-              >
-                <span>✏️</span>
-                <span>Manual</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleModeSwitch("collection")}
-                style={{
-                  flex: 1,
-                  padding: "6px 8px",
-                  border: "none",
-                  borderRadius: 4,
-                  backgroundColor: inputMode === "collection" ? COLORS.white : "transparent",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                  fontSize: 12,
-                  color: inputMode === "collection" ? COLORS.gray800 : COLORS.gray600,
-                  boxShadow: inputMode === "collection" ? "0 1px 2px rgba(0,0,0,0.1)" : "none",
-                }}
-              >
-                <span>🗄️</span>
-                <span>Collection</span>
-              </button>
-            </div>
-          )}
-
-          {/* Textarea для ручного ввода */}
-          {inputMode === "manual" && (
-            <>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: 4,
-                  fontSize: 12,
-                  color: COLORS.gray700,
-                }}
-              >
-                Text
-              </label>
-              <textarea
-                value={draft}
-                onChange={handleModalTextChange}
-                style={{
-                  width: "100%",
-                  minHeight: 80,
-                  borderRadius: 4,
-                  border: `1px solid ${COLORS.gray300}`,
-                  backgroundColor: COLORS.white,
-                  padding: "8px",
-                  fontSize: 12,
-                  fontFamily: "inherit",
-                  outline: "none",
-                  resize: "vertical",
-                  boxSizing: "border-box",
-                  marginBottom: 8,
-                  cursor: "text",
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = COLORS.purple400
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = COLORS.gray300
-                }}
-              />
-            </>
-          )}
-
-          {/* Select для выбора поля коллекции */}
-          {inputMode === "collection" && collectionFields.length > 0 && (
-            <>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: 4,
-                  fontSize: 12,
-                  color: COLORS.gray700,
-                }}
-              >
-                Collection Field
-              </label>
-              <select
-                value={collectionField || ""}
-                onChange={handleCollectionFieldChange}
-                style={{
-                  width: "100%",
-                  padding: "6px 8px",
-                  fontSize: 13,
-                  borderRadius: 4,
-                  border: `1px solid ${COLORS.gray300}`,
-                  marginBottom: 8,
-                  backgroundColor: COLORS.white,
-                  cursor: "pointer",
-                }}
-              >
-                <option value="">Select field...</option>
-                {collectionFields.map((field) => (
-                  <option key={field} value={field}>
-                    {field}
-                  </option>
-                ))}
-              </select>
-            </>
-          )}
-          {/* Кнопка "Показать все настройки" рендерит InlineSettingsModal через onShowAllSettings */}
+          <TextSettingsFields />
         </InlineSettingsModal>
       )}
     </>
