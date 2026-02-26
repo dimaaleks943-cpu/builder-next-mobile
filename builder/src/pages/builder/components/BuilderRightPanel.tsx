@@ -7,32 +7,29 @@ import { BordersAccordion } from "./BordersAccordion.tsx"
 import { LayoutAccordion } from "./LayoutAccordion.tsx"
 import { TextSettingsAccordion } from "./TextSettingsAccordion.tsx"
 import { LinkSettingsAccordion } from "./LinkSettingsAccordion.tsx"
+import { ImageSettingsFields } from "../settingsCraftComponents/ImageSettingsFields.tsx"
 import { useRightPanelContext } from "../RightPanelContext"
+import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts";
 
 export const BuilderRightPanel = () => {
   const rightPanelContext = useRightPanelContext()
   const tabIndex = rightPanelContext?.tabIndex ?? 0
-
   const { hasSelection, selectedType } = useEditor((state) => {
     const [id] = Array.from(state.events.selected)
     const node = id ? state.nodes[id] : null
 
-    let resolvedName: string | null = null
-    const type = node?.data.type
-
-    // type в Craft может быть строкой ИЛИ React-компонентом с полем resolvedName
-    if (typeof type === "string") {
-      resolvedName = type
-    } else if (type && typeof (type as any).resolvedName === "string") {
-      resolvedName = (type as any).resolvedName
-    }
-
+    const displayName = node ? resolveNodeDisplayName(node) : null
     const hasTextProp = node?.data.props?.text !== undefined
-    const isLinkText = resolvedName === "LinkText" || node?.data.props?.href !== undefined
+    const isLinkText =
+      displayName === "LinkText" || node?.data.props?.href !== undefined
 
     return {
       hasSelection: Boolean(id),
-      selectedType: isLinkText ? "LinkText" : resolvedName === "Text" || hasTextProp ? "Text" : resolvedName,
+      selectedType: isLinkText
+        ? "LinkText"
+        : displayName === "Text" || hasTextProp
+          ? "Text"
+          : displayName,
     }
   })
 
@@ -104,6 +101,9 @@ export const BuilderRightPanel = () => {
                   <TextSettingsAccordion />
                 )}
                 {selectedType === "LinkText" && <LinkSettingsAccordion />}
+                {selectedType === "Image" && (
+                  <ImageSettingsFields asAccordion />
+                )}
               </Box>
             )}
           </>
