@@ -10,7 +10,7 @@ import {
   TextSettingsFields,
   LinkTextSettingsFields,
 } from "../settingsCraftComponents"
-import { useRightPanelContext } from "../RightPanelContext"
+import { useRightPanelContext } from "../context/RightPanelContext.tsx"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts";
 
 export const BuilderRightPanel = () => {

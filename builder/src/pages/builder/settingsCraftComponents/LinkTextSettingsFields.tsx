@@ -1,7 +1,8 @@
 import type { ChangeEvent } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Box, Checkbox, FormControlLabel, Typography } from "@mui/material";
+import { Box, Checkbox, FormControlLabel, Typography } from "@mui/material";
 import { useEditor } from "@craftjs/core";
 import { COLORS } from "../../../theme/colors";
+import { SettingsAccordion } from "./components/SettingsAccordion/SettingsAccordion.tsx";
 
 interface SelectedLinkProps {
   href?: string;
@@ -102,25 +103,10 @@ export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
     </Box>
   );
 
-  /** В модалке настройки отображаются в блоке, в табе настроек — в аккордионе */
-  if (!asAccordion) {
-    return content;
-  }
-
   return (
-    <Accordion defaultExpanded disableGutters>
-      <AccordionSummary
-        sx={{
-          minHeight: "40px",
-          "& .MuiAccordionSummary-content": { margin: 0 },
-        }}
-      >
-        <Typography sx={{ color: COLORS.gray700, fontSize: "12px" }}>
-          Ссылка
-        </Typography>
-      </AccordionSummary>
-      <AccordionDetails>{content}</AccordionDetails>
-    </Accordion>
+    <SettingsAccordion asAccordion={asAccordion} title="Ссылка">
+      {content}
+    </SettingsAccordion>
   );
 };
 

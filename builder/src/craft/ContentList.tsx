@@ -1,12 +1,12 @@
 import { useNode, useEditor, Element } from "@craftjs/core"
 import { useState, useEffect, useRef, startTransition } from "react"
 import { COLORS } from "../theme/colors"
-import { useRightPanelContext } from "../pages/builder/RightPanelContext"
-import { useCollectionsContext } from "../pages/builder/CollectionsContext"
+import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
+import { useCollectionsContext } from "../pages/builder/context/CollectionsContext.tsx"
 import { ContentListCell } from "./ContentListCell"
-import { ContentListDataContext } from "./ContentListDataContext"
-import { InlineSettingsModal } from "./InlineSettingsModal"
-import { InlineSettingsBadge } from "./InlineSettingsBadge"
+import { ContentListDataContext } from "../pages/builder/context/ContentListDataContext.tsx"
+import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
+import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 
 /** Клонирует дерево узлов с новыми id, чтобы не было дубликатов ключей при добавлении в несколько ячеек.
  *  Типы здесь намеренно ослаблены до any, чтобы не тянуть внутрь все внутренние типы Craft.js (NodeTree/Nodes).

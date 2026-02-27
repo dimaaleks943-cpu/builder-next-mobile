@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react"
 import type { ReactNode } from "react"
-import { COLORS } from "../theme/colors"
+import { COLORS } from "../theme/colors.ts"
 
 export interface InlineSettingsModalProps {
   open: boolean;

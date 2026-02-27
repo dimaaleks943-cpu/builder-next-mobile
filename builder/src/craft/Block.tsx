@@ -2,7 +2,7 @@ import { useNode } from "@craftjs/core"
 import type { ReactNode } from "react"
 import { COLORS } from "../theme/colors"
 import { withOpacity } from "../utils/colorUtils"
-import { InlineSettingsBadge } from "./InlineSettingsBadge"
+import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 
 export type BlockLayoutMode = "block" | "flex" | "grid" | "absolute"
 

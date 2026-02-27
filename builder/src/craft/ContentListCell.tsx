@@ -1,7 +1,7 @@
 import { useNode } from "@craftjs/core"
 import type { ReactNode } from "react"
 import { COLORS } from "../theme/colors"
-import { ContentListCellContext } from "./ContentListCellContext"
+import { ContentListCellContext } from "../pages/builder/context/ContentListCellContext.tsx"
 
 export type ContentListCellProps = {
   children?: ReactNode

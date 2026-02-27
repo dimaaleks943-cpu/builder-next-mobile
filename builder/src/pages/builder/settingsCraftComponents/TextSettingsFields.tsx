@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { useEditor } from "@craftjs/core";
 import { COLORS } from "../../../theme/colors";
-import { useContentListData } from "../../../craft/ContentListDataContext";
-import { useCollectionsContext } from "../CollectionsContext";
+import { useContentListData } from "../context/ContentListDataContext.tsx";
+import { useCollectionsContext } from "../context/CollectionsContext.tsx";
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName";
+import { SettingsAccordion } from "./components/SettingsAccordion/SettingsAccordion.tsx";
 
 interface SelectedTextProps {
   text?: string;
@@ -309,25 +310,10 @@ export const TextSettingsFields = ({ asAccordion }: Props) => {
     </Box>
   );
 
-  /** В модалке настройки отображаются в блоке, в табе настроек — в аккордионе */
-  if (!asAccordion) {
-    return content;
-  }
-
   return (
-    <Accordion defaultExpanded disableGutters>
-      <AccordionSummary
-        sx={{
-          minHeight: "40px",
-          "& .MuiAccordionSummary-content": { margin: 0 },
-        }}
-      >
-        <Typography sx={{ color: COLORS.gray700, fontSize: "12px" }}>
-          Text settings
-        </Typography>
-      </AccordionSummary>
-      <AccordionDetails>{content}</AccordionDetails>
-    </Accordion>
+    <SettingsAccordion asAccordion={asAccordion} title="Text settings">
+      {content}
+    </SettingsAccordion>
   );
 };
 

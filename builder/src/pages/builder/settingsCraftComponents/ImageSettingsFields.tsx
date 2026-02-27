@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { useEditor } from "@craftjs/core";
 import { COLORS } from "../../../theme/colors.ts";
-import { useContentListData } from "../../../craft/ContentListDataContext.tsx";
-import { useCollectionsContext } from "../CollectionsContext.tsx";
+import { useContentListData } from "../context/ContentListDataContext.tsx";
+import { useCollectionsContext } from "../context/CollectionsContext.tsx";
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts";
+import { SettingsAccordion } from "./components/SettingsAccordion/SettingsAccordion.tsx";
 
 interface SelectedImageProps {
   src?: string;
@@ -437,24 +438,10 @@ export const ImageSettingsFields = ({ asAccordion }: ImageSettingsFieldsProps) =
     </Box>
   );
 
-  if (!asAccordion) {
-    return content;
-  }
-
   return (
-    <Accordion defaultExpanded disableGutters>
-      <AccordionSummary
-        sx={{
-          minHeight: 40,
-          "& .MuiAccordionSummary-content": { margin: 0 },
-        }}
-      >
-        <Typography variant="subtitle2" sx={{ color: COLORS.gray700 }}>
-          Image
-        </Typography>
-      </AccordionSummary>
-      <AccordionDetails>{content}</AccordionDetails>
-    </Accordion>
+    <SettingsAccordion asAccordion={asAccordion} title="Image">
+      {content}
+    </SettingsAccordion>
   );
 };
 

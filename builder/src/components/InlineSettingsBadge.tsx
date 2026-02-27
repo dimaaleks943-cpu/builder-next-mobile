@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useRef } from "react"
 import type { ReactNode } from "react"
-import { COLORS } from "../theme/colors"
+import { COLORS } from "../theme/colors.ts"
 
 export interface InlineSettingsBadgeProps {
   icon?: ReactNode;
