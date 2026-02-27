@@ -2,9 +2,12 @@ import { Box, Tab, Tabs } from "@mui/material"
 import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
 import emptySelectionImg from "../assets/dontSelectedElement.png"
-import { SpacingAccordion } from "./SpacingAccordion.tsx"
-import { BordersAccordion } from "./BordersAccordion.tsx"
-import { LayoutAccordion } from "./LayoutAccordion.tsx"
+import {
+  LayoutAccordion,
+  SpacingAccordion,
+  BordersAccordion,
+  TypographyAccordion,
+} from "../craftStylesComponents"
 import {
   ImageSettingsFields,
   TextSettingsFields,
@@ -85,6 +88,9 @@ export const BuilderRightPanel = () => {
                 <SpacingAccordion/>
 
                 <BordersAccordion/>
+                {(selectedType === "Text" || selectedType === "LinkText") && (
+                <TypographyAccordion />
+              )}
               </Box>
             )}
 

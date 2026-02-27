@@ -8,7 +8,7 @@ import {
 } from "@mui/material"
 import type { ChangeEvent } from "react"
 import { useEditor } from "@craftjs/core"
-import { COLORS } from "../../../theme/colors"
+import { COLORS } from "../../../theme/colors.ts"
 
 type BorderSide = "top" | "right" | "bottom" | "left"
 

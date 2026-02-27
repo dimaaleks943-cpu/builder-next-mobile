@@ -6,8 +6,8 @@ import {
   Typography,
 } from "@mui/material"
 import { useEditor } from "@craftjs/core"
-import { COLORS } from "../../../theme/colors"
-import { EdgeInput } from "./EdgeInput"
+import { COLORS } from "../../../theme/colors.ts"
+import { EdgeInput } from "../components/EdgeInput.tsx";
 
 export const SpacingAccordion = () => {
   const { selectedId, selectedProps } = useEditor((state) => {

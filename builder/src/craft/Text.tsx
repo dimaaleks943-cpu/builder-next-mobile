@@ -18,6 +18,14 @@ export interface TextProps {
   fontWeight?: "normal" | "bold"
   textAlign?: TextAlign
   color?: string
+  fontFamily?: string
+  lineHeight?: number
+  textTransform?: "none" | "uppercase" | "lowercase" | "capitalize"
+  strokeColor?: string
+  strokeWidth?: number
+  isItalic?: boolean
+  isUnderline?: boolean
+  isStrikethrough?: boolean
   marginTop?: number
   marginRight?: number
   marginBottom?: number
@@ -35,6 +43,14 @@ export const Text = ({
   fontWeight = "normal",
   textAlign = "left",
   color = COLORS.gray800,
+  fontFamily,
+  lineHeight = 20,
+  textTransform = "none",
+  strokeColor,
+  strokeWidth = 0,
+  isItalic = false,
+  isUnderline = false,
+  isStrikethrough = false,
   marginTop = 0,
   marginRight = 0,
   marginBottom = 0,
@@ -170,6 +186,18 @@ export const Text = ({
     fontWeight,
     textAlign,
     color,
+    fontFamily,
+    lineHeight: typeof lineHeight === "number" ? `${lineHeight}px` : undefined,
+    textTransform,
+    fontStyle: isItalic ? "italic" : "normal",
+    textDecoration: [
+      isUnderline ? "underline" : "",
+      isStrikethrough ? "line-through" : "",
+    ]
+      .filter(Boolean)
+      .join(" ") || "none",
+    WebkitTextStrokeWidth: strokeWidth ? strokeWidth : undefined,
+    WebkitTextStrokeColor: strokeColor,
     marginTop,
     marginRight,
     marginBottom,
@@ -254,7 +282,15 @@ export const Text = ({
     fontSize: 14,
     fontWeight: "normal" as const,
     textAlign: "left" as const,
-    color: COLORS.gray800,
+    color: COLORS.gray700,
+    fontFamily: undefined,
+    lineHeight: 20,
+    textTransform: "none" as const,
+    strokeColor: undefined,
+    strokeWidth: 0,
+    isItalic: false,
+    isUnderline: false,
+    isStrikethrough: false,
     marginTop: 0,
     marginRight: 0,
     marginBottom: 0,

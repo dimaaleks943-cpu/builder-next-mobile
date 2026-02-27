@@ -9,7 +9,7 @@ import {
   Typography,
 } from "@mui/material"
 import { useEditor } from "@craftjs/core"
-import { COLORS } from "../../../theme/colors"
+import { COLORS } from "../../../theme/colors.ts"
 
 type LayoutMode = "block" | "flex" | "grid" | "absolute"
 
