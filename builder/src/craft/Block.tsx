@@ -2,6 +2,7 @@ import { useNode } from "@craftjs/core"
 import type { ReactNode } from "react"
 import { COLORS } from "../theme/colors"
 import { withOpacity } from "../utils/colorUtils"
+import { InlineSettingsBadge } from "./InlineSettingsBadge"
 
 export type BlockLayoutMode = "block" | "flex" | "grid" | "absolute"
 
@@ -103,6 +104,13 @@ export const Block = ({
         boxSizing: "border-box",
       }}
     >
+      {selected && (
+        <InlineSettingsBadge
+          label="Block"
+          icon={<span style={{ fontSize: 11 }}>B</span>}
+          showSettingsButton={false}
+        />
+      )}
       {children}
     </div>
   )

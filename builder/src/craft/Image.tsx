@@ -6,7 +6,7 @@ import { InlineSettingsModal } from "./InlineSettingsModal"
 import { InlineSettingsBadge } from "./InlineSettingsBadge"
 import { useContentListData } from "./ContentListDataContext"
 import { useRightPanelContext } from "../pages/builder/RightPanelContext"
-import { ImageSettingsFields } from "../pages/builder/settingsCraftComponents/ImageSettingsFields.tsx"
+import { ImageSettingsFields } from "../pages/builder/settingsCraftComponents"
 
 interface Props {
   src?: string;

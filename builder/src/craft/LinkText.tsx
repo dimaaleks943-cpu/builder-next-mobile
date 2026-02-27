@@ -2,6 +2,10 @@ import { useState, useEffect, useRef } from "react"
 import { useEditor, useNode } from "@craftjs/core"
 import type { CSSProperties } from "react"
 import { COLORS } from "../theme/colors"
+import { InlineSettingsBadge } from "./InlineSettingsBadge"
+import { InlineSettingsModal } from "./InlineSettingsModal"
+import { useRightPanelContext } from "../pages/builder/RightPanelContext"
+import { LinkTextSettingsFields } from "../pages/builder/settingsCraftComponents"
 
 export type TextAlign = "left" | "center" | "right"
 
@@ -43,6 +47,9 @@ export const LinkText = ({
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(text)
   const spanRef = useRef<HTMLSpanElement | null>(null)
+  const badgeRef = useRef<HTMLDivElement | null>(null)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
 
   const {
     connectors: { connect, drag },
@@ -54,6 +61,7 @@ export const LinkText = ({
   }))
 
   const { actions } = useEditor()
+  const rightPanelContext = useRightPanelContext()
 
   useEffect(() => {
     if (!isEditing) {
@@ -110,6 +118,29 @@ export const LinkText = ({
     }
   }
 
+  const openSettingsModal = (event?: React.MouseEvent | React.PointerEvent) => {
+    if (event && "stopPropagation" in event) {
+      event.stopPropagation()
+      event.preventDefault()
+    }
+    if (badgeRef.current) {
+      const rect = badgeRef.current.getBoundingClientRect()
+      setModalPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+      })
+    }
+    if (id) {
+      actions.selectNode(id)
+    }
+    setIsSettingsOpen(true)
+  }
+
+  const handleShowAllSettings = () => {
+    rightPanelContext?.setTabIndex(1)
+    setIsSettingsOpen(false)
+  }
+
   const style: CSSProperties = {
     display: "inline-block",
     fontSize,
@@ -135,35 +166,59 @@ export const LinkText = ({
   }
 
   return (
-    <a
-      href={href}
-      target={openInNewTab ? "_blank" : "_self"}
-      rel={openInNewTab ? "noopener noreferrer" : undefined}
-      onClick={handleLinkClick}
-      style={{
-        textDecoration: "none",
-        color: "inherit",
-      }}
-    >
-      <span
-        ref={(ref) => {
-          spanRef.current = ref
-          if (!ref) return
-          if (isEditing) {
-            connect(ref)
-          } else {
-            connect(drag(ref))
-          }
+    <>
+      <a
+        href={href}
+        target={openInNewTab ? "_blank" : "_self"}
+        rel={openInNewTab ? "noopener noreferrer" : undefined}
+        onClick={handleLinkClick}
+        style={{
+          textDecoration: "none",
+          color: "inherit",
+          position: "relative",
+          display: "inline-block",
         }}
-        contentEditable={isEditing}
-        suppressContentEditableWarning
-        onDoubleClick={handleDoubleClick}
-        onInput={handleInput}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        style={style}
-      />
-    </a>
+      >
+        {selected && (
+          <InlineSettingsBadge
+            ref={badgeRef}
+            icon={<span style={{ fontSize: 11 }}>🔗</span>}
+            label={text || "Link"}
+            maxWidth={140}
+            showSettingsButton
+            onSettingsClick={openSettingsModal}
+          />
+        )}
+        <span
+          ref={(ref) => {
+            spanRef.current = ref
+            if (!ref) return
+            if (isEditing) {
+              connect(ref)
+            } else {
+              connect(drag(ref))
+            }
+          }}
+          contentEditable={isEditing}
+          suppressContentEditableWarning
+          onDoubleClick={handleDoubleClick}
+          onInput={handleInput}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          style={style}
+        />
+      </a>
+      <InlineSettingsModal
+        open={selected && isSettingsOpen}
+        title="Настройки ссылки"
+        top={modalPosition.top}
+        left={modalPosition.left}
+        onClose={() => setIsSettingsOpen(false)}
+        onShowAllSettings={handleShowAllSettings}
+      >
+        <LinkTextSettingsFields />
+      </InlineSettingsModal>
+    </>
   )
 }
 

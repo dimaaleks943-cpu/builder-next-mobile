@@ -7,7 +7,7 @@ import { useInsideContentListCell } from "./ContentListCellContext"
 import { useContentListData } from "./ContentListDataContext"
 import { InlineSettingsModal } from "./InlineSettingsModal"
 import { InlineSettingsBadge } from "./InlineSettingsBadge"
-import { TextSettingsFields } from "../pages/builder/settingsCraftComponents/TextSettingsFields"
+import { TextSettingsFields } from "../pages/builder/settingsCraftComponents"
 
 export type TextAlign = "left" | "center" | "right"
 
@@ -187,50 +187,53 @@ export const Text = ({
     userSelect: collectionField ? "none" : isEditing ? "text" : "none",
   }
 
-  const showContentListUi = isInsideContentList && selected
+  const showSettingsButton = isInsideContentList && selected
 
   return (
     <>
+      <span
+        style={
+          selected
+            ? { position: "relative" as const, display: "inline-block", zIndex: 1 }
+            : undefined
+        }
+      >
+        {selected && (
+          <InlineSettingsBadge
+            ref={badgeRef}
+            icon={<span style={{ fontSize: 11 }}>T</span>}
+            label={displayText || "Текст"}
+            maxWidth={120}
+            showSettingsButton={showSettingsButton}
+            onSettingsClick={
+              showSettingsButton ? () => openTextModal() : undefined
+            }
+          />
+        )}
         <span
-          style={
-            showContentListUi
-              ? { position: "relative" as const, display: "inline-block", zIndex: 1 }
-              : undefined
-          }
+          ref={(ref) => {
+            spanRef.current = ref
+            if (!ref) return
+            if (isEditing && !collectionField) {
+              connect(ref)
+            } else {
+              connect(drag(ref))
+            }
+          }}
+          contentEditable={isEditing && !collectionField}
+          suppressContentEditableWarning
+          onDoubleClick={handleDoubleClick}
+          onInput={handleInput}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          style={style}
         >
-          {showContentListUi && (
-            <InlineSettingsBadge
-              ref={badgeRef}
-              icon={<span style={{ fontSize: 11 }}>T</span>}
-              label={displayText || "Текст"}
-              maxWidth={120}
-              onSettingsClick={() => openTextModal()}
-            />
-          )}
-          <span
-            ref={(ref) => {
-              spanRef.current = ref
-              if (!ref) return
-              if (isEditing && !collectionField) {
-                connect(ref)
-              } else {
-                connect(drag(ref))
-              }
-            }}
-            contentEditable={isEditing && !collectionField}
-            suppressContentEditableWarning
-            onDoubleClick={handleDoubleClick}
-            onInput={handleInput}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
-            style={style}
-          >
-            {displayText}
-          </span>
+          {displayText}
         </span>
-      {showContentListUi && isTextModalOpen && (
+      </span>
+      {showSettingsButton && isTextModalOpen && (
         <InlineSettingsModal
-          open={showContentListUi && isTextModalOpen}
+          open={showSettingsButton && isTextModalOpen}
           title="Настройки текста"
           top={modalPosition.top}
           left={modalPosition.left}
