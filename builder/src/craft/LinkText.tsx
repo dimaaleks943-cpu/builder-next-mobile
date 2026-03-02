@@ -35,7 +35,7 @@ export interface LinkTextProps {
   paddingLeft?: number
 }
 
-export const LinkText = ({
+export const CraftLinkText = ({
   text = "Ссылка",
   href = "http://www.google.com",
   openInNewTab = false,
@@ -250,7 +250,7 @@ export const LinkText = ({
   )
 }
 
-;(LinkText as any).craft = {
+;(CraftLinkText as any).craft = {
   displayName: "LinkText",
   props: {
     text: "Ссылка",

@@ -36,7 +36,7 @@ export interface TextProps {
   paddingLeft?: number
 }
 
-export const Text = ({
+export const CraftText = ({
   text = "Текст",
   collectionField = null,
   fontSize = 14,
@@ -227,7 +227,7 @@ export const Text = ({
         }
       >
         {selected && (
-          <InlineSettingsBadge
+        <InlineSettingsBadge
             ref={badgeRef}
             icon={<span style={{ fontSize: 11 }}>T</span>}
             label={displayText || "Текст"}
@@ -275,7 +275,8 @@ export const Text = ({
   )
 };
 
-(Text as any).craft = {
+;(CraftText as any).craft = {
+  displayName: "Text",
   props: {
     text: "Текст",
     collectionField: null,

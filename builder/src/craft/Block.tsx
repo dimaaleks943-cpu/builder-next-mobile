@@ -34,7 +34,7 @@ export type BlockProps = {
   borderOpacity?: number
 }
 
-export const Block = ({
+export const CraftBlock = ({
   children,
   fullSize,
   layout = "block",
@@ -131,7 +131,7 @@ export const Block = ({
   )
 }
 
-;(Block as any).craft = {
+;(CraftBlock as any).craft = {
   displayName: "Block",
   props: {
     fullSize: false,

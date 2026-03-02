@@ -9,13 +9,13 @@ import { BuilderRightPanel } from "./components/BuilderRightPanel"
 import { RightPanelContext } from "./context/RightPanelContext.tsx"
 import { CollectionsContext } from "./context/CollectionsContext.tsx"
 import { COLORS } from "../../theme/colors"
-import { Block } from "../../craft/Block.tsx"
-import { Body } from "../../craft/Body.tsx"
-import { Text } from "../../craft/Text.tsx"
-import { LinkText } from "../../craft/LinkText.tsx"
-import { ContentList } from "../../craft/ContentList.tsx"
-import { ContentListCell } from "../../craft/ContentListCell.tsx"
-import { Image } from "../../craft/Image.tsx"
+import { CraftBlock } from "../../craft/Block.tsx"
+import { CraftBody } from "../../craft/Body.tsx"
+import { CraftText } from "../../craft/Text.tsx"
+import { CraftLinkText } from "../../craft/LinkText.tsx"
+import { CraftContentList } from "../../craft/ContentList.tsx"
+import { CraftContentListCell } from "../../craft/ContentListCell.tsx"
+import { CraftImage } from "../../craft/Image.tsx"
 import {
   EXTRANET_API_TOKEN,
   type ExtranetPageResponse,
@@ -99,13 +99,13 @@ export const BuilderPage = () => {
   return (
     <Editor
       resolver={{
-        Block,
-        Body,
-        Text,
-        LinkText,
-        ContentList,
-        ContentListCell,
-        Image,
+        Block: CraftBlock,
+        Body: CraftBody,
+        Text: CraftText,
+        LinkText: CraftLinkText,
+        ContentList: CraftContentList,
+        ContentListCell: CraftContentListCell,
+        Image: CraftImage,
       }}
     >
       <RightPanelContext.Provider

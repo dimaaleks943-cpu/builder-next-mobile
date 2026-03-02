@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react"
 import { Box, IconButton } from "@mui/material"
 import { Frame, Element, useEditor, type SerializedNodes } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
-import { Body } from "../../../craft/Body.tsx"
+import { CraftBody } from "../../../craft/Body.tsx"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
 import { UpdateIcon } from "../../../icons/UpdateIcon"
 
@@ -225,10 +225,7 @@ export const BuilderCanvas = ({ initialContent }: BuilderCanvasProps) => {
           }}
         >
           <Frame>
-            <Element
-              is={Body}
-              canvas
-            />
+            <Element is={CraftBody} canvas />
           </Frame>
         </Box>
       </Box>

@@ -18,7 +18,7 @@ export type ContentListCellProps = {
  * layout / gridColumns / gridRows управляются через LayoutAccordion и
  * описывают, как раскладывать дочерние элементы внутри ячейки.
  */
-export const ContentListCell = ({
+export const CraftContentListCell = ({
   children,
   layout = "block",
   gridColumns,
@@ -66,7 +66,7 @@ export const ContentListCell = ({
   )
 }
 
-;(ContentListCell as any).craft = {
+;(CraftContentListCell as any).craft = {
   displayName: "ContentListCell",
   props: {
     layout: "block" as BlockLayoutMode,

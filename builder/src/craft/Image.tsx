@@ -18,7 +18,7 @@ interface Props {
   collectionField?: string | null;
 }
 
-export const Image = ({
+export const CraftImage = ({
   src,
   alt = "Изображение",
   width,
@@ -162,7 +162,7 @@ export const Image = ({
   )
 };
 
-(Image as any).craft = {
+;(CraftImage as any).craft = {
   displayName: "Image",
   props: {
     src: undefined,

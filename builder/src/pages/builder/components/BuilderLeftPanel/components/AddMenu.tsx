@@ -11,11 +11,11 @@ import type { ReactElement } from "react"
 import { useEditor } from "@craftjs/core"
 import { useState } from "react"
 import { COLORS } from "../../../../../theme/colors.ts"
-import { Block } from "../../../../../craft/Block.tsx"
-import { Text } from "../../../../../craft/Text.tsx"
-import { LinkText } from "../../../../../craft/LinkText.tsx"
-import { ContentList } from "../../../../../craft/ContentList.tsx"
-import { Image } from "../../../../../craft/Image.tsx"
+import { CraftBlock } from "../../../../../craft/Block.tsx"
+import { CraftText } from "../../../../../craft/Text.tsx"
+import { CraftLinkText } from "../../../../../craft/LinkText.tsx"
+import { CraftContentList } from "../../../../../craft/ContentList.tsx"
+import { CraftImage } from "../../../../../craft/Image.tsx"
 
 interface ComponentItem {
   name: string;
@@ -33,7 +33,7 @@ const categories: Category[] = [
     items: [
       {
         name: "Div-блок",
-        component: <Block/>,
+            component: <CraftBlock/>,
       },
     ],
   },
@@ -42,11 +42,11 @@ const categories: Category[] = [
     items: [
       {
         name: "Текст",
-        component: <Text/>,
+            component: <CraftText/>,
       },
       {
         name: "Текст-ссылка",
-        component: <LinkText/>,
+            component: <CraftLinkText/>,
       },
     ],
   },
@@ -55,7 +55,7 @@ const categories: Category[] = [
     items: [
       {
         name: "Список контента",
-        component: <ContentList/>,
+            component: <CraftContentList/>,
       },
     ],
   },
@@ -64,7 +64,7 @@ const categories: Category[] = [
     items: [
       {
         name: "Изображение",
-        component: <Image/>,
+            component: <CraftImage/>,
       },
     ],
   },
@@ -74,7 +74,7 @@ interface Props {
   onClose: () => void;
 }
 
-export const AddMenu = ({ onClose }: Props) => {
+export const AddMenu = (_props: Props) => {
   const {
     connectors: { create },
   } = useEditor()

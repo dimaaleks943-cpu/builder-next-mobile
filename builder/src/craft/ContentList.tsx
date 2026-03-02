@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, startTransition } from "react"
 import { COLORS } from "../theme/colors"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import { useCollectionsContext } from "../pages/builder/context/CollectionsContext.tsx"
-import { ContentListCell } from "./ContentListCell"
+import { CraftContentListCell } from "./ContentListCell"
 import { ContentListDataContext } from "../pages/builder/context/ContentListDataContext.tsx"
 import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
 import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
@@ -90,7 +90,7 @@ export type ContentListProps = {
  * возникает при выборе коллекции в селекте из-за подписки useEditor на стор Craft.js
  * при монтировании дочерних ячеек. На работу не влияет, можно игнорировать.
  */
-export const ContentList = ({}: ContentListProps) => {
+export const CraftContentList = ({}: ContentListProps) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
   const badgeRef = useRef<HTMLDivElement | null>(null)
@@ -421,7 +421,7 @@ export const ContentList = ({}: ContentListProps) => {
                         }}
                       >
                         <Element
-                          is={ContentListCell}
+                          is={CraftContentListCell}
                           id={cellId}
                           canvas
                         />
@@ -647,7 +647,7 @@ export const ContentList = ({}: ContentListProps) => {
   )
 };
 
-(ContentList as any).craft = {
+;(CraftContentList as any).craft = {
   displayName: "ContentList",
   props: {
     selectedSource: "",

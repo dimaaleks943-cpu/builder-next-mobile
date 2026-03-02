@@ -27,7 +27,7 @@ export type BodyProps = {
 }
 
 // Root component используется только как стартовый элемент холста, не удаляется
-export const Body = ({
+export const CraftBody = ({
   children,
   layout = "block",
   marginTop = 0,
@@ -100,7 +100,7 @@ export const Body = ({
   )
 }
 
-;(Body as any).craft = {
+;(CraftBody as any).craft = {
   displayName: "Body",
   props: {
     layout: "block" as BodyLayoutMode,
