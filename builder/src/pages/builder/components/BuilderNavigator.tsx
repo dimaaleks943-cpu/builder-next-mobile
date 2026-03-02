@@ -268,7 +268,7 @@ export const BuilderNavigator: React.FC = () => {
               }}
             >
               {hasChildren && (
-                <ChevronRightIcon size={14} fill={COLORS.gray500} />
+                <ChevronRightIcon size={14} fill={COLORS.gray500}/>
               )}
             </Box>
             <Typography
@@ -297,7 +297,7 @@ export const BuilderNavigator: React.FC = () => {
               justifyContent: "center",
             }}
           >
-            <DragIcon size={14} fill={COLORS.gray500} />
+            <DragIcon size={14} fill={COLORS.gray500}/>
           </Box>
         </Box>
         {hasChildren && isExpanded &&
@@ -331,10 +331,15 @@ export const BuilderNavigator: React.FC = () => {
         },
       }}
     >
-      <Box sx={{ padding: "6px 10px", borderBottom: `1px solid ${COLORS.gray200}`, }}>
-        <Typography variant="subtitle2" sx={{ fontSize: "11px", color: COLORS.gray700, fontWeight: 600 }}>
-          Структура страницы
-        </Typography>
+      <Box
+        sx={{
+          padding: "12px 8px",
+          color: COLORS.black,
+          fontWeight: 700,
+          fontSize: "14px",
+          lineHeight: "20px",
+        }}>
+        Блоки
       </Box>
       <Box sx={{ paddingY: "4px" }}>
         {tree.length === 0 ? (

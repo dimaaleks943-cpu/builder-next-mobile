@@ -3,17 +3,19 @@ import {
   AccordionDetails,
   AccordionSummary,
   Box,
+  Tab,
+  Tabs,
   Typography,
 } from "@mui/material"
 import type { ReactElement } from "react"
 import { useEditor } from "@craftjs/core"
-import { COLORS } from "../../../theme/colors"
-import { Block } from "../../../craft/Block"
-import { Text } from "../../../craft/Text"
-import { LinkText } from "../../../craft/LinkText"
-import { ContentList } from "../../../craft/ContentList"
-import { Image } from "../../../craft/Image"
-import { BuilderNavigator } from "./BuilderNavigator"
+import { useState } from "react"
+import { COLORS } from "../../../../../theme/colors.ts"
+import { Block } from "../../../../../craft/Block.tsx"
+import { Text } from "../../../../../craft/Text.tsx"
+import { LinkText } from "../../../../../craft/LinkText.tsx"
+import { ContentList } from "../../../../../craft/ContentList.tsx"
+import { Image } from "../../../../../craft/Image.tsx"
 
 interface ComponentItem {
   name: string;
@@ -21,8 +23,8 @@ interface ComponentItem {
 }
 
 interface Category {
-  title: string
-  items: ComponentItem[]
+  title: string;
+  items: ComponentItem[];
 }
 
 const categories: Category[] = [
@@ -31,7 +33,7 @@ const categories: Category[] = [
     items: [
       {
         name: "Div-блок",
-        component: <Block />,
+        component: <Block/>,
       },
     ],
   },
@@ -40,11 +42,11 @@ const categories: Category[] = [
     items: [
       {
         name: "Текст",
-        component: <Text />,
+        component: <Text/>,
       },
       {
         name: "Текст-ссылка",
-        component: <LinkText />,
+        component: <LinkText/>,
       },
     ],
   },
@@ -53,7 +55,7 @@ const categories: Category[] = [
     items: [
       {
         name: "Список контента",
-        component: <ContentList />,
+        component: <ContentList/>,
       },
     ],
   },
@@ -62,37 +64,62 @@ const categories: Category[] = [
     items: [
       {
         name: "Изображение",
-        component: <Image />,
+        component: <Image/>,
       },
     ],
   },
 ]
 
-export const BuilderLeftPanel = () => {
+interface Props {
+  onClose: () => void;
+}
+
+export const AddMenu = ({ onClose }: Props) => {
   const {
     connectors: { create },
   } = useEditor()
+  const [tabIndex, setTabIndex] = useState(1)
 
   return (
     <Box
       sx={{
         width: 280,
-        borderRight: `1px solid ${COLORS.gray200}`,
-        backgroundColor: COLORS.secondaryVeryLightGray,
+        height: "100%",
         display: "flex",
         flexDirection: "column",
+        borderRight: `1px solid ${COLORS.gray200}`,
+        backgroundColor: COLORS.secondaryVeryLightGray,
       }}
     >
       <Box
         sx={{
-          padding: "12px 16px",
-          borderBottom: `1px solid ${COLORS.gray200}`,
+          padding: "12px 8px",
+          color: COLORS.black,
+          fontWeight: 700,
+          fontSize: "14px",
+          lineHeight: "20px",
         }}
       >
-        <Typography variant="subtitle2" color={COLORS.gray700}>
-          Материалы для холста
-        </Typography>
+        Добавить блок
       </Box>
+
+      <Tabs
+        value={tabIndex}
+        onChange={(_event, value: number) => setTabIndex(value)}
+        variant="fullWidth"
+        sx={{
+          minHeight: 32,
+          "& .MuiTab-root": {
+            minHeight: 32,
+            paddingY: 0.5,
+            textTransform: "none",
+            fontSize: "11px",
+          },
+        }}
+      >
+        <Tab label="Библиотека" value={0} />
+        <Tab label="Материалы для холста" value={1} />
+      </Tabs>
 
       <Box
         sx={{
@@ -101,7 +128,19 @@ export const BuilderLeftPanel = () => {
           overflowY: "auto",
         }}
       >
-        {categories.map((category) => (
+        {tabIndex === 0 && (
+          <Box
+            sx={{
+              padding: "8px",
+              fontSize: "12px",
+              color: COLORS.gray600,
+            }}
+          >
+            Библиотека скоро появится.
+          </Box>
+        )}
+
+        {tabIndex === 1 && categories.map((category) => (
           <Accordion
             key={category.title}
             defaultExpanded
@@ -148,6 +187,7 @@ export const BuilderLeftPanel = () => {
                     if (!ref) return
                     create(ref, item.component)
                   }}
+                  onMouseDown={onClose}
                   sx={{
                     display: "flex",
                     flexDirection: "column",
@@ -166,7 +206,7 @@ export const BuilderLeftPanel = () => {
                       height: "65px",
                       aspectRatio: "1",
                       backgroundColor: COLORS.blue100,
-                      borderRadius: 0.5,
+                      borderRadius: "4px",
                       padding: "8px",
                     }}
                   >
@@ -174,7 +214,7 @@ export const BuilderLeftPanel = () => {
                       sx={{
                         backgroundColor: COLORS.white,
                         width: "100%",
-                        height: "100%"
+                        height: "100%",
                       }}
                     />
                   </Box>
@@ -194,9 +234,7 @@ export const BuilderLeftPanel = () => {
           </Accordion>
         ))}
       </Box>
-
-      {/* Навигатор структуры страницы */}
-      <BuilderNavigator />
     </Box>
   )
 }
+
