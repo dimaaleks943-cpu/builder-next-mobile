@@ -12,6 +12,7 @@ interface Props {
   value: string;
   options: Option[];
   onChange: (id: string) => void;
+  withoutLabel?: boolean;
 }
 
 export const CraftSettingsButtonGroup = ({
@@ -19,12 +20,13 @@ export const CraftSettingsButtonGroup = ({
   value,
   options,
   onChange,
+  withoutLabel = false,
 }: Props) => {
   return (
     <Box
       sx={{ display: "flex", alignItems: "center", gap: "8px" }}
     >
-      <Typography
+      {!withoutLabel && <Typography
         sx={{
           minWidth: "48px",
           fontSize: "10px",
@@ -33,7 +35,7 @@ export const CraftSettingsButtonGroup = ({
         }}
       >
         {label}
-      </Typography>
+      </Typography>}
       <Box
         sx={{
           display: "flex",
@@ -51,11 +53,10 @@ export const CraftSettingsButtonGroup = ({
               type="button"
               onClick={() => onChange(option.id)}
               sx={{
-                width: "28px",
-                height: "20px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                padding: "5px 7px",
                 borderRadius: "2px",
                 border: "none",
                 cursor: "pointer",

@@ -10,6 +10,8 @@ export type BlockProps = {
   children?: ReactNode
   fullSize?: boolean
   layout?: BlockLayoutMode
+  gridColumns?: number
+  gridRows?: number
   // margins
   marginTop?: number
   marginRight?: number
@@ -36,6 +38,8 @@ export const Block = ({
   children,
   fullSize,
   layout = "block",
+  gridColumns,
+  gridRows,
   marginTop = 0,
   marginRight = 0,
   marginBottom = 0,
@@ -78,8 +82,19 @@ export const Block = ({
         connect(drag(ref))
       }}
       style={{
+        /** display и position — разные CSS‑свойства, но в LayoutAccordion задаём одним блоком «Расположение».
+         * Сейчас: layout="absolute" → position:absolute, display:block; остальные → display напрямую.
+         * TODO: продумать, как лучше разделить или оформить настройки display vs position. */
         display:
           layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block",
+        gridTemplateColumns:
+          layout === "grid" && gridColumns && gridColumns > 0
+            ? `repeat(${gridColumns}, minmax(0, 1fr))`
+            : undefined,
+        gridTemplateRows:
+          layout === "grid" && gridRows && gridRows > 0
+            ? `repeat(${gridRows}, auto)`
+            : undefined,
         position: layout === "absolute" ? "absolute" : "relative",
         width: fullSize ? "100%" : undefined,
         height: fullSize ? "100%" : undefined,
@@ -121,6 +136,8 @@ export const Block = ({
   props: {
     fullSize: false,
     layout: "block" as BlockLayoutMode,
+    gridColumns: undefined,
+    gridRows: undefined,
     marginTop: 0,
     marginRight: 0,
     marginBottom: 0,

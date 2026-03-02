@@ -1,15 +1,9 @@
-import { useState } from "react"
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Box,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-} from "@mui/material"
+import { useState, type ChangeEvent } from "react"
+import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from "@mui/material"
 import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors.ts"
+import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
+import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSettingsInput.tsx"
 
 type LayoutMode = "block" | "flex" | "grid" | "absolute"
 
@@ -30,10 +24,32 @@ export const LayoutAccordion = () => {
     return null
   }
 
+  const effectiveLayout: LayoutMode =
+    (selectedProps?.layout as LayoutMode | undefined) ?? layoutMode
+
   const handleLayoutChange = (value: LayoutMode) => {
     setLayoutMode(value)
     actions.setProp(selectedId, (props: any) => {
       props.layout = value
+    })
+  }
+
+  const handleGridColumnsChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const next = Number(event.target.value)
+    const safe = Number.isNaN(next) ? undefined : next
+    actions.setProp(selectedId, (props: any) => {
+      props.gridColumns = safe
+      // Для компонентов с построчной раскладкой (например, ContentList)
+      // синхронизируем количество колонок с itemsPerRow
+      props.itemsPerRow = safe
+    })
+  }
+
+  const handleGridRowsChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const next = Number(event.target.value)
+    const safe = Number.isNaN(next) ? undefined : next
+    actions.setProp(selectedId, (props: any) => {
+      props.gridRows = safe
     })
   }
 
@@ -51,57 +67,41 @@ export const LayoutAccordion = () => {
       </AccordionSummary>
       <AccordionDetails>
         <Box sx={{ width: "100%" }}>
-          <ToggleButtonGroup
-            value={selectedProps?.layout ?? layoutMode}
-            exclusive
-            onChange={(_, value) => {
-              if (!value) return
-              handleLayoutChange(value)
-            }}
-            size="small"
-            fullWidth
-          >
-            <ToggleButton
+          <CraftSettingsButtonGroup
+            withoutLabel
+            label="Layout"
+            value={effectiveLayout}
+            options={[
+              { id: "block", content: "Блок" },
+              { id: "flex", content: "Флекс" },
+              { id: "grid", content: "Сетка" },
+              { id: "absolute", content: "Абс. позиция" },
+            ]}
+            onChange={(id) => handleLayoutChange(id as LayoutMode)}
+          />
+
+          {effectiveLayout === "grid" && (
+            <Box
               sx={{
-                fontSize: "8px",
-                lineHeight: "10px",
-                padding: "2px 6px",
+                marginTop: "12px",
+                display: "flex",
+                gap: "8px",
               }}
-              value="block"
             >
-              Блок
-            </ToggleButton>
-            <ToggleButton
-              sx={{
-                fontSize: "8px",
-                lineHeight: "10px",
-                padding: "2px 6px",
-              }}
-              value="flex"
-            >
-              Флекс
-            </ToggleButton>
-            <ToggleButton
-              sx={{
-                fontSize: "8px",
-                lineHeight: "10px",
-                padding: "2px 6px",
-              }}
-              value="grid"
-            >
-              Сетка
-            </ToggleButton>
-            <ToggleButton
-              sx={{
-                fontSize: "8px",
-                lineHeight: "10px",
-                padding: "2px 6px",
-              }}
-              value="absolute"
-            >
-              Абсолют.позиция
-            </ToggleButton>
-          </ToggleButtonGroup>
+              <CraftSettingsInput
+                label="Columns"
+                type="number"
+                value={selectedProps?.gridColumns ?? ""}
+                onChange={handleGridColumnsChange}
+              />
+              <CraftSettingsInput
+                label="Rows"
+                type="number"
+                value={selectedProps?.gridRows ?? ""}
+                onChange={handleGridRowsChange}
+              />
+            </Box>
+          )}
         </Box>
       </AccordionDetails>
     </Accordion>

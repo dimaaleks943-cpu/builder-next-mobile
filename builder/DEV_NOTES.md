@@ -344,6 +344,10 @@
       «Стили» правой панели.
     - Сейчас здесь лежат:
       - `LayoutAccordion` — управление layout (`block` / `flex` / `grid` / `absolute`).
+        - **Важно:** `display` и `position` — разные CSS‑свойства, но в одном блоке «Расположение»
+          задаём оба. Сейчас `layout="absolute"` → `position: absolute` + `display: block`;
+          остальные режимы задают только `display`. TODO: продумать, как лучше разделить или
+          оформить настройки display vs position.
       - `SpacingAccordion` — визуальный контрол для `margin` / `padding`.
       - `BordersAccordion` — управление границами (стороны, ширина, цвет, opacity).
       - `TypographyAccordion` — типографика для текстовых компонентов (`Text`, `LinkText`).

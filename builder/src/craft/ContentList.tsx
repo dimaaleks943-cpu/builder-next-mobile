@@ -173,7 +173,8 @@ export const ContentList = ({}: ContentListProps) => {
             continue
           }
           const descendantIds = q.node(cellId).descendants(true)
-          const fingerprint = descendantIds
+          const allIds = [cellId, ...descendantIds]
+          const fingerprint = allIds
             .map((id) => {
               const n = serialized[id]
               if (!n) return ""
@@ -224,22 +225,25 @@ export const ContentList = ({}: ContentListProps) => {
         prevSignaturePartsRef.current = currentParts
         return
       }
+      let sourceNodesList: { id: string; type: unknown; props: Record<string, unknown> }[] = []
+      try {
+        sourceNodesList = getDescendantsWithProps(query, sourceCellId)
+      } catch {
+        prevSignaturePartsRef.current = currentParts
+        return
+      }
+      if (sourceNodesList.length === 0) {
+        prevSignaturePartsRef.current = currentParts
+        return
+      }
+
+      // Для «жёсткой» синхронизации (переклонирование дерева) нам всё ещё нужны прямые дети ячейки
       let sourceChildIds: string[] = []
       try {
         const node = query.node(sourceCellId).get()
         sourceChildIds = (node?.data?.nodes as string[]) ?? []
       } catch {
-        prevSignaturePartsRef.current = currentParts
-        return
-      }
-      if (sourceChildIds.length === 0) {
-        prevSignaturePartsRef.current = currentParts
-        return
-      }
-
-      const sourceNodesList: { id: string; type: unknown; props: Record<string, unknown> }[] = []
-      for (const cid of sourceChildIds) {
-        sourceNodesList.push(...getDescendantsWithProps(query, cid))
+        // игнорируем, жёсткая синхронизация просто ничего не сделает
       }
 
       syncInProgressRef.current = true
@@ -249,21 +253,12 @@ export const ContentList = ({}: ContentListProps) => {
         for (let i = 0; i < actualCellIds.length; i++) {
           if (i === sourceCellIndex) continue
           const targetCellId = actualCellIds[i]
-          let targetChildIds: string[] = []
+          let targetNodesList: { id: string; type: unknown; props: Record<string, unknown> }[] = []
           try {
-            const targetNode = query.node(targetCellId).get()
-            targetChildIds = (targetNode?.data?.nodes as string[]) ?? []
+            targetNodesList = getDescendantsWithProps(query, targetCellId)
           } catch {
             useSoftSync = false
             break
-          }
-          if (targetChildIds.length !== sourceChildIds.length) {
-            useSoftSync = false
-            break
-          }
-          const targetNodesList: { id: string; type: unknown; props: Record<string, unknown> }[] = []
-          for (const cid of targetChildIds) {
-            targetNodesList.push(...getDescendantsWithProps(query, cid))
           }
           if (targetNodesList.length !== sourceNodesList.length) {
             useSoftSync = false
@@ -282,16 +277,11 @@ export const ContentList = ({}: ContentListProps) => {
           for (let i = 0; i < actualCellIds.length; i++) {
             if (i === sourceCellIndex) continue
             const targetCellId = actualCellIds[i]
-            let targetChildIds: string[] = []
+            let targetNodesList: { id: string; type: unknown; props: Record<string, unknown> }[] = []
             try {
-              const targetNode = query.node(targetCellId).get()
-              targetChildIds = (targetNode?.data?.nodes as string[]) ?? []
+              targetNodesList = getDescendantsWithProps(query, targetCellId)
             } catch {
               continue
-            }
-            const targetNodesList: { id: string; type: unknown; props: Record<string, unknown> }[] = []
-            for (const cid of targetChildIds) {
-              targetNodesList.push(...getDescendantsWithProps(query, cid))
             }
             for (let k = 0; k < sourceNodesList.length && k < targetNodesList.length; k++) {
               try {
