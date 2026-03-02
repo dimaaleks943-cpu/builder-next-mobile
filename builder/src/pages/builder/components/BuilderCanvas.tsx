@@ -4,6 +4,7 @@ import { Frame, Element, useEditor, type SerializedNodes } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
 import { Body } from "../../../craft/Body.tsx"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
+import { UpdateIcon } from "../../../icons/UpdateIcon"
 
 interface BuilderCanvasProps {
   initialContent: SerializedNodes | null
@@ -19,7 +20,8 @@ export const BuilderCanvas = ({ initialContent }: BuilderCanvasProps) => {
   })
 
   /**
-   * Рекурсивно собираем историю вложености предков через parent
+   * Рекурсивно собираем историю вложенности предков через parent
+   * и формируем breadcrumb для панели над холстом.
    */
   const { breadcrumb } = useEditor((state, query) => {
     const [selectedId] = Array.from(state.events.selected)
@@ -113,14 +115,15 @@ export const BuilderCanvas = ({ initialContent }: BuilderCanvasProps) => {
         backgroundColor: COLORS.gray100,
       }}
     >
-      {/* Панель действий над холстом (undo/redo и т.п.) */}
+      {/* Панель действий над холстом (undo/redo + структура) */}
       <Box
         sx={{
-          height: "28px",
+          maxHeight: 28,
+          height: 28,
           padding: "0 16px",
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
+          gap: "8px",
           borderBottom: `1px solid ${COLORS.gray200}`,
           backgroundColor: COLORS.white,
         }}
@@ -129,11 +132,43 @@ export const BuilderCanvas = ({ initialContent }: BuilderCanvasProps) => {
           sx={{
             display: "flex",
             alignItems: "center",
+            gap: "4px",
+          }}
+        >
+          <IconButton
+            onClick={handleUndo}
+            size="small"
+            sx={{ padding: "4px" }}
+            title="Отменить"
+          >
+            <Box sx={{ transform: "scaleX(-1)", display: "inline-flex", transformOrigin: "center" }}>
+              <UpdateIcon size={16} fill={COLORS.gray500}/>
+            </Box>
+
+          </IconButton>
+          <IconButton onClick={handleRedo} size="small" sx={{ padding: "4px" }}>
+            <UpdateIcon size={16} fill={COLORS.gray500}/>
+          </IconButton>
+        </Box>
+
+        <Box
+          sx={{
+            width: "1px",
+            height: 20,
+            backgroundColor: COLORS.gray200,
+          }}
+        />
+
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
             overflow: "hidden",
             whiteSpace: "nowrap",
             textOverflow: "ellipsis",
             fontSize: "12px",
-            color: COLORS.red300,
+            color: COLORS.gray700,
           }}
         >
           {breadcrumb.map((name, index) => (
@@ -149,21 +184,6 @@ export const BuilderCanvas = ({ initialContent }: BuilderCanvasProps) => {
               <Box>{name}</Box>
             </Box>
           ))}
-        </Box>
-
-        <Box>
-          <IconButton
-            onClick={handleUndo}
-            sx={{ padding: 0, mr: 1 }}
-          >
-            {"↶"}
-          </IconButton>
-          <IconButton
-            onClick={handleRedo}
-            sx={{ padding: 0 }}
-          >
-            {"↷"}
-          </IconButton>
         </Box>
       </Box>
 
@@ -196,7 +216,7 @@ export const BuilderCanvas = ({ initialContent }: BuilderCanvasProps) => {
         }}
         onClick={handleCanvasBackgroundClick}
         onKeyDown={handleKeyDown}
-        >
+      >
         <Box
           sx={{
             width: "100%",

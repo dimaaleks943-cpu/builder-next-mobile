@@ -187,7 +187,7 @@ export const AddMenu = ({ onClose }: Props) => {
                     if (!ref) return
                     create(ref, item.component)
                   }}
-                  onMouseDown={onClose}
+                 // onMouseDown={onClose}
                   sx={{
                     display: "flex",
                     flexDirection: "column",
