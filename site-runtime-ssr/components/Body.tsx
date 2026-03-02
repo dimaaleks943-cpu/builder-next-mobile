@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { withOpacity } from "@/lib/colorUtils"
 
 interface BodyProps {
   children?: ReactNode
@@ -47,6 +48,10 @@ export const Body = ({
     borderBottomWidth > 0 ||
     borderLeftWidth > 0
 
+  const effectiveBorderColor = hasBorder
+    ? withOpacity(borderColor ?? "#CBD5E0", borderOpacity ?? 1)
+    : "transparent"
+
   return (
     <div
       style={{
@@ -68,9 +73,9 @@ export const Body = ({
         borderRightWidth: hasBorder ? borderRightWidth : 0,
         borderBottomWidth: hasBorder ? borderBottomWidth : 0,
         borderLeftWidth: hasBorder ? borderLeftWidth : 0,
-        borderColor: hasBorder ? borderColor : "transparent",
-        borderStyle: hasBorder ? borderStyle : "none",
-        opacity: borderOpacity,
+        borderColor: effectiveBorderColor,
+        borderStyle: hasBorder ? borderStyle : "solid",
+        backgroundColor: "#FFFFFF",
         boxSizing: "border-box",
       }}
     >

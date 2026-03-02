@@ -4,27 +4,34 @@ import type { ComponentNode } from "@/lib/interface"
 import { getCollectionByKey } from "@/lib/collectionsApi"
 import { ContentDataProvider } from "@/components/ContentDataContext"
 
+type CellLayoutMode = "block" | "flex" | "grid" | "absolute"
+
 interface ContentListProps {
   selectedSource?: string
   itemsPerRow?: number
+  cellLayout?: CellLayoutMode
+  cellGridColumns?: number
+  cellGridRows?: number
   children?: ComponentNode[]
 }
 
 /**
  * Компонент для отображения списка контента (коллекции) на витрине.
- * Это упрощённая версия ContentList из builder - только рендеринг, без редактирования.
+ * Упрощённая версия ContentList из builder — только рендеринг, без редактирования.
  *
  * Логика:
  * 1. Получает коллекцию по selectedSource из API
  * 2. Для каждого элемента коллекции рендерит шаблон из children (первая ячейка)
- * 3. Подставляет данные элемента в шаблон через контекст (если компоненты его используют)
+ * 3. Подставляет данные элемента в шаблон через ContentDataProvider
  */
 export const ContentList = ({
   selectedSource = "",
   itemsPerRow: itemsPerRowProp,
+  cellLayout = "block",
+  cellGridColumns,
+  cellGridRows,
   children: childrenProp,
 }: ContentListProps) => {
-  // Нормализуем значения, чтобы дальше работать с строгими типами
   const itemsPerRow: number = itemsPerRowProp ?? 1
   const children: ComponentNode[] = childrenProp ?? []
   const [collectionItems, setCollectionItems] = React.useState<any[]>([])
@@ -40,11 +47,6 @@ export const ContentList = ({
     setIsLoading(true)
     getCollectionByKey(selectedSource)
       .then((collection) => {
-        console.log("Collection loaded:", {
-          key: selectedSource,
-          itemsCount: collection?.items?.length || 0,
-          firstItem: collection?.items?.[0],
-        })
         if (collection) {
           setCollectionItems(collection.items || [])
         } else {
@@ -59,7 +61,6 @@ export const ContentList = ({
       })
   }, [selectedSource])
 
-  // Если коллекция не выбрана или загружается, показываем пустой контейнер
   if (!selectedSource || isLoading) {
     return (
       <div
@@ -73,7 +74,6 @@ export const ContentList = ({
     )
   }
 
-  // Если коллекция пустая, показываем пустой контейнер
   if (collectionItems.length === 0) {
     return (
       <div
@@ -87,7 +87,6 @@ export const ContentList = ({
     )
   }
 
-  // Разбиваем элементы на строки в зависимости от itemsPerRow
   const rows: any[][] = []
   for (let i = 0; i < collectionItems.length; i += itemsPerRow) {
     rows.push(collectionItems.slice(i, i + itemsPerRow))
@@ -107,10 +106,6 @@ export const ContentList = ({
           style={{
             display: "flex",
             flexDirection: itemsPerRow === 1 ? "column" : "row",
-            borderBottom:
-              rowIndex === rows.length - 1
-                ? "none"
-                : "1px dashed rgba(108, 93, 211, 0.3)",
           }}
         >
           {row.map((itemData, itemIndex) => {
@@ -119,9 +114,11 @@ export const ContentList = ({
               <ContentListItem
                 key={flatIndex}
                 itemData={itemData}
+                collectionKey={selectedSource}
                 itemsPerRow={itemsPerRow}
-                itemIndex={itemIndex}
-                rowLength={row.length}
+                layout={cellLayout}
+                gridColumns={cellGridColumns}
+                gridRows={cellGridRows}
               >
                 {children}
               </ContentListItem>
@@ -133,40 +130,53 @@ export const ContentList = ({
   )
 }
 
+interface ContentListItemProps {
+  itemData: any
+  collectionKey: string | null
+  itemsPerRow: number
+  layout?: "block" | "flex" | "grid" | "absolute"
+  gridColumns?: number
+  gridRows?: number
+  children: ComponentNode[]
+}
+
 /**
- * Одна ячейка списка коллекции
+ * Одна ячейка списка коллекции.
+ * Применяет layout/gridColumns/gridRows из первой ячейки (ContentListCell) билдера.
  */
 const ContentListItem = ({
   itemData,
+  collectionKey,
   itemsPerRow,
-  itemIndex,
-  rowLength,
+  layout = "block",
+  gridColumns,
+  gridRows,
   children,
-}: {
-  itemData: any
-  itemsPerRow: number
-  itemIndex: number
-  rowLength: number
-  children: ComponentNode[]
-}) => {
+}: ContentListItemProps) => {
+  const displayStyle =
+    layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block"
+
   return (
-    <ContentDataProvider collectionKey={null} itemData={itemData}>
+    <ContentDataProvider collectionKey={collectionKey} itemData={itemData}>
       <div
         style={{
           flex: itemsPerRow === 1 ? "none" : 1,
+          minHeight: 48,
           padding: "16px",
           position: "relative",
-          display: "flex",
-          flexDirection: "column",
+          display: displayStyle,
           alignItems: "flex-start",
-          borderRight:
-            itemsPerRow > 1 && itemIndex < rowLength - 1
-              ? "1px dashed rgba(108, 93, 211, 0.3)"
-              : "none",
+          gridTemplateColumns:
+            layout === "grid" && gridColumns && gridColumns > 0
+              ? `repeat(${gridColumns}, minmax(0, 1fr))`
+              : undefined,
+          gridTemplateRows:
+            layout === "grid" && gridRows && gridRows > 0
+              ? `repeat(${gridRows}, auto)`
+              : undefined,
           boxSizing: "border-box",
         }}
       >
-        {/* Рендерим шаблон из children для каждого элемента коллекции */}
         {children && children.length > 0 ? (
           children.map((child, index) => (
             <React.Fragment key={index}>
@@ -174,14 +184,9 @@ const ContentListItem = ({
             </React.Fragment>
           ))
         ) : (
-          <div style={{ color: "#999", fontSize: 12 }}>
-            No template (children empty)
-          </div>
+          <div style={{ color: "#999", fontSize: 12 }}>No template</div>
         )}
       </div>
     </ContentDataProvider>
   )
 }
-
-// Данные элемента коллекции теперь передаются через общий ContentDataContext,
-// чтобы их могли использовать и другие контейнеры (например, таблица).

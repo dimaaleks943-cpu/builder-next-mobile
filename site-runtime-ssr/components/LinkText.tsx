@@ -1,30 +1,62 @@
 interface LinkTextProps {
-  text?: string
-  href?: string
-  openInNewTab?: boolean
-  fontSize?: number
-  fontWeight?: "normal" | "bold"
-  textAlign?: "left" | "center" | "right"
-  color?: string
-  marginTop?: number
-  marginRight?: number
-  marginBottom?: number
-  marginLeft?: number
+  text?: string;
+  href?: string;
+  openInNewTab?: boolean;
+  fontSize?: number;
+  fontWeight?: "normal" | "bold";
+  textAlign?: "left" | "center" | "right";
+  color?: string;
+  fontFamily?: string;
+  lineHeight?: number;
+  textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
+  strokeColor?: string;
+  strokeWidth?: number;
+  isItalic?: boolean;
+  isUnderline?: boolean;
+  isStrikethrough?: boolean;
+  marginTop?: number;
+  marginRight?: number;
+  marginBottom?: number;
+  marginLeft?: number;
+  paddingTop?: number;
+  paddingRight?: number;
+  paddingBottom?: number;
+  paddingLeft?: number;
 }
 
 export const LinkText = ({
-  text = "Link",
-  href = "#",
+  text = "Ссылка",
+  href = "http://www.google.com",
   openInNewTab = false,
   fontSize = 14,
   fontWeight = "normal",
   textAlign = "left",
-  color = "#2967FF",
+  color = "#00C78D",
+  fontFamily,
+  lineHeight = 20,
+  textTransform = "none",
+  strokeColor,
+  strokeWidth = 0,
+  isItalic = false,
+  isUnderline = false,
+  isStrikethrough = false,
   marginTop = 0,
   marginRight = 0,
   marginBottom = 0,
   marginLeft = 0,
+  paddingTop = 0,
+  paddingRight = 0,
+  paddingBottom = 0,
+  paddingLeft = 0,
 }: LinkTextProps) => {
+  const textDecoration = [
+    "underline",
+    isStrikethrough ? "line-through" : "",
+    isUnderline ? "underline" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <a
       href={href}
@@ -36,14 +68,25 @@ export const LinkText = ({
         fontWeight,
         textAlign,
         color,
+        fontFamily,
+        lineHeight: typeof lineHeight === "number" ? `${lineHeight}px` : undefined,
+        textTransform,
+        fontStyle: isItalic ? "italic" : "normal",
+        textDecoration,
+        WebkitTextStrokeWidth: strokeWidth ? strokeWidth : undefined,
+        WebkitTextStrokeColor: strokeColor,
         marginTop,
         marginRight,
         marginBottom,
         marginLeft,
-        textDecoration: "underline",
+        paddingTop,
+        paddingRight,
+        paddingBottom,
+        paddingLeft,
+        boxSizing: "border-box",
       }}
     >
       {text}
     </a>
-  )
+  );
 }

@@ -3,6 +3,7 @@ import { Block } from "@/components/Block"
 import { Body } from "@/components/Body"
 import { Text } from "@/components/Text"
 import { LinkText } from "@/components/LinkText"
+import { Image } from "@/components/Image"
 import { ContentList } from "@/components/ContentList"
 import type { ComponentNode } from "./interface"
 
@@ -11,6 +12,7 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   Body,
   Text,
   LinkText,
+  Image,
   ContentList,
 }
 

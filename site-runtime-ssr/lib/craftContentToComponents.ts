@@ -150,9 +150,18 @@ const buildNodeTree = (
       type: String(child.type),
     }))
 
+    // Пропсы первой ячейки (layout, gridColumns, gridRows) применяем к каждой ячейке в runtime
+    const cellProps = cellNode.props ?? {}
+    const contentListProps = {
+      ...(node.props ?? {}),
+      cellLayout: cellProps.layout ?? "block",
+      cellGridColumns: cellProps.gridColumns,
+      cellGridRows: cellProps.gridRows,
+    }
+
     return {
       type: "ContentList",
-      props: node.props ?? {},
+      props: contentListProps,
       children: safeChildren.length > 0 ? safeChildren : undefined,
     }
   }

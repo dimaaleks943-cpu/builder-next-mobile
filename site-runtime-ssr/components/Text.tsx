@@ -1,4 +1,4 @@
-import React from "react"
+import { useMemo } from "react"
 import { useContentData } from "./ContentDataContext"
 
 interface TextProps {
@@ -8,6 +8,14 @@ interface TextProps {
   fontWeight?: "normal" | "bold"
   textAlign?: "left" | "center" | "right"
   color?: string
+  fontFamily?: string
+  lineHeight?: number
+  textTransform?: "none" | "uppercase" | "lowercase" | "capitalize"
+  strokeColor?: string
+  strokeWidth?: number
+  isItalic?: boolean
+  isUnderline?: boolean
+  isStrikethrough?: boolean
   marginTop?: number
   marginRight?: number
   marginBottom?: number
@@ -19,12 +27,20 @@ interface TextProps {
 }
 
 export const Text = ({
-  text = "Text",
+  text = "Текст",
   collectionField = null,
   fontSize = 14,
   fontWeight = "normal",
   textAlign = "left",
-  color = "#2D2D2F",
+  color = "#727280",
+  fontFamily,
+  lineHeight = 20,
+  textTransform = "none",
+  strokeColor,
+  strokeWidth = 0,
+  isItalic = false,
+  isUnderline = false,
+  isStrikethrough = false,
   marginTop = 0,
   marginRight = 0,
   marginBottom = 0,
@@ -36,12 +52,10 @@ export const Text = ({
 }: TextProps) => {
   const contentData = useContentData()
 
-  // Если выбрано поле коллекции, подставляем значение из itemData
-  const displayText = React.useMemo(() => {
+  const displayText = useMemo(() => {
     if (collectionField && contentData?.itemData) {
       const fieldValue = contentData.itemData[collectionField]
       if (fieldValue !== null && fieldValue !== undefined) {
-        // Преобразуем значение в строку
         if (typeof fieldValue === "object") {
           return JSON.stringify(fieldValue)
         }
@@ -51,6 +65,13 @@ export const Text = ({
     return text
   }, [collectionField, contentData?.itemData, text])
 
+  const textDecoration = [
+    isUnderline ? "underline" : "",
+    isStrikethrough ? "line-through" : "",
+  ]
+    .filter(Boolean)
+    .join(" ") || "none"
+
   return (
     <span
       style={{
@@ -59,6 +80,13 @@ export const Text = ({
         fontWeight,
         textAlign,
         color,
+        fontFamily,
+        lineHeight: typeof lineHeight === "number" ? `${lineHeight}px` : undefined,
+        textTransform,
+        fontStyle: isItalic ? "italic" : "normal",
+        textDecoration,
+        WebkitTextStrokeWidth: strokeWidth ? strokeWidth : undefined,
+        WebkitTextStrokeColor: strokeColor,
         marginTop,
         marginRight,
         marginBottom,
@@ -67,6 +95,7 @@ export const Text = ({
         paddingRight,
         paddingBottom,
         paddingLeft,
+        boxSizing: "border-box",
       }}
     >
       {displayText}

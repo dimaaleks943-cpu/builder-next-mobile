@@ -1,9 +1,12 @@
-﻿import type { ReactNode } from "react"
+import type { ReactNode } from "react"
+import { withOpacity } from "@/lib/colorUtils"
 
 interface BlockProps {
   children?: ReactNode
+  fullSize?: boolean
   layout?: "block" | "flex" | "grid" | "absolute"
-  flexDirection?: "row" | "column"
+  gridColumns?: number
+  gridRows?: number
   marginTop?: number
   marginRight?: number
   marginBottom?: number
@@ -19,13 +22,15 @@ interface BlockProps {
   borderLeftWidth?: number
   borderColor?: string
   borderStyle?: "none" | "solid" | "dashed"
-  backgroundColor?: string
+  borderOpacity?: number
 }
 
 export const Block = ({
   children,
+  fullSize = false,
   layout = "block",
-  flexDirection,
+  gridColumns,
+  gridRows,
   marginTop = 0,
   marginRight = 0,
   marginBottom = 0,
@@ -41,27 +46,34 @@ export const Block = ({
   borderLeftWidth = 0,
   borderColor = "#CBD5E0",
   borderStyle = "solid",
-  backgroundColor = "#FFFFFF",
+  borderOpacity = 1,
 }: BlockProps) => {
-  const hasBorder =
+  const hasCustomBorder =
     borderTopWidth > 0 ||
     borderRightWidth > 0 ||
     borderBottomWidth > 0 ||
     borderLeftWidth > 0
 
-  const displayStyle =
-    layout === "flex"
-      ? "flex"
-      : layout === "grid"
-      ? "grid"
-      : "block"
+  const effectiveBorderColor = hasCustomBorder
+    ? withOpacity(borderColor ?? "#CBD5E0", borderOpacity ?? 1)
+    : "transparent"
 
   return (
     <div
       style={{
-        display: displayStyle,
-        flexDirection: flexDirection,
+        display:
+          layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block",
+        gridTemplateColumns:
+          layout === "grid" && gridColumns && gridColumns > 0
+            ? `repeat(${gridColumns}, minmax(0, 1fr))`
+            : undefined,
+        gridTemplateRows:
+          layout === "grid" && gridRows && gridRows > 0
+            ? `repeat(${gridRows}, auto)`
+            : undefined,
         position: layout === "absolute" ? "absolute" : "relative",
+        width: fullSize ? "100%" : undefined,
+        height: fullSize ? "100%" : undefined,
         marginTop,
         marginRight,
         marginBottom,
@@ -70,14 +82,15 @@ export const Block = ({
         paddingRight,
         paddingBottom,
         paddingLeft,
-        borderRadius,
-        borderTopWidth: hasBorder ? borderTopWidth : 0,
-        borderRightWidth: hasBorder ? borderRightWidth : 0,
-        borderBottomWidth: hasBorder ? borderBottomWidth : 0,
-        borderLeftWidth: hasBorder ? borderLeftWidth : 0,
-        borderColor: hasBorder ? borderColor : "transparent",
-        borderStyle: hasBorder ? borderStyle : "none",
-        backgroundColor,
+        borderRadius: fullSize ? 0 : borderRadius,
+        borderTopWidth: hasCustomBorder ? borderTopWidth : 0,
+        borderRightWidth: hasCustomBorder ? borderRightWidth : 0,
+        borderBottomWidth: hasCustomBorder ? borderBottomWidth : 0,
+        borderLeftWidth: hasCustomBorder ? borderLeftWidth : 0,
+        borderColor: effectiveBorderColor,
+        borderStyle: hasCustomBorder ? (borderStyle || "solid") : "solid",
+        backgroundColor: "#FFFFFF",
+        boxShadow: fullSize ? "none" : "0 1px 2px rgba(15, 23, 42, 0.08)",
         boxSizing: "border-box",
       }}
     >

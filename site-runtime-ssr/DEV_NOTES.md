@@ -14,7 +14,7 @@
   `craftContentToComponents(content: string): ComponentNode[]`.
   - Файл: `lib/craftContentToComponents.ts`.
   - Результат — массив `ComponentNode`:
-    - `type: string` — имя компонента для рендера (`"Body"`, `"Block"`, `"Text"`, `"ContentList"` и т.п.).
+    - `type: string` — имя компонента для рендера (`"Body"`, `"Block"`, `"Text"`, `"LinkText"`, `"Image"`, `"ContentList"` и т.п.).
     - `props: Record<string, any>` — пропсы из Craft.
     - `children?: ComponentNode[]` — дерево потомков.
 - **Рендер**:
@@ -53,7 +53,7 @@
 **Ключевая договорённость**:
 
 - Все компоненты, которые должны уметь подставлять данные из коллекций/таблиц
-  (например, `Text`, `LinkText`), используют **только** `useContentData()`
+  (например, `Text`, `LinkText`, `Image`), используют **только** `useContentData()`
   и не знают, что их оборачивает — `ContentList`, таблица или что‑то ещё.
 - Новые контейнеры (таблица, карусель и т.п.) просто используют `ContentDataProvider`
   в нужных местах (например, на уровне строки / ячейки).
@@ -102,6 +102,21 @@
 
 Таким образом, один и тот же `Text` может быть как статическим, так и «привязанным»
 к данным коллекции/таблицы.
+
+---
+
+### 4.1. Компонент Image
+
+Файл: `components/Image.tsx`.
+
+- Принимает:
+  - `src` — ручной URL изображения.
+  - `collectionField?: string | null` — поле коллекции с URL (если внутри ContentList).
+  - `alt`, `width`, `height`, `borderRadius`.
+- Логика:
+  - Через `useContentData()` получает `itemData`.
+  - Если `collectionField` задан — извлекает URL из поля (строка или объект `{ urls: { original/small: { url } } }`).
+  - Иначе использует `src` или плейсхолдер по умолчанию.
 
 ---
 
