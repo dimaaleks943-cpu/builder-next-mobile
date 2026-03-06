@@ -9,13 +9,15 @@ import {
 } from "@mui/material"
 import type { ReactElement } from "react"
 import { useEditor } from "@craftjs/core"
-import { useState } from "react"
-import { COLORS } from "../../../../../theme/colors.ts"
+import { useMemo, useState } from "react"
+import { COLORS } from "../../../../../theme/colors"
 import { CraftBlock } from "../../../../../craft/Block.tsx"
 import { CraftText } from "../../../../../craft/Text.tsx"
 import { CraftLinkText } from "../../../../../craft/LinkText.tsx"
 import { CraftContentList } from "../../../../../craft/ContentList.tsx"
 import { CraftImage } from "../../../../../craft/Image.tsx"
+import { useBuilderModeContext } from "../../../context/BuilderModeContext"
+import { MODE_TYPE } from "../../../builder.enum"
 
 interface ComponentItem {
   name: string;
@@ -27,63 +29,60 @@ interface Category {
   items: ComponentItem[];
 }
 
-const categories: Category[] = [
-  {
-    title: "Базовые",
-    items: [
+export const useCategories = (): Category[] => {
+  const modeContext = useBuilderModeContext()
+  const isRn = modeContext?.mode === MODE_TYPE.RN
+
+  return useMemo(
+    () => [
       {
-        name: "Div-блок",
-            component: <CraftBlock/>,
+        title: "Базовые",
+        items: [
+          {
+            name: "Div-блок",
+            component: isRn ? (
+              <CraftBlock layout="flex" />
+            ) : (
+              <CraftBlock />
+            ),
+          },
+        ],
+      },
+      {
+        title: "Типографика",
+        items: [
+          { name: "Текст", component: <CraftText /> },
+          { name: "Текст-ссылка", component: <CraftLinkText /> },
+        ],
+      },
+      {
+        title: "CMS",
+        items: [
+          { name: "Список контента", component: <CraftContentList /> },
+        ],
+      },
+      {
+        title: "Медиа",
+        items: [{ name: "Изображение", component: <CraftImage /> }],
       },
     ],
-  },
-  {
-    title: "Типографика",
-    items: [
-      {
-        name: "Текст",
-            component: <CraftText/>,
-      },
-      {
-        name: "Текст-ссылка",
-            component: <CraftLinkText/>,
-      },
-    ],
-  },
-  {
-    title: "CMS",
-    items: [
-      {
-        name: "Список контента",
-            component: <CraftContentList/>,
-      },
-    ],
-  },
-  {
-    title: "Медиа",
-    items: [
-      {
-        name: "Изображение",
-            component: <CraftImage/>,
-      },
-    ],
-  },
-]
+    [isRn],
+  )
+}
 
 interface Props {
   onClose: () => void;
 }
 
 export const AddMenu = (_props: Props) => {
-  const {
-    connectors: { create },
-  } = useEditor()
+  const { connectors: { create } } = useEditor()
   const [tabIndex, setTabIndex] = useState(1)
+  const categories = useCategories()
 
   return (
     <Box
       sx={{
-        width: 280,
+        width: "280px",
         height: "100%",
         display: "flex",
         flexDirection: "column",
@@ -93,7 +92,10 @@ export const AddMenu = (_props: Props) => {
     >
       <Box
         sx={{
-          padding: "12px 8px",
+          paddingTop: "12px",
+          paddingRight: "8px",
+          paddingBottom: "12px",
+          paddingLeft: "8px",
           color: COLORS.black,
           fontWeight: 700,
           fontSize: "14px",
@@ -108,10 +110,11 @@ export const AddMenu = (_props: Props) => {
         onChange={(_event, value: number) => setTabIndex(value)}
         variant="fullWidth"
         sx={{
-          minHeight: 32,
+          minHeight: "32px",
           "& .MuiTab-root": {
-            minHeight: 32,
-            paddingY: 0.5,
+            minHeight: "32px",
+            paddingTop: "4px",
+            paddingBottom: "4px",
             textTransform: "none",
             fontSize: "11px",
           },
@@ -131,7 +134,10 @@ export const AddMenu = (_props: Props) => {
         {tabIndex === 0 && (
           <Box
             sx={{
-              padding: "8px",
+              paddingTop: "8px",
+              paddingRight: "8px",
+              paddingBottom: "8px",
+              paddingLeft: "8px",
               fontSize: "12px",
               color: COLORS.gray600,
             }}
@@ -155,16 +161,20 @@ export const AddMenu = (_props: Props) => {
           >
             <AccordionSummary
               sx={{
-                minHeight: 40,
-                padding: "0 8px",
+                minHeight: "40px",
+                paddingTop: 0,
+                paddingRight: "8px",
+                paddingBottom: 0,
+                paddingLeft: "8px",
                 "& .MuiAccordionSummary-content": {
                   margin: 0,
                 },
               }}
             >
               <Typography
-                variant="subtitle2"
                 sx={{
+                  fontSize: "12px",
+                  lineHeight: "16px",
                   color: COLORS.gray700,
                   fontWeight: 600,
                 }}
@@ -174,7 +184,10 @@ export const AddMenu = (_props: Props) => {
             </AccordionSummary>
             <AccordionDetails
               sx={{
-                padding: "8px",
+                paddingTop: "8px",
+                paddingRight: "8px",
+                paddingBottom: "8px",
+                paddingLeft: "8px",
                 display: "flex",
                 flexWrap: "wrap",
                 gap: "8px",
@@ -187,7 +200,6 @@ export const AddMenu = (_props: Props) => {
                     if (!ref) return
                     create(ref, item.component)
                   }}
-                 // onMouseDown={onClose}
                   sx={{
                     display: "flex",
                     flexDirection: "column",
@@ -220,9 +232,9 @@ export const AddMenu = (_props: Props) => {
                   </Box>
                   <Typography
                     sx={{
-                      color: COLORS.gray600,
                       fontSize: "8px",
                       lineHeight: "10px",
+                      color: COLORS.gray600,
                       textAlign: "center",
                     }}
                   >

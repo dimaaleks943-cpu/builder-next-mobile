@@ -1,14 +1,35 @@
 import { useState, type ChangeEvent } from "react"
-import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from "@mui/material"
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  Typography,
+} from "@mui/material"
 import { useEditor } from "@craftjs/core"
-import { COLORS } from "../../../theme/colors.ts"
-import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
-import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSettingsInput.tsx"
+import { COLORS } from "../../../theme/colors"
+import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup"
+import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSettingsInput"
+import { useBuilderModeContext } from "../context/BuilderModeContext"
+import { MODE_TYPE } from "../builder.enum"
 
 type LayoutMode = "block" | "flex" | "grid" | "absolute"
 
+const LAYOUT_OPTIONS_WEB: { id: LayoutMode; content: string }[] = [
+  { id: "block", content: "Блок" },
+  { id: "flex", content: "Флекс" },
+  { id: "grid", content: "Сетка" },
+  { id: "absolute", content: "Абс. позиция" },
+]
+
+const LAYOUT_OPTIONS_RN: { id: LayoutMode; content: string }[] = [
+  { id: "flex", content: "Флекс" },
+]
+
 export const LayoutAccordion = () => {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("block")
+  const modeContext = useBuilderModeContext()
+  const isRn = modeContext?.mode === MODE_TYPE.RN
 
   const { actions } = useEditor()
   const { selectedId, selectedProps } = useEditor((state) => {
@@ -27,6 +48,10 @@ export const LayoutAccordion = () => {
   const effectiveLayout: LayoutMode =
     (selectedProps?.layout as LayoutMode | undefined) ?? layoutMode
 
+  /** В режиме RN показываем только флекс; значение для UI принудительно "flex". */
+  const displayLayout: LayoutMode = isRn ? "flex" : effectiveLayout
+  const options = isRn ? LAYOUT_OPTIONS_RN : LAYOUT_OPTIONS_WEB
+
   const handleLayoutChange = (value: LayoutMode) => {
     setLayoutMode(value)
     actions.setProp(selectedId, (props: any) => {
@@ -39,8 +64,6 @@ export const LayoutAccordion = () => {
     const safe = Number.isNaN(next) ? undefined : next
     actions.setProp(selectedId, (props: any) => {
       props.gridColumns = safe
-      // Для компонентов с построчной раскладкой (например, ContentList)
-      // синхронизируем количество колонок с itemsPerRow
       props.itemsPerRow = safe
     })
   }
@@ -57,11 +80,17 @@ export const LayoutAccordion = () => {
     <Accordion defaultExpanded disableGutters>
       <AccordionSummary
         sx={{
-          minHeight: 40,
+          minHeight: "40px",
           "& .MuiAccordionSummary-content": { margin: 0 },
         }}
       >
-        <Typography variant="subtitle2" sx={{ color: COLORS.gray700 }}>
+        <Typography
+          sx={{
+            fontSize: "12px",
+            lineHeight: "16px",
+            color: COLORS.gray700,
+          }}
+        >
           Расположение
         </Typography>
       </AccordionSummary>
@@ -70,17 +99,12 @@ export const LayoutAccordion = () => {
           <CraftSettingsButtonGroup
             withoutLabel
             label="Layout"
-            value={effectiveLayout}
-            options={[
-              { id: "block", content: "Блок" },
-              { id: "flex", content: "Флекс" },
-              { id: "grid", content: "Сетка" },
-              { id: "absolute", content: "Абс. позиция" },
-            ]}
+            value={displayLayout}
+            options={options}
             onChange={(id) => handleLayoutChange(id as LayoutMode)}
           />
 
-          {effectiveLayout === "grid" && (
+          {!isRn && effectiveLayout === "grid" && (
             <Box
               sx={{
                 marginTop: "12px",
