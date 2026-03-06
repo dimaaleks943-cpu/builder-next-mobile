@@ -1,0 +1,106 @@
+import { Text as RNText, StyleSheet, type TextStyle } from "react-native";
+import { useContentData } from "./ContentDataContext";
+
+interface TextProps {
+  text?: string;
+  collectionField?: string | null;
+  fontSize?: number;
+  fontWeight?: "normal" | "bold";
+  textAlign?: "left" | "center" | "right";
+  color?: string;
+  fontFamily?: string;
+  lineHeight?: number;
+  textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
+  strokeColor?: string;
+  strokeWidth?: number;
+  isItalic?: boolean;
+  isUnderline?: boolean;
+  isStrikethrough?: boolean;
+  marginTop?: number;
+  marginRight?: number;
+  marginBottom?: number;
+  marginLeft?: number;
+  paddingTop?: number;
+  paddingRight?: number;
+  paddingBottom?: number;
+  paddingLeft?: number;
+}
+
+export const Text = ({
+  text,
+  collectionField = null,
+  fontSize = 14,
+  fontWeight = "normal",
+  textAlign = "left",
+  color = "#333333",
+  fontFamily,
+  lineHeight = 20,
+  textTransform = "none",
+  strokeColor,
+  strokeWidth = 0,
+  isItalic = false,
+  isUnderline = false,
+  isStrikethrough = false,
+  marginTop = 0,
+  marginRight = 0,
+  marginBottom = 0,
+  marginLeft = 0,
+  paddingTop = 0,
+  paddingRight = 0,
+  paddingBottom = 0,
+  paddingLeft = 0,
+}: TextProps) => {
+  const contentData = useContentData();
+
+  let displayText = text;
+  if (collectionField && contentData?.itemData) {
+    const fieldValue = contentData.itemData[collectionField];
+    if (fieldValue !== null && fieldValue !== undefined) {
+      if (typeof fieldValue === "object") {
+        displayText = JSON.stringify(fieldValue);
+      } else {
+        displayText = String(fieldValue);
+      }
+    }
+  }
+  const textDecorationParts: ("underline" | "line-through")[] = [];
+  if (isUnderline) {
+    textDecorationParts.push("underline");
+  }
+  if (isStrikethrough) {
+    textDecorationParts.push("line-through");
+  }
+
+  const style: TextStyle = {
+    fontSize,
+    fontWeight,
+    textAlign,
+    color,
+    fontFamily,
+    lineHeight,
+    textTransform,
+    fontStyle: isItalic ? "italic" : "normal",
+    textDecorationLine:
+      textDecorationParts.length > 0 ? textDecorationParts.join(" ") : "none",
+    // strokeColor/strokeWidth в RN нативно не поддерживаются как в вебе,
+    // поэтому пока считаем их noop или можно будет реализовать через textShadow.
+    marginTop,
+    marginRight,
+    marginBottom,
+    marginLeft,
+    paddingTop,
+    paddingRight,
+    paddingBottom,
+    paddingLeft,
+  };
+
+  return <RNText style={[styles.base, style]}>{displayText}</RNText>;
+};
+
+const styles = StyleSheet.create({
+  base: {
+    fontSize: 14,
+    color: "#333333",
+  },
+});
+

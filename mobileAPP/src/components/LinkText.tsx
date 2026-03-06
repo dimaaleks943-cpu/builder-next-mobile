@@ -1,0 +1,111 @@
+import { Linking, Pressable, StyleSheet, Text as RNText, type TextStyle } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+
+interface LinkTextProps {
+  text?: string;
+  href?: string;
+  openInNewTab?: boolean;
+  fontSize?: number;
+  fontWeight?: "normal" | "bold";
+  textAlign?: "left" | "center" | "right";
+  color?: string;
+  fontFamily?: string;
+  lineHeight?: number;
+  textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
+  strokeColor?: string;
+  strokeWidth?: number;
+  isItalic?: boolean;
+  isUnderline?: boolean;
+  isStrikethrough?: boolean;
+  marginTop?: number;
+  marginRight?: number;
+  marginBottom?: number;
+  marginLeft?: number;
+  paddingTop?: number;
+  paddingRight?: number;
+  paddingBottom?: number;
+  paddingLeft?: number;
+}
+
+export const LinkText = ({
+  text = "Ссылка",
+  href,
+  openInNewTab, // не используется в мобилке, но оставляем для совместимости с контрактом
+  fontSize = 14,
+  fontWeight = "normal",
+  textAlign = "left",
+  color = "#00C78D",
+  fontFamily,
+  lineHeight = 20,
+  textTransform = "none",
+  strokeColor,
+  strokeWidth = 0,
+  isItalic = false,
+  isUnderline = false,
+  isStrikethrough = false,
+  marginTop = 0,
+  marginRight = 0,
+  marginBottom = 0,
+  marginLeft = 0,
+  paddingTop = 0,
+  paddingRight = 0,
+  paddingBottom = 0,
+  paddingLeft = 0,
+}: LinkTextProps) => {
+  const navigation = useNavigation<any>();
+
+  const handlePress = () => {
+    if (!href) return;
+
+    if (href.startsWith("/")) {
+      navigation.navigate("Page", { slug: href });
+      return;
+    }
+
+    Linking.openURL(href).catch((error) => {
+      console.warn("[LinkText] Failed to open URL:", href, error);
+    });
+  };
+
+  const textDecorationParts: ("underline" | "line-through")[] = ["underline"];
+  if (isStrikethrough) {
+    textDecorationParts.push("line-through");
+  }
+  if (isUnderline) {
+    textDecorationParts.push("underline");
+  }
+
+  const style: TextStyle = {
+    fontSize,
+    fontWeight,
+    textAlign,
+    color,
+    fontFamily,
+    lineHeight,
+    textTransform,
+    fontStyle: isItalic ? "italic" : "normal",
+    textDecorationLine: textDecorationParts.join(" "),
+    marginTop,
+    marginRight,
+    marginBottom,
+    marginLeft,
+    paddingTop,
+    paddingRight,
+    paddingBottom,
+    paddingLeft,
+  };
+
+  return (
+    <Pressable onPress={handlePress}>
+      <RNText style={[styles.base, style]}>{text}</RNText>
+    </Pressable>
+  );
+};
+
+const styles = StyleSheet.create({
+  base: {
+    fontSize: 14,
+    textDecorationLine: "underline",
+  },
+});
+
