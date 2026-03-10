@@ -74,10 +74,6 @@ export const CraftContentListCell = ({
         flexWrap:
           layout === "flex" ? (flexFlow === "wrap" ? "wrap" : "nowrap") : undefined,
         justifyContent: layout === "flex" ? flexJustifyContent : undefined,
-        alignItems:
-          layout === "flex"
-            ? (flexAlignItems ?? "flex-start")
-            : "flex-start",
         gap:
           (layout === "grid" || layout === "flex") &&
           gap != null &&
@@ -101,6 +97,9 @@ export const CraftContentListCell = ({
         backgroundColor: selected ? "rgba(108, 93, 211, 0.08)" : "transparent",
         border: selected ? `1px dashed ${COLORS.purple400}` : "none",
         borderRadius: 4,
+        // alignItems в конце объекта, чтобы не перезаписаться другими стилями при мерже/каскаде.
+        alignItems:
+          layout === "flex" ? (flexAlignItems ?? "flex-start") : "flex-start",
       }}
     >
       <ContentListCellContext.Provider value={true}>

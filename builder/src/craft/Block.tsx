@@ -77,6 +77,7 @@ export const CraftBlock = ({
   borderStyle = "solid",
   borderOpacity = 1,
 }: BlockProps) => {
+    console.log("flexAlignItems123123", flexAlignItems)
   const {
     connectors: { connect, drag },
     selected,
@@ -117,7 +118,6 @@ export const CraftBlock = ({
           layout === "flex" ? (flexFlow === "wrap" ? "wrap" : "nowrap") : undefined,
         justifyContent:
           layout === "flex" ? flexJustifyContent : undefined,
-        alignItems: layout === "flex" ? flexAlignItems : undefined,
         gap:
           (layout === "grid" || layout === "flex") &&
           gap != null &&
@@ -159,6 +159,8 @@ export const CraftBlock = ({
         backgroundColor: COLORS.white,
         boxShadow: fullSize ? "none" : "0 1px 2px rgba(15, 23, 42, 0.08)",
         boxSizing: "border-box",
+        // alignItems в конце, чтобы не перезаписаться при мерже/каскаде стилей.
+        alignItems: layout === "flex" ? flexAlignItems : undefined,
       }}
     >
       {selected && (
