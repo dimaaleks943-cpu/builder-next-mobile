@@ -3,15 +3,18 @@ import type { ReactNode } from "react"
 import { COLORS } from "../theme/colors"
 import { withOpacity } from "../utils/colorUtils"
 import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
-
-export type BlockLayoutMode = "block" | "flex" | "grid" | "absolute"
+import type { BlockLayoutMode, GridAutoFlow, PlaceItemsValue } from "../builder.enum.ts";
 
 export type BlockProps = {
   children?: ReactNode
   fullSize?: boolean
-  layout?: BlockLayoutMode
+  layout?: BlockLayoutMode;
   gridColumns?: number
   gridRows?: number
+  gridAutoFlow?: GridAutoFlow;
+  gap?: number
+  placeItemsY?: PlaceItemsValue;
+  placeItemsX?: PlaceItemsValue;
   // margins
   marginTop?: number
   marginRight?: number
@@ -40,6 +43,10 @@ export const CraftBlock = ({
   layout = "block",
   gridColumns,
   gridRows,
+  gridAutoFlow = "row",
+  gap,
+  placeItemsY,
+  placeItemsX,
   marginTop = 0,
   marginRight = 0,
   marginBottom = 0,
@@ -95,6 +102,12 @@ export const CraftBlock = ({
           layout === "grid" && gridRows && gridRows > 0
             ? `repeat(${gridRows}, auto)`
             : undefined,
+        gridAutoFlow: layout === "grid" ? gridAutoFlow : undefined,
+        gap: layout === "grid" && gap != null && gap >= 0 ? gap : undefined,
+        placeItems:
+          layout === "grid" && placeItemsY != null && placeItemsX != null
+            ? `${placeItemsY} ${placeItemsX}`
+            : undefined,
         position: layout === "absolute" ? "absolute" : "relative",
         width: fullSize ? "100%" : undefined,
         height: fullSize ? "100%" : undefined,
@@ -138,6 +151,10 @@ export const CraftBlock = ({
     layout: "block" as BlockLayoutMode,
     gridColumns: undefined,
     gridRows: undefined,
+    gridAutoFlow: "row" as const,
+    gap: undefined,
+    placeItemsY: undefined,
+    placeItemsX: undefined,
     marginTop: 0,
     marginRight: 0,
     marginBottom: 0,

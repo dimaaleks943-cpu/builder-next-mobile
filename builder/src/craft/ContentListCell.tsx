@@ -2,13 +2,18 @@ import { useNode } from "@craftjs/core"
 import type { ReactNode } from "react"
 import { COLORS } from "../theme/colors"
 import { ContentListCellContext } from "../pages/builder/context/ContentListCellContext.tsx"
-import type { BlockLayoutMode } from "./Block"
+import type { BlockLayoutMode, GridAutoFlow, PlaceItemsValue } from "../builder.enum.ts";
+
 
 export type ContentListCellProps = {
   children?: ReactNode
-  layout?: BlockLayoutMode
+  layout?: BlockLayoutMode;
   gridColumns?: number
   gridRows?: number
+  gridAutoFlow?: GridAutoFlow;
+  gap?: number
+  placeItemsY?: PlaceItemsValue;
+  placeItemsX?: PlaceItemsValue;
 }
 
 /**
@@ -23,6 +28,10 @@ export const CraftContentListCell = ({
   layout = "block",
   gridColumns,
   gridRows,
+  gridAutoFlow = "row",
+  gap,
+  placeItemsY,
+  placeItemsX,
 }: ContentListCellProps) => {
   const {
     connectors: { connect, drag },
@@ -53,6 +62,12 @@ export const CraftContentListCell = ({
           layout === "grid" && gridRows && gridRows > 0
             ? `repeat(${gridRows}, auto)`
             : undefined,
+        gridAutoFlow: layout === "grid" ? gridAutoFlow : undefined,
+        gap: layout === "grid" && gap != null && gap >= 0 ? gap : undefined,
+        placeItems:
+          layout === "grid" && placeItemsY != null && placeItemsX != null
+            ? `${placeItemsY} ${placeItemsX}`
+            : undefined,
         boxSizing: "border-box",
         backgroundColor: selected ? "rgba(108, 93, 211, 0.08)" : "transparent",
         border: selected ? `1px dashed ${COLORS.purple400}` : "none",
@@ -72,6 +87,10 @@ export const CraftContentListCell = ({
     layout: "block" as BlockLayoutMode,
     gridColumns: undefined,
     gridRows: undefined,
+    gridAutoFlow: "row" as const,
+    gap: undefined,
+    placeItemsY: undefined,
+    placeItemsX: undefined,
   },
   rules: {
     canMoveIn: () => true,

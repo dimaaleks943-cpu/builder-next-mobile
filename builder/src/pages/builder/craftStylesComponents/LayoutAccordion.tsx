@@ -10,10 +10,15 @@ import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
 import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup"
 import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSettingsInput"
+import {
+  CraftAlignControl,
+  type PlaceItemsValue,
+} from "../components/craftSettingsControls/CraftAlignControl"
 import { useBuilderModeContext } from "../context/BuilderModeContext"
 import { MODE_TYPE } from "../builder.enum"
 
 type LayoutMode = "block" | "flex" | "grid" | "absolute"
+type GridFlowOption = "row" | "column"
 
 const LAYOUT_OPTIONS_WEB: { id: LayoutMode; content: string }[] = [
   { id: "block", content: "Блок" },
@@ -76,6 +81,33 @@ export const LayoutAccordion = () => {
     })
   }
 
+  const handleGridAutoFlowChange = (value: GridFlowOption) => {
+    actions.setProp(selectedId, (props: any) => {
+      props.gridAutoFlow = value
+    })
+  }
+
+  const handleGapChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const next = Number(event.target.value)
+    const safe = Number.isNaN(next) ? undefined : next
+    actions.setProp(selectedId, (props: any) => {
+      props.gap = safe
+    })
+  }
+
+  const handleAlignChange = (alignY: PlaceItemsValue, alignX: PlaceItemsValue) => {
+    actions.setProp(selectedId, (props: any) => {
+      props.placeItemsY = alignY
+      props.placeItemsX = alignX
+    })
+  }
+
+  const effectiveGridAutoFlow: GridFlowOption =
+    (selectedProps?.gridAutoFlow as GridFlowOption | undefined) ?? "row"
+
+  const effectivePlaceItemsY = selectedProps?.placeItemsY as PlaceItemsValue | undefined
+  const effectivePlaceItemsX = selectedProps?.placeItemsX as PlaceItemsValue | undefined
+
   return (
     <Accordion defaultExpanded disableGutters>
       <AccordionSummary
@@ -109,20 +141,47 @@ export const LayoutAccordion = () => {
               sx={{
                 marginTop: "12px",
                 display: "flex",
-                gap: "8px",
+                flexDirection: "column",
+                gap: "12px",
               }}
             >
-              <CraftSettingsInput
-                label="Columns"
-                type="number"
-                value={selectedProps?.gridColumns ?? ""}
-                onChange={handleGridColumnsChange}
+              <Box sx={{ display: "flex", gap: "8px" }}>
+                <CraftSettingsInput
+                  label="Columns"
+                  type="number"
+                  value={selectedProps?.gridColumns ?? ""}
+                  onChange={handleGridColumnsChange}
+                />
+                <CraftSettingsInput
+                  label="Rows"
+                  type="number"
+                  value={selectedProps?.gridRows ?? ""}
+                  onChange={handleGridRowsChange}
+                />
+              </Box>
+
+              <CraftSettingsButtonGroup
+                label="Direction"
+                value={effectiveGridAutoFlow}
+                options={[
+                  { id: "row", content: "Row" },
+                  { id: "column", content: "Column" },
+                ]}
+                onChange={(id) => handleGridAutoFlowChange(id as GridFlowOption)}
               />
+
+              <CraftAlignControl
+                label="Align"
+                alignY={effectivePlaceItemsY}
+                alignX={effectivePlaceItemsX}
+                onChange={handleAlignChange}
+              />
+
               <CraftSettingsInput
-                label="Rows"
+                label="Gap"
                 type="number"
-                value={selectedProps?.gridRows ?? ""}
-                onChange={handleGridRowsChange}
+                value={selectedProps?.gap ?? ""}
+                onChange={handleGapChange}
               />
             </Box>
           )}
