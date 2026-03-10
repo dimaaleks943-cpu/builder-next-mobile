@@ -150,7 +150,7 @@ const buildNodeTree = (
       type: String(child.type),
     }))
 
-    // Пропсы первой ячейки (layout, gridColumns, gridRows) применяем к каждой ячейке в runtime.
+    // Пропсы первой ячейки (layout, gridColumns, gridRows, gridAutoFlow, gap) применяем к каждой ячейке в runtime.
     // undefined не допускается при сериализации getServerSideProps (JSON), поэтому подставляем null.
     const cellProps = cellNode.props ?? {}
     const contentListProps = {
@@ -158,6 +158,10 @@ const buildNodeTree = (
       cellLayout: cellProps.layout ?? "block",
       cellGridColumns: cellProps.gridColumns ?? null,
       cellGridRows: cellProps.gridRows ?? null,
+      cellGridAutoFlow: cellProps.gridAutoFlow ?? null,
+      cellGap: cellProps.gap ?? null,
+      cellPlaceItemsY: cellProps.placeItemsY ?? null,
+      cellPlaceItemsX: cellProps.placeItemsX ?? null,
     }
 
     return {

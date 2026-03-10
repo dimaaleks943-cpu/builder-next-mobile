@@ -7,6 +7,10 @@ interface BlockProps {
   layout?: "block" | "flex" | "grid" | "absolute"
   gridColumns?: number
   gridRows?: number
+  gridAutoFlow?: "row" | "column"
+  gap?: number
+  placeItemsY?: "start" | "center" | "end" | "stretch" | "baseline"
+  placeItemsX?: "start" | "center" | "end" | "stretch" | "baseline"
   marginTop?: number
   marginRight?: number
   marginBottom?: number
@@ -31,6 +35,10 @@ export const Block = ({
   layout = "block",
   gridColumns,
   gridRows,
+  gridAutoFlow = "row",
+  gap,
+  placeItemsY,
+  placeItemsX,
   marginTop = 0,
   marginRight = 0,
   marginBottom = 0,
@@ -70,6 +78,12 @@ export const Block = ({
         gridTemplateRows:
           layout === "grid" && gridRows && gridRows > 0
             ? `repeat(${gridRows}, auto)`
+            : undefined,
+        gridAutoFlow: layout === "grid" ? gridAutoFlow : undefined,
+        gap: layout === "grid" && gap != null && gap >= 0 ? gap : undefined,
+        placeItems:
+          layout === "grid" && placeItemsY && placeItemsX
+            ? `${placeItemsY} ${placeItemsX}`
             : undefined,
         position: layout === "absolute" ? "absolute" : "relative",
         width: fullSize ? "100%" : undefined,
