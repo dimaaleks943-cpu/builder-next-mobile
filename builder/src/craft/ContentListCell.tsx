@@ -2,18 +2,27 @@ import { useNode } from "@craftjs/core"
 import type { ReactNode } from "react"
 import { COLORS } from "../theme/colors"
 import { ContentListCellContext } from "../pages/builder/context/ContentListCellContext.tsx"
-import type { BlockLayoutMode, GridAutoFlow, PlaceItemsValue } from "../builder.enum.ts";
-
+import type {
+  BlockLayoutMode,
+  FlexAlignItems,
+  FlexFlowOption,
+  FlexJustifyContent,
+  GridAutoFlow,
+  PlaceItemsValue,
+} from "../builder.enum"
 
 export type ContentListCellProps = {
   children?: ReactNode
-  layout?: BlockLayoutMode;
+  layout?: BlockLayoutMode
   gridColumns?: number
   gridRows?: number
-  gridAutoFlow?: GridAutoFlow;
+  gridAutoFlow?: GridAutoFlow
   gap?: number
-  placeItemsY?: PlaceItemsValue;
-  placeItemsX?: PlaceItemsValue;
+  flexFlow?: FlexFlowOption
+  flexJustifyContent?: FlexJustifyContent
+  flexAlignItems?: FlexAlignItems
+  placeItemsY?: PlaceItemsValue
+  placeItemsX?: PlaceItemsValue
 }
 
 /**
@@ -30,6 +39,9 @@ export const CraftContentListCell = ({
   gridRows,
   gridAutoFlow = "row",
   gap,
+  flexFlow = "row",
+  flexJustifyContent,
+  flexAlignItems,
   placeItemsY,
   placeItemsX,
 }: ContentListCellProps) => {
@@ -53,7 +65,25 @@ export const CraftContentListCell = ({
         position: "relative" as const,
         display:
           layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block",
-        alignItems: "flex-start",
+        flexDirection:
+          layout === "flex"
+            ? flexFlow === "column"
+              ? "column"
+              : "row"
+            : undefined,
+        flexWrap:
+          layout === "flex" ? (flexFlow === "wrap" ? "wrap" : "nowrap") : undefined,
+        justifyContent: layout === "flex" ? flexJustifyContent : undefined,
+        alignItems:
+          layout === "flex"
+            ? (flexAlignItems ?? "flex-start")
+            : "flex-start",
+        gap:
+          (layout === "grid" || layout === "flex") &&
+          gap != null &&
+          gap >= 0
+            ? gap
+            : undefined,
         gridTemplateColumns:
           layout === "grid" && gridColumns && gridColumns > 0
             ? `repeat(${gridColumns}, minmax(0, 1fr))`
@@ -63,7 +93,6 @@ export const CraftContentListCell = ({
             ? `repeat(${gridRows}, auto)`
             : undefined,
         gridAutoFlow: layout === "grid" ? gridAutoFlow : undefined,
-        gap: layout === "grid" && gap != null && gap >= 0 ? gap : undefined,
         placeItems:
           layout === "grid" && placeItemsY != null && placeItemsX != null
             ? `${placeItemsY} ${placeItemsX}`
@@ -89,6 +118,9 @@ export const CraftContentListCell = ({
     gridRows: undefined,
     gridAutoFlow: "row" as const,
     gap: undefined,
+    flexFlow: "row" as const,
+    flexJustifyContent: undefined,
+    flexAlignItems: undefined,
     placeItemsY: undefined,
     placeItemsX: undefined,
   },

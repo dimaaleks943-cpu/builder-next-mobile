@@ -4,8 +4,7 @@ import type { ChangeEvent } from "react"
 import { COLORS } from "../../../../theme/colors"
 import { CraftSettingsSelect } from "./CraftSettingsSelect"
 import { Arrows } from "../../../../icons/Arrows.tsx";
-
-type PlaceItemsValue = "start" | "center" | "end" | "stretch" | "baseline"
+import type { PlaceItemsValue } from "../../../../builder.enum.ts";
 
 const X_OPTIONS: { id: string; value: string }[] = [
   { id: "left", value: "Left" },
@@ -72,7 +71,11 @@ interface Props {
   label: string
   alignY: PlaceItemsValue | undefined
   alignX: PlaceItemsValue | undefined
-  onChange: (alignY: PlaceItemsValue, alignX: PlaceItemsValue) => void
+  /** При вызове с (undefined, undefined) — сброс к дефолту (place-items не задан). */
+  onChange: (
+    alignY: PlaceItemsValue | undefined,
+    alignX: PlaceItemsValue | undefined,
+  ) => void
 }
 
 export const CraftAlignControl = ({
@@ -117,6 +120,11 @@ export const CraftAlignControl = ({
     onChange(cssValue as PlaceItemsValue, effectiveX)
   }
 
+  const handleResetAlign = () => {
+    onChange(undefined, undefined)
+    setExpanded(false)
+  }
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
       <Box
@@ -126,16 +134,37 @@ export const CraftAlignControl = ({
           gap: "8px",
         }}
       >
-        <Typography
-          sx={{
-            fontSize: "10px",
-            lineHeight: "14px",
-            color: COLORS.gray700,
-            minWidth: "48px",
-          }}
-        >
-          {label}
-        </Typography>
+        {hasPlaceItems ? (
+          <Box
+            component="button"
+            type="button"
+            onClick={handleResetAlign}
+            sx={{
+              fontSize: "10px",
+              lineHeight: "14px",
+              minWidth: "48px",
+              padding: 0,
+              border: "none",
+              background: "none",
+              cursor: "pointer",
+              color: COLORS.blue400,
+              textAlign: "left",
+            }}
+          >
+            {label}
+          </Box>
+        ) : (
+          <Typography
+            sx={{
+              fontSize: "10px",
+              lineHeight: "14px",
+              color: COLORS.gray700,
+              minWidth: "48px",
+            }}
+          >
+            {label}
+          </Typography>
+        )}
         <Box
           component="button"
           type="button"

@@ -12,10 +12,16 @@ import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/Cr
 import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSettingsInput"
 import {
   CraftAlignControl,
-  type PlaceItemsValue,
 } from "../components/craftSettingsControls/CraftAlignControl"
 import { useBuilderModeContext } from "../context/BuilderModeContext"
 import { MODE_TYPE } from "../builder.enum"
+import type {
+  PlaceItemsValue,
+  FlexFlowOption,
+  FlexJustifyContent,
+  FlexAlignItems,
+} from "../../../builder.enum"
+import { CraftFlexAlignControl } from "../components/craftSettingsControls/CraftFlexAlignControl"
 
 type LayoutMode = "block" | "flex" | "grid" | "absolute"
 type GridFlowOption = "row" | "column"
@@ -95,15 +101,54 @@ export const LayoutAccordion = () => {
     })
   }
 
-  const handleAlignChange = (alignY: PlaceItemsValue, alignX: PlaceItemsValue) => {
+  const handleFlexFlowChange = (value: FlexFlowOption) => {
     actions.setProp(selectedId, (props: any) => {
-      props.placeItemsY = alignY
-      props.placeItemsX = alignX
+      props.flexFlow = value
+    })
+  }
+
+  const handleFlexAlignChange = (
+    justifyContent: FlexJustifyContent | undefined,
+    alignItems: FlexAlignItems | undefined,
+  ) => {
+    actions.setProp(selectedId, (props: any) => {
+      if (justifyContent === undefined && alignItems === undefined) {
+        delete props.flexJustifyContent
+        delete props.flexAlignItems
+      } else {
+        if (justifyContent != null) props.flexJustifyContent = justifyContent
+        if (alignItems != null) props.flexAlignItems = alignItems
+      }
+    })
+  }
+
+  const handleAlignChange = (
+    alignY: PlaceItemsValue | undefined,
+    alignX: PlaceItemsValue | undefined,
+  ) => {
+    actions.setProp(selectedId, (props: any) => {
+      if (alignY === undefined && alignX === undefined) {
+        delete props.placeItemsY
+        delete props.placeItemsX
+      } else if (alignY != null && alignX != null) {
+        props.placeItemsY = alignY
+        props.placeItemsX = alignX
+      }
     })
   }
 
   const effectiveGridAutoFlow: GridFlowOption =
     (selectedProps?.gridAutoFlow as GridFlowOption | undefined) ?? "row"
+
+  const effectiveFlexFlow: FlexFlowOption =
+    (selectedProps?.flexFlow as FlexFlowOption | undefined) ?? "row"
+
+  const effectiveFlexJustify = selectedProps?.flexJustifyContent as
+    | FlexJustifyContent
+    | undefined
+  const effectiveFlexAlign = selectedProps?.flexAlignItems as
+    | FlexAlignItems
+    | undefined
 
   const effectivePlaceItemsY = selectedProps?.placeItemsY as PlaceItemsValue | undefined
   const effectivePlaceItemsX = selectedProps?.placeItemsX as PlaceItemsValue | undefined
@@ -135,6 +180,41 @@ export const LayoutAccordion = () => {
             options={options}
             onChange={(id) => handleLayoutChange(id as LayoutMode)}
           />
+
+          {effectiveLayout === "flex" && (
+            <Box
+              sx={{
+                marginTop: "12px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+              }}
+            >
+              <CraftSettingsButtonGroup
+                label="Direction"
+                value={effectiveFlexFlow}
+                options={[
+                  { id: "row", content: "→" },
+                  { id: "column", content: "↓" },
+                  { id: "wrap", content: "⇅" },
+                ]}
+                onChange={(id) => handleFlexFlowChange(id as FlexFlowOption)}
+              />
+              <CraftFlexAlignControl
+                label="Align"
+                flexFlow={effectiveFlexFlow}
+                justifyContent={effectiveFlexJustify}
+                alignItems={effectiveFlexAlign}
+                onChange={handleFlexAlignChange}
+              />
+              <CraftSettingsInput
+                label="Gap"
+                type="number"
+                value={selectedProps?.gap ?? ""}
+                onChange={handleGapChange}
+              />
+            </Box>
+          )}
 
           {!isRn && effectiveLayout === "grid" && (
             <Box
