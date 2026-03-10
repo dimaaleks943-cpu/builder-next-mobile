@@ -15,6 +15,21 @@ interface ContentListProps {
   cellGridRows?: number;
   cellGridAutoFlow?: "row" | "column" | null;
   cellGap?: number | null;
+  cellFlexFlow?: "row" | "column" | "wrap" | null;
+  cellFlexJustifyContent?:
+    | "flex-start"
+    | "flex-end"
+    | "center"
+    | "space-between"
+    | "space-around"
+    | null;
+  cellFlexAlignItems?:
+    | "flex-start"
+    | "flex-end"
+    | "center"
+    | "stretch"
+    | "baseline"
+    | null;
   cellPlaceItemsY?: "start" | "center" | "end" | "stretch" | "baseline" | null;
   cellPlaceItemsX?: "start" | "center" | "end" | "stretch" | "baseline" | null;
   children?: ComponentNode[];
@@ -28,6 +43,9 @@ export const ContentList = ({
   cellGridRows,
   cellGridAutoFlow,
   cellGap,
+  cellFlexFlow,
+  cellFlexJustifyContent,
+  cellFlexAlignItems,
   cellPlaceItemsY,
   cellPlaceItemsX,
   children: childrenProp,
@@ -97,6 +115,9 @@ export const ContentList = ({
                 gridRows={cellGridRows}
                 gridAutoFlow={cellGridAutoFlow ?? undefined}
                 gap={cellGap ?? undefined}
+                flexFlow={cellFlexFlow ?? undefined}
+                flexJustifyContent={cellFlexJustifyContent ?? undefined}
+                flexAlignItems={cellFlexAlignItems ?? undefined}
                 placeItemsY={cellPlaceItemsY ?? undefined}
                 placeItemsX={cellPlaceItemsX ?? undefined}
               >
@@ -119,6 +140,19 @@ interface ContentListItemProps {
   gridRows?: number;
   gridAutoFlow?: "row" | "column";
   gap?: number;
+  flexFlow?: "row" | "column" | "wrap";
+  flexJustifyContent?:
+    | "flex-start"
+    | "flex-end"
+    | "center"
+    | "space-between"
+    | "space-around";
+  flexAlignItems?:
+    | "flex-start"
+    | "flex-end"
+    | "center"
+    | "stretch"
+    | "baseline";
   placeItemsY?: "start" | "center" | "end" | "stretch" | "baseline";
   placeItemsX?: "start" | "center" | "end" | "stretch" | "baseline";
   children: ComponentNode[];
@@ -151,6 +185,9 @@ const ContentListItem = ({
   gridRows,
   gridAutoFlow = "row",
   gap,
+  flexFlow = "row",
+  flexJustifyContent,
+  flexAlignItems,
   placeItemsY,
   placeItemsX,
   children,
@@ -160,6 +197,23 @@ const ContentListItem = ({
 
   const hasTemplate = children && children.length > 0;
 
+  const flexDirection = isFlex
+    ? flexFlow === "column"
+      ? "column"
+      : "row"
+    : isGrid
+      ? gridAutoFlow === "column"
+        ? "column"
+        : "row"
+      : "column";
+  const flexWrap = isGrid ? "wrap" : isFlex && flexFlow === "wrap" ? "wrap" : "nowrap";
+  const alignItems = isFlex && flexAlignItems != null
+    ? flexAlignItems
+    : (toAlignItems(placeItemsY) ?? undefined);
+  const justifyContent = isFlex && flexJustifyContent != null
+    ? flexJustifyContent
+    : (toJustifyContent(placeItemsX) ?? undefined);
+
   return (
     <ContentDataProvider collectionKey={collectionKey} itemData={itemData}>
       <View
@@ -167,11 +221,11 @@ const ContentListItem = ({
           styles.item,
           {
             flex: itemsPerRow === 1 ? 0 : 1,
-            flexDirection: isGrid || isFlex ? (gridAutoFlow === "column" ? "column" : "row") : "column",
-            flexWrap: isGrid ? "wrap" : "nowrap",
+            flexDirection,
+            flexWrap,
             gap: gap != null && gap >= 0 ? gap : undefined,
-            alignItems: toAlignItems(placeItemsY),
-            justifyContent: toJustifyContent(placeItemsX),
+            alignItems: alignItems ?? undefined,
+            justifyContent: justifyContent ?? undefined,
           },
         ]}
       >
