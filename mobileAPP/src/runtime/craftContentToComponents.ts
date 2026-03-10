@@ -129,8 +129,12 @@ const buildNodeTree = (
     const contentListProps = {
       ...(node.props ?? {}),
       cellLayout: cellProps.layout ?? "block",
-      cellGridColumns: cellProps.gridColumns,
-      cellGridRows: cellProps.gridRows,
+      cellGridColumns: cellProps.gridColumns ?? null,
+      cellGridRows: cellProps.gridRows ?? null,
+      cellGridAutoFlow: cellProps.gridAutoFlow ?? null,
+      cellGap: cellProps.gap ?? null,
+      cellPlaceItemsY: cellProps.placeItemsY ?? null,
+      cellPlaceItemsX: cellProps.placeItemsX ?? null,
     };
 
     return {

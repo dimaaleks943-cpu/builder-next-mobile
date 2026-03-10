@@ -13,6 +13,10 @@ interface ContentListProps {
   cellLayout?: CellLayoutMode;
   cellGridColumns?: number;
   cellGridRows?: number;
+  cellGridAutoFlow?: "row" | "column" | null;
+  cellGap?: number | null;
+  cellPlaceItemsY?: "start" | "center" | "end" | "stretch" | "baseline" | null;
+  cellPlaceItemsX?: "start" | "center" | "end" | "stretch" | "baseline" | null;
   children?: ComponentNode[];
 }
 
@@ -22,6 +26,10 @@ export const ContentList = ({
   cellLayout = "block",
   cellGridColumns,
   cellGridRows,
+  cellGridAutoFlow,
+  cellGap,
+  cellPlaceItemsY,
+  cellPlaceItemsX,
   children: childrenProp,
 }: ContentListProps) => {
   const itemsPerRow: number = itemsPerRowProp ?? 1;
@@ -87,6 +95,10 @@ export const ContentList = ({
                 layout={cellLayout}
                 gridColumns={cellGridColumns}
                 gridRows={cellGridRows}
+                gridAutoFlow={cellGridAutoFlow ?? undefined}
+                gap={cellGap ?? undefined}
+                placeItemsY={cellPlaceItemsY ?? undefined}
+                placeItemsX={cellPlaceItemsX ?? undefined}
               >
                 {children}
               </ContentListItem>
@@ -105,8 +117,30 @@ interface ContentListItemProps {
   layout?: "block" | "flex" | "grid" | "absolute";
   gridColumns?: number;
   gridRows?: number;
+  gridAutoFlow?: "row" | "column";
+  gap?: number;
+  placeItemsY?: "start" | "center" | "end" | "stretch" | "baseline";
+  placeItemsX?: "start" | "center" | "end" | "stretch" | "baseline";
   children: ComponentNode[];
 }
+
+const toAlignItems = (
+  v?: "start" | "center" | "end" | "stretch" | "baseline",
+): "flex-start" | "center" | "flex-end" | "stretch" | "baseline" | undefined => {
+  if (!v) return undefined;
+  if (v === "start") return "flex-start";
+  if (v === "end") return "flex-end";
+  return v;
+};
+
+const toJustifyContent = (
+  v?: "start" | "center" | "end" | "stretch" | "baseline",
+): "flex-start" | "center" | "flex-end" | undefined => {
+  if (!v || v === "stretch" || v === "baseline") return undefined;
+  if (v === "start") return "flex-start";
+  if (v === "end") return "flex-end";
+  return v;
+};
 
 const ContentListItem = ({
   itemData,
@@ -115,6 +149,10 @@ const ContentListItem = ({
   layout = "block",
   gridColumns,
   gridRows,
+  gridAutoFlow = "row",
+  gap,
+  placeItemsY,
+  placeItemsX,
   children,
 }: ContentListItemProps) => {
   const isGrid = layout === "grid";
@@ -129,8 +167,11 @@ const ContentListItem = ({
           styles.item,
           {
             flex: itemsPerRow === 1 ? 0 : 1,
-            flexDirection: isGrid || isFlex ? "row" : "column",
+            flexDirection: isGrid || isFlex ? (gridAutoFlow === "column" ? "column" : "row") : "column",
             flexWrap: isGrid ? "wrap" : "nowrap",
+            gap: gap != null && gap >= 0 ? gap : undefined,
+            alignItems: toAlignItems(placeItemsY),
+            justifyContent: toJustifyContent(placeItemsX),
           },
         ]}
       >
