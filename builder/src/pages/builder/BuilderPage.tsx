@@ -88,7 +88,7 @@ export const BuilderPage = () => {
         const page = result.data
 
         setContentWeb(page.content ?? "")
-        setContentMobile(page.mobContent ?? "")
+        setContentMobile(page.content_mobile ?? "")
         setLoaded(true)
       } catch (error) {
         console.error(

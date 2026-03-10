@@ -69,7 +69,7 @@ export const BuilderHeader = ({ pageId }: BuilderHeaderProps) => {
       name: "Главная",
       slug: "/",
       content: contentPayload,
-      mobContent: mobContentPayload,
+      content_mobile: mobContentPayload,
       sort: 0,
     }
 
