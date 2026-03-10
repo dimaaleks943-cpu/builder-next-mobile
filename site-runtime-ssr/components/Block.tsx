@@ -9,6 +9,19 @@ interface BlockProps {
   gridRows?: number
   gridAutoFlow?: "row" | "column"
   gap?: number
+  flexFlow?: "row" | "column" | "wrap"
+  flexJustifyContent?:
+    | "flex-start"
+    | "flex-end"
+    | "center"
+    | "space-between"
+    | "space-around"
+  flexAlignItems?:
+    | "flex-start"
+    | "flex-end"
+    | "center"
+    | "stretch"
+    | "baseline"
   placeItemsY?: "start" | "center" | "end" | "stretch" | "baseline"
   placeItemsX?: "start" | "center" | "end" | "stretch" | "baseline"
   marginTop?: number
@@ -37,6 +50,9 @@ export const Block = ({
   gridRows,
   gridAutoFlow = "row",
   gap,
+  flexFlow = "row",
+  flexJustifyContent,
+  flexAlignItems,
   placeItemsY,
   placeItemsX,
   marginTop = 0,
@@ -71,6 +87,22 @@ export const Block = ({
       style={{
         display:
           layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block",
+        flexDirection:
+          layout === "flex"
+            ? flexFlow === "column"
+              ? "column"
+              : "row"
+            : undefined,
+        flexWrap:
+          layout === "flex" ? (flexFlow === "wrap" ? "wrap" : "nowrap") : undefined,
+        justifyContent: layout === "flex" ? flexJustifyContent : undefined,
+        alignItems: layout === "flex" ? flexAlignItems : undefined,
+        gap:
+          (layout === "grid" || layout === "flex") &&
+          gap != null &&
+          gap >= 0
+            ? gap
+            : undefined,
         gridTemplateColumns:
           layout === "grid" && gridColumns && gridColumns > 0
             ? `repeat(${gridColumns}, minmax(0, 1fr))`
@@ -80,7 +112,6 @@ export const Block = ({
             ? `repeat(${gridRows}, auto)`
             : undefined,
         gridAutoFlow: layout === "grid" ? gridAutoFlow : undefined,
-        gap: layout === "grid" && gap != null && gap >= 0 ? gap : undefined,
         placeItems:
           layout === "grid" && placeItemsY && placeItemsX
             ? `${placeItemsY} ${placeItemsX}`

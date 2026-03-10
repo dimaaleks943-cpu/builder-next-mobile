@@ -160,6 +160,9 @@ const buildNodeTree = (
       cellGridRows: cellProps.gridRows ?? null,
       cellGridAutoFlow: cellProps.gridAutoFlow ?? null,
       cellGap: cellProps.gap ?? null,
+      cellFlexFlow: cellProps.flexFlow ?? null,
+      cellFlexJustifyContent: cellProps.flexJustifyContent ?? null,
+      cellFlexAlignItems: cellProps.flexAlignItems ?? null,
       cellPlaceItemsY: cellProps.placeItemsY ?? null,
       cellPlaceItemsX: cellProps.placeItemsX ?? null,
     }
