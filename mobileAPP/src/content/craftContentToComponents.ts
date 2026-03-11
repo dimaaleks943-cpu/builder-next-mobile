@@ -1,6 +1,7 @@
 import type { ComponentNode } from "./interface";
 
-// Сериализованный формат дерева Craft.js, который мы сохраняем в поле content
+
+/** сериализованый формат дерева craft.js, который мы сохраняем в поле content  */
 type SerializedNodes = Record<
   string,
   {
@@ -16,15 +17,12 @@ type SerializedNodes = Record<
   }
 >;
 
-// Преобразуем тип Craft-узла в строковое имя компонента рантайма (Body, Block, Text, LinkText)
-// В сериализованном JSON тип всегда представлен как строка или как объект с resolvedName/displayName.
+/**
+ * Преобразуем тип Craft-узла в строковое имя компонента (Body, Block, Text, LinkText)
+ * в JSON тип всегда представлен как строка или как объект с resolvedName/displayName
+ * */
 const resolveTypeName = (type: any, nodeId?: string): string => {
   if (!type) {
-    if (nodeId) {
-      console.warn(
-        `[craftContentToComponents] resolveTypeName: type is null/undefined for node ${nodeId}`,
-      );
-    }
     return "div";
   }
 
@@ -45,7 +43,7 @@ const resolveTypeName = (type: any, nodeId?: string): string => {
   return "div";
 };
 
-// Рекурсивно строим дерево ComponentNode из сериализованных узлов Craft, начиная с указанного id
+/** рекурсивно строим дерево ComponentNode из сериализованных узлов Craft, начиная с указанного id  */
 const buildNodeTree = (
   nodes: SerializedNodes,
   id: string,
@@ -55,16 +53,18 @@ const buildNodeTree = (
 
   const componentType = resolveTypeName(node.type, id);
 
-  // Для ContentList берём только первую ячейку (шаблон) из всех ячеек.
-  // В сериализованном дереве Craft.js дети ContentList — это ячейки (ContentListCell),
-  // каждая из которых содержит своих детей-шаблонов.
+  /**
+   * Для ContentList берём только первую ячейку (шаблон) из всех ячеек.
+   * В сериализованном дереве Craft.js дети ContentList — это ячейки (ContentListCell),
+   * каждая из которых содержит своих детей-шаблонов.
+   * */
   if (componentType === "ContentList") {
     const linkedNodes = node.linkedNodes ?? {};
-    // Дети ContentList — ячейки; могут быть в node.nodes или только в linkedNodes
+    /** дети ContentList это ячейки; могут быть в node.nodes или только в linkedNodes  */
     let cellNodeIds = node.nodes ?? [];
     if (!cellNodeIds.length && Object.keys(linkedNodes).length > 0) {
       const keys = Object.keys(linkedNodes);
-      // Предпочитаем ключи вида *-cell-* или берём первый
+      /** предпочитаем ключи вида *-cell-* или берём первый  */
       const cellKeys = keys.filter((k) => /-cell-|\d+$/.test(k));
       cellNodeIds = cellKeys.length > 0 ? cellKeys : keys.slice(0, 1);
     }
@@ -100,7 +100,7 @@ const buildNodeTree = (
         if (child) {
           templateChildren.push(child);
         } else {
-          // Узел не рендерится (например ContentListCell) — разворачиваем его детей
+          /** узел не рендерится (например ContentListCell) — разворачиваем его детей  */
           collectTemplateFromNode(actualId);
         }
       }
@@ -108,7 +108,6 @@ const buildNodeTree = (
 
     for (const templateChildId of templateChildIds) {
       const actualChildId = cellLinkedNodes[templateChildId] || templateChildId;
-      const childNode = nodes[actualChildId];
 
       const child = buildNodeTree(nodes, actualChildId);
       if (child) {
@@ -118,20 +117,17 @@ const buildNodeTree = (
       }
     }
 
-    // Гарантируем, что все children имеют строковый type
+    /** гарантируем, что все children имеют строковый type  */
     const safeChildren = templateChildren.map((child) => ({
       ...child,
       type: String(child.type),
     }));
 
-    // Пропсы первой ячейки (layout, gridColumns, gridRows) применяем к каждой ячейке в runtime
+    /** пропсы первой ячейки (layout, flex, placeItems) для рендера ячеек; grid не поддерживается в RN, приходит как flex.  */
     const cellProps = cellNode.props ?? {};
     const contentListProps = {
       ...(node.props ?? {}),
       cellLayout: cellProps.layout ?? "block",
-      cellGridColumns: cellProps.gridColumns ?? null,
-      cellGridRows: cellProps.gridRows ?? null,
-      cellGridAutoFlow: cellProps.gridAutoFlow ?? null,
       cellGap: cellProps.gap ?? null,
       cellFlexFlow: cellProps.flexFlow ?? null,
       cellFlexJustifyContent: cellProps.flexJustifyContent ?? null,
@@ -147,18 +143,15 @@ const buildNodeTree = (
     };
   }
 
-  // ContentListCell - это просто обёртка в builder для редактирования, в runtime мы её не рендерим
-  // Её дети обрабатываются напрямую в ContentList при построении шаблона
-  if (componentType === "ContentListCell") {
-    return null;
-  }
+  /** ContentListCell — обёртка в конструкторе для редактирования; здесь не рендерим, дети обрабатываются в ContentList */
+  if (componentType === "ContentListCell") return null;
 
-  // Для остальных компонентов строим дерево как обычно
+  /** для остальных компонентов строим дерево как обычно */
   const childrenIds = node.nodes ?? [];
   const children: ComponentNode[] = [];
 
   for (const childId of childrenIds) {
-    // Проверяем linkedNodes для правильного разрешения id
+    /** проверяем linkedNodes для правильного разрешения id */
     const linkedNodes = node.linkedNodes ?? {};
     const actualChildId = linkedNodes[childId] || childId;
     const child = buildNodeTree(nodes, actualChildId);
@@ -179,8 +172,10 @@ const buildNodeTree = (
   return component;
 };
 
-// Главная функция: берём content из конструктора (строка JSON из Craft.js)
-// и превращаем его в массив ComponentNode
+/**
+ * Преобразует строку content (JSON из конструктора, формат Craft.js) в массив ComponentNode
+ * для рендера страницы нативными компонентами.
+ */
 export const craftContentToComponents = (content: string): ComponentNode[] => {
   if (!content) return [];
 
@@ -201,7 +196,7 @@ export const craftContentToComponents = (content: string): ComponentNode[] => {
   const result: ComponentNode[] = [];
   const rootLinkedNodes = root.linkedNodes ?? {};
 
-  // Берём детей ROOT и строим из них верхний уровень страницы (разрешаем linkedNodes)
+  /** берём детей ROOT и строим из них верхний уровень страницы (разрешаем linkedNodes) */
   for (const childKey of root.nodes) {
     const actualChildId = rootLinkedNodes[childKey] || childKey;
     const child = buildNodeTree(nodes, actualChildId);
@@ -212,4 +207,3 @@ export const craftContentToComponents = (content: string): ComponentNode[] => {
 
   return result;
 };
-

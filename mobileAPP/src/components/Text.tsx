@@ -1,5 +1,5 @@
 import { Text as RNText, StyleSheet, type TextStyle } from "react-native";
-import { useContentData } from "./ContentDataContext";
+import { useContentData } from "../contexts/ContentDataContext";
 
 interface TextProps {
   text?: string;
@@ -11,8 +11,6 @@ interface TextProps {
   fontFamily?: string;
   lineHeight?: number;
   textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
-  strokeColor?: string;
-  strokeWidth?: number;
   isItalic?: boolean;
   isUnderline?: boolean;
   isStrikethrough?: boolean;
@@ -36,8 +34,6 @@ export const Text = ({
   fontFamily,
   lineHeight = 20,
   textTransform = "none",
-  strokeColor,
-  strokeWidth = 0,
   isItalic = false,
   isUnderline = false,
   isStrikethrough = false,
@@ -82,8 +78,6 @@ export const Text = ({
     fontStyle: isItalic ? "italic" : "normal",
     textDecorationLine:
       textDecorationParts.length > 0 ? textDecorationParts.join(" ") : "none",
-    // strokeColor/strokeWidth в RN нативно не поддерживаются как в вебе,
-    // поэтому пока считаем их noop или можно будет реализовать через textShadow.
     marginTop,
     marginRight,
     marginBottom,

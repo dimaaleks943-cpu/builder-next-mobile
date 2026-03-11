@@ -3,4 +3,3 @@ export interface ComponentNode {
   props: Record<string, any>;
   children?: ComponentNode[];
 }
-

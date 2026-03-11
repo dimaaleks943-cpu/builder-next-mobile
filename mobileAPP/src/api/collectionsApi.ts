@@ -1,4 +1,4 @@
-import { RUNTIME_API_BASE_URL } from "./config";
+import { API_BASE_URL } from "./config";
 
 export type CollectionInfo = {
   key: string;
@@ -8,13 +8,11 @@ export type CollectionInfo = {
 
 export type CollectionsMap = Record<string, CollectionInfo>;
 
-/**
- * Получает коллекцию продуктов из API (заглушка, как в site-runtime-ssr).
- */
+/** TODO заглушка загружает коллекцию продуктов с API бэкенда для блоков типа ContentList. */
 export const fetchProductsCollection = async (): Promise<any[] | null> => {
   try {
     const response = await fetch(
-      `${RUNTIME_API_BASE_URL}/v3/client/catalog/products?limit=10&filter=%7B%7D`,
+      `${API_BASE_URL}/v3/client/catalog/products?limit=10&filter=%7B%7D`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -22,19 +20,9 @@ export const fetchProductsCollection = async (): Promise<any[] | null> => {
       },
     );
 
-    if (!response.ok) {
-      console.error(
-        "[mobileApp] Не удалось получить коллекцию products:",
-        response.status,
-        response.statusText,
-      );
-      return null;
-    }
-
     const json = (await response.json()) as { data: any[] };
     return json.data || [];
   } catch (error) {
-    console.error("[mobileApp] Ошибка при запросе коллекции products:", error);
     return null;
   }
 };

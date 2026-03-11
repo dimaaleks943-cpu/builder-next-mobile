@@ -1,3 +1,8 @@
+/**
+ * Рендер контента страницы: маппинг имён компонентов (Body, Block, Text, Image, LinkText, ContentList)
+ * на RN-компоненты и отрисовка страницы из массива узлов (ComponentNode[]).
+ */
+
 import React from "react";
 import { View, Text as RNText } from "react-native";
 import type { ComponentNode } from "./interface";
@@ -17,7 +22,7 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   ContentList,
 };
 
-export function renderComponent(node: ComponentNode): React.ReactElement {
+export const renderComponent = (node: ComponentNode): React.ReactElement => {
   const rawType: any = (node as any).type;
   let componentType: string;
 
@@ -34,12 +39,14 @@ export function renderComponent(node: ComponentNode): React.ReactElement {
     componentType = String(rawType);
   }
 
-  // Для ContentList нужно передать внутрь "сырые" ComponentNode-дети
-  // (шаблон ячейки из конструктора), а не уже отрендеренные React-элементы.
+  /**
+   *  Для ContentList нужно передать внутрь "сырые" ComponentNode-дети (шаблон ячейки из конструктора),
+   *  а не уже отрендеренные React-элементы.
+   *  */
   if (componentType === "ContentList") {
     const templateChildren = (node as any).children as ComponentNode[] | undefined;
     return (
-      <ContentList {...(node as any).props} children={templateChildren} />
+      <ContentList {...(node as any).props} children={templateChildren}/>
     );
   }
 
@@ -47,12 +54,11 @@ export function renderComponent(node: ComponentNode): React.ReactElement {
 
   const children = childrenNodes
     ? childrenNodes.map((child, index) => (
-        <React.Fragment key={index}>{renderComponent(child)}</React.Fragment>
-      ))
+      <React.Fragment key={index}>{renderComponent(child)}</React.Fragment>
+    ))
     : undefined;
 
-  // Узлы-обёртки React.Fragment из сериализованного дерева просто
-  // разворачиваем, не пытаясь искать их в componentMap.
+  /** узлы-обёртки React.Fragment из сериализованного дерева просто разворачиваем, не пытаясь искать их в componentMap. */
   if (componentType.toLowerCase().includes("fragment")) {
     return <>{children}</>;
   }
@@ -60,8 +66,10 @@ export function renderComponent(node: ComponentNode): React.ReactElement {
   const Component = componentMap[componentType];
 
   if (!Component) {
-    // Если мы не знаем компонент, но у него есть дети —
-    // считаем его прозрачной обёрткой и рендерим только детей.
+    /**
+     * Если мы не знаем компонент, но у него есть дети — считаем обёрткой и рендерим только детей.
+     *  В идеале мы должны знать все комопоенты, сделано только для того что не ломать при добавление новых комп. в констркутор
+     *  */
     if (children) {
       return <>{children}</>;
     }
@@ -76,7 +84,7 @@ export function renderComponent(node: ComponentNode): React.ReactElement {
   return <Component {...(node as any).props}>{children}</Component>;
 }
 
-export function renderPage(components: ComponentNode[]): React.ReactElement {
+export const renderPage = (components: ComponentNode[]): React.ReactElement => {
   return (
     <>
       {components.map((component, index) => (
@@ -87,4 +95,3 @@ export function renderPage(components: ComponentNode[]): React.ReactElement {
     </>
   );
 }
-

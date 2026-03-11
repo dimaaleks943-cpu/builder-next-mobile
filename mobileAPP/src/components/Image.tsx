@@ -1,5 +1,5 @@
 import { Image as RNImage, StyleSheet, View, type ImageStyle } from "react-native";
-import { useContentData } from "./ContentDataContext";
+import { useContentData } from "../contexts/ContentDataContext";
 
 interface ImageProps {
   src?: string;
@@ -7,7 +7,7 @@ interface ImageProps {
   width?: number;
   height?: number;
   borderRadius?: number;
-  /** кол-во полей для коллекций пока не поддерживаем в мобилке */
+  /** todo кол-во полей для коллекций пока не поддерживаем в мобилке */
   collectionField?: string | null;
 }
 
@@ -45,11 +45,11 @@ export const Image = ({
     effectiveSrc =
       src && src.trim().length > 0
         ? src
-        : "https://cdn-icons-png.flaticon.com/128/17807/17807769.png";
+        : "https://cdn-icons-png.flaticon.com/128/17807/17807769.png";  //TODO заменить на дефолт
   }
 
   const imageStyle: ImageStyle = {
-    width: width ?? "100%",
+    width: width ?? "100%", //TODO убрать 100%
     height: height ?? undefined,
     minHeight: height ?? 140,
     borderRadius,

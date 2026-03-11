@@ -1,8 +1,10 @@
 /**
- * Базовый URL API, который использует runtime (site-runtime-ssr).
- * Аналог переменной API_URL в `site-runtime-ssr`.
+ * Конфигурация приложения: подключение к бэкенду конструктора и к веб-версии сайта.
+ * значения задаются через переменные окружения Expo (EXPO_PUBLIC_*).
  */
-export const RUNTIME_API_BASE_URL =
+
+/** базовый URL API бэкенда конструктора (список страниц, контент, коллекции). */
+export const API_BASE_URL =
   process.env.EXPO_PUBLIC_RUNTIME_API_URL ?? "https://dev-api.cezyo.com";
 
 const cleanPublicEnv = (value: unknown): string | undefined => {
@@ -14,19 +16,11 @@ const cleanPublicEnv = (value: unknown): string | undefined => {
   return v;
 };
 
-/**
- * Домен сайта, для которого собрана мобильная витрина.
- * В Next.js он берётся из Host, здесь — из переменной окружения.
- *
- * Пример: marketflow.store
- */
-export const RUNTIME_SITE_DOMAIN =
-  cleanPublicEnv(process.env.EXPO_PUBLIC_SITE_DOMAIN) ?? "marketflow.store";
+/** домен сайта, для которого развёрнуто приложение (например marketflow.store). */
+export const SITE_DOMAIN =
+  cleanPublicEnv(process.env.EXPO_PUBLIC_SITE_DOMAIN) ?? "marketflow.store"; // tODO заглушка для разработки marketflow.stor
 
-/**
- * Базовый URL веб-сайта (site-runtime-ssr) для отображения страниц в WebView.
- * По умолчанию: https://{RUNTIME_SITE_DOMAIN}
- */
+/** URL веб-версии сайта для отображения страниц в WebView. По умолчанию: https://{SITE_DOMAIN}. */
 const normalizeWebBaseUrl = (value: string): string => {
   const trimmed = value.trim().replace(/\/+$/, "");
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
@@ -35,12 +29,10 @@ const normalizeWebBaseUrl = (value: string): string => {
   return `https://${trimmed}`;
 };
 
-export const SITE_WEB_BASE_URL = normalizeWebBaseUrl(
+export const WEB_VIEW_BASE_URL = normalizeWebBaseUrl(
   cleanPublicEnv(process.env.EXPO_PUBLIC_SITE_WEB_URL) ??
-    `https://${RUNTIME_SITE_DOMAIN}`,
+    `https://${SITE_DOMAIN}`,
 );
 
 export const cleanDomain = (domain: string): string =>
   domain.includes(":") ? domain.split(":")[0] : domain;
-
-

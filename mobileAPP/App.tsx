@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { StatusBar } from "expo-status-bar"
 import {
   ActivityIndicator,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -13,7 +14,10 @@ import {
   createNativeStackNavigator,
   type NativeStackScreenProps,
 } from "@react-navigation/native-stack"
-import { SITE_WEB_BASE_URL } from "./src/api/config"
+import { WEB_VIEW_BASE_URL } from "./src/api/config"
+import { fetchSitePageBySlug, type SitePage } from "./src/api/sitePagesApi"
+import { craftContentToComponents } from "./src/content/craftContentToComponents"
+import { renderPage } from "./src/content/renderer"
 
 type RootStackParamList = {
   Page: { slug: string }
@@ -23,39 +27,79 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
 
 type PageScreenProps = NativeStackScreenProps<RootStackParamList, "Page">
 
+// Flow: загрузка страницы по slug → при is_mobile_content и наличии content — нативный рендер (craftContentToComponents + renderPage в ScrollView), иначе WebView по WEB_VIEW_BASE_URL + path.
 const PageScreen = ({ route }: PageScreenProps) => {
   const slug = route.params?.slug ?? "/"
+  const [page, setPage] = useState<SitePage | null>(null)
+  const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
 
   const uri = useMemo(() => {
-    const base = SITE_WEB_BASE_URL.replace(/\/$/, "")
+    const base = WEB_VIEW_BASE_URL.replace(/\/$/, "")
     const path = slug === "/" ? "" : slug.startsWith("/") ? slug : `/${slug}`
     return `${base}${path || "/"}`
   }, [slug])
+
+  useEffect(() => {
+    setLoading(true)
+    setLoadError(null)
+    setPage(null)
+
+    fetchSitePageBySlug(slug)
+      .then((p) => {
+        setPage(p)
+        setLoading(false)
+      })
+      .catch(() => {
+        setPage(null)
+        setLoading(false)
+      })
+  }, [slug])
+
+  const showNativeContent =
+    !loading && page?.is_mobile_content === true && page.content
+  let nativeComponents: ReturnType<typeof craftContentToComponents> = []
+  if (showNativeContent) {
+    try {
+      nativeComponents = craftContentToComponents(page.content)
+    } catch {
+      nativeComponents = []
+    }
+  }
+  const useNativeRender = showNativeContent && nativeComponents.length > 0
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
 
       <View style={styles.content}>
-        <WebView
-          source={{ uri }}
-          style={styles.webView}
-          startInLoadingState
-          onError={(e) => {
-            const msg =
-              e?.nativeEvent?.description ??
-              e?.nativeEvent?.code?.toString() ??
-              "Unknown WebView error"
-            setLoadError(`${msg}\nURL: ${uri}`)
-          }}
-          renderLoading={() => (
-            <View style={styles.loadingOverlay}>
-              <ActivityIndicator size="small" />
-              <Text style={styles.message}>Загружаем страницу...</Text>
-            </View>
-          )}
-        />
+        {loading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="small" />
+            <Text style={styles.message}>Загружаем страницу...</Text>
+          </View>
+        )}
+
+        {!loading && useNativeRender && (
+          <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+            {renderPage(nativeComponents)}
+          </ScrollView>
+        )}
+
+        {!loading && !useNativeRender && (
+          <WebView
+            source={{ uri }}
+            style={styles.webView}
+            startInLoadingState={false}
+            onError={(e) => {
+              const msg =
+                e?.nativeEvent?.description ??
+                e?.nativeEvent?.code?.toString() ??
+                "Unknown WebView error"
+              setLoadError(`${msg}\nURL: ${uri}`)
+            }}
+          />
+        )}
 
         {loadError && (
           <View style={styles.errorOverlay}>
@@ -89,6 +133,12 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   webView: {
     flex: 1,

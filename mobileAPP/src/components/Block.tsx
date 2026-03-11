@@ -1,14 +1,30 @@
 import type { ReactNode } from "react";
 import { View, StyleSheet } from "react-native";
 
-type BlockLayoutMode = "block" | "flex" | "grid" | "absolute";
+type BlockLayoutMode = "block" | "flex" | "absolute";
+
+type FlexFlowOption = "row" | "column" | "wrap";
+type FlexJustifyContent =
+  | "flex-start"
+  | "center"
+  | "flex-end"
+  | "space-between"
+  | "space-around";
+type FlexAlignItems =
+  | "flex-start"
+  | "center"
+  | "flex-end"
+  | "stretch"
+  | "baseline";
 
 interface BlockProps {
   children?: ReactNode;
   fullSize?: boolean;
   layout?: BlockLayoutMode;
-  gridColumns?: number;
-  gridRows?: number;
+  flexFlow?: FlexFlowOption;
+  flexJustifyContent?: FlexJustifyContent;
+  flexAlignItems?: FlexAlignItems;
+  gap?: number;
   // margins
   marginTop?: number;
   marginRight?: number;
@@ -45,8 +61,10 @@ export const Block = ({
   children,
   fullSize,
   layout = "block",
-  gridColumns,
-  gridRows,
+  flexFlow = "row",
+  flexJustifyContent,
+  flexAlignItems,
+  gap,
   marginTop = 0,
   marginRight = 0,
   marginBottom = 0,
@@ -75,20 +93,23 @@ export const Block = ({
     ? withOpacity(borderColor, borderOpacity)
     : "transparent";
 
-  // Имитация поведения веб-Block:
-  // - layout="block" → дети в строку (как inline в div), при переполнении могут переноситься.
-  // - layout="flex"  → горизонтальный flex-ряд.
-  // - layout="grid"  → сетка через flex-wrap (будет доработана вместе с gridColumns/gridRows).
+  /** при layout="flex" направление и выравнивание задаются flexFlow, flexJustifyContent, flexAlignItems.
+   *  "grid" трактуем как flex (row + wrap). TODO по идем приходить grid не должен, это престраховка */
+  const effectiveLayout = layout === "grid" ? "flex" : layout;
+  const isFlex = effectiveLayout === "flex";
   const flexDirection =
-    layout === "block" || layout === "flex" || layout === "grid"
-      ? "row"
-      : "column";
+    effectiveLayout === "absolute"
+      ? "column"
+      : isFlex
+        ? layout === "grid"
+          ? "row"
+          : flexFlow === "column"
+            ? "column"
+            : "row"
+        : "row";
 
-  const flexWrap =
-    layout === "grid" ? "wrap" : "nowrap";
-
-  const position = layout === "absolute" ? "absolute" : "relative";
-
+  const flexWrap = isFlex && flexFlow === "wrap" ? "wrap" : "nowrap";
+  const position = effectiveLayout === "absolute" ? "absolute" : "relative";
   const shadowStyle = fullSize
     ? {}
     : {
@@ -99,6 +120,8 @@ export const Block = ({
         elevation: 1,
       };
 
+  const gapStyle = isFlex && gap != null && gap >= 0 ? { gap } : {};
+
   return (
     <View
       style={[
@@ -108,6 +131,9 @@ export const Block = ({
           flexDirection,
           flexWrap,
           position,
+          ...(isFlex && flexJustifyContent != null && { justifyContent: flexJustifyContent }),
+          ...(isFlex && flexAlignItems != null && { alignItems: flexAlignItems }),
+          ...gapStyle,
           width: fullSize ? "100%" : undefined,
           height: fullSize ? "100%" : undefined,
           marginTop,
@@ -135,8 +161,6 @@ export const Block = ({
 };
 
 const styles = StyleSheet.create({
-  block: {
-    boxSizing: "border-box" as any,
-  },
+  block: {},
 });
 

@@ -1,19 +1,17 @@
 import React from "react";
 import { View, StyleSheet, Text as RNText } from "react-native";
-import type { ComponentNode } from "../runtime/interface";
+import type { ComponentNode } from "../content/interface";
 import { getCollectionByKey } from "../api/collectionsApi";
-import { ContentDataProvider } from "./ContentDataContext";
-import { renderComponent } from "../runtime/renderer";
+import { ContentDataProvider } from "../contexts/ContentDataContext";
+import { renderComponent } from "../content/renderer";
 
-type CellLayoutMode = "block" | "flex" | "grid" | "absolute";
+type CellLayoutMode = "block" | "flex" | "absolute";
 
 interface ContentListProps {
   selectedSource?: string;
   itemsPerRow?: number;
-  cellLayout?: CellLayoutMode;
-  cellGridColumns?: number;
-  cellGridRows?: number;
-  cellGridAutoFlow?: "row" | "column" | null;
+  /** при "grid" с API считаем это как flex (row + wrap). временно  */
+  cellLayout?: CellLayoutMode | "grid";
   cellGap?: number | null;
   cellFlexFlow?: "row" | "column" | "wrap" | null;
   cellFlexJustifyContent?:
@@ -34,14 +32,11 @@ interface ContentListProps {
   cellPlaceItemsX?: "start" | "center" | "end" | "stretch" | "baseline" | null;
   children?: ComponentNode[];
 }
-
+//TODO проверить не добавляем ли мы случайно грид в конструкторе, проверсти рефакторинг убрать грид
 export const ContentList = ({
   selectedSource = "",
   itemsPerRow: itemsPerRowProp,
   cellLayout = "block",
-  cellGridColumns,
-  cellGridRows,
-  cellGridAutoFlow,
   cellGap,
   cellFlexFlow,
   cellFlexJustifyContent,
@@ -73,7 +68,6 @@ export const ContentList = ({
         setIsLoading(false);
       })
       .catch((error) => {
-        console.error("[mobileApp] Ошибка при загрузке коллекции:", error);
         setCollectionItems([]);
         setIsLoading(false);
       });
@@ -111,9 +105,6 @@ export const ContentList = ({
                 collectionKey={selectedSource}
                 itemsPerRow={itemsPerRow}
                 layout={cellLayout}
-                gridColumns={cellGridColumns}
-                gridRows={cellGridRows}
-                gridAutoFlow={cellGridAutoFlow ?? undefined}
                 gap={cellGap ?? undefined}
                 flexFlow={cellFlexFlow ?? undefined}
                 flexJustifyContent={cellFlexJustifyContent ?? undefined}
@@ -135,10 +126,7 @@ interface ContentListItemProps {
   itemData: any;
   collectionKey: string | null;
   itemsPerRow: number;
-  layout?: "block" | "flex" | "grid" | "absolute";
-  gridColumns?: number;
-  gridRows?: number;
-  gridAutoFlow?: "row" | "column";
+  layout?: "block" | "flex" | "absolute" | "grid";
   gap?: number;
   flexFlow?: "row" | "column" | "wrap";
   flexJustifyContent?:
@@ -181,9 +169,6 @@ const ContentListItem = ({
   collectionKey,
   itemsPerRow,
   layout = "block",
-  gridColumns,
-  gridRows,
-  gridAutoFlow = "row",
   gap,
   flexFlow = "row",
   flexJustifyContent,
@@ -192,21 +177,19 @@ const ContentListItem = ({
   placeItemsX,
   children,
 }: ContentListItemProps) => {
-  const isGrid = layout === "grid";
-  const isFlex = layout === "flex";
+  const effectiveLayout = layout === "grid" ? "flex" : layout;
+  const isFlex = effectiveLayout === "flex";
 
   const hasTemplate = children && children.length > 0;
 
   const flexDirection = isFlex
-    ? flexFlow === "column"
-      ? "column"
-      : "row"
-    : isGrid
-      ? gridAutoFlow === "column"
+    ? layout === "grid"
+      ? "row"
+      : flexFlow === "column"
         ? "column"
         : "row"
-      : "column";
-  const flexWrap = isGrid ? "wrap" : isFlex && flexFlow === "wrap" ? "wrap" : "nowrap";
+    : "column";
+  const flexWrap = isFlex && (layout === "grid" || flexFlow === "wrap") ? "wrap" : "nowrap";
   const alignItems = isFlex && flexAlignItems != null
     ? flexAlignItems
     : (toAlignItems(placeItemsY) ?? undefined);
@@ -256,7 +239,6 @@ const styles = StyleSheet.create({
   item: {
     minHeight: 48,
     padding: 16,
-    boxSizing: "border-box" as any,
   },
   placeholder: {
     width: "100%",

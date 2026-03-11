@@ -12,8 +12,6 @@ interface LinkTextProps {
   fontFamily?: string;
   lineHeight?: number;
   textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
-  strokeColor?: string;
-  strokeWidth?: number;
   isItalic?: boolean;
   isUnderline?: boolean;
   isStrikethrough?: boolean;
@@ -30,7 +28,7 @@ interface LinkTextProps {
 export const LinkText = ({
   text = "Ссылка",
   href,
-  openInNewTab, // не используется в мобилке, но оставляем для совместимости с контрактом
+  openInNewTab, // не используется в RN, оставлен для совместимости с типом конструктора
   fontSize = 14,
   fontWeight = "normal",
   textAlign = "left",
@@ -38,8 +36,6 @@ export const LinkText = ({
   fontFamily,
   lineHeight = 20,
   textTransform = "none",
-  strokeColor,
-  strokeWidth = 0,
   isItalic = false,
   isUnderline = false,
   isStrikethrough = false,
