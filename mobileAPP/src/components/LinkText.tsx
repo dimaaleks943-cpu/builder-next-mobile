@@ -71,7 +71,7 @@ export const LinkText = ({
     textDecorationParts.push("underline");
   }
 
-  const style: TextStyle = {
+  const style = {
     fontSize,
     fontWeight,
     textAlign,
@@ -89,7 +89,7 @@ export const LinkText = ({
     paddingRight,
     paddingBottom,
     paddingLeft,
-  };
+  } as TextStyle;
 
   return (
     <Pressable onPress={handlePress}>

@@ -20,7 +20,7 @@ type FlexAlignItems =
 interface BlockProps {
   children?: ReactNode;
   fullSize?: boolean;
-  layout?: BlockLayoutMode;
+  layout?: BlockLayoutMode | "grid"; //TODo врменно
   flexFlow?: FlexFlowOption;
   flexJustifyContent?: FlexJustifyContent;
   flexAlignItems?: FlexAlignItems;
@@ -47,7 +47,6 @@ interface BlockProps {
   backgroundColor?: string;
 }
 
-// Простейшее применение opacity к hex‑цвету вида #RRGGBB
 const withOpacity = (color: string, opacity: number): string => {
   const normalized = color.startsWith("#") ? color.slice(1) : color;
   if (normalized.length !== 6) return color;
@@ -90,7 +89,7 @@ export const Block = ({
     borderLeftWidth > 0;
 
   const effectiveBorderColor = hasCustomBorder
-    ? withOpacity(borderColor, borderOpacity)
+    ? withOpacity(borderColor ?? "#CBD5E0", borderOpacity ?? 1)
     : "transparent";
 
   /** при layout="flex" направление и выравнивание задаются flexFlow, flexJustifyContent, flexAlignItems.
@@ -145,7 +144,7 @@ export const Block = ({
           paddingBottom,
           paddingLeft,
           borderRadius: fullSize ? 0 : borderRadius,
-          borderStyle: hasCustomBorder ? (borderStyle || "solid") : "solid",
+          borderStyle: hasCustomBorder && borderStyle !== "none" ? borderStyle : "solid",
           borderColor: effectiveBorderColor,
           borderTopWidth: hasCustomBorder ? borderTopWidth : 0,
           borderRightWidth: hasCustomBorder ? borderRightWidth : 0,

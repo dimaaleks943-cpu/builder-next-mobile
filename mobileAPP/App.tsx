@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { ComponentType, useEffect, useMemo, useState } from "react"
 import { StatusBar } from "expo-status-bar"
 import {
   ActivityIndicator,
@@ -27,7 +27,10 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
 
 type PageScreenProps = NativeStackScreenProps<RootStackParamList, "Page">
 
-// Flow: загрузка страницы по slug → при is_mobile_content и наличии content — нативный рендер (craftContentToComponents + renderPage в ScrollView), иначе WebView по WEB_VIEW_BASE_URL + path.
+/**
+ * загрузка страницы по slug => при is_mobile_content и наличии content — нативный рендер (craftContentToComponents + renderPage в ScrollView),
+ *  иначе WebView по WEB_VIEW_BASE_URL + path.
+ */
 const PageScreen = ({ route }: PageScreenProps) => {
   const slug = route.params?.slug ?? "/"
   const [page, setPage] = useState<SitePage | null>(null)
@@ -57,9 +60,9 @@ const PageScreen = ({ route }: PageScreenProps) => {
   }, [slug])
 
   const showNativeContent =
-    !loading && page?.is_mobile_content === true && page.content
+    !loading && page?.is_mobile_content === true && page?.content != null
   let nativeComponents: ReturnType<typeof craftContentToComponents> = []
-  if (showNativeContent) {
+  if (showNativeContent && page?.content) {
     try {
       nativeComponents = craftContentToComponents(page.content)
     } catch {
@@ -70,12 +73,12 @@ const PageScreen = ({ route }: PageScreenProps) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="dark" />
+      <StatusBar style="dark"/>
 
       <View style={styles.content}>
         {loading && (
           <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="small" />
+            <ActivityIndicator size="small"/>
             <Text style={styles.message}>Загружаем страницу...</Text>
           </View>
         )}
@@ -118,7 +121,7 @@ export default function App() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen
           name="Page"
-          component={PageScreen}
+          component={PageScreen as ComponentType}
           initialParams={{ slug: "/" }}
         />
       </Stack.Navigator>
@@ -126,7 +129,7 @@ export default function App() {
   )
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create({ //TODO
   safeArea: {
     flex: 1,
     backgroundColor: "#F5F5F5",

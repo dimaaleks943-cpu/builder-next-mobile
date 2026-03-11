@@ -67,7 +67,7 @@ export const Text = ({
     textDecorationParts.push("line-through");
   }
 
-  const style: TextStyle = {
+  const style = {
     fontSize,
     fontWeight,
     textAlign,
@@ -86,7 +86,7 @@ export const Text = ({
     paddingRight,
     paddingBottom,
     paddingLeft,
-  };
+  } as TextStyle;
 
   return <RNText style={[styles.base, style]}>{displayText}</RNText>;
 };

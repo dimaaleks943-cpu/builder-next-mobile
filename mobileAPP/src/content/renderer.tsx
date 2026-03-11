@@ -13,14 +13,14 @@ import { Image } from "../components/Image";
 import { LinkText } from "../components/LinkText";
 import { ContentList } from "../components/ContentList";
 
-const componentMap: Record<string, React.ComponentType<any>> = {
+const componentMap = {
   Body,
   Block,
   Text,
   Image,
   LinkText,
   ContentList,
-};
+} as Record<string, React.ComponentType<any>>;
 
 export const renderComponent = (node: ComponentNode): React.ReactElement => {
   const rawType: any = (node as any).type;
