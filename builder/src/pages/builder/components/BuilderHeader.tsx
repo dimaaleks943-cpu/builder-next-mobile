@@ -8,6 +8,9 @@ import {
   type BuilderMode,
 } from "../context/BuilderModeContext"
 import { MODE_TYPE } from "../builder.enum"
+import { MonitorIcon } from "../../../icons/MonitorIcon.tsx";
+import { TabletIcon } from "../../../icons/TabletIcon.tsx";
+import { MobileIcon } from "../../../icons/MobileIcon.tsx";
 
 interface BuilderHeaderProps {
   pageId?: string;
@@ -124,63 +127,79 @@ export const BuilderHeader = ({ pageId }: BuilderHeaderProps) => {
       }}
       onClick={handleClick}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: "8px" }}>
+
         <IconButton onClick={() => navigate(-1)} sx={{ padding: 0 }}>
           {"<="}
         </IconButton>
 
-        {modeContext && (
-          <Box
-            sx={{
-              display: "flex",
-              border: `1px solid ${COLORS.gray200}`,
-              borderRadius: "4px",
-              overflow: "hidden",
-            }}
-          >
-            {MODES.map(({ value, label }) => (
-              <Box
-                key={value}
-                component="button"
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleModeChange(value)
-                }}
-                sx={{
-                  paddingTop: "4px",
-                  paddingRight: "10px",
-                  paddingBottom: "4px",
-                  paddingLeft: "10px",
-                  fontSize: "12px",
-                  border: "none",
-                  cursor: "pointer",
-                  backgroundColor:
-                    modeContext.mode === value ? COLORS.purple100 : "transparent",
-                  color:
-                    modeContext.mode === value
-                      ? COLORS.purple400
-                      : COLORS.gray600,
-                  "&:hover": {
-                    backgroundColor:
-                      modeContext.mode === value
-                        ? COLORS.purple100
-                        : COLORS.gray100,
-                  },
-                }}
-              >
-                {label}
-              </Box>
-            ))}
-          </Box>
-        )}
-      </Box>
+        <Box sx={{ display: "flex", columnGap: "8px" }}>
+          <IconButton onClick={() => {
+          }}>
+            <MonitorIcon/>
+          </IconButton>
 
-      <Box>
-        <Button variant="outlined" size="small" onClick={handleSave}>
-          Сохранить
-        </Button>
-      </Box>
+          <IconButton onClick={() => {
+          }}>
+            <TabletIcon/>
+          </IconButton>
+
+          <IconButton onClick={() => {
+          }}>
+            <MobileIcon/>
+          </IconButton>
+        </Box>
+
+        <Box sx={{ display: "flex", alignItems: "center", columnGap: "12px" }}>
+          {modeContext && (
+            <Box
+              sx={{
+                display: "flex",
+                border: `1px solid ${COLORS.gray200}`,
+                borderRadius: "4px",
+                overflow: "hidden",
+              }}
+            >
+              {MODES.map(({ value, label }) => (
+                <Box
+                  key={value}
+                  component="button"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleModeChange(value)
+                  }}
+                  sx={{
+                    paddingTop: "4px",
+                    paddingRight: "10px",
+                    paddingBottom: "4px",
+                    paddingLeft: "10px",
+                    fontSize: "12px",
+                    border: "none",
+                    cursor: "pointer",
+                    backgroundColor:
+                      modeContext.mode === value ? COLORS.purple100 : "transparent",
+                    color:
+                      modeContext.mode === value
+                        ? COLORS.purple400
+                        : COLORS.gray600,
+                    "&:hover": {
+                      backgroundColor:
+                        modeContext.mode === value
+                          ? COLORS.purple100
+                          : COLORS.gray100,
+                    },
+                  }}
+                >
+                  {label}
+                </Box>
+              ))}
+            </Box>
+          )}
+          <Button variant="outlined" size="small" onClick={handleSave}>
+            Сохранить
+          </Button>
+        </Box>
+
     </Box>
   )
 }
