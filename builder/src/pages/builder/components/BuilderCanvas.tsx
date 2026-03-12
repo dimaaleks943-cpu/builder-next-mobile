@@ -2,15 +2,20 @@ import { useEffect, useRef } from "react"
 import { Box, IconButton } from "@mui/material"
 import { Frame, Element, useEditor, type SerializedNodes } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
+import { getPreviewMaxWidth, type PreviewViewport } from "../builder.enum"
 import { CraftBody } from "../../../craft/Body.tsx"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
 import { UpdateIcon } from "../../../icons/UpdateIcon"
 
 interface BuilderCanvasProps {
   initialContent: SerializedNodes | null
+  previewViewport: PreviewViewport
 }
 
-export const BuilderCanvas = ({ initialContent }: BuilderCanvasProps) => {
+export const BuilderCanvas = ({
+  initialContent,
+  previewViewport,
+}: BuilderCanvasProps) => {
   const { actions } = useEditor()
   const { selectedId, canDeleteSelected } = useEditor((state, query) => {
     const [id] = Array.from(state.events.selected)
@@ -220,6 +225,9 @@ export const BuilderCanvas = ({ initialContent }: BuilderCanvasProps) => {
         <Box
           sx={{
             width: "100%",
+            maxWidth: getPreviewMaxWidth(previewViewport),
+            marginLeft: "auto",
+            marginRight: "auto",
             backgroundColor: COLORS.white,
             display: "flex",
           }}

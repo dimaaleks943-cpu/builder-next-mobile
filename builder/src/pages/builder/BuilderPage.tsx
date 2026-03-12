@@ -22,7 +22,7 @@ import {
   type ExtranetPageResponse,
   fetchProductsCollection,
 } from "../../api/extranet"
-import { MODE_TYPE } from "./builder.enum"
+import { MODE_TYPE, type PreviewViewport } from "./builder.enum"
 
 /** Пустое дерево Craft (только ROOT + Body без детей). Нужно, чтобы при переключении на режим с пустым контентом Canvas вызывал deserialize и очищал холст, а не игнорировал null. */
 const EMPTY_SERIALIZED_NODES: SerializedNodes = {
@@ -58,6 +58,7 @@ export const BuilderPage = () => {
   const [contentWeb, setContentWeb] = useState("")
   const [contentMobile, setContentMobile] = useState("")
   const [loaded, setLoaded] = useState(false)
+  const [previewViewport, setPreviewViewport] = useState<PreviewViewport>("desktop")
 
   useEffect(() => {
     if (!id) return
@@ -173,7 +174,11 @@ export const BuilderPage = () => {
                 backgroundColor: COLORS.gray100,
               }}
             >
-              <BuilderHeader pageId={id} />
+              <BuilderHeader
+                pageId={id}
+                previewViewport={previewViewport}
+                onPreviewViewportChange={setPreviewViewport}
+              />
 
               <Box
                 sx={{
@@ -184,7 +189,10 @@ export const BuilderPage = () => {
                 }}
               >
                 <BuilderLeftPanel />
-                <BuilderCanvas initialContent={initialContent} />
+                <BuilderCanvas
+                  initialContent={initialContent}
+                  previewViewport={previewViewport}
+                />
                 <BuilderRightPanel />
               </Box>
             </Box>

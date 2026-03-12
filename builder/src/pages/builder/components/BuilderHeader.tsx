@@ -7,21 +7,27 @@ import {
   useBuilderModeContext,
   type BuilderMode,
 } from "../context/BuilderModeContext"
-import { MODE_TYPE } from "../builder.enum"
+import { MODE_TYPE, type PreviewViewport } from "../builder.enum"
 import { MonitorIcon } from "../../../icons/MonitorIcon.tsx";
 import { TabletIcon } from "../../../icons/TabletIcon.tsx";
 import { MobileIcon } from "../../../icons/MobileIcon.tsx";
 
 interface BuilderHeaderProps {
-  pageId?: string;
+  pageId?: string
+  previewViewport: PreviewViewport
+  onPreviewViewportChange: (viewport: PreviewViewport) => void
 }
 
 const MODES: { value: BuilderMode; label: string }[] = [
-  { value: MODE_TYPE.WEB, label: "Веб" },
-  { value: MODE_TYPE.RN, label: "Мобилка" },
+  { value: MODE_TYPE.WEB, label: "WEB" },
+  { value: MODE_TYPE.RN, label: "APP" },
 ]
 
-export const BuilderHeader = ({ pageId }: BuilderHeaderProps) => {
+export const BuilderHeader = ({
+  pageId,
+  previewViewport,
+  onPreviewViewportChange,
+}: BuilderHeaderProps) => {
   const navigate = useNavigate()
   const { actions, query } = useEditor()
   const modeContext = useBuilderModeContext()
@@ -128,77 +134,98 @@ export const BuilderHeader = ({ pageId }: BuilderHeaderProps) => {
       onClick={handleClick}
     >
 
-        <IconButton onClick={() => navigate(-1)} sx={{ padding: 0 }}>
-          {"<="}
+      <IconButton onClick={() => navigate(-1)} sx={{ padding: 0 }}>
+        {"<="}
+      </IconButton>
+
+      <Box sx={{ display: "flex", columnGap: "8px" }}>
+        <IconButton
+          onClick={(e) => {
+            e.stopPropagation()
+            onPreviewViewportChange("desktop")
+          }}
+          size="small"
+          title="Десктоп"
+          disableRipple
+        >
+          <MonitorIcon fill={previewViewport === "desktop" ? COLORS.purple400 : COLORS.gray600}/>
         </IconButton>
 
-        <Box sx={{ display: "flex", columnGap: "8px" }}>
-          <IconButton onClick={() => {
-          }}>
-            <MonitorIcon/>
-          </IconButton>
+        <IconButton
+          disableRipple
+          onClick={(e) => {
+            e.stopPropagation()
+            onPreviewViewportChange("tablet")
+          }}
+          size="small"
+          title="Планшет"
+        >
+          <TabletIcon fill={previewViewport === "tablet" ? COLORS.purple400 : COLORS.gray600}/>
+        </IconButton>
 
-          <IconButton onClick={() => {
-          }}>
-            <TabletIcon/>
-          </IconButton>
+        <IconButton
+          onClick={(e) => {
+            e.stopPropagation()
+            onPreviewViewportChange("phone")
+          }}
+          size="small"
+          title="Телефон"
+          disableRipple
+        >
+          <MobileIcon fill={previewViewport === "phone" ? COLORS.purple400 : COLORS.gray600}/>
+        </IconButton>
+      </Box>
 
-          <IconButton onClick={() => {
-          }}>
-            <MobileIcon/>
-          </IconButton>
-        </Box>
-
-        <Box sx={{ display: "flex", alignItems: "center", columnGap: "12px" }}>
-          {modeContext && (
-            <Box
-              sx={{
-                display: "flex",
-                border: `1px solid ${COLORS.gray200}`,
-                borderRadius: "4px",
-                overflow: "hidden",
-              }}
-            >
-              {MODES.map(({ value, label }) => (
-                <Box
-                  key={value}
-                  component="button"
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleModeChange(value)
-                  }}
-                  sx={{
-                    paddingTop: "4px",
-                    paddingRight: "10px",
-                    paddingBottom: "4px",
-                    paddingLeft: "10px",
-                    fontSize: "12px",
-                    border: "none",
-                    cursor: "pointer",
+      <Box sx={{ display: "flex", alignItems: "center", columnGap: "12px" }}>
+        {modeContext && (
+          <Box
+            sx={{
+              display: "flex",
+              border: `1px solid ${COLORS.gray200}`,
+              borderRadius: "4px",
+              overflow: "hidden",
+            }}
+          >
+            {MODES.map(({ value, label }) => (
+              <Box
+                key={value}
+                component="button"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleModeChange(value)
+                }}
+                sx={{
+                  paddingTop: "4px",
+                  paddingRight: "10px",
+                  paddingBottom: "4px",
+                  paddingLeft: "10px",
+                  fontSize: "12px",
+                  border: "none",
+                  cursor: "pointer",
+                  backgroundColor:
+                    modeContext.mode === value ? COLORS.purple100 : "transparent",
+                  color:
+                    modeContext.mode === value
+                      ? COLORS.purple400
+                      : COLORS.gray600,
+                  "&:hover": {
                     backgroundColor:
-                      modeContext.mode === value ? COLORS.purple100 : "transparent",
-                    color:
                       modeContext.mode === value
-                        ? COLORS.purple400
-                        : COLORS.gray600,
-                    "&:hover": {
-                      backgroundColor:
-                        modeContext.mode === value
-                          ? COLORS.purple100
-                          : COLORS.gray100,
-                    },
-                  }}
-                >
-                  {label}
-                </Box>
-              ))}
-            </Box>
-          )}
-          <Button variant="outlined" size="small" onClick={handleSave}>
-            Сохранить
-          </Button>
-        </Box>
+                        ? COLORS.purple100
+                        : COLORS.gray100,
+                  },
+                }}
+              >
+                {label}
+              </Box>
+            ))}
+          </Box>
+        )}
+        <Button variant="outlined" size="small" onClick={handleSave}>
+          Сохранить
+        </Button>
+      </Box>
 
     </Box>
   )
