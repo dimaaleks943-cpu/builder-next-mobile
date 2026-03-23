@@ -4,9 +4,6 @@ import type { IContentItem, IContentTypeField } from "../../../api/extranet"
 /**
  * Коллекция в билдере: `key` — `content_type_id` (UUID) для привязки в JSON страницы.
  * `fields` — метаданные полей типа (имена для селекта); `items` — экземпляры, подгружаются лениво.
- *
- * Обратная совместимость: старые страницы с `selectedSource: "products"` и плоскими ключами полей
- * перестанут резолвиться после перехода на content API — такие пресеты нужно перепривязать в редакторе.
  */
 export type CollectionInfo = {
   key: string

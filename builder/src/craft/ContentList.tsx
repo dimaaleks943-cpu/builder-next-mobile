@@ -1,7 +1,6 @@
 import { useNode, useEditor, Element } from "@craftjs/core"
 import { useState, useEffect, useRef, startTransition } from "react"
 import { useLazyGetContentItemsQuery } from "../store/extranetApi"
-import { isExtranetContentTypeId } from "../utils/contentFieldValue"
 import { COLORS } from "../theme/colors"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import { useCollectionsContext } from "../pages/builder/context/CollectionsContext.tsx"
@@ -150,7 +149,6 @@ export const CraftContentList = ({}: ContentListProps) => {
 
   useEffect(() => {
     if (!selectedSource || !collectionsContext?.setCollectionItems) return
-    if (!isExtranetContentTypeId(selectedSource)) return
 
     const collection = collectionsContext.collections.find(
       (c) => c.key === selectedSource,
@@ -592,18 +590,6 @@ export const CraftContentList = ({}: ContentListProps) => {
             </option>
           ))}
         </select>
-
-        {selectedSource && !isExtranetContentTypeId(selectedSource) && (
-          <div
-            style={{
-              marginTop: 8,
-              fontSize: 11,
-              color: COLORS.gray600,
-            }}
-          >
-            This source is no longer available. Rebind the list to a content type from extranet.
-          </div>
-        )}
 
         {selectedSource ? (
           <div

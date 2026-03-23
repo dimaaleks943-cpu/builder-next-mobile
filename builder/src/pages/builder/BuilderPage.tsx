@@ -32,7 +32,7 @@ function pickBindableTypeFields(
 ): IContentTypeField[] {
   if (!fields?.length) return []
   return fields.filter(
-    (f) => f.reference_type == null || f.reference_type === "item",
+    (f) => f.reference_type === "item",
   )
 }
 

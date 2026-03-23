@@ -9,11 +9,7 @@ import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
 import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 import { TextSettingsFields } from "../pages/builder/settingsCraftComponents"
 import type { IContentItem } from "../api/extranet"
-import {
-  findContentItemField,
-  getContentFieldDisplayValue,
-  isLegacyFlatCollectionItem,
-} from "../utils/contentFieldValue"
+import { findContentItemField, getContentFieldDisplayValue } from "../utils/contentFieldValue"
 
 export type TextAlign = "left" | "center" | "right"
 
@@ -95,16 +91,6 @@ export const CraftText = ({
       return text
     }
     const item = contentListData.itemData as IContentItem
-    if (isLegacyFlatCollectionItem(item)) {
-      const fieldValue = (item as Record<string, unknown>)[collectionField]
-      if (fieldValue !== null && fieldValue !== undefined) {
-        if (typeof fieldValue === "object") {
-          return JSON.stringify(fieldValue)
-        }
-        return String(fieldValue)
-      }
-      return text
-    }
     const field = findContentItemField(item, collectionField)
     const resolved = getContentFieldDisplayValue(field)
     return resolved !== "" ? resolved : text

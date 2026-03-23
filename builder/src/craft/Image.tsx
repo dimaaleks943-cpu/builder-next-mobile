@@ -7,12 +7,6 @@ import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import { ImageSettingsFields } from "../pages/builder/settingsCraftComponents"
-import type { IContentItem } from "../api/extranet"
-import {
-  findContentItemField,
-  getContentFieldImageUrl,
-  isLegacyFlatCollectionItem,
-} from "../utils/contentFieldValue"
 
 interface Props {
   src?: string;
@@ -48,32 +42,12 @@ export const CraftImage = ({
 
   const effectiveSrc = useMemo(() => {
     // Если есть выбранное поле коллекции и данные элемента — берём URL из коллекции.
-    if (collectionField && contentListData?.itemData) {
-      const item = contentListData.itemData as IContentItem
-      if (isLegacyFlatCollectionItem(item)) {
-        const fieldValue = (item as Record<string, unknown>)[collectionField]
-        if (fieldValue !== null && fieldValue !== undefined) {
-          if (typeof fieldValue === "string") {
-            return fieldValue
-          }
-          if (typeof fieldValue === "object") {
-            const asAny = fieldValue as Record<string, unknown>
-            const fromDirectUrl = asAny.url as string | undefined
-            const urls = asAny.urls as { small?: { url?: string }; original?: { url?: string } } | undefined
-            const fromSmall = urls?.small?.url
-            const fromOriginal = urls?.original?.url
-            const candidate = fromDirectUrl ?? fromSmall ?? fromOriginal
-            if (candidate && typeof candidate === "string") {
-              return candidate
-            }
-          }
-        }
-      } else {
-        const field = findContentItemField(item, collectionField)
-        const url = getContentFieldImageUrl(field)
-        if (url) return url
-      }
-    }
+    // if (collectionField && contentListData?.itemData) { TODO тип данных как img пока отстутсвует в колеекции
+    //   const item = contentListData.itemData as IContentItem
+    //   const field = findContentItemField(item, collectionField)
+    //   const url = getContentFieldImageUrl(field)
+    //   if (url) return url
+    // }
 
     // Иначе используем вручную заданный URL.
     const manualSrc = src

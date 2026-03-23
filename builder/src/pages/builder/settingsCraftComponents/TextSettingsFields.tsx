@@ -11,7 +11,6 @@ import type { IContentItem } from "../../../api/extranet";
 import {
   findContentItemField,
   getContentFieldDisplayValue,
-  isLegacyFlatCollectionItem,
 } from "../../../utils/contentFieldValue";
 
 interface SelectedTextProps {
@@ -122,14 +121,6 @@ export const TextSettingsFields = ({ asAccordion }: Props) => {
   const resolveCollectionText = (fieldId: string | null): string | undefined => {
     if (!fieldId || !contentListData?.itemData) return undefined;
     const item = contentListData.itemData as IContentItem;
-    if (isLegacyFlatCollectionItem(item)) {
-      const fieldValue = (item as Record<string, unknown>)[fieldId];
-      if (fieldValue === null || fieldValue === undefined) return undefined;
-      if (typeof fieldValue === "object") {
-        return JSON.stringify(fieldValue);
-      }
-      return String(fieldValue);
-    }
     return getContentFieldDisplayValue(findContentItemField(item, fieldId));
   };
 
