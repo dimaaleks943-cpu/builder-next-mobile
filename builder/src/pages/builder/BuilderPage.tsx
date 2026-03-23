@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Box } from "@mui/material"
 import { Editor, type SerializedNodes } from "@craftjs/core"
 import { useParams } from "react-router-dom"
@@ -7,7 +7,10 @@ import { BuilderLeftPanel } from "./components/BuilderLeftPanel/BuilderLeftPanel
 import { BuilderCanvas } from "./components/BuilderCanvas"
 import { BuilderRightPanel } from "./components/BuilderRightPanel"
 import { RightPanelContext } from "./context/RightPanelContext.tsx"
-import { CollectionsContext } from "./context/CollectionsContext.tsx"
+import {
+  CollectionsContext,
+  type CollectionInfo,
+} from "./context/CollectionsContext.tsx"
 import { BuilderModeContext } from "./context/BuilderModeContext.tsx"
 import { COLORS } from "../../theme/colors"
 import { CraftBlock } from "../../craft/Block.tsx"
@@ -17,12 +20,21 @@ import { CraftLinkText } from "../../craft/LinkText.tsx"
 import { CraftContentList } from "../../craft/ContentList.tsx"
 import { CraftContentListCell } from "../../craft/ContentListCell.tsx"
 import { CraftImage } from "../../craft/Image.tsx"
+import type { IContentItem, IContentTypeField } from "../../api/extranet"
 import {
-  EXTRANET_API_TOKEN,
-  type ExtranetPageResponse,
-  fetchProductsCollection,
-} from "../../api/extranet"
+  useGetContentTypesQuery,
+  useGetExtranetPageQuery,
+} from "../../store/extranetApi"
 import { MODE_TYPE, type PreviewViewport } from "./builder.enum"
+
+function pickBindableTypeFields(
+  fields: IContentTypeField[] | undefined,
+): IContentTypeField[] {
+  if (!fields?.length) return []
+  return fields.filter(
+    (f) => f.reference_type == null || f.reference_type === "item",
+  )
+}
 
 /** Пустое дерево Craft (только ROOT + Body без детей). Нужно, чтобы при переключении на режим с пустым контентом Canvas вызывал deserialize и очищал холст, а не игнорировал null. */
 const EMPTY_SERIALIZED_NODES: SerializedNodes = {
@@ -51,74 +63,65 @@ const parseContent = (raw: string): SerializedNodes => {
 export const BuilderPage = () => {
   const { id } = useParams<{ id: string }>()
   const [rightPanelTabIndex, setRightPanelTabIndex] = useState(0)
-  const [collections, setCollections] = useState<
-    { key: string; label: string; items: any[] }[]
-  >([])
+  const [collections, setCollections] = useState<CollectionInfo[]>([])
   const [mode, setMode] = useState<MODE_TYPE.WEB | MODE_TYPE.RN>(MODE_TYPE.WEB)
   const [contentWeb, setContentWeb] = useState("")
   const [contentMobile, setContentMobile] = useState("")
   const [loaded, setLoaded] = useState(false)
   const [previewViewport, setPreviewViewport] = useState<PreviewViewport>("desktop")
 
+  const { data: pageResponse, isSuccess: pageLoadSuccess } =
+    useGetExtranetPageQuery(id!, { skip: !id })
+  const { data: typesData } = useGetContentTypesQuery({ limit: 200 })
+
   useEffect(() => {
     if (!id) return
-
-    const fetchPage = async () => {
-      try {
-        const response = await fetch(
-          `https://dev-api.cezyo.com/v3/sites/extranet/pages/${id}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: EXTRANET_API_TOKEN,
-            },
-          },
-        )
-
-        if (!response.ok) {
-          console.error(
-            "Ошибка при запросе страницы по id:",
-            id,
-            response.status,
-            response.statusText,
-          )
-          return
-        }
-
-        const result: ExtranetPageResponse = await response.json()
-        const page = result.data
-
-        setContentWeb(page.content ?? "")
-        setContentMobile(page.content_mobile ?? "")
-        setLoaded(true)
-      } catch (error) {
-        console.error(
-          "Ошибка сети при запросе страницы extranet по id:",
-          id,
-          error,
-        )
-      }
-    }
-
-    void fetchPage()
+    setLoaded(false)
   }, [id])
 
   useEffect(() => {
-    const fetchCollections = async () => {
-      const products = await fetchProductsCollection()
-      if (products) {
-        setCollections([
-          {
-            key: "products",
-            label: "Products",
-            items: products.data,
-          },
-        ])
-      }
-    }
+    if (!pageLoadSuccess || !pageResponse?.data) return
+    const page = pageResponse.data
+    setContentWeb(page.content ?? "")
+    setContentMobile(page.content_mobile ?? "")
+    setLoaded(true)
+  }, [pageLoadSuccess, pageResponse, id])
 
-    void fetchCollections()
-  }, [])
+  const setCollectionItems = useCallback(
+    (contentTypeId: string, items: IContentItem[]) => {
+      setCollections((prev) =>
+        prev.map((c) =>
+          c.key === contentTypeId ? { ...c, items } : c,
+        ),
+      )
+    },
+    [],
+  )
+
+  useEffect(() => {
+    if (!typesData?.data?.length) {
+      setCollections([])
+      return
+    }
+    setCollections(
+      typesData.data.map(
+        (t): CollectionInfo => ({
+          key: t.id,
+          label: t.name,
+          items: [],
+          fields: pickBindableTypeFields(t.fields),
+        }),
+      ),
+    )
+  }, [typesData])
+
+  const collectionsContextValue = useMemo(
+    () => ({
+      collections,
+      setCollectionItems,
+    }),
+    [collections, setCollectionItems],
+  )
 
   const initialContent = useMemo(() => {
     if (!loaded) return null
@@ -157,11 +160,7 @@ export const BuilderPage = () => {
             setTabIndex: setRightPanelTabIndex,
           }}
         >
-          <CollectionsContext.Provider
-            value={{
-              collections,
-            }}
-          >
+          <CollectionsContext.Provider value={collectionsContextValue}>
             <Box
               sx={{
                 position: "fixed",

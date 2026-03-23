@@ -8,6 +8,12 @@ import { useContentListData } from "../pages/builder/context/ContentListDataCont
 import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
 import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 import { TextSettingsFields } from "../pages/builder/settingsCraftComponents"
+import type { IContentItem } from "../api/extranet"
+import {
+  findContentItemField,
+  getContentFieldDisplayValue,
+  isLegacyFlatCollectionItem,
+} from "../utils/contentFieldValue"
 
 export type TextAlign = "left" | "center" | "right"
 
@@ -85,17 +91,23 @@ export const CraftText = ({
 
   // Вычисляем отображаемый текст: либо значение поля коллекции, либо статический текст
   const displayText = useMemo(() => {
-    if (collectionField && contentListData?.itemData) {
-      const fieldValue = contentListData.itemData[collectionField]
+    if (!collectionField || !contentListData?.itemData) {
+      return text
+    }
+    const item = contentListData.itemData as IContentItem
+    if (isLegacyFlatCollectionItem(item)) {
+      const fieldValue = (item as Record<string, unknown>)[collectionField]
       if (fieldValue !== null && fieldValue !== undefined) {
-        // Преобразуем значение в строку
         if (typeof fieldValue === "object") {
           return JSON.stringify(fieldValue)
         }
         return String(fieldValue)
       }
+      return text
     }
-    return text
+    const field = findContentItemField(item, collectionField)
+    const resolved = getContentFieldDisplayValue(field)
+    return resolved !== "" ? resolved : text
   }, [collectionField, contentListData?.itemData, text])
 
   /**

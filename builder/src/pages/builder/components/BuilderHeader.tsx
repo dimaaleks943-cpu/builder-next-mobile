@@ -2,7 +2,7 @@ import { Box, Button, IconButton } from "@mui/material"
 import { useNavigate } from "react-router-dom"
 import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
-import { EXTRANET_API_TOKEN } from "../../../api/extranet"
+import { useUpdateExtranetPageMutation } from "../../../store/extranetApi"
 import {
   useBuilderModeContext,
   type BuilderMode,
@@ -31,6 +31,8 @@ export const BuilderHeader = ({
   const navigate = useNavigate()
   const { actions, query } = useEditor()
   const modeContext = useBuilderModeContext()
+  const [updateExtranetPage, { isLoading: isSaving }] =
+    useUpdateExtranetPageMutation()
 
   const handleClick = () => {
     actions.clearEvents()
@@ -83,32 +85,11 @@ export const BuilderHeader = ({
     }
 
     try {
-      const response = await fetch(
-        `https://dev-api.cezyo.com/v3/sites/extranet/pages/${pageId}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: EXTRANET_API_TOKEN,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(body),
-        },
-      )
-
-      if (!response.ok) {
-        console.error(
-          "Ошибка при сохранении страницы extranet:",
-          pageId,
-          response.status,
-          response.statusText,
-        )
-        return
-      }
-
+      await updateExtranetPage({ id: pageId, body }).unwrap()
       console.log("Страница extranet успешно сохранена:", pageId)
     } catch (error) {
       console.error(
-        "Ошибка сети при сохранении страницы extranet:",
+        "Ошибка при сохранении страницы extranet:",
         pageId,
         error,
       )
@@ -222,7 +203,12 @@ export const BuilderHeader = ({
             ))}
           </Box>
         )}
-        <Button variant="outlined" size="small" onClick={handleSave}>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={handleSave}
+          disabled={isSaving}
+        >
           Сохранить
         </Button>
       </Box>

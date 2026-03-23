@@ -1,5 +1,7 @@
 import { useNode, useEditor, Element } from "@craftjs/core"
 import { useState, useEffect, useRef, startTransition } from "react"
+import { useLazyGetContentItemsQuery } from "../store/extranetApi"
+import { isExtranetContentTypeId } from "../utils/contentFieldValue"
 import { COLORS } from "../theme/colors"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import { useCollectionsContext } from "../pages/builder/context/CollectionsContext.tsx"
@@ -112,6 +114,7 @@ export const CraftContentList = ({}: ContentListProps) => {
 
   const rightPanelContext = useRightPanelContext()
   const collectionsContext = useCollectionsContext()
+  const [fetchContentItems] = useLazyGetContentItemsQuery()
 
   const openSettings = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -135,12 +138,46 @@ export const CraftContentList = ({}: ContentListProps) => {
   const selectedSource = props.selectedSource ?? ""
   const itemsPerRow = props.itemsPerRow ?? 1
 
+  /** Чтобы не зациклить запрос при пустом ответе или ошибке. */
+  const itemsFetchCompletedRef = useRef<Set<string>>(new Set()) //TODO надо?
+
   // Массив элементов активной коллекции (items выбранного source),
   // уже "разрешённый" из CollectionsContext по selectedSource
   const resolvedItems: any[] =
     selectedSource && collectionsContext
       ? collectionsContext.collections.find((c) => c.key === selectedSource)?.items ?? []
       : []
+
+  useEffect(() => {
+    if (!selectedSource || !collectionsContext?.setCollectionItems) return
+    if (!isExtranetContentTypeId(selectedSource)) return
+
+    const collection = collectionsContext.collections.find(
+      (c) => c.key === selectedSource,
+    )
+    if (!collection) return
+    if (collection.items.length > 0) return
+    if (itemsFetchCompletedRef.current.has(selectedSource)) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await fetchContentItems({
+          contentTypeId: selectedSource,
+        }).unwrap()
+        if (cancelled) return
+        itemsFetchCompletedRef.current.add(selectedSource)
+        collectionsContext.setCollectionItems(selectedSource, res?.data ?? [])
+      } catch {
+        if (cancelled) return
+        itemsFetchCompletedRef.current.add(selectedSource)
+        collectionsContext.setCollectionItems(selectedSource, [])
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [selectedSource, collectionsContext])
 
   const hasCollection = resolvedItems.length > 0
   const cellCount = hasCollection ? resolvedItems.length : 0
@@ -555,6 +592,18 @@ export const CraftContentList = ({}: ContentListProps) => {
             </option>
           ))}
         </select>
+
+        {selectedSource && !isExtranetContentTypeId(selectedSource) && (
+          <div
+            style={{
+              marginTop: 8,
+              fontSize: 11,
+              color: COLORS.gray600,
+            }}
+          >
+            This source is no longer available. Rebind the list to a content type from extranet.
+          </div>
+        )}
 
         {selectedSource ? (
           <div

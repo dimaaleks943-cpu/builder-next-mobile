@@ -7,6 +7,12 @@ import { useContentListData } from "../context/ContentListDataContext.tsx";
 import { useCollectionsContext } from "../context/CollectionsContext.tsx";
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName";
 import { SettingsAccordion } from "./components/SettingsAccordion/SettingsAccordion.tsx";
+import type { IContentItem } from "../../../api/extranet";
+import {
+  findContentItemField,
+  getContentFieldDisplayValue,
+  isLegacyFlatCollectionItem,
+} from "../../../utils/contentFieldValue";
 
 interface SelectedTextProps {
   text?: string;
@@ -75,29 +81,21 @@ export const TextSettingsFields = ({ asAccordion }: Props) => {
   const effectiveCollectionKey =
     contentListData?.collectionKey ?? parentCollectionKey;
 
-  /** Получаем список полей коллекции, когда текст находится внутри ContentList */
+  /** Поля для селекта — из метаданных типа контента (не из первого элемента). */
   const collectionFields = useMemo(() => {
     if (!effectiveCollectionKey || !collectionsContext) {
-      return [];
+      return [] as { id: string; label: string }[];
     }
 
     const collection = collectionsContext.collections.find(
       (c) => c.key === effectiveCollectionKey,
     );
 
-    if (!collection || !collection.items || collection.items.length === 0) {
+    if (!collection?.fields?.length) {
       return [];
     }
 
-    const firstItem = collection.items[0];
-    if (!firstItem || typeof firstItem !== "object") {
-      return [];
-    }
-
-    return Object.keys(firstItem).filter((key) => {
-      const value = (firstItem as any)[key];
-      return typeof value !== "function";
-    });
+    return collection.fields.map((f) => ({ id: f.id, label: f.name }));
   }, [effectiveCollectionKey, collectionsContext]);
 
   const isCollectionAvailable = Boolean(
@@ -121,19 +119,29 @@ export const TextSettingsFields = ({ asAccordion }: Props) => {
     });
   };
 
+  const resolveCollectionText = (fieldId: string | null): string | undefined => {
+    if (!fieldId || !contentListData?.itemData) return undefined;
+    const item = contentListData.itemData as IContentItem;
+    if (isLegacyFlatCollectionItem(item)) {
+      const fieldValue = (item as Record<string, unknown>)[fieldId];
+      if (fieldValue === null || fieldValue === undefined) return undefined;
+      if (typeof fieldValue === "object") {
+        return JSON.stringify(fieldValue);
+      }
+      return String(fieldValue);
+    }
+    return getContentFieldDisplayValue(findContentItemField(item, fieldId));
+  };
+
   const handleCollectionFieldChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value || null;
     actions.setProp(selectedId, (props: any) => {
       props.collectionField = value;
 
-      if (value && contentListData?.itemData) {
-        const fieldValue = contentListData.itemData[value];
-        if (fieldValue !== null && fieldValue !== undefined) {
-          if (typeof fieldValue === "object") {
-            props.text = JSON.stringify(fieldValue);
-          } else {
-            props.text = String(fieldValue);
-          }
+      if (value) {
+        const resolved = resolveCollectionText(value);
+        if (resolved !== undefined) {
+          props.text = resolved;
         }
       }
     });
@@ -150,16 +158,12 @@ export const TextSettingsFields = ({ asAccordion }: Props) => {
 
         if (!props.collectionField) {
           const [firstField] = collectionFields;
-          props.collectionField = firstField ?? null;
+          props.collectionField = firstField?.id ?? null;
 
-          if (props.collectionField && contentListData?.itemData) {
-            const fieldValue = contentListData.itemData[props.collectionField];
-            if (fieldValue !== null && fieldValue !== undefined) {
-              if (typeof fieldValue === "object") {
-                props.text = JSON.stringify(fieldValue);
-              } else {
-                props.text = String(fieldValue);
-              }
+          if (props.collectionField) {
+            const resolved = resolveCollectionText(props.collectionField);
+            if (resolved !== undefined) {
+              props.text = resolved;
             }
           }
         }
@@ -300,8 +304,8 @@ export const TextSettingsFields = ({ asAccordion }: Props) => {
           >
             <option value="">Select field...</option>
             {collectionFields.map((field) => (
-              <option key={field} value={field}>
-                {field}
+              <option key={field.id} value={field.id}>
+                {field.label}
               </option>
             ))}
           </Box>

@@ -100,22 +100,15 @@ export const ImageSettingsFields = ({ asAccordion }: ImageSettingsFieldsProps) =
 
   const collectionFields = useMemo(() => {
     if (!effectiveCollectionKey || !collectionsContext) {
-      return [];
+      return [] as { id: string; label: string }[];
     }
     const collection = collectionsContext.collections.find(
       (c) => c.key === effectiveCollectionKey,
     );
-    if (!collection || !collection.items || collection.items.length === 0) {
+    if (!collection?.fields?.length) {
       return [];
     }
-    const firstItem = collection.items[0];
-    if (!firstItem || typeof firstItem !== "object") {
-      return [];
-    }
-    return Object.keys(firstItem).filter((key) => {
-      const value = (firstItem as any)[key];
-      return typeof value !== "function";
-    });
+    return collection.fields.map((f) => ({ id: f.id, label: f.name }));
   }, [effectiveCollectionKey, collectionsContext]);
 
   const isCollectionAvailable = Boolean(
@@ -157,7 +150,7 @@ export const ImageSettingsFields = ({ asAccordion }: ImageSettingsFieldsProps) =
 
         if (!props.collectionField) {
           const [firstField] = collectionFields;
-          props.collectionField = firstField ?? null;
+          props.collectionField = firstField?.id ?? null;
         }
       }
     });
@@ -329,8 +322,8 @@ export const ImageSettingsFields = ({ asAccordion }: ImageSettingsFieldsProps) =
           >
             <option value="">Select field...</option>
             {collectionFields.map((field) => (
-              <option key={field} value={field}>
-                {field}
+              <option key={field.id} value={field.id}>
+                {field.label}
               </option>
             ))}
           </Box>

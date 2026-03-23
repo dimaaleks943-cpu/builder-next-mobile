@@ -7,6 +7,12 @@ import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import { ImageSettingsFields } from "../pages/builder/settingsCraftComponents"
+import type { IContentItem } from "../api/extranet"
+import {
+  findContentItemField,
+  getContentFieldImageUrl,
+  isLegacyFlatCollectionItem,
+} from "../utils/contentFieldValue"
 
 interface Props {
   src?: string;
@@ -43,36 +49,29 @@ export const CraftImage = ({
   const effectiveSrc = useMemo(() => {
     // Если есть выбранное поле коллекции и данные элемента — берём URL из коллекции.
     if (collectionField && contentListData?.itemData) {
-      const fieldValue = contentListData.itemData[collectionField]
-      if (fieldValue !== null && fieldValue !== undefined) {
-        if (typeof fieldValue === "string") {
-          return fieldValue
-        }
-
-        if (typeof fieldValue === "object") {
-          // ВРЕМЕННАЯ ЗАГЛУШКА:
-          // Сейчас поле image в коллекции приходит как объект:
-          // {
-          //   urls: {
-          //     original: { url: "...", auth: false },
-          //     small:    { url: "...", auth: false }
-          //   },
-          //   sort: null
-          // }
-          // Пока просто пытаемся вытащить small/original.url.
-          const asAny = fieldValue as any
-          const fromDirectUrl = asAny.url as string | undefined
-          const fromSmall = asAny.urls?.small?.url as string | undefined
-          const fromOriginal = asAny.urls?.original?.url as string | undefined
-
-          const candidate = fromDirectUrl ?? fromSmall ?? fromOriginal
-          if (candidate && typeof candidate === "string") {
-            return candidate
+      const item = contentListData.itemData as IContentItem
+      if (isLegacyFlatCollectionItem(item)) {
+        const fieldValue = (item as Record<string, unknown>)[collectionField]
+        if (fieldValue !== null && fieldValue !== undefined) {
+          if (typeof fieldValue === "string") {
+            return fieldValue
+          }
+          if (typeof fieldValue === "object") {
+            const asAny = fieldValue as Record<string, unknown>
+            const fromDirectUrl = asAny.url as string | undefined
+            const urls = asAny.urls as { small?: { url?: string }; original?: { url?: string } } | undefined
+            const fromSmall = urls?.small?.url
+            const fromOriginal = urls?.original?.url
+            const candidate = fromDirectUrl ?? fromSmall ?? fromOriginal
+            if (candidate && typeof candidate === "string") {
+              return candidate
+            }
           }
         }
-
-        // На будущее: здесь можно будет добавить более умную обработку
-        // других форматов (например, массивы картинок и т.п.).
+      } else {
+        const field = findContentItemField(item, collectionField)
+        const url = getContentFieldImageUrl(field)
+        if (url) return url
       }
     }
 
