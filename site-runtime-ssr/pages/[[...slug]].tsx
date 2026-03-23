@@ -2,20 +2,29 @@ import type { GetServerSideProps, GetServerSidePropsResult } from "next"
 import Head from "next/head"
 import { renderPage } from "@/lib/renderer"
 import type { ComponentNode } from "@/lib/interface"
-import { getSitePages } from "@/lib/sitePages"
+import { getSitePages, normalizeSiteDomain } from "@/lib/sitePages"
 import { craftContentToComponents } from "@/lib/craftContentToComponents"
+import { fetchContentItems } from "@/lib/collectionsApi"
+import { extractContentListTypeIdsFromCraftContent } from "@/lib/extractContentListSources"
+import type { IContentItem } from "@/lib/contentTypes"
+import { SiteCollectionsProvider } from "@/components/SiteCollectionsContext"
 
 interface PageProps {
   domain: string
   slug: string
   components: ComponentNode[]
+  collectionItemsByTypeId: Record<string, IContentItem[]>
 }
 
 export const getServerSideProps: GetServerSideProps<PageProps> = async (
   context,
 ): Promise<GetServerSidePropsResult<PageProps>> => {
-  // 1. Определяем домен из заголовка Host (marketflow.store, example.com и т.п.)
-  const domain = context.req.headers.host || "marketflow.store"
+  const hostHeader = context.req.headers.host ?? "" //marketflow.store
+  const domain = normalizeSiteDomain(hostHeader)
+
+  if (!domain) {
+    return { notFound: true }
+  }
 
   // 2. Определяем slug из catch-all-роута:
   // "/" -> slug пустой -> считаем, что это корень "/"
@@ -49,16 +58,39 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
     return { notFound: true }
   }
 
+  const contentListTypeIds = extractContentListTypeIdsFromCraftContent(
+    page.content,
+  )
+  const collectionItemsByTypeId: Record<string, IContentItem[]> = {}
+
+  if (contentListTypeIds.length > 0) {
+    const batches = await Promise.all(
+      contentListTypeIds.map(async (typeId) => {
+        const data = await fetchContentItems(domain, typeId)
+        return [typeId, data ?? []] as const
+      }),
+    )
+    for (const [typeId, items] of batches) {
+      collectionItemsByTypeId[typeId] = items
+    }
+  }
+
   return {
     props: {
       domain,
       slug: slugPath,
       components,
+      collectionItemsByTypeId,
     },
   }
 }
 
-export default function Page({ domain, slug, components }: PageProps) {
+export default function Page({
+  domain,
+  slug,
+  components,
+  collectionItemsByTypeId,
+}: PageProps) {
   const urlPath = slug === "/" ? "" : slug
 
   return (
@@ -68,9 +100,14 @@ export default function Page({ domain, slug, components }: PageProps) {
         <meta property="og:title" content={`Страница ${slug} — ${domain}`} />
         <meta property="og:url" content={`https://${domain}${urlPath}`} />
       </Head>
-      <main style={{ minHeight: "100vh", padding: "20px" }}>
-        {renderPage(components)}
-      </main>
+      <SiteCollectionsProvider
+        domain={domain}
+        collectionItemsByTypeId={collectionItemsByTypeId}
+      >
+        <main style={{ minHeight: "100vh", padding: "20px" }}>
+          {renderPage(components)}
+        </main>
+      </SiteCollectionsProvider>
     </>
   )
 }

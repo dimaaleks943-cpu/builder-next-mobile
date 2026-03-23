@@ -1,5 +1,10 @@
 import { useMemo } from "react"
 import { useContentData } from "./ContentDataContext"
+import {
+  findContentItemField,
+  getContentFieldDisplayValue,
+} from "@/lib/contentFieldValue"
+import type { IContentItem } from "@/lib/contentTypes"
 
 interface TextProps {
   text?: string
@@ -54,12 +59,10 @@ export const Text = ({
 
   const displayText = useMemo(() => {
     if (collectionField && contentData?.itemData) {
-      const fieldValue = contentData.itemData[collectionField]
-      if (fieldValue !== null && fieldValue !== undefined) {
-        if (typeof fieldValue === "object") {
-          return JSON.stringify(fieldValue)
-        }
-        return String(fieldValue)
+      const item = contentData.itemData as IContentItem
+      const field = findContentItemField(item, collectionField)
+      if (field) {
+        return getContentFieldDisplayValue(field)
       }
     }
     return text

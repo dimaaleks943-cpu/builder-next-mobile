@@ -3,6 +3,8 @@ import { renderComponent } from "@/lib/renderer"
 import type { ComponentNode } from "@/lib/interface"
 import { getCollectionByKey } from "@/lib/collectionsApi"
 import { ContentDataProvider } from "@/components/ContentDataContext"
+import { useSiteCollections } from "@/components/SiteCollectionsContext"
+import type { IContentItem } from "@/lib/contentTypes"
 
 type CellLayoutMode = "block" | "flex" | "grid" | "absolute"
 
@@ -60,32 +62,55 @@ export const ContentList = ({
 }: ContentListProps) => {
   const itemsPerRow: number = itemsPerRowProp ?? 1
   const children: ComponentNode[] = childrenProp ?? []
-  const [collectionItems, setCollectionItems] = React.useState<any[]>([])
-  const [isLoading, setIsLoading] = React.useState(true)
+  const { domain, collectionItemsByTypeId } = useSiteCollections()
+  const fromSsr = collectionItemsByTypeId[selectedSource]
+  const [fallbackItems, setFallbackItems] = React.useState<IContentItem[] | null>(
+    null,
+  )
+  const [fetchLoading, setFetchLoading] = React.useState(
+    () =>
+      !!selectedSource &&
+      fromSsr === undefined &&
+      !!domain,
+  )
 
   React.useEffect(() => {
-    if (!selectedSource) {
-      setCollectionItems([])
-      setIsLoading(false)
+    if (fromSsr !== undefined) {
+      setFallbackItems(null)
+      setFetchLoading(false)
+      return
+    }
+    if (!selectedSource || !domain) {
+      setFallbackItems([])
+      setFetchLoading(false)
       return
     }
 
-    setIsLoading(true)
-    getCollectionByKey(selectedSource)
+    let cancelled = false
+    setFetchLoading(true)
+    getCollectionByKey(domain, selectedSource)
       .then((collection) => {
-        if (collection) {
-          setCollectionItems(collection.items || [])
-        } else {
-          setCollectionItems([])
+        if (!cancelled) {
+          setFallbackItems(collection?.items ?? [])
         }
-        setIsLoading(false)
       })
       .catch((error) => {
         console.error("Ошибка при загрузке коллекции:", error)
-        setCollectionItems([])
-        setIsLoading(false)
+        if (!cancelled) setFallbackItems([])
       })
-  }, [selectedSource])
+      .finally(() => {
+        if (!cancelled) setFetchLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedSource, domain, fromSsr])
+
+  const collectionItems: IContentItem[] =
+    fromSsr !== undefined ? fromSsr : (fallbackItems ?? [])
+
+  const isLoading =
+    !!selectedSource && fromSsr === undefined && fetchLoading
 
   if (!selectedSource || isLoading) {
     return (
@@ -164,7 +189,7 @@ export const ContentList = ({
 }
 
 interface ContentListItemProps {
-  itemData: any
+  itemData: IContentItem
   collectionKey: string | null
   itemsPerRow: number
   layout?: "block" | "flex" | "grid" | "absolute"

@@ -10,14 +10,16 @@ export interface SitePagesResponse {
   links: unknown | null
 }
 
+/** Домен из заголовка Host может содержать порт (example.com:3000) — отбрасываем порт. */
+export function normalizeSiteDomain(domain: string): string {
+  return domain.includes(":") ? domain.split(":")[0]! : domain
+}
+
 // Получаем список страниц для домена через публичный GET /{domain}/pages
 export const getSitePages = async (
   domain: string,
 ): Promise<SitePage[] | null> => {
-  // домен из заголовка может содержать порт (marketflow.store:3000) — срезаем порт
-  const cleanDomain = domain.includes(":")
-    ? domain.split(":")[0]
-    : domain
+  const cleanDomain = normalizeSiteDomain(domain)
 
   try {
     const apiUrl = process.env.API_URL || "https://dev-api.cezyo.com"

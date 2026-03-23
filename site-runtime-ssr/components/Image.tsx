@@ -10,20 +10,8 @@ interface ImageProps {
   collectionField?: string | null
 }
 
-/** извлекает URL из значения поля коллекции TODO пока жестко достает из продукта, изменить после добавления АПИ ти контента  */
-const extractUrlFromFieldValue = (fieldValue: unknown): string | null => {
-  if (fieldValue === null || fieldValue === undefined) return null
-  if (typeof fieldValue === "string") return fieldValue
-  if (typeof fieldValue === "object") {
-    const asAny = fieldValue as Record<string, unknown>
-    const fromDirectUrl = asAny.url as string | undefined
-    const fromSmall = (asAny.urls as Record<string, { url?: string }> | undefined)?.small?.url
-    const fromOriginal = (asAny.urls as Record<string, { url?: string }> | undefined)?.original?.url
-    const candidate = fromDirectUrl ?? fromSmall ?? fromOriginal
-    return candidate && typeof candidate === "string" ? candidate : null
-  }
-  return null
-}
+const DEFAULT_PLACEHOLDER =
+  "https://cdn-icons-png.flaticon.com/128/17807/17807769.png"
 
 export const Image = ({
   src,
@@ -36,15 +24,14 @@ export const Image = ({
   const contentData = useContentData()
 
   const effectiveSrc = useMemo(() => {
+    // TODO: когда в контенте появится тип поля «изображение» с URL, резолвить из item.fields по collectionField.
     if (collectionField && contentData?.itemData) {
-      const fieldValue = contentData.itemData[collectionField]
-      const fromCollection = extractUrlFromFieldValue(fieldValue)
-      if (fromCollection) return fromCollection
+      return DEFAULT_PLACEHOLDER
     }
 
     if (src && src.trim().length > 0) return src
 
-    return "https://cdn-icons-png.flaticon.com/128/17807/17807769.png"
+    return DEFAULT_PLACEHOLDER
   }, [collectionField, contentData?.itemData, src])
 
   return (

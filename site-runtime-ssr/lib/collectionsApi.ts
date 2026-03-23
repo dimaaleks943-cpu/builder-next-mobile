@@ -1,10 +1,14 @@
-// Заглушка API для получения коллекций (в будущем будет заменена на реальное API)
-// Пока используем ту же API что и в builder для получения продуктов
+import type {
+  ContentType,
+  IContentItem,
+  PaginatedResponse,
+} from "@/lib/contentTypes"
+import { normalizeSiteDomain } from "@/lib/sitePages"
 
 export type CollectionInfo = {
   key: string
   label: string
-  items: any[]
+  items: IContentItem[]
 }
 
 export type CollectionsMap = Record<string, CollectionInfo>
@@ -12,63 +16,125 @@ export type CollectionsMap = Record<string, CollectionInfo>
 const API_BASE_URL = process.env.API_URL || "https://dev-api.cezyo.com"
 
 /**
- * Получает коллекцию продуктов из API (заглушка)
- * В будущем здесь будет реальное API для получения разных типов коллекций
+ * GET /v3/sites/{domain}/content/items с filter по content_type_id (UUID).
  */
-export const fetchProductsCollection = async (): Promise<any[] | null> => {
+export const fetchContentItems = async (
+  domain: string,
+  contentTypeId: string,
+  params?: { limit?: number; offset?: number },
+): Promise<IContentItem[] | null> => {
+  const cleanDomain = normalizeSiteDomain(domain)
+  if (!cleanDomain || !contentTypeId.trim()) return null
+
   try {
+    const filter = JSON.stringify({
+      content_type_id: [contentTypeId],
+    })
+    const searchParams = new URLSearchParams({ filter })
+    if (params?.limit != null) searchParams.set("limit", String(params.limit))
+    if (params?.offset != null) searchParams.set("offset", String(params.offset))
+
     const response = await fetch(
-      `${API_BASE_URL}/v3/client/catalog/products?limit=10&filter=%7B%7D`,
+      `${API_BASE_URL}/v3/sites/${encodeURIComponent(cleanDomain)}/content/items?${searchParams.toString()}`,
       {
         headers: {
-          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-      }
+      },
     )
 
     if (!response.ok) {
       console.error(
-        "Не удалось получить коллекцию products:",
+        `Не удалось получить content items для ${cleanDomain}:`,
         response.status,
-        response.statusText
+        response.statusText,
       )
       return null
     }
 
-    const json: { data: any[] } = await response.json()
-    return json.data || []
+    const json: PaginatedResponse<IContentItem> = await response.json()
+    return json.data ?? []
   } catch (error) {
-    console.error("Ошибка при запросе коллекции products:", error)
+    console.error("Ошибка при запросе content items:", error)
     return null
   }
 }
 
 /**
- * Получает все доступные коллекции (заглушка)
- * В будущем здесь будет запрос к реальному API для получения списка коллекций
+ * GET /v3/sites/{domain}/content/types (опционально — схемы полей, подписи типов).
  */
-export const fetchCollections = async (): Promise<CollectionsMap> => {
-  const products = await fetchProductsCollection()
+export const fetchContentTypes = async (
+  domain: string,
+  params?: { limit?: number; offset?: number },
+): Promise<ContentType[] | null> => {
+  const cleanDomain = normalizeSiteDomain(domain)
+  if (!cleanDomain) return null
 
+  try {
+    const searchParams = new URLSearchParams()
+    if (params?.limit != null) searchParams.set("limit", String(params.limit))
+    if (params?.offset != null) searchParams.set("offset", String(params.offset))
+    const qs = searchParams.toString()
+
+    const response = await fetch(
+      `${API_BASE_URL}/v3/sites/${encodeURIComponent(cleanDomain)}/content/types${qs ? `?${qs}` : ""}`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      },
+    )
+
+    if (!response.ok) {
+      console.error(
+        `Не удалось получить content types для ${cleanDomain}:`,
+        response.status,
+        response.statusText,
+      )
+      return null
+    }
+
+    const json: PaginatedResponse<ContentType> = await response.json()
+    return json.data ?? []
+  } catch (error) {
+    console.error("Ошибка при запросе content types:", error)
+    return null
+  }
+}
+
+/**
+ * Загружает все коллекции по списку типов (для отладки / будущего UI).
+ */
+export const fetchCollections = async (
+  domain: string,
+  contentTypeIds: string[],
+): Promise<CollectionsMap> => {
   const collections: CollectionsMap = {}
-
-  if (products && products.length > 0) {
-    collections.products = {
-      key: "products",
-      label: "Products",
-      items: products,
+  for (const id of contentTypeIds) {
+    const items = await fetchContentItems(domain, id)
+    if (items && items.length > 0) {
+      collections[id] = {
+        key: id,
+        label: id,
+        items,
+      }
     }
   }
-
   return collections
 }
 
 /**
- * Получает конкретную коллекцию по ключу
+ * Коллекция по ключу `content_type_id` (UUID).
  */
 export const getCollectionByKey = async (
-  key: string
+  domain: string,
+  key: string,
 ): Promise<CollectionInfo | null> => {
-  const collections = await fetchCollections()
-  return collections[key] || null
+  const items = await fetchContentItems(domain, key)
+  if (items === null) return null
+  return {
+    key,
+    label: key,
+    items,
+  }
 }

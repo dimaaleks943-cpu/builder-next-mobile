@@ -11,8 +11,8 @@ export interface ContentDataContextValue {
  * коллекции/строки/записи, не зная, в каком именно контейнере они находятся.
  *
  * @example
- * <ContentDataProvider collectionKey="products" itemData={product}>
- *   <Text collectionField="name" />
+ * <ContentDataProvider collectionKey="550e8400-e29b-41d4-a716-446655440000" itemData={item}>
+ *   <Text collectionField="<content-field-uuid>" />
  * </ContentDataProvider>
  */
 const ContentDataContext = React.createContext<ContentDataContextValue>({
