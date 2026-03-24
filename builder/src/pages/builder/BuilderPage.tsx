@@ -26,6 +26,7 @@ import {
   useGetExtranetPageQuery,
 } from "../../store/extranetApi"
 import { MODE_TYPE, type PreviewViewport } from "./builder.enum"
+import { decodeSerializedNodesStyleProps } from "../../utils/stylePropsCodec"
 
 function pickBindableTypeFields(
   fields: IContentTypeField[] | undefined,
@@ -54,7 +55,8 @@ const EMPTY_SERIALIZED_NODES: SerializedNodes = {
 const parseContent = (raw: string): SerializedNodes => {
   if (!raw || !raw.trim()) return EMPTY_SERIALIZED_NODES
   try {
-    return (JSON.parse(raw) as SerializedNodes) || EMPTY_SERIALIZED_NODES
+    const parsed = (JSON.parse(raw) as SerializedNodes) || EMPTY_SERIALIZED_NODES
+    return decodeSerializedNodesStyleProps(parsed)
   } catch {
     return EMPTY_SERIALIZED_NODES
   }

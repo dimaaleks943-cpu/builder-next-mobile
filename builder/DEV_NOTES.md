@@ -399,7 +399,30 @@
 
 ---
 
-### 5. Как дальше развивать документацию
+### 5. Словарь сокращений CSS-style props (v1)
+
+Source of truth для сокращений зафиксирован в `src/utils/stylePropsShortMapV1.ts`.
+
+- Базовые правила нейминга:
+  - `m*` для margin (`marginTop -> mt`, `marginLeft -> ml`);
+  - `p*` для padding (`paddingTop -> pt`, `paddingLeft -> pl`);
+  - `b*` для border (`borderRadius -> br`, `borderColor -> bc`, `borderOpacity -> bo`);
+  - составные свойства сокращаем предсказуемо:
+    - `borderTopWidth -> btw`,
+    - `flexJustifyContent -> fjc`,
+    - `placeItemsX -> pix`.
+- Обратный маппинг (`SHORT_TO_FULL`) генерируется автоматически из `FULL_TO_SHORT`.
+- Коллизии коротких ключей валидируются при инициализации модуля (fail-fast).
+
+Правило расширения словаря:
+
+- Новое style-свойство нельзя использовать в JSON-контенте, encode/decode и рантаймах,
+  пока оно не добавлено в `FULL_TO_SHORT`.
+- Изменения словаря должны синхронно отражаться в `site-runtime-ssr` и `mobileAPP` codec-модулях.
+
+---
+
+### 6. Как дальше развивать документацию
 
 - При добавлении новых Craft‑компонентов:
   - описывать:

@@ -8,6 +8,7 @@ import {
   type BuilderMode,
 } from "../context/BuilderModeContext"
 import { MODE_TYPE, type PreviewViewport } from "../builder.enum"
+import { encodeSerializedNodesStyleProps } from "../../../utils/stylePropsCodec"
 import { MonitorIcon } from "../../../icons/MonitorIcon.tsx";
 import { TabletIcon } from "../../../icons/TabletIcon.tsx";
 import { MobileIcon } from "../../../icons/MobileIcon.tsx";
@@ -41,7 +42,7 @@ export const BuilderHeader = ({
   const handleModeChange = (nextMode: BuilderMode) => {
     if (!modeContext || modeContext.mode === nextMode) return
     const serialized = query.getSerializedNodes()
-    const json = JSON.stringify(serialized)
+    const json = JSON.stringify(encodeSerializedNodesStyleProps(serialized))
     if (nextMode === MODE_TYPE.RN) {
       modeContext.setContentWeb(json)
       modeContext.setMode(MODE_TYPE.RN)
@@ -62,7 +63,7 @@ export const BuilderHeader = ({
     }
 
     const serialized = query.getSerializedNodes()
-    const currentJson = JSON.stringify(serialized)
+    const currentJson = JSON.stringify(encodeSerializedNodesStyleProps(serialized))
 
     if (modeContext.mode === MODE_TYPE.WEB) {
       modeContext.setContentWeb(currentJson)
