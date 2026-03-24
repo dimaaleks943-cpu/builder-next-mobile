@@ -1,4 +1,5 @@
 import type { ComponentNode } from "./interface"
+import { decodeSerializedNodesStyleProps } from "./stylePropsCodec"
 
 // Сериализованный формат дерева Craft.js, который мы сохраняем в поле content
 type SerializedNodes = Record<
@@ -221,6 +222,8 @@ export const craftContentToComponents = (
     console.error("Не удалось распарсить Craft content как JSON:", error)
     return []
   }
+
+  nodes = decodeSerializedNodesStyleProps(nodes)
 
   const root = nodes.ROOT
   if (!root || !Array.isArray(root.nodes)) {
