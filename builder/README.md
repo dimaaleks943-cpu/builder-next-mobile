@@ -1,73 +1,65 @@
-# React + TypeScript + Vite
+# Builder (конструктор контента)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+`builder` - редактор страниц на базе Craft.js. Он формирует JSON-дерево компонентов для двух
+рендеров:
 
-Currently, two official plugins are available:
+- `content` - веб-рендер (`site-runtime-ssr`);
+- `content_mobile` - нативный мобильный рендер (`mobileAPP`).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Архитектура на уровне модулей
 
-## React Compiler
+- `src/craft` - визуальные компоненты конструктора (`Body`, `Block`, `Text`, `Image`, `LinkText`, `ContentList`);
+- `src/pages/builder` - экран конструктора, режимы Web/RN, панели настроек и стили;
+- `src/api` - API-адаптеры к extranet (`pages`, `content/items`, опционально `content/types`);
+- `src/core` - общие UI/иконки/утилиты.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Контракт коллекций и контента
 
-## Expanding the ESLint configuration
+Для `ContentList` используется единый контракт между Builder -> SSR -> Mobile:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- `selectedSource` всегда хранит `content_type_id` (UUID), а не "products" или иной текстовый alias;
+- данные элементов загружаются через:
+  `GET /v3/sites/{domain}/content/items?filter={"content_type_id":["<UUID>"]}`;
+- endpoint `GET /v3/sites/{domain}/content/types` используется опционально (для UI выбора типа).
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### API-сигнатуры (builder)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- `fetchContentItems(domain, contentTypeId, params?)` -> `IContentItem[] | null`;
+- `fetchContentTypes(domain, params?)` -> `ContentType[] | null`;
+- `getCollectionByKey(domain, key)` -> `CollectionInfo | null`, где `key` = `content_type_id`.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Glossary
+
+- `ContentType` - тип контента (схема полей), приходит из `content/types`;
+- `IContentItem` - элемент контента (запись), приходит из `content/items`;
+- `selectedSource` - выбранный источник `ContentList`, строго UUID `content_type_id`.
+
+Минимальная форма `IContentItem`:
+
+```ts
+{
+  id: string;
+  content_type_id?: string;
+  fields?: Array<{
+    id: string;
+    value?: unknown;
+    value_text?: string | null;
+    value_float?: number | null;
+    value_boolean?: boolean | null;
+  }>;
+}
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Data flow
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. В Builder пользователь выбирает `selectedSource` в `ContentList`.
+2. При сохранении страницы уходят `content` и `content_mobile`.
+3. SSR и Mobile читают `selectedSource` как `content_type_id`.
+4. Runtime получает items по `content/items` и рендерит шаблон ячейки с `ContentDataContext`.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Запуск
+
+```bash
+npm install
+npm run dev
 ```

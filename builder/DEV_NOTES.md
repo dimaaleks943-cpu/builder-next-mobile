@@ -143,6 +143,21 @@
   - Логика аналогична рентайму: `ContentListCell` используется только в билдере,
     а реальные данные и шаблон рендерятся через общий механизм data‑binding’а.
 
+#### Актуальный контракт collections/content
+
+Для `ContentList` используем единый контракт во всех рантаймах:
+
+- `selectedSource` хранит `content_type_id` (UUID), а не условные значения вроде `products`.
+- загрузка items выполняется через `GET /v3/sites/{domain}/content/items` с filter:
+  `{"content_type_id":["<UUID>"]}`.
+- `GET /v3/sites/{domain}/content/types` - опциональный endpoint для списка типов контента
+  (UI выбора в билдере), но не обязательный для runtime-рендера.
+- сигнатура адаптера должна оставаться в виде `getCollectionByKey(domain, key)`, где
+  `key` в текущем контракте равен `content_type_id`.
+
+Важно: в документации и комментариях для источника `ContentList` не используем legacy wording
+`products/ecommerce`; корректный термин - `content_type_id` / тип контента.
+
 ---
 
 ### 3. Связь builder ↔ site-runtime-ssr ↔ мобилка
@@ -318,7 +333,7 @@
       - для правой панели сам вычисляет, находится ли `Image` внутри `ContentList`:
         - поднимается по `ancestors(true)` через Craft‑`query`,
         - ищет предка с `displayName === "ContentList"` (через `resolveNodeDisplayName`),
-        - берёт его `props.selectedSource` как ключ коллекции.
+        - берёт его `props.selectedSource` как `content_type_id`.
   - Договорённость:
     - Все новые настройки, которые должны быть **и в модалке, и в правом табе**, выносим в отдельный
       компонент в `settingsCraftComponents` и переиспользуем, вместо копирования JSX и логики.
