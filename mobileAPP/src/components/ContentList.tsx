@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, StyleSheet, Text as RNText } from "react-native";
 import type { ComponentNode } from "../content/interface";
 import { getCollectionByKey } from "../api/collectionsApi";
+import { SITE_DOMAIN } from "../api/config";
+import type { IContentItem } from "../api/contentTypes";
 import { ContentDataProvider } from "../contexts/ContentDataContext";
 import { renderComponent } from "../content/renderer";
 
@@ -47,10 +49,10 @@ export const ContentList = ({
 }: ContentListProps) => {
   const itemsPerRow: number = itemsPerRowProp ?? 1;
   const children: ComponentNode[] = childrenProp ?? [];
-  const [collectionItems, setCollectionItems] = React.useState<any[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [collectionItems, setCollectionItems] = useState<IContentItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!selectedSource) {
       setCollectionItems([]);
       setIsLoading(false);
@@ -58,7 +60,7 @@ export const ContentList = ({
     }
 
     setIsLoading(true);
-    getCollectionByKey(selectedSource)
+    getCollectionByKey(SITE_DOMAIN, selectedSource)
       .then((collection) => {
         if (collection) {
           setCollectionItems(collection.items || []);
@@ -81,7 +83,7 @@ export const ContentList = ({
     return <View style={styles.placeholder} />;
   }
 
-  const rows: any[][] = [];
+  const rows: IContentItem[][] = [];
   for (let i = 0; i < collectionItems.length; i += itemsPerRow) {
     rows.push(collectionItems.slice(i, i + itemsPerRow));
   }
@@ -123,7 +125,7 @@ export const ContentList = ({
 };
 
 interface ContentListItemProps {
-  itemData: any;
+  itemData: IContentItem;
   collectionKey: string | null;
   itemsPerRow: number;
   layout?: "block" | "flex" | "absolute" | "grid";

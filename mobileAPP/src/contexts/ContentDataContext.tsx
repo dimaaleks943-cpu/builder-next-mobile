@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 
 export interface ContentDataContextValue {
   collectionKey: string | null;
@@ -28,6 +28,6 @@ export const ContentDataProvider = ({
 };
 
 export const useContentData = () => {
-  return React.useContext(ContentDataContext);
+  return useContext(ContentDataContext);
 };
 

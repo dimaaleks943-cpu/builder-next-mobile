@@ -1,23 +1,26 @@
 # Мобильное приложение (Expo + React Native)
 
-Приложение отображает сайт, собранный в конструкторе. Поддерживаются два режима: **нативный рендер** страницы из JSON (Body, Block, Text, Image, LinkText, ContentList в ScrollView) и отображение **веб-версии сайта в WebView**. Выбор режима делается по флагу `is_mobile_content` в ответе API.
+Приложение отображает сайт, собранный в конструкторе. Поддерживаются два режима: **нативный рендер** страницы из JSON (Body, Block, Text, Image, LinkText, ContentList в ScrollView) и отображение **веб-версии сайта в WebView**.
 
 Платформы: **Android и iOS** (одна кодовая база).
 
 ## Откуда данные
 
-- **Бэкенд конструктора (API):** список страниц сайта, контент страницы (JSON), коллекции (например продукты для ContentList).
+- **Бэкенд конструктора (API):** список страниц сайта, контент страницы (JSON), content items для `ContentList`.
 - Конфигурация через переменные окружения Expo: базовый URL API, домен сайта, URL веб-версии для WebView.
 
 ## Flow отображения страницы
 
 1. По slug запрашивается страница с API (список страниц, затем выбор по slug).
-2. Если в ответе **`is_mobile_content === true`** и есть поле **`content`** — контент парсится (Craft JSON → дерево компонентов) и рендерится **нативно** в ScrollView (Body, Block, Text, Image, LinkText, ContentList).
-3. Иначе страница показывается в **WebView** по URL веб-версии сайта (`WEB_VIEW_BASE_URL` + path).
+2. Нативный рендер включается только если одновременно:
+   - `is_mobile_content === true`,
+   - `content != null`,
+   - после парсинга есть хотя бы один компонент (`nativeComponents.length > 0`).
+3. Во всех остальных случаях используется fallback в **WebView** (`WEB_VIEW_BASE_URL` + path).
 
 ## Структура проекта
 
-- **`src/api`** — конфигурация и запросы к API: `config.ts` (API_BASE_URL, SITE_DOMAIN, WEB_VIEW_BASE_URL), `sitePagesApi.ts` (страницы по домену и по slug), `collectionsApi.ts` (коллекции для ContentList).
+- **`src/api`** — конфигурация и запросы к API: `config.ts` (API_BASE_URL, SITE_DOMAIN, WEB_VIEW_BASE_URL), `sitePagesApi.ts` (страницы по домену и по slug), `collectionsApi.ts` (content/items + optional content/types), `contentTypes.ts` (типы ответов).
 - **`src/content`** — разбор и рендер контента страницы: парсинг JSON конструктора (Craft) в дерево узлов, маппинг на RN-компоненты, отрисовка страницы (`craftContentToComponents`, `renderer`, `interface`).
 - **`src/components`** — RN-компоненты блоков: Body, Block, Text, Image, LinkText, ContentList, ContentDataContext.
 
@@ -51,6 +54,31 @@ npm start
 import { fetchSitePageBySlug } from "./src/api/sitePagesApi";
 
 const page = await fetchSitePageBySlug("/"); // корневая страница
-// page?.is_mobile_content === true → рендерить page.content нативно
-// иначе → открыть в WebView по WEB_VIEW_BASE_URL + slug
+// if (page?.is_mobile_content && page?.content && nativeComponents.length > 0) -> native render
+// else -> WebView fallback по WEB_VIEW_BASE_URL + slug
+```
+
+## ContentList API контракт
+
+`ContentList.selectedSource` в мобильном runtime трактуется строго как `content_type_id` (UUID).
+
+- `getCollectionByKey(domain, key)` -> `CollectionInfo | null`;
+- в текущем контракте `key` = `content_type_id`;
+- загрузка items: `GET /v3/sites/{domain}/content/items?filter={"content_type_id":["<UUID>"]}`;
+- endpoint `GET /v3/sites/{domain}/content/types` подключается опционально, если нужен список типов контента.
+
+Минимальная схема item для рендера:
+
+```ts
+interface IContentItem {
+  id: string;
+  content_type_id?: string;
+  fields?: Array<{
+    id: string;
+    value?: unknown;
+    value_text?: string | null;
+    value_float?: number | null;
+    value_boolean?: boolean | null;
+  }>;
+}
 ```

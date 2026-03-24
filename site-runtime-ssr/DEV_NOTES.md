@@ -35,7 +35,7 @@
 - Файл: `components/ContentDataContext.tsx`.
 - Основные сущности:
   - `ContentDataContextValue`:
-    - `collectionKey: string | null` — идентификатор источника данных (например, ключ коллекции).
+    - `collectionKey: string | null` — идентификатор источника данных (`content_type_id`).
     - `itemData: any | null` — данные текущего элемента (продукт, строка таблицы и т.п.).
   - `ContentDataProvider`:
     - Оборачивает поддерево и прокидывает внутрь `collectionKey` и `itemData`.
@@ -45,7 +45,7 @@
 **Пример использования**:
 
 ```tsx
-<ContentDataProvider collectionKey="products" itemData={product}>
+<ContentDataProvider collectionKey="5fbf56af-df5d-4e73-b5b2-74d7c5206bd6" itemData={item}>
   <Text collectionField="name" />
 </ContentDataProvider>
 ```
@@ -70,7 +70,7 @@
 Основные шаги:
 
 1. **Загрузка коллекции**:
-   - Используем `getCollectionByKey(selectedSource)` из `lib/collectionsApi.ts`.
+   - Используем `getCollectionByKey(domain, selectedSource)` из `lib/collectionsApi.ts`.
    - При `!selectedSource` или ошибке — возвращаем пустой контейнер (но без крэша).
 2. **Нормализация входных пропов**:
    - `itemsPerRow` и `children` нормализуются в локальные переменные строго типизированные:
@@ -117,6 +117,13 @@
   - Через `useContentData()` получает `itemData`.
   - Если `collectionField` задан — извлекает URL из поля (строка или объект `{ urls: { original/small: { url } } }`).
   - Иначе использует `src` или плейсхолдер по умолчанию.
+
+Текущий статус:
+
+- поведение `Image` в SSR намеренно консервативное: при невалидном значении показываем placeholder,
+  чтобы не ронять рендер страницы;
+- TODO: расширить нормализацию сложных media-структур (массивы/вложенные форматы), когда формат API
+  будет стабилизирован.
 
 ---
 
@@ -190,12 +197,28 @@
 Подход:
 
 - В одном месте инкапсулируем:
-  - как получить коллекцию по ключу (`getCollectionByKey`),
+  - как получить коллекцию по ключу (`getCollectionByKey(domain, key)`),
   - как выглядят элементы (минимальный интерфейс/структура),
   - возможные заглушки/моки.
 - Компоненты типа `ContentList`:
-  - знают только про `getCollectionByKey(selectedSource)` и то, что вернётся `{ items: any[] }`.
+  - знают только про `getCollectionByKey(domain, selectedSource)` и то, что вернётся `{ items: any[] }`.
   - не зависят напрямую от URL, схемы бэкенда и т.п.
+
+Актуальный API-контракт:
+
+- `selectedSource` = `content_type_id` (UUID);
+- items: `GET /v3/sites/{domain}/content/items?filter={"content_type_id":["<UUID>"]}`;
+- `GET /v3/sites/{domain}/content/types` - optional endpoint (используется там, где нужен список типов).
+
+### 7.1 SSR flow для ContentList (prefetch + fallback)
+
+Актуальный поток в `pages/[[...slug]].tsx`:
+
+1. извлекаем все `content_type_id` из Craft JSON через `extractContentListTypeIdsFromCraftContent`;
+2. на сервере prefetch'им items по каждому typeId через `fetchContentItems(domain, typeId)`;
+3. складываем результат в `collectionItemsByTypeId` и прокидываем в `SiteCollectionsProvider`;
+4. `ContentList` на клиенте сначала использует prefetched data из provider;
+5. если данных нет/они не были префетчены - выполняется client fallback (дозагрузка по API).
 
 Это позволяет:
 

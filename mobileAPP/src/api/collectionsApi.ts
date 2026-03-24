@@ -1,52 +1,65 @@
-import { API_BASE_URL } from "./config";
+import { API_BASE_URL, cleanDomain } from "./config";
+import type {
+  ContentType,
+  IContentItem,
+  PaginatedResponse,
+} from "./contentTypes";
 
 export type CollectionInfo = {
   key: string;
   label: string;
-  items: any[];
+  items: IContentItem[];
 };
 
-export type CollectionsMap = Record<string, CollectionInfo>;
+/**
+ * GET /v3/sites/{domain}/content/items с filter по content_type_id.
+ */
+export const fetchContentItems = async (
+  domain: string,
+  contentTypeId: string,
+  params?: { limit?: number; offset?: number },
+): Promise<IContentItem[] | null> => {
+  const domainClean = cleanDomain(domain);
+  const contentTypeIdClean = contentTypeId.trim();
+  if (!domainClean || !contentTypeIdClean) return null;
 
-/** TODO заглушка загружает коллекцию продуктов с API бэкенда для блоков типа ContentList. */
-export const fetchProductsCollection = async (): Promise<any[] | null> => {
   try {
+    const filter = JSON.stringify({
+      content_type_id: [contentTypeIdClean],
+    });
+    const searchParams = new URLSearchParams({ filter });
+    if (params?.limit != null) searchParams.set("limit", String(params.limit));
+    if (params?.offset != null)
+      searchParams.set("offset", String(params.offset));
+
     const response = await fetch(
-      `${API_BASE_URL}/v3/client/catalog/products?limit=10&filter=%7B%7D`,
+      `${API_BASE_URL}/v3/sites/${encodeURIComponent(domainClean)}/content/items?${searchParams.toString()}`,
       {
         headers: {
-          "Content-Type": "application/json",
+          Accept: "application/json",
         },
       },
     );
 
-    const json = (await response.json()) as { data: any[] };
+    if (!response.ok) return null;
+
+    const json = (await response.json()) as PaginatedResponse<IContentItem>;
     return json.data || [];
   } catch (error) {
     return null;
   }
 };
 
-export const fetchCollections = async (): Promise<CollectionsMap> => {
-  const products = await fetchProductsCollection();
-
-  const collections: CollectionsMap = {};
-
-  if (products && products.length > 0) {
-    collections.products = {
-      key: "products",
-      label: "Products",
-      items: products,
-    };
-  }
-
-  return collections;
-};
-
 export const getCollectionByKey = async (
+  domain: string,
   key: string,
 ): Promise<CollectionInfo | null> => {
-  const collections = await fetchCollections();
-  return collections[key] || null;
+  const items = await fetchContentItems(domain, key);
+  if (items === null) return null;
+  return {
+    key,
+    label: key,
+    items,
+  };
 };
 
