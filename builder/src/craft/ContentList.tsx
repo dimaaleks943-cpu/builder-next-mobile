@@ -8,77 +8,15 @@ import { CraftContentListCell } from "./ContentListCell"
 import { ContentListDataContext } from "../pages/builder/context/ContentListDataContext.tsx"
 import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
 import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
-
-/** Клонирует дерево узлов с новыми id, чтобы не было дубликатов ключей при добавлении в несколько ячеек.
- *  Типы здесь намеренно ослаблены до any, чтобы не тянуть внутрь все внутренние типы Craft.js (NodeTree/Nodes).
- */
-const cloneNodeTree = (tree: any, idPrefix: string): any => {
-  const idMap: Record<string, string> = {}
-  for (const oldId of Object.keys(tree.nodes as Record<string, any>)) {
-    idMap[oldId] = `${idPrefix}_${oldId}`
-  }
-  const newNodes: Record<string, any> = {}
-  for (const [oldId, node] of Object.entries(tree.nodes as Record<string, any>)) {
-    const newId = idMap[oldId]
-    const data: any = { ...(node as any).data }
-    data.parent = data.parent && idMap[data.parent as string] ? idMap[data.parent as string] : null
-    data.nodes = ((data.nodes as string[]) ?? []).map((n) => idMap[n] ?? n)
-    if (data.linkedNodes && typeof data.linkedNodes === "object") {
-      const linked = data.linkedNodes as Record<string, string>
-      data.linkedNodes = Object.fromEntries(
-        Object.entries(linked).map(([k, v]) => [k, idMap[v] ?? v]),
-      )
-    }
-    if (data._childCanvas && typeof data._childCanvas === "object") {
-      const childCanvas = data._childCanvas as Record<string, string>
-      data._childCanvas = Object.fromEntries(
-        Object.entries(childCanvas).map(([k, v]) => [k, idMap[v] ?? v]),
-      )
-    }
-    newNodes[newId] = { ...(node as any), id: newId, data }
-  }
-  return {
-    rootNodeId: idMap[tree.rootNodeId],
-    nodes: newNodes,
-  }
-}
-
-const CELL_IDS_PENDING = { cellIds: [] as string[], signature: "__pending__" } as const
-
-/** Собирает id, type и props узлов поддерева в порядке depth-first (узел, затем дети) */
-const getDescendantsWithProps = (
-  query: {
-    node: (id: string) => { get: () => { data: { nodes?: string[]; type: unknown; props: Record<string, unknown> } } }
-  },
-  nodeId: string,
-): { id: string; type: unknown; props: Record<string, unknown> }[] => {
-  const result: { id: string; type: unknown; props: Record<string, unknown> }[] = []
-  try {
-    const node = query.node(nodeId).get()
-    const type = node.data.type
-    const props = { ...(node.data.props || {}) }
-    result.push({ id: nodeId, type, props })
-    const childIds: string[] = (node.data.nodes ?? []) as string[]
-    for (const cid of childIds) {
-      result.push(...getDescendantsWithProps(query, cid))
-    }
-  } catch {
-    // skip invalid node
-  }
-  return result
-}
-
-// Проверяет, что типы узлов совпадают (в том числе по resolvedName у Craft-компонентов),
-// чтобы можно было безопасно обновлять только props при "мягкой" синхронизации без пересоздания узлов
-const typesMatch = (a: unknown, b: unknown): boolean => {
-  if (a === b) return true
-  if (typeof a === "object" && a && typeof b === "object" && b) {
-    const ar = (a as { resolvedName?: string }).resolvedName
-    const br = (b as { resolvedName?: string }).resolvedName
-    if (ar !== undefined && br !== undefined) return ar === br
-  }
-  return false
-}
+import {
+  buildAllCellsSignature,
+  buildSubtreeTypePropsFingerprint,
+  CELL_IDS_PENDING_SIGNATURE,
+  cloneNodeTree,
+  collectContentListCellIds,
+  getDescendantsWithProps,
+  typesMatch,
+} from "./contentListEditorUtils"
 
 export type ContentListProps = {
   selectedSource?: string
@@ -97,6 +35,8 @@ export const CraftContentList = ({}: ContentListProps) => {
   const badgeRef = useRef<HTMLDivElement | null>(null)
   const syncInProgressRef = useRef(false)
   const prevSignaturePartsRef = useRef<string[]>([])
+  const lastSeedKeyRef = useRef<string>("")
+  const seedCounterRef = useRef(0)
 
   const {
     connectors: { connect, drag },
@@ -180,48 +120,136 @@ export const CraftContentList = ({}: ContentListProps) => {
   const hasCollection = resolvedItems.length > 0
   const cellCount = hasCollection ? resolvedItems.length : 0
 
-  // Для текущего ContentList собираем:
-  // 1) фактические id всех ячеек (cellIds)
-  // 2) "подпись" структуры каждой ячейки (signature), чтобы отслеживать изменения шаблона
-  const cellIdsAndSignature = useEditor((state, q) => {
-    if (!contentListId || !state.nodes[contentListId] || cellCount === 0) return {
-      cellIds: [] as string[],
-      signature: ""
+  // Seed: только при пустых целях и новом seedKey (lastSeedKeyRef), без пересечения с активным sync (syncInProgressRef).
+  const seedInfo = useEditor((state, q) => {
+    if (!contentListId || !state.nodes[contentListId] || cellCount <= 1) {
+      return {
+        templateCellId: "",
+        templateChildIds: [] as string[],
+        emptyTargetCellIds: [] as string[],
+        seedKey: "",
+      }
     }
     try {
       const contentListNode = state.nodes[contentListId]
       const linkedNodes = (contentListNode?.data?.linkedNodes ?? {}) as Record<string, string>
       const dataNodes = (contentListNode?.data?.nodes ?? []) as string[]
-      const cellIds: string[] = []
-      for (let i = 0; i < cellCount; i++) {
-        const linkKey = `${contentListId}-cell-${i}`
-        const actualId = linkedNodes[linkKey] ?? dataNodes[i]
-        if (actualId && state.nodes[actualId]) cellIds.push(actualId)
+
+      const expectedTemplateId = `${contentListId}-cell-0`
+      const templateCellId =
+        linkedNodes[expectedTemplateId] ?? dataNodes[0] ?? expectedTemplateId
+
+      const templateNode = state.nodes[templateCellId]
+      const templateChildIds: string[] = ((templateNode?.data?.nodes ?? []) as string[]) ?? []
+
+      // Сидим только те ячейки, которые уже существуют в state (Element их смонтирует),
+      // но остаются пустыми из-за того, что в storage хранится только cell-0.
+      const emptyTargetCellIds: string[] = []
+      for (let i = 1; i < cellCount; i++) {
+        const expectedId = `${contentListId}-cell-${i}`
+        const actualId = linkedNodes[expectedId] ?? dataNodes[i] ?? expectedId
+        const node = state.nodes[actualId]
+        if (!node) continue
+        const childIds: string[] = ((node.data?.nodes ?? []) as string[]) ?? []
+        if (childIds.length === 0) emptyTargetCellIds.push(actualId)
       }
-      if (cellIds.length < cellCount) return CELL_IDS_PENDING
-      const serialized = q.getSerializedNodes()
-      const parts: string[] = []
-      for (const cellId of cellIds) {
+
+      const templateFingerprint = templateCellId
+        ? buildSubtreeTypePropsFingerprint(state, q, templateCellId)
+        : ""
+
+      return {
+        templateCellId,
+        templateChildIds,
+        emptyTargetCellIds,
+        seedKey: `${contentListId}|${cellCount}|${templateCellId}|${templateFingerprint}`,
+      }
+    } catch {
+      return {
+        templateCellId: "",
+        templateChildIds: [] as string[],
+        emptyTargetCellIds: [] as string[],
+        seedKey: "",
+      }
+    }
+  })
+
+  // Ленивая инициализация: если храним только cell-0, то остальные ячейки в редакторе
+  // монтируются, но пустые. Клонируем шаблон (детей cell-0) в каждую пустую ячейку.
+  // Invariant seed: см. lastSeedKeyRef — один и тот же seedKey не запускает эффект повторно.
+  useEffect(() => {
+    if (!hasCollection || cellCount <= 1) return
+    if (!seedInfo.templateCellId) return
+    if (seedInfo.templateChildIds.length === 0) return
+    if (seedInfo.emptyTargetCellIds.length === 0) return
+    if (syncInProgressRef.current) return
+    if (!seedInfo.seedKey) return
+    if (lastSeedKeyRef.current === seedInfo.seedKey) return
+
+    lastSeedKeyRef.current = seedInfo.seedKey
+
+    try {
+      const trees: any[] = []
+      for (const cid of seedInfo.templateChildIds) {
         try {
-          if (!state.nodes[cellId]) {
-            parts.push("")
-            continue
-          }
-          const descendantIds = q.node(cellId).descendants(true)
-          const allIds = [cellId, ...descendantIds]
-          const fingerprint = allIds
-            .map((id) => {
-              const n = serialized[id]
-              if (!n) return ""
-              return JSON.stringify({ type: n.type, props: n.props })
-            })
-            .join(";")
-          parts.push(fingerprint)
+          trees.push(query.node(cid).toNodeTree("childNodes"))
         } catch {
-          parts.push("")
+          // skip invalid node
         }
       }
-      return { cellIds, signature: parts.join("||") }
+      if (trees.length === 0) return
+
+      const batched = actions.history.merge()
+      for (const targetCellId of seedInfo.emptyTargetCellIds) {
+        let targetNode
+        try {
+          targetNode = query.node(targetCellId).get()
+        } catch {
+          continue
+        }
+        const targetChildIds: string[] = (targetNode?.data?.nodes as string[]) ?? []
+        for (const childId of targetChildIds) {
+          try {
+            batched.delete(childId)
+          } catch {
+            // ignore
+          }
+        }
+        const seedPrefixBase = `${targetCellId}__seed__${seedCounterRef.current++}`
+        for (const tree of trees) {
+          const cloned = cloneNodeTree(tree, seedPrefixBase)
+          batched.addNodeTree(cloned, targetCellId)
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [
+    hasCollection,
+    cellCount,
+    seedInfo.templateCellId,
+    seedInfo.templateChildIds,
+    seedInfo.emptyTargetCellIds,
+    seedInfo.seedKey,
+    actions,
+    query,
+  ])
+
+  // Структурные id ячеек + контентная подпись (fingerprint по state.nodes, без getSerializedNodes).
+  const cellIdsAndSignature = useEditor((state, q) => {
+    if (!contentListId || !state.nodes[contentListId] || cellCount === 0) {
+      return { cellIds: [] as string[], signature: "" }
+    }
+    try {
+      const collected = collectContentListCellIds(state, contentListId, cellCount)
+      if (collected.status === "pending") {
+        return { cellIds: [] as string[], signature: CELL_IDS_PENDING_SIGNATURE }
+      }
+      if (collected.status === "empty" || collected.cellIds.length === 0) {
+        return { cellIds: [] as string[], signature: "" }
+      }
+      const signature = buildAllCellsSignature(state, q, collected.cellIds)
+      return { cellIds: collected.cellIds, signature }
     } catch {
       return { cellIds: [] as string[], signature: "" }
     }
@@ -232,11 +260,11 @@ export const CraftContentList = ({}: ContentListProps) => {
   // Массив фактических id ячеек ContentList в сторе Craft.js
   const actualCellIds = cellIdsAndSignature.cellIds
 
-  // Следит за изменением "подписи" ячеек и, если одна из ячеек изменилась,
-  // синхронизирует её содержимое (структуру/props) во все остальные ячейки списка
+  // Sync: при смене подписи ячеек копируем изменения из отличающейся ячейки в остальные.
+  // Invariant: не стартуем, пока signature === pending; syncInProgressRef блокирует вложенные батчи.
   useEffect(() => {
     if (!hasCollection || actualCellIds.length <= 1 || syncInProgressRef.current) return
-    if (anyCellTemplateSignature === "__pending__" || anyCellTemplateSignature === "") return
+    if (anyCellTemplateSignature === CELL_IDS_PENDING_SIGNATURE || anyCellTemplateSignature === "") return
 
     const runSync = () => {
       if (syncInProgressRef.current) return

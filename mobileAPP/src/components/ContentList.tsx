@@ -102,7 +102,7 @@ export const ContentList = ({
             const flatIndex = rowIndex * itemsPerRow + itemIndex;
             return (
               <ContentListItem
-                key={flatIndex}
+                key={itemData.id || String(flatIndex)}
                 itemData={itemData}
                 collectionKey={selectedSource}
                 itemsPerRow={itemsPerRow}

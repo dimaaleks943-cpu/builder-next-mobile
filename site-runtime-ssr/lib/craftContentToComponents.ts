@@ -67,21 +67,29 @@ const buildNodeTree = (
   // каждая из которых содержит своих детей-шаблонов.
   if (componentType === "ContentList") {
     const linkedNodes = node.linkedNodes ?? {}
-    // Дети ContentList — ячейки; могут быть в node.nodes или только в linkedNodes
-    let cellNodeIds = node.nodes ?? []
-    if (!cellNodeIds.length && Object.keys(linkedNodes).length > 0) {
+    // Дети ContentList — ячейки; могут быть в node.nodes или только в linkedNodes.
+    // В "сжатом" формате storage мы ожидаем ровно одну ячейку-шаблон: `${contentListId}-cell-0`.
+    const pickTemplateCellId = (): string | null => {
+      const dataNodes = node.nodes ?? []
+      if (dataNodes.length > 0) return dataNodes[0]
+
       const keys = Object.keys(linkedNodes)
-      // Предпочитаем ключи вида *-cell-* или берём первый
-      const cellKeys = keys.filter((k) => /-cell-|\d+$/.test(k))
-      cellNodeIds = cellKeys.length > 0 ? cellKeys : keys.slice(0, 1)
+      if (keys.length === 0) return null
+
+      const preferredKey = `${id}-cell-0`
+      if (linkedNodes[preferredKey]) return linkedNodes[preferredKey]
+      if (keys.includes(preferredKey)) return linkedNodes[preferredKey] || preferredKey
+
+      // Фоллбэк: берём любую ячейку, но стараемся не спутать с не-cell ссылками.
+      const cellKeys = keys.filter((k) => k.includes("cell"))
+      const candidateKey = (cellKeys.length > 0 ? cellKeys : keys)[0]
+      return linkedNodes[candidateKey] || candidateKey
     }
 
-    if (!cellNodeIds.length) {
+    const actualFirstCellId = pickTemplateCellId()
+    if (!actualFirstCellId) {
       return { type: "ContentList", props: node.props ?? {} }
     }
-
-    const firstCellKey = cellNodeIds[0]
-    const actualFirstCellId = linkedNodes[firstCellKey] || firstCellKey
     const cellNode = nodes[actualFirstCellId]
 
     if (!cellNode) {

@@ -302,4 +302,16 @@
   2) синхронизировать codec в `site-runtime-ssr`,
   3) синхронизировать codec в `mobileAPP`.
 
+---
+
+### 12. Update protocol для DEV_NOTES (обязательный)
+
+- Все изменения runtime-контрактов и data-flow фиксируем здесь в рамках той же задачи.
+- При изменениях `ContentList`/collections обязательно проверяем parity с `builder` и `mobileAPP`:
+  - `selectedSource` трактуется как `content_type_id` (UUID);
+  - items загружаются через `GET /v3/sites/{domain}/content/items` с filter по `content_type_id`;
+  - field-resolution в `Text`/`Image` работает через `item.fields[]` и `field.id`.
+- Если меняется SSR prefetch/client fallback в `pages/[[...slug]].tsx` или API-адаптеры,
+  обновляем этот раздел и `site-runtime-ssr/README.md`, чтобы не было расхождений.
+
 

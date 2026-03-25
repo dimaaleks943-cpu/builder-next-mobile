@@ -5,6 +5,7 @@ import { COLORS } from "../../../theme/colors"
 import { getPreviewMaxWidth, type PreviewViewport } from "../builder.enum"
 import { CraftBody } from "../../../craft/Body.tsx"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
+import { deleteCraftNode } from "../../../utils/craftDeleteNode.ts"
 import { UpdateIcon } from "../../../icons/UpdateIcon"
 
 interface BuilderCanvasProps {
@@ -16,7 +17,7 @@ export const BuilderCanvas = ({
   initialContent,
   previewViewport,
 }: BuilderCanvasProps) => {
-  const { actions } = useEditor()
+  const { actions, query } = useEditor()
   const { selectedId, canDeleteSelected } = useEditor((state, query) => {
     const [id] = Array.from(state.events.selected)
     if (!id) return { selectedId: null as string | null, canDeleteSelected: false }
@@ -91,7 +92,7 @@ export const BuilderCanvas = ({
     if (!selectedId || !canDeleteSelected) return
     e.preventDefault()
     e.stopPropagation()
-    actions.delete(selectedId)
+    deleteCraftNode(actions, query, selectedId)
   }
 
   const handleUndo = () => {

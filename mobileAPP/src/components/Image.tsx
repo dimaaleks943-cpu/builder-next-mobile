@@ -1,5 +1,6 @@
 import { Image as RNImage, StyleSheet, View, type ImageStyle } from "react-native";
 import { useContentData } from "../contexts/ContentDataContext";
+import { findContentItemField } from "../content/contentFieldValue";
 
 interface ImageProps {
   src?: string;
@@ -24,7 +25,8 @@ export const Image = ({
   let effectiveSrc: string | null = null;
 
   if (collectionField && contentData?.itemData) {
-    const fieldValue = contentData.itemData[collectionField];
+    const field = findContentItemField(contentData.itemData, collectionField);
+    const fieldValue = field?.value_text ?? field?.value;
     if (fieldValue !== null && fieldValue !== undefined) {
       if (typeof fieldValue === "string") {
         effectiveSrc = fieldValue;
@@ -49,7 +51,7 @@ export const Image = ({
   }
 
   const imageStyle: ImageStyle = {
-    width: width ?? "100%", //TODO убрать 100%
+    width: width ?? "100%",
     height: height ?? undefined,
     minHeight: height ?? 140,
     borderRadius,
@@ -70,7 +72,6 @@ export const Image = ({
 
 const styles = StyleSheet.create({
   wrapper: {
-    width: "100%",
     marginVertical: 8,
   },
 });

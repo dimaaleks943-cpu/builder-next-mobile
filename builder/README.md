@@ -57,6 +57,22 @@
 3. SSR и Mobile читают `selectedSource` как `content_type_id`.
 4. Runtime получает items по `content/items` и рендерит шаблон ячейки с `ContentDataContext`.
 
+## ContentList в редакторе (актуальный pipeline)
+
+Текущий pipeline редактирования/сохранения для `ContentList`:
+
+1. **compact (save-time)** - при `Save/Publish` JSON сначала проходит через
+   `compactContentListCells`, где сохраняется только шаблонная ячейка `cell-0`,
+   а дублированные `cell-1..N` удаляются.
+2. **seed (editor-time)** - в редакторе шаблон из `cell-0` разворачивается в пустые целевые ячейки,
+   чтобы пользователь видел структуру и мог править сетку.
+3. **sync (editor-time)** - изменения шаблона мягко/жестко синхронизируются между ячейками,
+   чтобы сохранялась одинаковая структура и props.
+4. **delete fallback** - удаление узла делает `actions.delete`, но при ошибках Craft
+   используется fallback через `serialize -> removeSerializedSubtree -> deserialize`.
+
+Это поведение фиксирует единый контракт: в сохраненном JSON хранится шаблон, а не runtime-дубли.
+
 ## Запуск
 
 ```bash

@@ -433,3 +433,22 @@ Source of truth для сокращений зафиксирован в `src/uti
   - фиксировать изменения контракта (новые пропсы, изменения структуры),
   - отмечать, как это влияет на `site-runtime-ssr` и на будущую мобильную реализацию.
 
+---
+
+### 7. Update protocol для DEV_NOTES (обязательный)
+
+- Любое изменение контрактов/flow в `builder`, влияющее на SSR/RN, фиксируем в этом файле
+  **в рамках той же задачи/PR**, а не "потом".
+- Минимум, который нужно дописать при изменениях:
+  - что поменялось;
+  - где source of truth (файл/модуль);
+  - влияние на `site-runtime-ssr` и `mobileAPP`.
+- Для `ContentList` поддерживаем текущий pipeline без расхождений с runtime:
+  - `compact` на сохранении (`cell-0` как шаблон);
+  - `seed` в редакторе;
+  - `sync` структуры и props между ячейками;
+  - `delete` с fallback через serialized subtree при сбое Craft `actions.delete`.
+- Терминология в описаниях и комментариях всегда единая:
+  - `selectedSource` = `content_type_id` (UUID),
+  - items через `content/items` c filter по `content_type_id`.
+

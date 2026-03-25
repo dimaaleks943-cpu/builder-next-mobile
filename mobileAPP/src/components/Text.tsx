@@ -1,5 +1,10 @@
+import { useMemo } from "react";
 import { Text as RNText, StyleSheet, type TextStyle } from "react-native";
 import { useContentData } from "../contexts/ContentDataContext";
+import {
+  findContentItemField,
+  getContentFieldDisplayValue,
+} from "../content/contentFieldValue";
 
 interface TextProps {
   text?: string;
@@ -48,17 +53,17 @@ export const Text = ({
 }: TextProps) => {
   const contentData = useContentData();
 
-  let displayText = text;
-  if (collectionField && contentData?.itemData) {
-    const fieldValue = contentData.itemData[collectionField];
-    if (fieldValue !== null && fieldValue !== undefined) {
-      if (typeof fieldValue === "object") {
-        displayText = JSON.stringify(fieldValue);
-      } else {
-        displayText = String(fieldValue);
+  const displayText = useMemo(() => {
+    if (collectionField && contentData?.itemData) {
+      const field = findContentItemField(contentData.itemData, collectionField);
+      const resolvedText = getContentFieldDisplayValue(field);
+      if (resolvedText !== "") {
+        return resolvedText;
       }
     }
-  }
+    return text;
+  }, [collectionField, contentData?.itemData, text]);
+
   const textDecorationParts: ("underline" | "line-through")[] = [];
   if (isUnderline) {
     textDecorationParts.push("underline");

@@ -62,20 +62,26 @@ const buildNodeTree = (
   if (componentType === "ContentList") {
     const linkedNodes = node.linkedNodes ?? {};
     /** дети ContentList это ячейки; могут быть в node.nodes или только в linkedNodes  */
-    let cellNodeIds = node.nodes ?? [];
-    if (!cellNodeIds.length && Object.keys(linkedNodes).length > 0) {
-      const keys = Object.keys(linkedNodes);
-      /** предпочитаем ключи вида *-cell-* или берём первый  */
-      const cellKeys = keys.filter((k) => /-cell-|\d+$/.test(k));
-      cellNodeIds = cellKeys.length > 0 ? cellKeys : keys.slice(0, 1);
-    }
+    const pickTemplateCellId = (): string | null => {
+      const dataNodes = node.nodes ?? [];
+      if (dataNodes.length > 0) return dataNodes[0];
 
-    if (!cellNodeIds.length) {
+      const keys = Object.keys(linkedNodes);
+      if (keys.length === 0) return null;
+
+      const preferredKey = `${id}-cell-0`;
+      if (linkedNodes[preferredKey]) return linkedNodes[preferredKey];
+      if (keys.includes(preferredKey)) return linkedNodes[preferredKey] || preferredKey;
+
+      const cellKeys = keys.filter((k) => k.includes("cell"));
+      const candidateKey = (cellKeys.length > 0 ? cellKeys : keys)[0];
+      return linkedNodes[candidateKey] || candidateKey;
+    };
+
+    const actualFirstCellId = pickTemplateCellId();
+    if (!actualFirstCellId) {
       return { type: "ContentList", props: node.props ?? {} };
     }
-
-    const firstCellKey = cellNodeIds[0];
-    const actualFirstCellId = linkedNodes[firstCellKey] || firstCellKey;
     const cellNode = nodes[actualFirstCellId];
 
     if (!cellNode) {
