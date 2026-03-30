@@ -8,6 +8,7 @@ import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSet
 import { CraftSettingsSelect } from "../components/craftSettingsControls/CraftSettingsSelect.tsx";
 import { useGetExtranetPagesQuery } from "../../../store/extranetApi.ts";
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts";
+import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts";
 
 type LinkMode = "url" | "page" | "collectionItemPage";
 
@@ -41,7 +42,7 @@ export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
         const ancestors = query.node(id).ancestors(true) as string[];
         for (const ancestorId of ancestors) {
           const ancestorNode = query.node(ancestorId).get();
-          if (resolveNodeDisplayName(ancestorNode) === "ContentList") {
+          if (resolveNodeDisplayName(ancestorNode) === CRAFT_DISPLAY_NAME.ContentList) {
             foundContentListAncestor = true;
             break;
           }

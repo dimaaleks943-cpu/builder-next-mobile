@@ -14,7 +14,8 @@ import {
   LinkTextSettingsFields,
 } from "../settingsCraftComponents"
 import { useRightPanelContext } from "../context/RightPanelContext.tsx"
-import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts";
+import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
+import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts"
 
 export const BuilderRightPanel = () => {
   const rightPanelContext = useRightPanelContext()
@@ -26,15 +27,21 @@ export const BuilderRightPanel = () => {
     const displayName = node ? resolveNodeDisplayName(node) : null
     const hasTextProp = node?.data.props?.text !== undefined
     const isLinkText =
-      displayName === "LinkText" || node?.data.props?.href !== undefined
+      displayName === CRAFT_DISPLAY_NAME.LinkText ||
+      node?.data.props?.href !== undefined
+    const isText =
+      displayName === CRAFT_DISPLAY_NAME.Text || hasTextProp
+    const isImage = displayName === CRAFT_DISPLAY_NAME.Image
 
     return {
       hasSelection: Boolean(id),
       selectedType: isLinkText
         ? "LinkText"
-        : displayName === "Text" || hasTextProp
+        : isText
           ? "Text"
-          : displayName,
+          : isImage
+            ? "Image"
+            : displayName,
     }
   })
 

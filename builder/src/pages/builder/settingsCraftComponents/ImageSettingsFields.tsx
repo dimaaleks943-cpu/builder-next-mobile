@@ -6,6 +6,7 @@ import { COLORS } from "../../../theme/colors.ts";
 import { useContentListData } from "../context/ContentListDataContext.tsx";
 import { useCollectionsContext } from "../context/CollectionsContext.tsx";
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts";
+import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts";
 import { SettingsAccordion } from "./components/SettingsAccordion/SettingsAccordion.tsx";
 
 interface SelectedImageProps {
@@ -42,7 +43,7 @@ export const ImageSettingsFields = ({ asAccordion }: ImageSettingsFieldsProps) =
             const ancestorNode = query.node(ancestorId).get();
             const displayName = resolveNodeDisplayName(ancestorNode);
 
-            if (displayName === "ContentList") {
+            if (displayName === CRAFT_DISPLAY_NAME.ContentList) {
               const selectedSource = (ancestorNode.data.props as any)
                 ?.selectedSource as string | undefined;
               if (selectedSource) {

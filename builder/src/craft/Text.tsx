@@ -10,6 +10,7 @@ import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 import { TextSettingsFields } from "../pages/builder/settingsCraftComponents"
 import type { IContentItem } from "../api/extranet"
 import { findContentItemField, getContentFieldDisplayValue } from "../utils/contentFieldValue"
+import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 
 export type TextAlign = "left" | "center" | "right"
 
@@ -274,7 +275,7 @@ export const CraftText = ({
 };
 
 ;(CraftText as any).craft = {
-  displayName: "Text",
+  displayName: CRAFT_DISPLAY_NAME.Text,
   props: {
     text: "Текст",
     collectionField: null,

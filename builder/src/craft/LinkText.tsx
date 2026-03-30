@@ -9,6 +9,7 @@ import { useContentListData } from "../pages/builder/context/ContentListDataCont
 import { LinkTextSettingsFields } from "../pages/builder/settingsCraftComponents"
 import type { IContentItem } from "../api/extranet"
 import { findContentItemField, getContentFieldDisplayValue } from "../utils/contentFieldValue"
+import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 
 export type TextAlign = "left" | "center" | "right"
 
@@ -271,7 +272,7 @@ export const CraftLinkText = ({
 };
 
 (CraftLinkText as any).craft = {
-  displayName: "LinkText",
+  displayName: CRAFT_DISPLAY_NAME.LinkText,
   props: {
     text: "Ссылка",
     collectionField: null,

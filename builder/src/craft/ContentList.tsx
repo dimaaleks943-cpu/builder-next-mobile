@@ -17,6 +17,7 @@ import {
   getDescendantsWithProps,
   typesMatch,
 } from "./contentListEditorUtils"
+import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 
 export type ContentListProps = {
   selectedSource?: string
@@ -711,7 +712,7 @@ export const CraftContentList = ({}: ContentListProps) => {
 };
 
 ;(CraftContentList as any).craft = {
-  displayName: "ContentList",
+  displayName: CRAFT_DISPLAY_NAME.ContentList,
   props: {
     selectedSource: "",
     itemsPerRow: 1,

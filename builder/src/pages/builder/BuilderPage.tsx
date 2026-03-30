@@ -27,6 +27,7 @@ import {
 } from "../../store/extranetApi"
 import { MODE_TYPE, type PreviewViewport } from "./builder.enum"
 import { decodeSerializedNodesStyleProps } from "../../utils/stylePropsCodec"
+import { CRAFT_DISPLAY_NAME } from "../../craft/craftDisplayNames.ts"
 
 function pickBindableTypeFields(
   fields: IContentTypeField[] | undefined,
@@ -43,7 +44,7 @@ const EMPTY_SERIALIZED_NODES: SerializedNodes = {
     type: { resolvedName: "Body" },
     isCanvas: true,
     props: {},
-    displayName: "CraftBody",
+    displayName: CRAFT_DISPLAY_NAME.Body,
     custom: {},
     hidden: false,
     nodes: [],

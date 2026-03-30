@@ -7,6 +7,7 @@ import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import { ImageSettingsFields } from "../pages/builder/settingsCraftComponents"
+import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 
 interface Props {
   src?: string;
@@ -136,7 +137,7 @@ export const CraftImage = ({
 };
 
 ;(CraftImage as any).craft = {
-  displayName: "Image",
+  displayName: CRAFT_DISPLAY_NAME.Image,
   props: {
     src: undefined,
     alt: "",

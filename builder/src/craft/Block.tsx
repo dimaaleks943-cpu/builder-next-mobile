@@ -11,6 +11,7 @@ import type {
   GridAutoFlow,
   PlaceItemsValue,
 } from "../builder.enum"
+import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 
 export type BlockProps = {
   children?: ReactNode
@@ -175,7 +176,7 @@ export const CraftBlock = ({
 };
 
 (CraftBlock as any).craft = {
-  displayName: "Block",
+  displayName: CRAFT_DISPLAY_NAME.Block,
   props: {
     fullSize: false,
     layout: "block" as BlockLayoutMode,

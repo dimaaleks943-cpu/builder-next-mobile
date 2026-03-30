@@ -2,6 +2,7 @@ import { useNode } from "@craftjs/core"
 import type { ReactNode } from "react"
 import { COLORS } from "../theme/colors"
 import { withOpacity } from "../utils/colorUtils"
+import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 
 export type BodyLayoutMode = "block" | "flex" | "grid" | "absolute"
 
@@ -101,7 +102,7 @@ export const CraftBody = ({
 }
 
 ;(CraftBody as any).craft = {
-  displayName: "Body",
+  displayName: CRAFT_DISPLAY_NAME.Body,
   props: {
     layout: "block" as BodyLayoutMode,
     marginTop: 0,

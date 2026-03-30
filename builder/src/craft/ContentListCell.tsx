@@ -10,6 +10,7 @@ import type {
   GridAutoFlow,
   PlaceItemsValue,
 } from "../builder.enum"
+import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 
 export type ContentListCellProps = {
   children?: ReactNode
@@ -110,7 +111,7 @@ export const CraftContentListCell = ({
 }
 
 ;(CraftContentListCell as any).craft = {
-  displayName: "ContentListCell",
+  displayName: CRAFT_DISPLAY_NAME.ContentListCell,
   props: {
     layout: "block" as BlockLayoutMode,
     gridColumns: undefined,
