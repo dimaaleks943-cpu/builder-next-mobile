@@ -1,17 +1,22 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useEditor, useNode } from "@craftjs/core"
 import type { CSSProperties } from "react"
 import { COLORS } from "../theme/colors"
 import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
+import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
 import { LinkTextSettingsFields } from "../pages/builder/settingsCraftComponents"
+import type { IContentItem } from "../api/extranet"
+import { findContentItemField, getContentFieldDisplayValue } from "../utils/contentFieldValue"
 
 export type TextAlign = "left" | "center" | "right"
 
 export interface LinkTextProps {
   text?: string
+  collectionField?: string | null
   href?: string
+  linkMode?: "url" | "page" | "collectionItemPage"
   openInNewTab?: boolean
   fontSize?: number
   fontWeight?: "normal" | "bold"
@@ -37,6 +42,7 @@ export interface LinkTextProps {
 
 export const CraftLinkText = ({
   text = "Ссылка",
+  collectionField = null,
   href = "http://www.google.com",
   openInNewTab = false,
   fontSize = 14,
@@ -78,20 +84,32 @@ export const CraftLinkText = ({
 
   const { actions } = useEditor()
   const rightPanelContext = useRightPanelContext()
+  const contentListData = useContentListData()
+
+  const displayText = useMemo(() => {
+    if (!collectionField || !contentListData?.itemData) {
+      return text
+    }
+    const item = contentListData.itemData as IContentItem
+    const field = findContentItemField(item, collectionField)
+    const resolved = getContentFieldDisplayValue(field)
+    return resolved !== "" ? resolved : text
+  }, [collectionField, contentListData?.itemData, text])
 
   useEffect(() => {
     if (!isEditing) {
-      setDraft(text)
-      if (spanRef.current) {
-        spanRef.current.textContent = text
+      setDraft(displayText)
+      if (spanRef.current && !collectionField) {
+        spanRef.current.textContent = displayText
       }
     }
-  }, [text, isEditing])
+  }, [displayText, isEditing, collectionField])
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLSpanElement>) => {
     e.stopPropagation()
     e.preventDefault()
     if (!selected) return
+    if (collectionField) return
     setIsEditing(true)
   }
 
@@ -123,7 +141,7 @@ export const CraftLinkText = ({
     } else if (e.key === "Escape") {
       e.preventDefault()
       e.stopPropagation()
-      setDraft(text)
+      setDraft(displayText)
       setIsEditing(false)
     }
   }
@@ -189,8 +207,8 @@ export const CraftLinkText = ({
     boxSizing: "border-box",
     minWidth: 20,
     outline: "none",
-    cursor: isEditing ? "text" : selected ? "move" : "pointer",
-    userSelect: isEditing ? "text" : "none",
+    cursor: collectionField ? "default" : isEditing ? "text" : selected ? "move" : "pointer",
+    userSelect: collectionField ? "none" : isEditing ? "text" : "none",
   }
 
   return (
@@ -211,7 +229,7 @@ export const CraftLinkText = ({
           <InlineSettingsBadge
             ref={badgeRef}
             icon={<span style={{ fontSize: 11 }}>🔗</span>}
-            label={text || "Link"}
+            label="Текст-ссылка"
             maxWidth={140}
             showSettingsButton
             onSettingsClick={openSettingsModal}
@@ -221,20 +239,22 @@ export const CraftLinkText = ({
           ref={(ref) => {
             spanRef.current = ref
             if (!ref) return
-            if (isEditing) {
+            if (isEditing && !collectionField) {
               connect(ref)
             } else {
               connect(drag(ref))
             }
           }}
-          contentEditable={isEditing}
+          contentEditable={isEditing && !collectionField}
           suppressContentEditableWarning
           onDoubleClick={handleDoubleClick}
           onInput={handleInput}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           style={style}
-        />
+        >
+          {displayText}
+        </span>
       </a>
       <InlineSettingsModal
         open={selected && isSettingsOpen}
@@ -244,17 +264,19 @@ export const CraftLinkText = ({
         onClose={() => setIsSettingsOpen(false)}
         onShowAllSettings={handleShowAllSettings}
       >
-        <LinkTextSettingsFields />
+        <LinkTextSettingsFields/>
       </InlineSettingsModal>
     </>
   )
-}
+};
 
-;(CraftLinkText as any).craft = {
+(CraftLinkText as any).craft = {
   displayName: "LinkText",
   props: {
     text: "Ссылка",
+    collectionField: null,
     href: "http://www.google.com",
+    linkMode: "url" as const,
     openInNewTab: false,
     fontSize: 14,
     fontWeight: "normal" as const,

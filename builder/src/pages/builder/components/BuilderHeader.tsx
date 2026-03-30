@@ -16,6 +16,8 @@ import { MobileIcon } from "../../../icons/MobileIcon.tsx";
 
 interface BuilderHeaderProps {
   pageId?: string
+  pageName?: string
+  pageSlug?: string
   previewViewport: PreviewViewport
   onPreviewViewportChange: (viewport: PreviewViewport) => void
 }
@@ -27,6 +29,8 @@ const MODES: { value: BuilderMode; label: string }[] = [
 
 export const BuilderHeader = ({
   pageId,
+  pageName,
+  pageSlug,
   previewViewport,
   onPreviewViewportChange,
 }: BuilderHeaderProps) => {
@@ -63,6 +67,10 @@ export const BuilderHeader = ({
       console.error("BuilderModeContext недоступен")
       return
     }
+    if (!pageName || !pageSlug) {
+      console.error("Невозможно сохранить: не загружены name/slug страницы")
+      return
+    }
 
     const serialized = query.getSerializedNodes()
     const compacted = compactContentListCells(serialized)
@@ -81,8 +89,8 @@ export const BuilderHeader = ({
 
     const body = {
       directory_id: null as string | null,
-      name: "Главная",
-      slug: "/",
+      name: pageName,
+      slug: pageSlug,
       content: contentPayload,
       content_mobile: mobContentPayload,
       sort: 0,

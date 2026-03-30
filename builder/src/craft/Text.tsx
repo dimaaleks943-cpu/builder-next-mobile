@@ -228,7 +228,7 @@ export const CraftText = ({
         <InlineSettingsBadge
             ref={badgeRef}
             icon={<span style={{ fontSize: 11 }}>T</span>}
-            label={displayText || "Текст"}
+            label="Текст"
             maxWidth={120}
             showSettingsButton={showSettingsButton}
             onSettingsClick={

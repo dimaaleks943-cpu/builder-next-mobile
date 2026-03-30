@@ -428,7 +428,7 @@ export const CraftContentList = ({}: ContentListProps) => {
         <InlineSettingsBadge
           ref={badgeRef}
           icon={<span>CL</span>}
-          label="ContentList"
+          label="Список-контента"
           onSettingsClick={openSettings}
         />
       )}

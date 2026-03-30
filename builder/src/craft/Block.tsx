@@ -77,7 +77,6 @@ export const CraftBlock = ({
   borderStyle = "solid",
   borderOpacity = 1,
 }: BlockProps) => {
-    console.log("flexAlignItems123123", flexAlignItems)
   const {
     connectors: { connect, drag },
     selected,
@@ -165,7 +164,7 @@ export const CraftBlock = ({
     >
       {selected && (
         <InlineSettingsBadge
-          label="Block"
+          label="Div блок"
           icon={<span style={{ fontSize: 11 }}>B</span>}
           showSettingsButton={false}
         />
@@ -173,9 +172,9 @@ export const CraftBlock = ({
       {children}
     </div>
   )
-}
+};
 
-;(CraftBlock as any).craft = {
+(CraftBlock as any).craft = {
   displayName: "Block",
   props: {
     fullSize: false,

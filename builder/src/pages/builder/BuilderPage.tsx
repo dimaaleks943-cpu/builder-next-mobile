@@ -177,6 +177,8 @@ export const BuilderPage = () => {
             >
               <BuilderHeader
                 pageId={id}
+                pageName={pageResponse?.data?.name}
+                pageSlug={pageResponse?.data?.slug}
                 previewViewport={previewViewport}
                 onPreviewViewportChange={setPreviewViewport}
               />
