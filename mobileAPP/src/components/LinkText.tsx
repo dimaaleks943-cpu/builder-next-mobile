@@ -1,8 +1,15 @@
+import { useMemo } from "react";
 import { Linking, Pressable, StyleSheet, Text as RNText, type TextStyle } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useContentData } from "../contexts/ContentDataContext";
+import {
+  findContentItemField,
+  getContentFieldDisplayValue,
+} from "../content/contentFieldValue";
 
 interface LinkTextProps {
   text?: string;
+  collectionField?: string | null;
   href?: string;
   openInNewTab?: boolean;
   fontSize?: number;
@@ -27,6 +34,7 @@ interface LinkTextProps {
 
 export const LinkText = ({
   text = "Ссылка",
+  collectionField = null,
   href,
   openInNewTab, // не используется в RN, оставлен для совместимости с типом конструктора
   fontSize = 14,
@@ -49,6 +57,19 @@ export const LinkText = ({
   paddingLeft = 0,
 }: LinkTextProps) => {
   const navigation = useNavigation<any>();
+  const contentData = useContentData();
+
+  const displayText = useMemo(() => {
+    if (collectionField && contentData?.itemData) {
+      const field = findContentItemField(contentData.itemData, collectionField);
+      const resolvedText = getContentFieldDisplayValue(field);
+      if (resolvedText !== "") {
+        return resolvedText;
+      }
+    }
+    return text;
+  }, [collectionField, contentData?.itemData, text]);
+
 
   const handlePress = () => {
     if (!href) return;
@@ -93,7 +114,7 @@ export const LinkText = ({
 
   return (
     <Pressable onPress={handlePress}>
-      <RNText style={[styles.base, style]}>{text}</RNText>
+      <RNText style={[styles.base, style]}>{displayText}</RNText>
     </Pressable>
   );
 };

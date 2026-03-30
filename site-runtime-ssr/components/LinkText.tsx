@@ -1,5 +1,14 @@
+import { useMemo } from "react";
+import { useContentData } from "./ContentDataContext";
+import {
+  findContentItemField,
+  getContentFieldDisplayValue,
+} from "@/lib/contentFieldValue";
+import type { IContentItem } from "@/lib/contentTypes";
+
 interface LinkTextProps {
   text?: string;
+  collectionField?: string | null;
   href?: string;
   openInNewTab?: boolean;
   fontSize?: number;
@@ -26,6 +35,7 @@ interface LinkTextProps {
 
 export const LinkText = ({
   text = "Ссылка",
+  collectionField = null,
   href = "http://www.google.com",
   openInNewTab = false,
   fontSize = 14,
@@ -49,6 +59,19 @@ export const LinkText = ({
   paddingBottom = 0,
   paddingLeft = 0,
 }: LinkTextProps) => {
+  const contentData = useContentData();
+
+  const displayText = useMemo(() => {
+    if (collectionField && contentData?.itemData) {
+      const item = contentData.itemData as IContentItem;
+      const field = findContentItemField(item, collectionField);
+      if (field) {
+        return getContentFieldDisplayValue(field);
+      }
+    }
+    return text;
+  }, [collectionField, contentData?.itemData, text]);
+
   const textDecoration = [
     "underline",
     isStrikethrough ? "line-through" : "",
@@ -86,7 +109,7 @@ export const LinkText = ({
         boxSizing: "border-box",
       }}
     >
-      {text}
+      {displayText}
     </a>
   );
 }
