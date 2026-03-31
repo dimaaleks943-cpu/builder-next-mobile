@@ -25,12 +25,12 @@ export const fetchContentItems = async (
 ): Promise<IContentItem[] | null> => {
   const cleanDomain = normalizeSiteDomain(domain)
   if (!cleanDomain || !contentTypeId.trim()) return null
-  console.log("contentTypeId12312", contentTypeId)
+
   try {
     const filter = JSON.stringify({
       content_type_id: [contentTypeId],
     })
-    const searchParams = new URLSearchParams()
+    const searchParams = new URLSearchParams({filter})
     if (params?.limit != null) searchParams.set("limit", String(params.limit))
     if (params?.offset != null) searchParams.set("offset", String(params.offset))
 
