@@ -11,6 +11,74 @@ type HomePageProps = {
   onOpenBuilder: (id?: string) => void
 }
 
+type ExtranetPageListSectionsProps = {
+  pages: ExtranetPage[] | undefined
+  onOpenBuilder: (id?: string) => void
+}
+
+function ExtranetPageListSections({
+  pages,
+  onOpenBuilder,
+}: ExtranetPageListSectionsProps): ReactNode {
+  const { staticPages, templatePages } = useMemo(() => {
+    const list = pages ?? []
+    return {
+      staticPages: list.filter(p => (p.type ?? "static") === "static"),
+      templatePages: list.filter(p => p.type === "template"),
+    }
+  }, [pages])
+
+  const buttonRowSx = {
+    display: "flex",
+    gap: 1,
+    justifyContent: "center",
+    flexWrap: "wrap" as const,
+  }
+
+  return (
+    <Box mt={2} display="flex" flexDirection="column" gap={2}>
+      {staticPages.length > 0 ? (
+        <Box>
+          <Typography variant="subtitle1" component="h2" sx={{ mb: 1 }}>
+            Статические страницы
+          </Typography>
+          <Box sx={buttonRowSx}>
+            {staticPages.map(page => (
+              <Button
+                key={page.id}
+                variant="outlined"
+                size="small"
+                onClick={() => onOpenBuilder(page.id)}
+              >
+                {page.name}
+              </Button>
+            ))}
+          </Box>
+        </Box>
+      ) : null}
+      {templatePages.length > 0 ? (
+        <Box>
+          <Typography variant="subtitle1" component="h2" sx={{ mb: 1 }}>
+            Шаблоны
+          </Typography>
+          <Box sx={buttonRowSx}>
+            {templatePages.map(page => (
+              <Button
+                key={page.id}
+                variant="outlined"
+                size="small"
+                onClick={() => onOpenBuilder(page.id)}
+              >
+                {page.name}
+              </Button>
+            ))}
+          </Box>
+        </Box>
+      ) : null}
+    </Box>
+  )
+}
+
 export const HomePage = ({ onOpenBuilder }: HomePageProps): ReactNode => {
   const [fetchExtranetPages] = useLazyGetExtranetPagesQuery()
 
@@ -84,18 +152,10 @@ export const HomePage = ({ onOpenBuilder }: HomePageProps): ReactNode => {
                       Загрузить страницы extranet
                     </Button>
                   </Box>
-                  <Box mt={2} display="flex" gap={1} justifyContent="center" flexWrap="wrap">
-                    {values.page?.map(page => (
-                      <Button
-                        key={page.id}
-                        variant="outlined"
-                        size="small"
-                        onClick={() => onOpenBuilder(page.id)}
-                      >
-                        {page.name}
-                      </Button>
-                    ))}
-                  </Box>
+                  <ExtranetPageListSections
+                    pages={values.page}
+                    onOpenBuilder={onOpenBuilder}
+                  />
                 </Box>
               </Box>
             </Box>
