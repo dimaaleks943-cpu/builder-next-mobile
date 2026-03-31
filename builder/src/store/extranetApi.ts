@@ -21,6 +21,19 @@ const baseQuery = fetchBaseQuery({
   },
 })
 
+/** Тело POST `/pages` (создание страницы extranet). */
+export type CreateExtranetPageBody = {
+  directory_id: string | null
+  name: string
+  slug: string
+  type: "static" | "template"
+  collection_type_id: string | null
+  item_path_prefix: string | null
+  content: string
+  content_mobile: string
+  sort: number
+}
+
 export type UpdateExtranetPageBody = {
   directory_id: string | null
   name: string
@@ -112,6 +125,18 @@ export const extranetApi = createApi({
       }),
       invalidatesTags: ["ExtranetPage"],
     }),
+
+    createExtranetPage: build.mutation<
+      ExtranetPageResponse,
+      CreateExtranetPageBody
+    >({
+      query: (body) => ({
+        url: "/pages",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["ExtranetPage"],
+    }),
   }),
 })
 
@@ -123,4 +148,5 @@ export const {
   useGetExtranetPagesQuery,
   useLazyGetExtranetPagesQuery,
   useUpdateExtranetPageMutation,
+  useCreateExtranetPageMutation,
 } = extranetApi
