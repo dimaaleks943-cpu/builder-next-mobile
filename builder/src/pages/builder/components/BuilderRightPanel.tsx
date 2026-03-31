@@ -28,7 +28,8 @@ export const BuilderRightPanel = () => {
     const hasTextProp = node?.data.props?.text !== undefined
     const isLinkText =
       displayName === CRAFT_DISPLAY_NAME.LinkText ||
-      node?.data.props?.href !== undefined
+      node?.data.props?.href !== undefined ||
+      node?.data.props?.linkMode === "collectionItemPage"
     const isText =
       displayName === CRAFT_DISPLAY_NAME.Text || hasTextProp
     const isImage = displayName === CRAFT_DISPLAY_NAME.Image

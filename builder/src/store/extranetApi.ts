@@ -7,6 +7,7 @@ import {
   type ExtranetPageResponse,
   type ExtranetPagesResponse,
   type PaginatedResponse,
+  type ExtranetPage,
 } from "../api/extranet"
 
 const baseQuery = fetchBaseQuery({
@@ -29,18 +30,20 @@ export type CreateExtranetPageBody = {
   type: "static" | "template"
   collection_type_id: string | null
   item_path_prefix: string | null
-  content: string
-  content_mobile: string
+  content: string | null
+  content_mobile: string | null
   sort: number
+  site_id: number
 }
 
 export type UpdateExtranetPageBody = {
   directory_id: string | null
   name: string
   slug: string
-  content: string
-  content_mobile: string
+  content: string | null
+  content_mobile: string | null
   sort: number
+  site_id: number
 }
 
 export const extranetApi = createApi({
@@ -127,7 +130,7 @@ export const extranetApi = createApi({
     }),
 
     createExtranetPage: build.mutation<
-      ExtranetPageResponse,
+      ExtranetPage,
       CreateExtranetPageBody
     >({
       query: (body) => ({

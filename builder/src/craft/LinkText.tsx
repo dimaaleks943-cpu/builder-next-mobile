@@ -18,6 +18,8 @@ export interface LinkTextProps {
   collectionField?: string | null
   href?: string
   linkMode?: "url" | "page" | "collectionItemPage"
+  collectionItemLinkTarget?: "none" | "template"
+  collectionItemTemplatePageId?: string | null
   openInNewTab?: boolean
   fontSize?: number
   fontWeight?: "normal" | "bold"
@@ -278,6 +280,8 @@ export const CraftLinkText = ({
     collectionField: null,
     href: "http://www.google.com",
     linkMode: "url" as const,
+    collectionItemLinkTarget: "none" as const,
+    collectionItemTemplatePageId: null,
     openInNewTab: false,
     fontSize: 14,
     fontWeight: "normal" as const,

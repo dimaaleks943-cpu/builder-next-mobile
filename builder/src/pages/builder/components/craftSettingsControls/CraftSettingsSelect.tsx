@@ -13,6 +13,7 @@ interface Props {
   value: string;
   onChange: (event: ChangeEvent<HTMLSelectElement>) => void;
   options: Option[];
+  disabled?: boolean;
 }
 
 export const CraftSettingsSelect = ({
@@ -20,6 +21,7 @@ export const CraftSettingsSelect = ({
   value,
   onChange,
   options,
+  disabled = false,
 }: Props) => {
   return (
     <Box
@@ -53,6 +55,7 @@ export const CraftSettingsSelect = ({
           component="select"
           value={value}
           onChange={onChange}
+          disabled={disabled}
           sx={{
             width: "100%",
             boxSizing: "border-box",
