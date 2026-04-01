@@ -60,6 +60,57 @@ export const fetchContentItems = async (
   }
 }
 
+function parseSingleContentItemJson(json: unknown): IContentItem | null {
+  if (!json || typeof json !== "object") return null
+  const o = json as Record<string, unknown>
+  if (o.data != null && typeof o.data === "object" && !Array.isArray(o.data)) {
+    const inner = o.data as Record<string, unknown>
+    if (typeof inner.id === "string") return o.data as IContentItem
+  }
+  if (typeof o.id === "string") return json as IContentItem
+  return null
+}
+
+/**
+ * GET /v3/sites/{domain}/content/items/{content_item_id}
+ */
+export const fetchContentItemById = async (
+  domain: string,
+  contentItemId: string,
+): Promise<IContentItem | null> => {
+  const cleanDomain = normalizeSiteDomain(domain)
+  const id = contentItemId.trim()
+  if (!cleanDomain || !id) return null
+
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/v3/sites/${encodeURIComponent(cleanDomain)}/content/items/${encodeURIComponent(id)}`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      },
+    )
+
+    if (!response.ok) {
+      if (response.status !== 404) {
+        console.error(
+          `Не удалось получить content item ${id} для ${cleanDomain}:`,
+          response.status,
+          response.statusText,
+        )
+      }
+      return null
+    }
+
+    const json: unknown = await response.json()
+    return parseSingleContentItemJson(json)
+  } catch (error) {
+    console.error("Ошибка при запросе content item по id:", error)
+    return null
+  }
+}
+
 /**
  * GET /v3/sites/{domain}/content/types (опционально — схемы полей, подписи типов).
  */

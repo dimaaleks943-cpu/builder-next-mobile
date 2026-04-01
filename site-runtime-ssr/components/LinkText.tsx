@@ -1,15 +1,39 @@
 import { useMemo } from "react";
 import { useContentData } from "./ContentDataContext";
+import { useSiteCollections } from "./SiteCollectionsContext";
 import {
   findContentItemField,
   getContentFieldDisplayValue,
 } from "@/lib/contentFieldValue";
 import type { IContentItem } from "@/lib/contentTypes";
+import { normalizeItemPathPrefix } from "@/lib/templateRoute";
+
+function buildCollectionItemTemplateHref(
+  prefixNormalized: string,
+  segment: string,
+): string {
+  const raw = segment.trim();
+  if (!raw) return "#";
+  const encoded = raw
+    .split("/")
+    .filter(Boolean)
+    .map((p) => encodeURIComponent(p))
+    .join("/");
+  if (!encoded) return "#";
+  if (prefixNormalized === "/") {
+    return `/${encoded}`;
+  }
+  const base = prefixNormalized.replace(/\/+$/, "");
+  return `${base}/${encoded}`;
+}
 
 interface LinkTextProps {
   text?: string;
   collectionField?: string | null;
   href?: string;
+  linkMode?: "url" | "page" | "collectionItemPage";
+  collectionItemLinkTarget?: "none" | "template";
+  collectionItemTemplatePageId?: string | null;
   openInNewTab?: boolean;
   fontSize?: number;
   fontWeight?: "normal" | "bold";
@@ -37,6 +61,9 @@ export const LinkText = ({
   text = "Ссылка",
   collectionField = null,
   href = "http://www.google.com",
+  linkMode = "url",
+  collectionItemLinkTarget = "none",
+  collectionItemTemplatePageId = null,
   openInNewTab = false,
   fontSize = 14,
   fontWeight = "normal",
@@ -60,6 +87,7 @@ export const LinkText = ({
   paddingLeft = 0,
 }: LinkTextProps) => {
   const contentData = useContentData();
+  const { sitePages } = useSiteCollections();
 
   const displayText = useMemo(() => {
     if (collectionField && contentData?.itemData) {
@@ -72,6 +100,56 @@ export const LinkText = ({
     return text;
   }, [collectionField, contentData?.itemData, text]);
 
+  const resolvedHref = useMemo(() => {
+    const templateId =
+      typeof collectionItemTemplatePageId === "string"
+        ? collectionItemTemplatePageId.trim()
+        : "";
+    const useTemplate =
+      linkMode === "collectionItemPage" &&
+      collectionItemLinkTarget === "template" &&
+      templateId.length > 0;
+
+    if (!useTemplate) {
+      return href;
+    }
+
+    const page = sitePages.find((p) => p.id === templateId);
+    if (!page) {
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "[LinkText] collectionItemTemplatePageId not found in sitePages:",
+          templateId,
+        );
+      }
+      return href?.trim() ? href : "#";
+    }
+
+    const item = contentData?.itemData as IContentItem | undefined;
+    if (!item) {
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "[LinkText] collection item template link needs row context (itemData); using fallback href.",
+        );
+      }
+      return href?.trim() ? href : "#";
+    }
+
+    const prefix = normalizeItemPathPrefix(page.item_path_prefix ?? page.slug);
+    const segment =
+      typeof item.id === "string" ? item.id.trim() : String(item.id ?? "").trim();
+    return buildCollectionItemTemplateHref(prefix, segment);
+  }, [
+    href,
+    linkMode,
+    collectionItemLinkTarget,
+    collectionItemTemplatePageId,
+    sitePages,
+    contentData?.itemData,
+  ]);
+
   const textDecoration = [
     "underline",
     isStrikethrough ? "line-through" : "",
@@ -82,7 +160,7 @@ export const LinkText = ({
 
   return (
     <a
-      href={href}
+      href={resolvedHref}
       target={openInNewTab ? "_blank" : "_self"}
       rel={openInNewTab ? "noopener noreferrer" : undefined}
       style={{

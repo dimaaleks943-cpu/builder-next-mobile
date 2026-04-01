@@ -2,24 +2,37 @@ import type { GetServerSideProps, GetServerSidePropsResult } from "next"
 import Head from "next/head"
 import { renderPage } from "@/lib/renderer"
 import type { ComponentNode } from "@/lib/interface"
-import { getSitePages, normalizeSiteDomain } from "@/lib/sitePages"
+import { getSitePages, normalizeSiteDomain, type SitePage } from "@/lib/sitePages"
 import { craftContentToComponents } from "@/lib/craftContentToComponents"
-import { fetchContentItems } from "@/lib/collectionsApi"
+import { fetchContentItemById, fetchContentItems } from "@/lib/collectionsApi"
 import { extractContentListTypeIdsFromCraftContent } from "@/lib/extractContentListSources"
 import type { IContentItem } from "@/lib/contentTypes"
 import { SiteCollectionsProvider } from "@/components/SiteCollectionsContext"
+import { ContentDataProvider } from "@/components/ContentDataContext"
+import {
+  findContentItemByUrlSegment,
+  isTemplateSitePage,
+  isUuidLikePathSegment,
+  resolveTemplatePageForSlug,
+} from "@/lib/templateRoute"
 
 interface PageProps {
   domain: string
   slug: string
   components: ComponentNode[]
   collectionItemsByTypeId: Record<string, IContentItem[]>
+  sitePages: SitePage[]
+  /** Данные записи для template-страницы (поля Text/Image вне ContentList). */
+  templateContentData: {
+    collectionKey: string
+    itemData: IContentItem
+  } | null
 }
 
 export const getServerSideProps: GetServerSideProps<PageProps> = async (
   context,
 ): Promise<GetServerSidePropsResult<PageProps>> => {
-  const hostHeader = context.req.headers.host ?? "" //marketflow.store
+  const hostHeader = "marketflow.store" // context.req.headers.host ?? "" //
   const domain = normalizeSiteDomain(hostHeader)
 
   if (!domain) {
@@ -41,10 +54,25 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
     return { notFound: true }
   }
 
-  // 4. Ищем нужную страницу по slug. Как корень используем "/"
-  const page =
-    pages.find((p) => p.slug === slugPath) ||
-    (slugPath === "/" ? pages.find((p) => p.slug === "/") : undefined)
+  // 4. Статическая страница: точное совпадение slug; template-страницы с тем же slug не берём
+  // (для них нужен хвост пути с записью коллекции).
+  const isStaticPage = (p: SitePage) => !isTemplateSitePage(p)
+
+  let page: SitePage | undefined =
+    pages.find((p) => p.slug === slugPath && isStaticPage(p)) ||
+    (slugPath === "/"
+      ? pages.find((p) => p.slug === "/" && isStaticPage(p))
+      : undefined)
+
+  let templateItemSegment: string | null = null
+
+  if (!page) {
+    const resolved = resolveTemplatePageForSlug(pages, slugPath)
+    if (resolved) {
+      page = resolved.page
+      templateItemSegment = resolved.itemSegment
+    }
+  }
 
   if (!page || !page.content) {
     return { notFound: true }
@@ -63,9 +91,55 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
   )
   const collectionItemsByTypeId: Record<string, IContentItem[]> = {}
 
-  if (contentListTypeIds.length > 0) {
+  let templateContentData: PageProps["templateContentData"] = null
+
+  if (isTemplateSitePage(page) && page.collection_type_id?.trim()) {
+    //@ts-ignore
+    const typeId = page.collection_type_id.trim()
+
+    if (!templateItemSegment) {
+      return { notFound: true }
+    }
+
+    if (isUuidLikePathSegment(templateItemSegment)) {
+      const byId = await fetchContentItemById(domain, templateItemSegment)
+      if (!byId) {
+        return { notFound: true }
+      }
+      const raw = byId as Record<string, unknown>
+      const itemTypeId =
+        (typeof byId.content_type_id === "string"
+          ? byId.content_type_id
+          : undefined) ??
+        (typeof raw.collection_type_id === "string"
+          ? raw.collection_type_id
+          : undefined)
+      if (
+        !itemTypeId ||
+        itemTypeId.trim().toLowerCase() !== typeId.toLowerCase()
+      ) {
+        return { notFound: true }
+      }
+      collectionItemsByTypeId[typeId] = [byId]
+      templateContentData = { collectionKey: typeId, itemData: byId }
+    } else {
+      const items = (await fetchContentItems(domain, typeId)) ?? []
+      collectionItemsByTypeId[typeId] = items
+      const item = findContentItemByUrlSegment(items, templateItemSegment)
+      if (!item) {
+        return { notFound: true }
+      }
+      templateContentData = { collectionKey: typeId, itemData: item }
+    }
+  }
+
+  const extraTypeIds = contentListTypeIds.filter(
+    (id) => collectionItemsByTypeId[id] === undefined,
+  )
+
+  if (extraTypeIds.length > 0) {
     const batches = await Promise.all(
-      contentListTypeIds.map(async (typeId) => {
+      extraTypeIds.map(async (typeId) => {
         const data = await fetchContentItems(domain, typeId)
         return [typeId, data ?? []] as const
       }),
@@ -81,6 +155,8 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       slug: slugPath,
       components,
       collectionItemsByTypeId,
+      sitePages: pages,
+      templateContentData,
     },
   }
 }
@@ -90,8 +166,16 @@ export default function Page({
   slug,
   components,
   collectionItemsByTypeId,
+  sitePages,
+  templateContentData,
 }: PageProps) {
   const urlPath = slug === "/" ? "" : slug
+
+  const main = (
+    <main style={{ minHeight: "100vh", padding: "20px" }}>
+      {renderPage(components)}
+    </main>
+  )
 
   return (
     <>
@@ -103,10 +187,18 @@ export default function Page({
       <SiteCollectionsProvider
         domain={domain}
         collectionItemsByTypeId={collectionItemsByTypeId}
+        sitePages={sitePages}
       >
-        <main style={{ minHeight: "100vh", padding: "20px" }}>
-          {renderPage(components)}
-        </main>
+        {templateContentData ? (
+          <ContentDataProvider
+            collectionKey={templateContentData.collectionKey}
+            itemData={templateContentData.itemData}
+          >
+            {main}
+          </ContentDataProvider>
+        ) : (
+          main
+        )}
       </SiteCollectionsProvider>
     </>
   )

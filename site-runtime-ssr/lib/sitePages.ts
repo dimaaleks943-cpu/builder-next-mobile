@@ -3,6 +3,15 @@ export interface SitePage {
   name: string
   slug: string
   content: string
+  /** Публичный GET /pages может не отдавать — тогда считаем страницу статической. */
+  type?: "static" | "template"
+  collection_type_id?: string | null
+  item_path_prefix?: string | null
+  /**
+   * Порядок страницы из API; при равной длине префикса template выбирается меньший sort.
+   * Публичный GET /pages может не отдавать.
+   */
+  sort?: number | null
 }
 
 export interface SitePagesResponse {

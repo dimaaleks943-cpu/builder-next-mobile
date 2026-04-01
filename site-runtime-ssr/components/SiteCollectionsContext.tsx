@@ -1,14 +1,17 @@
 import React from "react"
 import type { IContentItem } from "@/lib/contentTypes"
+import type { SitePage } from "@/lib/sitePages"
 
 export type SiteCollectionsContextValue = {
   domain: string
   collectionItemsByTypeId: Record<string, IContentItem[]>
+  sitePages: SitePage[]
 }
 
 const defaultValue: SiteCollectionsContextValue = {
   domain: "",
   collectionItemsByTypeId: {},
+  sitePages: [],
 }
 
 const SiteCollectionsContext =
@@ -17,10 +20,11 @@ const SiteCollectionsContext =
 export const SiteCollectionsProvider = ({
   domain,
   collectionItemsByTypeId,
+  sitePages,
   children,
 }: SiteCollectionsContextValue & { children: React.ReactNode }) => (
   <SiteCollectionsContext.Provider
-    value={{ domain, collectionItemsByTypeId }}
+    value={{ domain, collectionItemsByTypeId, sitePages }}
   >
     {children}
   </SiteCollectionsContext.Provider>
