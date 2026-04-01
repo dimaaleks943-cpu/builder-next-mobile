@@ -50,6 +50,47 @@ export const fetchContentItems = async (
   }
 };
 
+function parseSingleContentItemJson(json: unknown): IContentItem | null {
+  if (!json || typeof json !== "object") return null;
+  const o = json as Record<string, unknown>;
+  if (o.data != null && typeof o.data === "object" && !Array.isArray(o.data)) {
+    const inner = o.data as Record<string, unknown>;
+    if (typeof inner.id === "string") return o.data as IContentItem;
+  }
+  if (typeof o.id === "string") return json as IContentItem;
+  return null;
+}
+
+/**
+ * GET /v3/sites/{domain}/content/items/{content_item_id}
+ */
+export const fetchContentItemById = async (
+  domain: string,
+  contentItemId: string,
+): Promise<IContentItem | null> => {
+  const domainClean = cleanDomain(domain);
+  const id = contentItemId.trim();
+  if (!domainClean || !id) return null;
+
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/v3/sites/${encodeURIComponent(domainClean)}/content/items/${encodeURIComponent(id)}`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      },
+    );
+
+    if (!response.ok) return null;
+
+    const json: unknown = await response.json();
+    return parseSingleContentItemJson(json);
+  } catch (error) {
+    return null;
+  }
+};
+
 export const getCollectionByKey = async (
   domain: string,
   key: string,
