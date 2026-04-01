@@ -16,18 +16,15 @@ import {
 } from "../../../store/extranetApi.ts";
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts";
 import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts";
+import { EMPTY_SERIALIZED_NODES } from "../BuilderPage.tsx";
+import { normalizeItemPathPrefix } from "../../../utils/normalizeItemPathPrefix.ts";
 
 type LinkMode = "url" | "page" | "collectionItemPage";
 
 const COLLECTION_ITEM_SELECT_NONE = "__collection_item_none__";
 const COLLECTION_ITEM_SELECT_CURRENT = "__collection_item_current__";
 
-export const normalizeItemPathPrefix = (slug: string | undefined | null): string => {
-  const t = (slug ?? "").trim();
-  if (!t) return "/";
-
-  return t.startsWith("/") ? t : `/${t}`;
-}
+export { normalizeItemPathPrefix };
 
 interface SelectedLinkProps {
   href?: string;
@@ -239,6 +236,14 @@ export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
       const safeSlugPart = contentListContentTypeId?.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12); //TODO
       const slug = `item-${safeSlugPart || "tpl"}-${Date.now()}`;
 
+      const siteId = current?.site_id
+      if (siteId == null) {
+        console.error(
+          "Невозможно создать шаблон коллекции: у текущей страницы не задан site_id",
+        )
+        return
+      }
+
       try {
         const created = await createExtranetPage({
           directory_id: current?.directory_id ?? null,
@@ -247,10 +252,10 @@ export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
           type: "template",
           collection_type_id: contentListContentTypeId,
           item_path_prefix: normalizeItemPathPrefix(current?.slug),
-          content: "{}",
+          content: JSON.stringify(EMPTY_SERIALIZED_NODES),
           content_mobile: null,
           sort: 0,
-          site_id: 1, //TODO хард-код
+          site_id: siteId,
         }).unwrap();
 
         actions.setProp(selectedId, (props: any) => {

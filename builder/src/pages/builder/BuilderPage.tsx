@@ -11,6 +11,7 @@ import {
   CollectionsContext,
   type CollectionInfo,
 } from "./context/CollectionsContext.tsx"
+import { BuilderTemplatePageContext } from "./context/BuilderTemplatePageContext.tsx"
 import { BuilderModeContext } from "./context/BuilderModeContext.tsx"
 import { COLORS } from "../../theme/colors"
 import { CraftBlock } from "../../craft/Block.tsx"
@@ -22,12 +23,14 @@ import { CraftContentListCell } from "../../craft/ContentListCell.tsx"
 import { CraftImage } from "../../craft/Image.tsx"
 import type { IContentItem, IContentTypeField } from "../../api/extranet"
 import {
+  useGetContentItemsQuery,
   useGetContentTypesQuery,
   useGetExtranetPageQuery,
 } from "../../store/extranetApi"
 import { MODE_TYPE, type PreviewViewport } from "./builder.enum"
 import { decodeSerializedNodesStyleProps } from "../../utils/stylePropsCodec"
 import { CRAFT_DISPLAY_NAME } from "../../craft/craftDisplayNames.ts"
+import { normalizeItemPathPrefix } from "../../utils/normalizeItemPathPrefix.ts"
 
 function pickBindableTypeFields(
   fields: IContentTypeField[] | undefined,
@@ -39,7 +42,7 @@ function pickBindableTypeFields(
 }
 
 /** Пустое дерево Craft (только ROOT + Body без детей). Нужно, чтобы при переключении на режим с пустым контентом Canvas вызывал deserialize и очищал холст, а не игнорировал null. */
-const EMPTY_SERIALIZED_NODES: SerializedNodes = {
+export const EMPTY_SERIALIZED_NODES: SerializedNodes = {
   ROOT: {
     type: { resolvedName: "Body" },
     isCanvas: true,
@@ -72,10 +75,22 @@ export const BuilderPage = () => {
   const [contentMobile, setContentMobile] = useState("")
   const [loaded, setLoaded] = useState(false)
   const [previewViewport, setPreviewViewport] = useState<PreviewViewport>("desktop")
+  const [templateItemPathPrefix, setTemplateItemPathPrefix] = useState("")
 
   const { data: pageResponse, isSuccess: pageLoadSuccess } =
     useGetExtranetPageQuery(id!, { skip: !id })
   const { data: typesData } = useGetContentTypesQuery({ limit: 200 })
+
+  const pageMeta = pageResponse?.data
+  const templateCollectionId = pageMeta?.collection_type_id ?? null
+  const isTemplateWithCollection =
+    pageMeta?.type === "template" && !!templateCollectionId
+
+  const { data: templateItemsResponse, isSuccess: templateItemsSuccess } =
+    useGetContentItemsQuery(
+      { contentTypeId: templateCollectionId ?? "" },
+      { skip: !isTemplateWithCollection },
+    )
 
   useEffect(() => {
     if (!id) return
@@ -87,6 +102,11 @@ export const BuilderPage = () => {
     const page = pageResponse.data
     setContentWeb(page.content ?? "")
     setContentMobile(page.content_mobile ?? "")
+    if (page.type === "template") {
+      setTemplateItemPathPrefix(
+        normalizeItemPathPrefix(page.item_path_prefix ?? page.slug),
+      )
+    }
     setLoaded(true)
   }, [pageLoadSuccess, pageResponse, id])
 
@@ -118,6 +138,18 @@ export const BuilderPage = () => {
     )
   }, [typesData])
 
+  useEffect(() => {
+    if (!isTemplateWithCollection || !templateCollectionId) return
+    if (!templateItemsSuccess) return
+    setCollectionItems(templateCollectionId, templateItemsResponse?.data ?? [])
+  }, [
+    isTemplateWithCollection,
+    templateCollectionId,
+    templateItemsSuccess,
+    templateItemsResponse,
+    setCollectionItems,
+  ])
+
   const collectionsContextValue = useMemo(
     () => ({
       collections,
@@ -131,6 +163,24 @@ export const BuilderPage = () => {
     const raw = mode === MODE_TYPE.WEB ? contentWeb : contentMobile
     return parseContent(raw)
   }, [loaded, mode, contentWeb, contentMobile])
+
+  const templatePreviewItem = useMemo(() => {
+    if (!isTemplateWithCollection || !templateItemsSuccess || !templateItemsResponse)
+      return null
+    const items = templateItemsResponse.data ?? []
+    return items[0] ?? null
+  }, [isTemplateWithCollection, templateItemsSuccess, templateItemsResponse])
+  console.log("templatePreviewItem12321", templatePreviewItem)
+  const builderTemplatePageValue = useMemo(
+    () => ({
+      templatePageCollectionKey:
+        pageMeta?.type === "template" && pageMeta.collection_type_id
+          ? pageMeta.collection_type_id
+          : null,
+      templatePreviewItem,
+    }),
+    [pageMeta?.type, pageMeta?.collection_type_id, templatePreviewItem],
+  )
 
   const modeContextValue = useMemo(
     () => ({
@@ -164,6 +214,7 @@ export const BuilderPage = () => {
           }}
         >
           <CollectionsContext.Provider value={collectionsContextValue}>
+            <BuilderTemplatePageContext.Provider value={builderTemplatePageValue}>
             <Box
               sx={{
                 position: "fixed",
@@ -178,8 +229,17 @@ export const BuilderPage = () => {
             >
               <BuilderHeader
                 pageId={id}
-                pageName={pageResponse?.data?.name}
-                pageSlug={pageResponse?.data?.slug}
+                pageName={pageMeta?.name}
+                pageSlug={pageMeta?.slug}
+                siteId={pageMeta?.site_id}
+                directoryId={pageMeta?.directory_id ?? null}
+                pageType={pageMeta?.type ?? "static"}
+                collectionTypeId={pageMeta?.collection_type_id ?? null}
+                itemPathPrefix={
+                  pageMeta?.type === "template"
+                    ? templateItemPathPrefix
+                    : (pageMeta?.item_path_prefix ?? null)
+                }
                 previewViewport={previewViewport}
                 onPreviewViewportChange={setPreviewViewport}
               />
@@ -196,10 +256,18 @@ export const BuilderPage = () => {
                 <BuilderCanvas
                   initialContent={initialContent}
                   previewViewport={previewViewport}
+                  pageType={pageMeta?.type ?? "static"}
+                  collectionTypeId={pageMeta?.collection_type_id ?? null}
+                  templatePreviewItem={templatePreviewItem}
                 />
-                <BuilderRightPanel />
+                <BuilderRightPanel
+                  isTemplatePage={pageMeta?.type === "template"}
+                  templateItemPathPrefix={templateItemPathPrefix}
+                  onTemplateItemPathPrefixChange={setTemplateItemPathPrefix}
+                />
               </Box>
             </Box>
+            </BuilderTemplatePageContext.Provider>
           </CollectionsContext.Provider>
         </RightPanelContext.Provider>
       </Editor>

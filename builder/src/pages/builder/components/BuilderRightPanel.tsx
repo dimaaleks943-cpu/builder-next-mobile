@@ -1,4 +1,5 @@
-import { Box, Tab, Tabs } from "@mui/material"
+import { Box, Tab, Tabs, Typography } from "@mui/material"
+import type { ChangeEvent } from "react"
 import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
 import emptySelectionImg from "../assets/dontSelectedElement.png"
@@ -16,8 +17,19 @@ import {
 import { useRightPanelContext } from "../context/RightPanelContext.tsx"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
 import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts"
+import { CraftSettingsInput } from "./craftSettingsControls/CraftSettingsInput.tsx"
 
-export const BuilderRightPanel = () => {
+type Props = {
+  isTemplatePage?: boolean
+  templateItemPathPrefix?: string
+  onTemplateItemPathPrefixChange?: (value: string) => void
+}
+
+export const BuilderRightPanel = ({
+  isTemplatePage = false,
+  templateItemPathPrefix = "",
+  onTemplateItemPathPrefixChange,
+}: Props) => {
   const rightPanelContext = useRightPanelContext()
   const tabIndex = rightPanelContext?.tabIndex ?? 0
   const { hasSelection, selectedType } = useEditor((state) => {
@@ -67,6 +79,37 @@ export const BuilderRightPanel = () => {
           flexDirection: "column",
         }}
       >
+        {isTemplatePage && onTemplateItemPathPrefixChange && (
+          <Box
+            sx={{
+              flexShrink: 0,
+              padding: "12px 16px",
+              borderBottom: `1px solid ${COLORS.gray200}`,
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              backgroundColor: COLORS.white,
+            }}
+          >
+            <Typography
+              sx={{ fontSize: "11px", fontWeight: 600, color: COLORS.gray700 }}
+            >
+              Страница коллекции
+            </Typography>
+            <CraftSettingsInput
+              label="Базовый URL коллекции"
+              value={templateItemPathPrefix}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                onTemplateItemPathPrefixChange(e.target.value)
+              }
+            />
+            <Typography sx={{ fontSize: "10px", lineHeight: "14px", color: COLORS.gray600 }}>
+              {
+                "Совпадайте с путём листинга (например /products). Детальные URL: /products/<slug или id>."
+              }
+            </Typography>
+          </Box>
+        )}
         {hasSelection ? (
           <>
             <Tabs

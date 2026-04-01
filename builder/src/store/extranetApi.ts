@@ -40,6 +40,9 @@ export type UpdateExtranetPageBody = {
   directory_id: string | null
   name: string
   slug: string
+  type: "static" | "template"
+  collection_type_id: string | null
+  item_path_prefix: string | null
   content: string | null
   content_mobile: string | null
   sort: number

@@ -10,6 +10,7 @@ import {
 import { MODE_TYPE, type PreviewViewport } from "../builder.enum"
 import { encodeSerializedNodesStyleProps } from "../../../utils/stylePropsCodec"
 import { compactContentListCells } from "../../../utils/compactContentListCells"
+import { normalizeItemPathPrefix } from "../../../utils/normalizeItemPathPrefix.ts"
 import { MonitorIcon } from "../../../icons/MonitorIcon.tsx";
 import { TabletIcon } from "../../../icons/TabletIcon.tsx";
 import { MobileIcon } from "../../../icons/MobileIcon.tsx";
@@ -18,6 +19,15 @@ interface BuilderHeaderProps {
   pageId?: string
   pageName?: string
   pageSlug?: string
+  /** С метаданных GET страницы — нужны для PUT. */
+  siteId?: number
+  directoryId?: string | null
+  pageType?: "static" | "template"
+  collectionTypeId?: string | null
+  /**
+   * Для `template` — редактируемый префикс из билдера (строка); для `static` — как с API или null.
+   */
+  itemPathPrefix?: string | null
   previewViewport: PreviewViewport
   onPreviewViewportChange: (viewport: PreviewViewport) => void
 }
@@ -31,6 +41,11 @@ export const BuilderHeader = ({
   pageId,
   pageName,
   pageSlug,
+  siteId,
+  directoryId = null,
+  pageType = "static",
+  collectionTypeId = null,
+  itemPathPrefix = null,
   previewViewport,
   onPreviewViewportChange,
 }: BuilderHeaderProps) => {
@@ -71,6 +86,10 @@ export const BuilderHeader = ({
       console.error("Невозможно сохранить: не загружены name/slug страницы")
       return
     }
+    if (siteId == null) {
+      console.error("Невозможно сохранить: не загружен site_id страницы")
+      return
+    }
 
     const serialized = query.getSerializedNodes()
     const compacted = compactContentListCells(serialized)
@@ -87,13 +106,22 @@ export const BuilderHeader = ({
     const mobContentPayload =
       modeContext.mode === MODE_TYPE.RN ? currentJson : modeContext.contentMobile
 
+    const itemPathForApi =
+      pageType === "template"
+        ? normalizeItemPathPrefix(itemPathPrefix ?? "")
+        : itemPathPrefix ?? null
+
     const body = {
-      directory_id: null as string | null,
+      directory_id: directoryId,
       name: pageName,
       slug: pageSlug,
+      type: pageType,
+      collection_type_id: collectionTypeId,
+      item_path_prefix: itemPathForApi,
       content: contentPayload,
       content_mobile: mobContentPayload,
       sort: 0,
+      site_id: siteId,
     }
 
     try {

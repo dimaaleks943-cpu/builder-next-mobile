@@ -4,6 +4,7 @@ import { Box, Typography } from "@mui/material";
 import { useEditor } from "@craftjs/core";
 import { COLORS } from "../../../theme/colors";
 import { useContentListData } from "../context/ContentListDataContext.tsx";
+import { useBuilderTemplatePage } from "../context/BuilderTemplatePageContext.tsx";
 import { useCollectionsContext } from "../context/CollectionsContext.tsx";
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName";
 import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts";
@@ -69,6 +70,7 @@ export const TextSettingsFields = ({ asAccordion }: Props) => {
   );
 
   const contentListData = useContentListData();
+  const { templatePageCollectionKey, templatePreviewItem } = useBuilderTemplatePage();
   const collectionsContext = useCollectionsContext();
 
   const [textDraft, setTextDraft] = useState<string>(selectedProps?.text ?? "");
@@ -79,7 +81,9 @@ export const TextSettingsFields = ({ asAccordion }: Props) => {
   }, [selectedProps?.text]);
 
   const effectiveCollectionKey =
-    contentListData?.collectionKey ?? parentCollectionKey;
+    contentListData?.collectionKey ??
+    parentCollectionKey ??
+    templatePageCollectionKey;
 
   /** Поля для селекта — из метаданных типа контента (не из первого элемента). */
   const collectionFields = useMemo(() => {
@@ -120,8 +124,10 @@ export const TextSettingsFields = ({ asAccordion }: Props) => {
   };
 
   const resolveCollectionText = (fieldId: string | null): string | undefined => {
-    if (!fieldId || !contentListData?.itemData) return undefined;
-    const item = contentListData.itemData as IContentItem;
+    if (!fieldId) return undefined;
+    const item =
+      (contentListData?.itemData as IContentItem | undefined) ?? templatePreviewItem;
+    if (!item) return undefined;
     return getContentFieldDisplayValue(findContentItemField(item, fieldId));
   };
 

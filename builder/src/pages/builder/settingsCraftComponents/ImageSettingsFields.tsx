@@ -4,6 +4,7 @@ import { Box, Typography } from "@mui/material";
 import { useEditor } from "@craftjs/core";
 import { COLORS } from "../../../theme/colors.ts";
 import { useContentListData } from "../context/ContentListDataContext.tsx";
+import { useBuilderTemplatePage } from "../context/BuilderTemplatePageContext.tsx";
 import { useCollectionsContext } from "../context/CollectionsContext.tsx";
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts";
 import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts";
@@ -66,6 +67,7 @@ export const ImageSettingsFields = ({ asAccordion }: ImageSettingsFieldsProps) =
   );
 
   const contentListData = useContentListData();
+  const { templatePageCollectionKey } = useBuilderTemplatePage();
   const collectionsContext = useCollectionsContext();
 
   const [urlDraft, setUrlDraft] = useState<string>(selectedProps?.src ?? "");
@@ -97,7 +99,9 @@ export const ImageSettingsFields = ({ asAccordion }: ImageSettingsFieldsProps) =
   }, [selectedProps?.src, selectedProps?.width, selectedProps?.height]);
 
   const effectiveCollectionKey =
-    contentListData?.collectionKey ?? parentCollectionKey;
+    contentListData?.collectionKey ??
+    parentCollectionKey ??
+    templatePageCollectionKey;
 
   const collectionFields = useMemo(() => {
     if (!effectiveCollectionKey || !collectionsContext) {

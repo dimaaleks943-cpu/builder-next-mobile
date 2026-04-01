@@ -4,6 +4,8 @@ import { Frame, Element, useEditor, type SerializedNodes } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
 import { getPreviewMaxWidth, type PreviewViewport } from "../builder.enum"
 import { CraftBody } from "../../../craft/Body.tsx"
+import type { IContentItem } from "../../../api/extranet"
+import { ContentListDataContext } from "../context/ContentListDataContext.tsx"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
 import { deleteCraftNode } from "../../../utils/craftDeleteNode.ts"
 import { UpdateIcon } from "../../../icons/UpdateIcon"
@@ -11,11 +13,18 @@ import { UpdateIcon } from "../../../icons/UpdateIcon"
 interface BuilderCanvasProps {
   initialContent: SerializedNodes | null
   previewViewport: PreviewViewport
+  /** Метаданные страницы: для template + collection_type_id холст оборачивается в ContentListDataContext. */
+  pageType: "static" | "template"
+  collectionTypeId: string | null
+  templatePreviewItem: IContentItem | null
 }
 
 export const BuilderCanvas = ({
   initialContent,
   previewViewport,
+  pageType,
+  collectionTypeId,
+  templatePreviewItem,
 }: BuilderCanvasProps) => {
   const { actions, query } = useEditor()
   const { selectedId, canDeleteSelected } = useEditor((state, query) => {
@@ -102,6 +111,14 @@ export const BuilderCanvas = ({
   const handleRedo = () => {
     actions.history.redo()
   }
+
+  const templateContentListContext =
+    pageType === "template" && collectionTypeId
+      ? {
+          collectionKey: collectionTypeId,
+          itemData: templatePreviewItem,
+        }
+      : null
 
   const handleCanvasBackgroundClick = (
     event: React.MouseEvent<HTMLDivElement, MouseEvent>,
@@ -233,9 +250,17 @@ export const BuilderCanvas = ({
             display: "flex",
           }}
         >
-          <Frame>
-            <Element is={CraftBody} canvas />
-          </Frame>
+          {templateContentListContext ? (
+            <ContentListDataContext.Provider value={templateContentListContext}>
+              <Frame>
+                <Element is={CraftBody} canvas />
+              </Frame>
+            </ContentListDataContext.Provider>
+          ) : (
+            <Frame>
+              <Element is={CraftBody} canvas />
+            </Frame>
+          )}
         </Box>
       </Box>
     </Box>

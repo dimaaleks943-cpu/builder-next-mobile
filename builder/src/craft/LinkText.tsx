@@ -102,12 +102,12 @@ export const CraftLinkText = ({
   useEffect(() => {
     if (!isEditing) {
       setDraft(displayText)
-      if (spanRef.current && !collectionField) {
+      if (spanRef.current) {
         spanRef.current.textContent = displayText
       }
     }
-  }, [displayText, isEditing, collectionField])
-
+  }, [displayText, isEditing])
+  console.log("displayText123123123", contentListData)
   const handleDoubleClick = (e: React.MouseEvent<HTMLSpanElement>) => {
     e.stopPropagation()
     e.preventDefault()

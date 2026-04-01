@@ -103,13 +103,12 @@ export const CraftText = ({
   useEffect(() => {
     if (!isEditing) {
       setDraft(displayText)
-      if (spanRef.current && !collectionField) {
-        // Обновляем textContent только если не выбрано поле коллекции
-        // (иначе текст управляется через children)
+      if (spanRef.current) {
         spanRef.current.textContent = displayText
       }
     }
-  }, [displayText, isEditing, collectionField])
+  }, [displayText, isEditing])
+
 
   const openTextModal = useCallback((e?: React.MouseEvent | React.PointerEvent | Event) => {
     if (e && "stopPropagation" in e) {
