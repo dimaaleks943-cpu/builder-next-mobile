@@ -14,6 +14,7 @@ import { normalizeItemPathPrefix } from "../../../utils/normalizeItemPathPrefix.
 import { MonitorIcon } from "../../../icons/MonitorIcon.tsx";
 import { TabletIcon } from "../../../icons/TabletIcon.tsx";
 import { MobileIcon } from "../../../icons/MobileIcon.tsx";
+import { PageType } from "../../../api/extranet";
 
 interface BuilderHeaderProps {
   pageId?: string
@@ -22,7 +23,7 @@ interface BuilderHeaderProps {
   /** С метаданных GET страницы — нужны для PUT. */
   siteId?: number
   directoryId?: string | null
-  pageType?: "static" | "template"
+  pageType?: PageType
   collectionTypeId?: string | null
   /**
    * Для `template` — редактируемый префикс из билдера (строка); для `static` — как с API или null.
@@ -43,7 +44,7 @@ export const BuilderHeader = ({
   pageSlug,
   siteId,
   directoryId = null,
-  pageType = "static",
+  pageType = PageType.STATIC,
   collectionTypeId = null,
   itemPathPrefix = null,
   previewViewport,
@@ -107,7 +108,7 @@ export const BuilderHeader = ({
       modeContext.mode === MODE_TYPE.RN ? currentJson : modeContext.contentMobile
 
     const itemPathForApi =
-      pageType === "template"
+      pageType === PageType.TEMPLATE
         ? normalizeItemPathPrefix(itemPathPrefix ?? "")
         : itemPathPrefix ?? null
 

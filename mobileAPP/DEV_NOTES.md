@@ -40,7 +40,7 @@
 
 ### 4. Template-страницы, резолвинг `slug` и внутренние ссылки
 
-Поведение выровнено с `site-runtime-ssr/pages/[[...slug]].tsx`, `lib/templateRoute.ts` и `components/LinkText.tsx`.
+Поведение выровнено с `site-runtime-ssr/pages/[[...slug]].tsx`, `lib/templateRoute.ts` и `components/LinkText.tsx`. Подробный пошаговый разбор маппинга URL на SSR и таблица parity с RN — **`site-runtime-ssr/DEV_NOTES.md` §7.2–7.3**. Метаданные страницы и настройки `LinkText` в конструкторе — **`builder/DEV_NOTES.md`** (§1: `LinkText` и блок «Страница типа template»).
 
 **Поля `SitePage` из API** (`GET /v3/sites/{domain}/pages` с заголовком `x-mobile-client`):
 

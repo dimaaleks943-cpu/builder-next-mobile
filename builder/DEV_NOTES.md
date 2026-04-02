@@ -60,11 +60,18 @@
 - Файл: `src/craft/LinkText.tsx`.
 - Роль:
   - Текстовый компонент со ссылкой (URL, поведение при клике).
+- Режимы (`linkMode`):
+  - **`url`** — открыть произвольный `href`;
+  - **`page`** — внутренняя страница сайта (путь в `href`);
+  - **`collectionItemPage`** — ссылка из контекста **строки коллекции** (внутри `ContentList`): цель задаётся парой `collectionItemLinkTarget` + при необходимости `collectionItemTemplatePageId`.
+- **Ссылка на детальную страницу записи через template**:
+  - `collectionItemLinkTarget === "template"` и непустой `collectionItemTemplatePageId` (id страницы из API со `type: "template"` и тем же `collection_type_id`, что у списка).
+  - Настройки в UI: `src/pages/builder/settingsCraftComponents/LinkTextSettingsFields.tsx` — список допустимых template-страниц фильтруется по `content_type_id` текущего `ContentList`; при отсутствии шаблона возможно создание страницы с `type: "template"` и префиксом из `normalizeItemPathPrefix`.
+  - В рантайме (SSR / `mobileAPP`) итоговый путь строится как **префикс записи** (`item_path_prefix ?? slug` выбранной страницы, нормализация `normalizeItemPathPrefix`) **+** закодированный сегмент **`item.id`** текущей записи — см. `site-runtime-ssr/DEV_NOTES.md` §7.2 и `mobileAPP/DEV_NOTES.md` §4.
 - В рентайме:
-  - Аналогичный компонент `LinkText` в `site-runtime-ssr/components/LinkText.tsx`,
-    который рендерит `<a>` или другой ссылочный элемент.
+  - `site-runtime-ssr/components/LinkText.tsx` — подставляет `resolvedHref` в `<a>`.
 - Для мобилки:
-  - Аналогичный по пропсам компонент, но с навигацией/линками мобильного UI.
+  - `mobileAPP/src/components/LinkText.tsx` — тот же контракт пропсов; внутренний путь ведёт на экран `Page` с полным `slug`.
 
 #### `Image`
 
@@ -81,6 +88,17 @@
   - Компонент `Image` в `site-runtime-ssr` рендерит `<img>`; для источника использует либо `src` (ручной URL), либо значение из `useContentData()` по `collectionField`, с той же логикой извлечения URL из объекта.
 - Для мобилки:
   - Тот же контракт пропсов (`src`, `collectionField`, размеры, стили); отображение — через нативный компонент изображения.
+
+#### Страница типа **template** (метаданные и сохранение)
+
+- В билдере страница может иметь тип **`static`** или **`template`** (редактирование и сохранение — `src/pages/builder/components/BuilderHeader.tsx`).
+- При сохранении в тело запроса уходят:
+  - `type: "template"`;
+  - `collection_type_id` — какой тип контента (коллекция) обслуживает этот шаблон;
+  - `item_path_prefix` — для `template` перед отправкой нормализуется через **`normalizeItemPathPrefix`** (`src/utils/normalizeItemPathPrefix.ts`), совместимый с рантаймом (`site-runtime-ssr/lib/templateRoute.ts`, `mobileAPP/src/lib/templateRoute.ts`): ведущий `/`, без хвостового `/` (кроме корня `"/"`).
+  - Обычный **`slug`** страницы остаётся человекочитаемым идентификатором страницы в админке/списке; **публичный URL записи** на витрине и в мобилке считается от **`item_path_prefix ?? slug`** template-страницы плюс сегмент записи (см. ниже).
+- **Контент** (`content` / `content_mobile`) — тот же Craft JSON, что у статики: на витрине для URL вида `{prefix}/{segment}` подставляется одна запись коллекции, и корень дерева может быть обёрнут в `ContentDataProvider` с этой записью (parity SSR / RN — `site-runtime-ssr/DEV_NOTES.md` §7.2–7.3).
+- **Связь с `LinkText`**: внутри ячейки `ContentList` ссылка в режиме «страница записи + template» должна указывать на template-страницу с **тем же** `collection_type_id`, что и список; рантайм соберёт URL из префикса страницы и `id` строки.
 
 ---
 
@@ -448,6 +466,7 @@ Source of truth для сокращений зафиксирован в `src/uti
   - `seed` в редакторе;
   - `sync` структуры и props между ячейками;
   - `delete` с fallback через serialized subtree при сбое Craft `actions.delete`.
+- При изменении **template-страниц** (`type`, `collection_type_id`, `item_path_prefix`, сохранение в `BuilderHeader`), **LinkText** в режиме `collectionItemPage` + template или логики в `LinkTextSettingsFields` — обновляем §1 (template + LinkText) и синхронизируем `site-runtime-ssr/DEV_NOTES.md` §7.2–7.3 и `mobileAPP/DEV_NOTES.md` §4.
 - Терминология в описаниях и комментариях всегда единая:
   - `selectedSource` = `content_type_id` (UUID),
   - items через `content/items` c filter по `content_type_id`.

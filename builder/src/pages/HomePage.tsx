@@ -1,6 +1,6 @@
 import { Box, Button, Typography } from "@mui/material"
 import { Form } from "react-final-form"
-import type { ExtranetPage } from "../api/extranet"
+import { PageType, type ExtranetPage } from "../api/extranet"
 import { useLazyGetExtranetPagesQuery } from "../store/extranetApi"
 import { useMemo, type ReactNode } from "react"
 type HomeFormValues = {
@@ -23,8 +23,8 @@ function ExtranetPageListSections({
   const { staticPages, templatePages } = useMemo(() => {
     const list = pages ?? []
     return {
-      staticPages: list.filter(p => (p.type ?? "static") === "static"),
-      templatePages: list.filter(p => p.type === "template"),
+      staticPages: list.filter((p) => (p.type ?? PageType.STATIC) === PageType.STATIC),
+      templatePages: list.filter((p) => p.type === PageType.TEMPLATE),
     }
   }, [pages])
 

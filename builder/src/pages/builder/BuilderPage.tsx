@@ -21,7 +21,7 @@ import { CraftLinkText } from "../../craft/LinkText.tsx"
 import { CraftContentList } from "../../craft/ContentList.tsx"
 import { CraftContentListCell } from "../../craft/ContentListCell.tsx"
 import { CraftImage } from "../../craft/Image.tsx"
-import type { IContentItem, IContentTypeField } from "../../api/extranet"
+import { PageType, type IContentItem, type IContentTypeField } from "../../api/extranet"
 import {
   useGetContentItemsQuery,
   useGetContentTypesQuery,
@@ -84,7 +84,7 @@ export const BuilderPage = () => {
   const pageMeta = pageResponse?.data
   const templateCollectionId = pageMeta?.collection_type_id ?? null
   const isTemplateWithCollection =
-    pageMeta?.type === "template" && !!templateCollectionId
+    pageMeta?.type === PageType.TEMPLATE && !!templateCollectionId
 
   const { data: templateItemsResponse, isSuccess: templateItemsSuccess } =
     useGetContentItemsQuery(
@@ -102,7 +102,7 @@ export const BuilderPage = () => {
     const page = pageResponse.data
     setContentWeb(page.content ?? "")
     setContentMobile(page.content_mobile ?? "")
-    if (page.type === "template") {
+    if (page.type === PageType.TEMPLATE) {
       setTemplateItemPathPrefix(
         normalizeItemPathPrefix(page.item_path_prefix ?? page.slug),
       )
@@ -174,7 +174,7 @@ export const BuilderPage = () => {
   const builderTemplatePageValue = useMemo(
     () => ({
       templatePageCollectionKey:
-        pageMeta?.type === "template" && pageMeta.collection_type_id
+        pageMeta?.type === PageType.TEMPLATE && pageMeta.collection_type_id
           ? pageMeta.collection_type_id
           : null,
       templatePreviewItem,
@@ -233,10 +233,10 @@ export const BuilderPage = () => {
                 pageSlug={pageMeta?.slug}
                 siteId={pageMeta?.site_id}
                 directoryId={pageMeta?.directory_id ?? null}
-                pageType={pageMeta?.type ?? "static"}
+                pageType={pageMeta?.type ?? PageType.STATIC}
                 collectionTypeId={pageMeta?.collection_type_id ?? null}
                 itemPathPrefix={
-                  pageMeta?.type === "template"
+                  pageMeta?.type === PageType.TEMPLATE
                     ? templateItemPathPrefix
                     : (pageMeta?.item_path_prefix ?? null)
                 }
@@ -256,12 +256,12 @@ export const BuilderPage = () => {
                 <BuilderCanvas
                   initialContent={initialContent}
                   previewViewport={previewViewport}
-                  pageType={pageMeta?.type ?? "static"}
+                  pageType={pageMeta?.type ?? PageType.STATIC}
                   collectionTypeId={pageMeta?.collection_type_id ?? null}
                   templatePreviewItem={templatePreviewItem}
                 />
                 <BuilderRightPanel
-                  isTemplatePage={pageMeta?.type === "template"}
+                  isTemplatePage={pageMeta?.type === PageType.TEMPLATE}
                   templateItemPathPrefix={templateItemPathPrefix}
                   onTemplateItemPathPrefixChange={setTemplateItemPathPrefix}
                 />

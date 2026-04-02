@@ -4,7 +4,7 @@ import { Frame, Element, useEditor, type SerializedNodes } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
 import { getPreviewMaxWidth, type PreviewViewport } from "../builder.enum"
 import { CraftBody } from "../../../craft/Body.tsx"
-import type { IContentItem } from "../../../api/extranet"
+import { PageType, type IContentItem } from "../../../api/extranet"
 import { ContentListDataContext } from "../context/ContentListDataContext.tsx"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
 import { deleteCraftNode } from "../../../utils/craftDeleteNode.ts"
@@ -14,7 +14,7 @@ interface BuilderCanvasProps {
   initialContent: SerializedNodes | null
   previewViewport: PreviewViewport
   /** Метаданные страницы: для template + collection_type_id холст оборачивается в ContentListDataContext. */
-  pageType: "static" | "template"
+  pageType: PageType
   collectionTypeId: string | null
   templatePreviewItem: IContentItem | null
 }
@@ -113,7 +113,7 @@ export const BuilderCanvas = ({
   }
 
   const templateContentListContext =
-    pageType === "template" && collectionTypeId
+    pageType === PageType.TEMPLATE && collectionTypeId
       ? {
           collectionKey: collectionTypeId,
           itemData: templatePreviewItem,

@@ -228,6 +228,85 @@
 
 ---
 
+### 7.2 Template-страницы: маппинг URL → страница + запись (SSR)
+
+**Смысл**: страница с `type: "template"` в API — это один layout (Craft JSON в `content`), который показывается для **множества URL**: префикс списка/каталога задаётся `slug` / `item_path_prefix`, а **хвост пути** идентифицирует **одну запись** коллекции с `content_type_id === collection_type_id` страницы.
+
+**Где код**: `pages/[[...slug]].tsx`, общая логика префикса/сегмента — `lib/templateRoute.ts` (тот же контракт имён и нормализации, что в `builder` и `mobileAPP`).
+
+**Поля `SitePage`, нужные для template** (см. `lib/sitePages.ts`):
+
+- `type: "template"`;
+- `collection_type_id` — UUID типа контента (та же семантика, что `ContentList.selectedSource`);
+- `item_path_prefix` — приоритетный префикс URL записей; если пусто, в рантайме берётся `page.slug`;
+- `sort` — при нескольких подходящих template с одинаковой длиной префикса помогает выбрать страницу (меньший `sort` предпочтительнее).
+
+**Нормализация входящего пути** (`[[...slug]].tsx`):
+
+- catch-all `slug` склеивается в строку `rawSlug`; итоговый `slugPath` всегда с ведущим `/`, корень = `"/"`.
+
+**Шаг 1 — статика vs template**:
+
+- Ищем **статическую** страницу: `page.slug === slugPath` и `!isTemplateSitePage(page)` (`lib/templateRoute.ts`).
+- Для корня дополнительно допускается страница со `slug === "/"`.
+- Если не нашли — **шаг 2**.
+
+**Шаг 2 — выбор template-страницы и сегмента записи**:
+
+- `resolveTemplatePageForSlug(pages, slugPath)` перебирает страницы с `type === "template"` и непустым `collection_type_id`.
+- Для каждой кандидатной страницы `extractTemplateItemPathSegment(slugPath, page)` сравнивает `slugPath` с префиксом `normalizeItemPathPrefix(page.item_path_prefix ?? page.slug)`:
+  - если путь — только префикс без хвоста, сегмента нет → страница **не** подходит для отображения записи (404 на SSR);
+  - иначе возвращается **декодированный** сегмент (один сегмент после префикса; внутри сегмента допускаются закодированные `/` после `encodeURIComponent` в ссылках).
+- Если подходит несколько template, побеждает **более длинный** префикс; при равенстве — меньший `sort`, затем стабильный порядок по `id`.
+
+**Шаг 3 — загрузка записи** (в `getServerSideProps`, только если выбранная `page` — template с `collection_type_id`):
+
+- Если сегмента нет → `notFound`.
+- Если сегмент похож на UUID (`isUuidLikePathSegment`):
+  - `fetchContentItemById(domain, segment)`;
+  - проверка, что тип записи совпадает с `page.collection_type_id` (поля `content_type_id` / `collection_type_id` в ответе);
+  - в `collectionItemsByTypeId[typeId]` кладётся массив из **одной** записи (как prefetch для контекста);
+  - `templateContentData = { collectionKey: typeId, itemData }` — для полей вне списка.
+- Иначе (slug-текст и т.п.):
+  - `fetchContentItems(domain, typeId)` — полный список типа;
+  - `findContentItemByUrlSegment(items, segment)` — совпадение по `id`, верхнеуровневому `slug`, либо по полям с именем/`field_type`, похожим на slug (см. `templateRoute.ts`);
+  - весь список попадает в `collectionItemsByTypeId[typeId]`;
+  - `templateContentData` — найденный `item`.
+
+**Шаг 4 — prefetch для ContentList** (как в §7.1):
+
+- Из того же `page.content` извлекаются дополнительные `content_type_id` списков; для типов, ещё не лежащих в `collectionItemsByTypeId`, догружаются items.
+
+**Шаг 5 — рендер**:
+
+- `SiteCollectionsProvider` получает `domain`, `sitePages`, `collectionItemsByTypeId`.
+- Если `templateContentData` задан — корень контента оборачивается в `ContentDataProvider` с `collectionKey` и `itemData`, чтобы `Text` / `Image` / `LinkText` с `collectionField` на template работали **вне** `ContentList` так же, как внутри ячейки списка.
+- `renderPage(components)` не меняется: вся привязка данных — через контексты.
+
+**LinkText на template-URL** (`components/LinkText.tsx`):
+
+- При `linkMode === "collectionItemPage"`, `collectionItemLinkTarget === "template"` и выбранном `collectionItemTemplatePageId` в `href` подставляется путь `normalizeItemPathPrefix(...) + "/" + encodeURIComponent(item.id)` (см. `buildCollectionItemTemplateHref` в компоненте), где `item` — текущий `itemData` из контекста (обычно ячейка `ContentList`).
+
+---
+
+### 7.3 Parity с React Native (`mobileAPP`)
+
+Та же **логическая** цепочка, другой каркас UI:
+
+| Этап | SSR (`site-runtime-ssr`) | RN (`mobileAPP`) |
+|------|---------------------------|------------------|
+| Список страниц | `getSitePages(domain)` в `getServerSideProps` | `fetchSitePages(domain)` с заголовком `x-mobile-client` |
+| Нормализация пути | вручную в `[[...slug]].tsx` | `normalizeSiteSlugPath` в `src/api/sitePagesApi.ts` |
+| Статика vs template + сегмент | блоки в `[[...slug]].tsx` + `resolveTemplatePageForSlug` | `resolveSitePageForSlugPath` (обёртка над той же идеей) |
+| Утилиты префикса/сегмента | `lib/templateRoute.ts` | `src/lib/templateRoute.ts` (копия контракта) |
+| Загрузка записи | inline в GSSP | `fetchTemplatePageItem` в `sitePagesApi.ts` |
+| Обёртки контекста | `SiteCollectionsProvider` + опционально `ContentDataProvider` вокруг `<main>` | `SiteCollectionsProvider` + `ContentDataProvider` вокруг нативного `ScrollView` в `App.tsx` |
+| Переход по ссылке | обычный `<a href={resolvedHref}>` | `navigation.navigate("Page", { slug: resolvedHref })` при пути с `/` |
+
+Отличия продукта: на RN страница без нативного контента уходит в **WebView** по полному URL; на SSR при отсутствии записи — **404**. Детали и контракт `SitePage` для мобилки — `mobileAPP/DEV_NOTES.md`, §4.
+
+---
+
 ### 8. Рендер страниц
 
 Основной сценарий:
@@ -313,5 +392,6 @@
   - field-resolution в `Text`/`Image` работает через `item.fields[]` и `field.id`.
 - Если меняется SSR prefetch/client fallback в `pages/[[...slug]].tsx` или API-адаптеры,
   обновляем этот раздел и `site-runtime-ssr/README.md`, чтобы не было расхождений.
+- Любые изменения **template-маршрута** (`templateRoute`, выбор страницы по slug, загрузка записи, `templateContentData`, `LinkText` template-href) синхронизируем с **§7.2–7.3**, `builder/DEV_NOTES.md` и `mobileAPP/DEV_NOTES.md` §4.
 
 

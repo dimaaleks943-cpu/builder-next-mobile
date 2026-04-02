@@ -18,6 +18,7 @@ import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts
 import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts";
 import { EMPTY_SERIALIZED_NODES } from "../BuilderPage.tsx";
 import { normalizeItemPathPrefix } from "../../../utils/normalizeItemPathPrefix.ts";
+import { PageType } from "../../../api/extranet.ts";
 
 type LinkMode = "url" | "page" | "collectionItemPage";
 
@@ -113,7 +114,7 @@ export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
     return pages.data
       .filter(
         (p) =>
-          p.type === "template" && p.collection_type_id === contentListContentTypeId,
+          p.type === PageType.TEMPLATE && p.collection_type_id === contentListContentTypeId,
       )
       .slice()
       .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
@@ -249,7 +250,7 @@ export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
           directory_id: current?.directory_id ?? null,
           name: `Шаблон: ${contentListCollectionLabel}`,
           slug,
-          type: "template",
+          type: PageType.TEMPLATE,
           collection_type_id: contentListContentTypeId,
           item_path_prefix: normalizeItemPathPrefix(current?.slug),
           content: JSON.stringify(EMPTY_SERIALIZED_NODES),

@@ -114,7 +114,7 @@ export function resolveTemplatePageForSlug(
       isTemplateSitePage(p) &&
       Boolean(p.collection_type_id?.trim()),
   )
-
+  console.log("candidates", candidates)
   const scored = candidates
     .map((page) => {
       const segment = extractTemplateItemPathSegment(slugPath, page)

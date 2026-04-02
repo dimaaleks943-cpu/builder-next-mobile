@@ -8,6 +8,7 @@ import {
   type ExtranetPagesResponse,
   type PaginatedResponse,
   type ExtranetPage,
+  type PageType,
 } from "../api/extranet"
 
 const baseQuery = fetchBaseQuery({
@@ -27,7 +28,7 @@ export type CreateExtranetPageBody = {
   directory_id: string | null
   name: string
   slug: string
-  type: "static" | "template"
+  type: PageType
   collection_type_id: string | null
   item_path_prefix: string | null
   content: string | null
@@ -40,7 +41,7 @@ export type UpdateExtranetPageBody = {
   directory_id: string | null
   name: string
   slug: string
-  type: "static" | "template"
+  type: PageType
   collection_type_id: string | null
   item_path_prefix: string | null
   content: string | null
