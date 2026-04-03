@@ -3,7 +3,8 @@ import type { IContentItem, IContentTypeField } from "../../../api/extranet"
 
 /**
  * Коллекция в билдере: `key` — `content_type_id` (UUID) для привязки в JSON страницы.
- * `fields` — метаданные полей типа (имена для селекта); `items` — экземпляры, подгружаются лениво.
+ * `fields` — метаданные полей типа (имена для селекта); `items` — экземпляры без scope (ленивая загрузка по типу).
+ * Для витрин с `filterScope` кэш элементов — в `collectionItemsByKey` по ключу `getCollectionItemsCacheKey(scope, content_type_id)`.
  */
 export type CollectionInfo = {
   key: string
@@ -14,8 +15,10 @@ export type CollectionInfo = {
 
 export type CollectionsContextValue = {
   collections: CollectionInfo[]
-  /** Кэш элементов по `content_type_id`; вызывается после fetch из ContentList. */
-  setCollectionItems: (contentTypeId: string, items: IContentItem[]) => void
+  /** Кэш элементов по составному ключу (`scope::typeId` или голый `content_type_id`). */
+  collectionItemsByKey: Record<string, IContentItem[]>
+  /** Запись среза items для превью; `cacheKey` совпадает с `getCollectionItemsCacheKey` при filterScope. */
+  setCollectionItems: (cacheKey: string, items: IContentItem[]) => void
 }
 
 /**

@@ -4,6 +4,7 @@ import {
   EXTRANET_SITES_BASE,
   type IContentItem,
   type ContentType,
+  type ContentCategory,
   type ExtranetPageResponse,
   type ExtranetPagesResponse,
   type PaginatedResponse,
@@ -77,18 +78,50 @@ export const extranetApi = createApi({
       }),
     }),
 
+    /** Категории контента для UI фильтра (дерево от заданного корня). */
+    getContentCategories: build.query<
+      PaginatedResponse<ContentCategory>,
+      {
+        contentCategoryId: string
+        limit?: number
+        offset?: number
+      }
+    >({
+      query: ({ contentCategoryId }) => {
+        const id = contentCategoryId.trim()
+        const params: Record<string, string | number> = {
+          filter: JSON.stringify({ content_type_id: [id] }),
+        }
+        return {
+          url: `/content/categories`,
+          params,
+        }
+      },
+      transformResponse: (
+        response: PaginatedResponse<ContentCategory>,
+      ): PaginatedResponse<ContentCategory> => ({
+        ...response,
+        data: response?.data ?? [],
+      }),
+    }),
+
     getContentItems: build.query<
       PaginatedResponse<IContentItem>,
       {
         contentTypeId: string
         limit?: number
         offset?: number
+        categoryIds?: string[]
       }
     >({
-      query: ({ contentTypeId, limit, offset }) => {
-        const filter = JSON.stringify({
-          content_type_id: [contentTypeId],
-        })
+      query: ({ contentTypeId, limit, offset, categoryIds }) => {
+        const filterPayload: Record<string, string[]> = {
+          content_type_id: [contentTypeId.trim()],
+        }
+        // Фильтр по категории — только когда в билдере у списка задан filterScope и выбрана категория.
+        const catIds = categoryIds?.map((c) => c.trim()).filter(Boolean)
+        if (catIds?.length) filterPayload.category_id = catIds
+        const filter = JSON.stringify(filterPayload)
         const params: Record<string, string | number> = { filter }
         if (limit != null) params.limit = limit
         if (offset != null) params.offset = offset
@@ -149,6 +182,8 @@ export const extranetApi = createApi({
 
 export const {
   useGetContentTypesQuery,
+  useGetContentCategoriesQuery,
+  useLazyGetContentCategoriesQuery,
   useGetContentItemsQuery,
   useLazyGetContentItemsQuery,
   useGetExtranetPageQuery,

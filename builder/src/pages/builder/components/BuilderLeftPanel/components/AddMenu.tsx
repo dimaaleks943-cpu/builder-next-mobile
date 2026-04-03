@@ -15,6 +15,7 @@ import { CraftBlock } from "../../../../../craft/Block.tsx"
 import { CraftText } from "../../../../../craft/Text.tsx"
 import { CraftLinkText } from "../../../../../craft/LinkText.tsx"
 import { CraftContentList } from "../../../../../craft/ContentList.tsx"
+import { CraftCategoryFilter } from "../../../../../craft/CategoryFilter.tsx"
 import { CraftImage } from "../../../../../craft/Image.tsx"
 import { useBuilderModeContext } from "../../../context/BuilderModeContext"
 import { MODE_TYPE } from "../../../builder.enum"
@@ -59,6 +60,11 @@ export const useCategories = (): Category[] => {
         title: "CMS",
         items: [
           { name: "Список контента", component: <CraftContentList /> },
+          {
+            name: "Фильтр категорий",
+            // Пару с ContentList задаёт одинаковый filterScope в настройках блоков.
+            component: <CraftCategoryFilter />,
+          },
         ],
       },
       {

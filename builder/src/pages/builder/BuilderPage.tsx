@@ -11,6 +11,7 @@ import {
   CollectionsContext,
   type CollectionInfo,
 } from "./context/CollectionsContext.tsx"
+import { CollectionFilterScopeProvider } from "./context/CollectionFilterScopeContext.tsx"
 import { BuilderTemplatePageContext } from "./context/BuilderTemplatePageContext.tsx"
 import { BuilderModeContext } from "./context/BuilderModeContext.tsx"
 import { COLORS } from "../../theme/colors"
@@ -20,6 +21,7 @@ import { CraftText } from "../../craft/Text.tsx"
 import { CraftLinkText } from "../../craft/LinkText.tsx"
 import { CraftContentList } from "../../craft/ContentList.tsx"
 import { CraftContentListCell } from "../../craft/ContentListCell.tsx"
+import { CraftCategoryFilter } from "../../craft/CategoryFilter.tsx"
 import { CraftImage } from "../../craft/Image.tsx"
 import { PageType, type IContentItem, type IContentTypeField } from "../../api/extranet"
 import {
@@ -70,6 +72,9 @@ export const BuilderPage = () => {
   const { id } = useParams<{ id: string }>()
   const [rightPanelTabIndex, setRightPanelTabIndex] = useState(0)
   const [collections, setCollections] = useState<CollectionInfo[]>([])
+  const [collectionItemsByKey, setCollectionItemsByKey] = useState<
+    Record<string, IContentItem[]>
+  >({})
   const [mode, setMode] = useState<MODE_TYPE.WEB | MODE_TYPE.RN>(MODE_TYPE.WEB)
   const [contentWeb, setContentWeb] = useState("")
   const [contentMobile, setContentMobile] = useState("")
@@ -111,12 +116,13 @@ export const BuilderPage = () => {
   }, [pageLoadSuccess, pageResponse, id])
 
   const setCollectionItems = useCallback(
-    (contentTypeId: string, items: IContentItem[]) => {
-      setCollections((prev) =>
-        prev.map((c) =>
-          c.key === contentTypeId ? { ...c, items } : c,
-        ),
-      )
+    (cacheKey: string, items: IContentItem[]) => {
+      setCollectionItemsByKey((prev) => ({ ...prev, [cacheKey]: items }))
+      if (!cacheKey.includes("::")) {
+        setCollections((prev) =>
+          prev.map((c) => (c.key === cacheKey ? { ...c, items } : c)),
+        )
+      }
     },
     [],
   )
@@ -124,8 +130,10 @@ export const BuilderPage = () => {
   useEffect(() => {
     if (!typesData?.data?.length) {
       setCollections([])
+      setCollectionItemsByKey({})
       return
     }
+    setCollectionItemsByKey({})
     setCollections(
       typesData.data.map(
         (t): CollectionInfo => ({
@@ -153,9 +161,10 @@ export const BuilderPage = () => {
   const collectionsContextValue = useMemo(
     () => ({
       collections,
+      collectionItemsByKey,
       setCollectionItems,
     }),
-    [collections, setCollectionItems],
+    [collections, collectionItemsByKey, setCollectionItems],
   )
 
   const initialContent = useMemo(() => {
@@ -204,6 +213,7 @@ export const BuilderPage = () => {
           LinkText: CraftLinkText,
           ContentList: CraftContentList,
           ContentListCell: CraftContentListCell,
+          CategoryFilter: CraftCategoryFilter, // filterScope должен совпадать с ContentList
           Image: CraftImage,
         }}
       >
@@ -213,7 +223,9 @@ export const BuilderPage = () => {
             setTabIndex: setRightPanelTabIndex,
           }}
         >
-          <CollectionsContext.Provider value={collectionsContextValue}>
+          {/* Общее состояние выбора категории для CategoryFilter и ContentList на canvas */}
+          <CollectionFilterScopeProvider>
+            <CollectionsContext.Provider value={collectionsContextValue}>
             <BuilderTemplatePageContext.Provider value={builderTemplatePageValue}>
             <Box
               sx={{
@@ -268,7 +280,8 @@ export const BuilderPage = () => {
               </Box>
             </Box>
             </BuilderTemplatePageContext.Provider>
-          </CollectionsContext.Provider>
+            </CollectionsContext.Provider>
+          </CollectionFilterScopeProvider>
         </RightPanelContext.Provider>
       </Editor>
     </BuilderModeContext.Provider>

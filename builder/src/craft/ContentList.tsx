@@ -4,6 +4,7 @@ import { useLazyGetContentItemsQuery } from "../store/extranetApi"
 import { COLORS } from "../theme/colors"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import { useCollectionsContext } from "../pages/builder/context/CollectionsContext.tsx"
+import { useCollectionFilterScope } from "../pages/builder/context/CollectionFilterScopeContext.tsx"
 import { CraftContentListCell } from "./ContentListCell"
 import { ContentListDataContext } from "../pages/builder/context/ContentListDataContext.tsx"
 import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
@@ -18,10 +19,16 @@ import {
   typesMatch,
 } from "./contentListEditorUtils"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
+import { getCollectionItemsCacheKey } from "../utils/collectionItemsCacheKey"
 
 export type ContentListProps = {
   selectedSource?: string
   itemsPerRow?: number
+  /**
+   * Строка группы с блоком «Фильтр категорий». Задаёт составной ключ кэша `scope::content_type_id`
+   * и включает передачу `categoryIds` в запрос элементов при смене категории в контексте.
+   */
+  filterScope?: string
 }
 
 /**
@@ -54,6 +61,7 @@ export const CraftContentList = ({}: ContentListProps) => {
 
   const rightPanelContext = useRightPanelContext()
   const collectionsContext = useCollectionsContext()
+  const { selectedCategoryIdByScope } = useCollectionFilterScope()
   const [fetchContentItems] = useLazyGetContentItemsQuery()
 
   const openSettings = (e: React.MouseEvent) => {
@@ -77,17 +85,24 @@ export const CraftContentList = ({}: ContentListProps) => {
   // чтобы настройки сохранялись в JSON и восстанавливались при загрузке
   const selectedSource = props.selectedSource ?? ""
   const itemsPerRow = props.itemsPerRow ?? 1
+  const filterScope = props.filterScope
+  const scopeTrimmed = filterScope?.trim() ?? ""
+  // Категория для этого списка: берётся из того же scope, что у CategoryFilter на странице.
+  const selectedCategoryIdForList = scopeTrimmed
+    ? selectedCategoryIdByScope[scopeTrimmed] ?? null
+    : null
 
-  /** Чтобы не зациклить запрос при пустом ответе или ошибке. */
-  const itemsFetchCompletedRef = useRef<Set<string>>(new Set()) //TODO надо?
+  const lastItemsFetchSignatureRef = useRef<string>("")
 
-  // Массив элементов активной коллекции (items выбранного source),
-  // уже "разрешённый" из CollectionsContext по selectedSource
+  // Кэш в CollectionsContext: без scope — голый type id; со scope — `scope::typeId` (несколько списков одного типа).
+  const cacheKey = getCollectionItemsCacheKey(filterScope, selectedSource)
+
   const resolvedItems: any[] =
     selectedSource && collectionsContext
-      ? collectionsContext.collections.find((c) => c.key === selectedSource)?.items ?? []
+      ? collectionsContext.collectionItemsByKey[cacheKey] ?? []
       : []
 
+  // Подгрузка элементов коллекции в превью редактора: с scope — с фильтром по категории из контекста.
   useEffect(() => {
     if (!selectedSource || !collectionsContext?.setCollectionItems) return
 
@@ -95,28 +110,54 @@ export const CraftContentList = ({}: ContentListProps) => {
       (c) => c.key === selectedSource,
     )
     if (!collection) return
-    if (collection.items.length > 0) return
-    if (itemsFetchCompletedRef.current.has(selectedSource)) return
+
+    // Сигнатура запроса: ключ кэша + выбранная категория (или «все»), чтобы не дёргать API повторно без смены условий.
+    const categoryPart = scopeTrimmed
+      ? (selectedCategoryIdForList ?? "__all__")
+      : "__default__"
+    const signature = `${cacheKey}|${categoryPart}`
+    if (
+      lastItemsFetchSignatureRef.current === signature &&
+      collectionsContext.collectionItemsByKey[cacheKey] !== undefined
+    ) {
+      return
+    }
+
+    // В API уходит `category_id` только если задан scope и выбрана конкретная категория (не «Все»).
+    const categoryIds =
+      scopeTrimmed && selectedCategoryIdForList
+        ? [selectedCategoryIdForList]
+        : undefined
+
     let cancelled = false
     void (async () => {
       try {
         const res = await fetchContentItems({
           contentTypeId: selectedSource,
+          ...(categoryIds?.length ? { categoryIds } : {}),
         }).unwrap()
         if (cancelled) return
-        itemsFetchCompletedRef.current.add(selectedSource)
-        collectionsContext.setCollectionItems(selectedSource, res?.data ?? [])
+        lastItemsFetchSignatureRef.current = signature
+        collectionsContext.setCollectionItems(cacheKey, res?.data ?? [])
       } catch {
         if (cancelled) return
-        itemsFetchCompletedRef.current.add(selectedSource)
-        collectionsContext.setCollectionItems(selectedSource, [])
+        lastItemsFetchSignatureRef.current = signature
+        collectionsContext.setCollectionItems(cacheKey, [])
       }
     })()
 
     return () => {
       cancelled = true
     }
-  }, [selectedSource, collectionsContext])
+  }, [
+    selectedSource,
+    filterScope,
+    cacheKey,
+    scopeTrimmed,
+    selectedCategoryIdForList,
+    collectionsContext,
+    fetchContentItems,
+  ])
 
   const hasCollection = resolvedItems.length > 0
   const cellCount = hasCollection ? resolvedItems.length : 0
@@ -620,6 +661,50 @@ export const CraftContentList = ({}: ContentListProps) => {
           ))}
         </select>
 
+        <label
+          style={{
+            display: "block",
+            marginTop: 8,
+            marginBottom: 4,
+            fontSize: 12,
+            color: COLORS.gray700,
+          }}
+        >
+          Filter scope (как у блока «Фильтр категорий»)
+        </label>
+        <input
+          type="text"
+          placeholder="например, catalog — оставьте пустым, если фильтр не нужен"
+          style={{
+            width: "100%",
+            padding: "6px 8px",
+            fontSize: 13,
+            borderRadius: 4,
+            border: `1px solid ${COLORS.gray300}`,
+            marginBottom: 8,
+            boxSizing: "border-box",
+          }}
+          value={props.filterScope ?? ""}
+          onChange={(e) => {
+            const value = e.target.value
+            startTransition(() => {
+              actions.setProp(contentListId, (nodeProps: ContentListProps) => {
+                nodeProps.filterScope = value
+              })
+            })
+          }}
+        />
+        <div
+          style={{
+            fontSize: 11,
+            color: COLORS.gray600,
+            marginBottom: selectedSource ? 0 : 8,
+            lineHeight: 1.35,
+          }}
+        >
+          Должен совпадать со строкой scope у фильтра категорий на странице.
+        </div>
+
         {selectedSource ? (
           <div
             style={{
@@ -716,6 +801,7 @@ export const CraftContentList = ({}: ContentListProps) => {
   props: {
     selectedSource: "",
     itemsPerRow: 1,
+    filterScope: "",
   },
   rules: {
     canMoveIn: (nodes: { data: { type: { resolvedName?: string } } }[]) =>

@@ -10,4 +10,5 @@ export const CRAFT_DISPLAY_NAME = {
   Image: "CraftImage",
   ContentList: "CraftContentList",
   ContentListCell: "CraftContentListCell",
+  CategoryFilter: "CraftCategoryFilter",
 } as const
