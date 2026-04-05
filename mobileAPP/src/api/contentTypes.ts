@@ -13,6 +13,15 @@ export interface ContentType {
   [key: string]: unknown;
 }
 
+/** Элемент списка категорий контента (GET …/content/categories). */
+export interface ContentCategory {
+  id: string;
+  name: string;
+  slug?: string;
+  sort?: number;
+  [key: string]: unknown;
+}
+
 export interface IContentItemField {
   id: string;
   field_type?: string;

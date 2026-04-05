@@ -106,7 +106,7 @@ export function resolveSitePageForSlugPath(
 
 export type TemplateItemResolveResult = {
   item: IContentItem;
-  /** Значение для `collectionItemsByTypeId[collection_type_id]` (как на SSR). */
+  /** Значение для `collectionItemsByKey[collection_type_id]` (как на SSR). */
   itemsForTemplateType: IContentItem[];
 };
 

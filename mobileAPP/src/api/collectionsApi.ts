@@ -11,22 +11,37 @@ export type CollectionInfo = {
   items: IContentItem[];
 };
 
+/** Собирает `filter` для GET content/items: тип контента обязателен; категории — при активном фильтре на странице. */
+function buildContentItemsFilter(
+  contentTypeId: string,
+  categoryIds?: string[],
+): string {
+  const payload: Record<string, string[]> = {
+    content_type_id: [contentTypeId.trim()],
+  };
+  const ids = categoryIds?.map((id) => id.trim()).filter(Boolean);
+  if (ids?.length) payload.category_id = ids;
+  return JSON.stringify(payload);
+}
+
 /**
- * GET /v3/sites/{domain}/content/items с filter по content_type_id.
+ * GET /v3/sites/{domain}/content/items с filter по content_type_id, опционально category_id.
  */
 export const fetchContentItems = async (
   domain: string,
   contentTypeId: string,
-  params?: { limit?: number; offset?: number },
+  params?: {
+    limit?: number;
+    offset?: number;
+    categoryIds?: string[];
+  },
 ): Promise<IContentItem[] | null> => {
   const domainClean = cleanDomain(domain);
   const contentTypeIdClean = contentTypeId.trim();
   if (!domainClean || !contentTypeIdClean) return null;
 
   try {
-    const filter = JSON.stringify({
-      content_type_id: [contentTypeIdClean],
-    });
+    const filter = buildContentItemsFilter(contentTypeIdClean, params?.categoryIds);
     const searchParams = new URLSearchParams({ filter });
     if (params?.limit != null) searchParams.set("limit", String(params.limit));
     if (params?.offset != null)

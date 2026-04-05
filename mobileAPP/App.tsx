@@ -24,6 +24,7 @@ import {
 } from "./src/api/sitePagesApi"
 import { isTemplateSitePage } from "./src/lib/templateRoute"
 import { ContentDataProvider } from "./src/contexts/ContentDataContext"
+import { CollectionFilterScopeProvider } from "./src/contexts/CollectionFilterScopeContext"
 import { SiteCollectionsProvider } from "./src/contexts/SiteCollectionsContext"
 import { craftContentToComponents } from "./src/content/craftContentToComponents"
 import { renderPage } from "./src/content/renderer"
@@ -44,7 +45,7 @@ const PageScreen = ({ route }: PageScreenProps) => {
   const slug = route.params?.slug ?? "/"
   const [page, setPage] = useState<SitePage | null>(null)
   const [sitePages, setSitePages] = useState<SitePage[]>([])
-  const [collectionItemsByTypeId, setCollectionItemsByTypeId] = useState<
+  const [collectionItemsByKey, setCollectionItemsByKey] = useState<
     Record<string, IContentItem[]>
   >({})
   const [templateItem, setTemplateItem] = useState<IContentItem | null>(null)
@@ -62,7 +63,7 @@ const PageScreen = ({ route }: PageScreenProps) => {
     setLoadError(null)
     setPage(null)
     setSitePages([])
-    setCollectionItemsByTypeId({})
+    setCollectionItemsByKey({})
     setTemplateItem(null)
 
     let cancelled = false
@@ -89,7 +90,7 @@ const PageScreen = ({ route }: PageScreenProps) => {
       setPage(resolved.page)
 
       if (resolved.kind === "static") {
-        setCollectionItemsByTypeId({})
+        setCollectionItemsByKey({})
         setTemplateItem(null)
         setLoading(false)
         return
@@ -104,14 +105,14 @@ const PageScreen = ({ route }: PageScreenProps) => {
 
       if (!itemResult) {
         setTemplateItem(null)
-        setCollectionItemsByTypeId({})
+        setCollectionItemsByKey({})
         setLoading(false)
         return
       }
 
       const typeId = resolved.page.collection_type_id?.trim() ?? ""
       setTemplateItem(itemResult.item)
-      setCollectionItemsByTypeId({
+      setCollectionItemsByKey({
         [typeId]: itemResult.itemsForTemplateType,
       })
       setLoading(false)
@@ -119,7 +120,7 @@ const PageScreen = ({ route }: PageScreenProps) => {
       if (!cancelled) {
         setPage(null)
         setSitePages([])
-        setCollectionItemsByTypeId({})
+        setCollectionItemsByKey({})
         setTemplateItem(null)
         setLoading(false)
       }
@@ -191,11 +192,15 @@ const PageScreen = ({ route }: PageScreenProps) => {
 
         {!loading && useNativeRender ? (
           <SiteCollectionsProvider
+            key={`${SITE_DOMAIN}:${slug}`}
             domain={SITE_DOMAIN}
             sitePages={sitePages}
-            collectionItemsByTypeId={collectionItemsByTypeId}
+            collectionItemsByKey={collectionItemsByKey}
           >
-            {nativeTree}
+            <CollectionFilterScopeProvider>
+              {/* Общий выбор категории для CategoryFilter + ContentList в превью */}
+              {nativeTree}
+            </CollectionFilterScopeProvider>
           </SiteCollectionsProvider>
         ) : null}
 
