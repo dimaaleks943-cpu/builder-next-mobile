@@ -21,9 +21,19 @@ const resolveTypeName = (type: unknown): string => {
   return "div"
 }
 
-export function extractContentListTypeIdsFromCraftContent(
+export type ContentListPrefetchPair = {
+  selectedSource: string
+  /** Если задан, префетч кладётся в ключ `getCollectionItemsCacheKey(filterScope, selectedSource)`. */
+  filterScope?: string
+}
+
+/**
+ * Уникальные пары (filterScope?, selectedSource) для префетча items на SSR.
+ * Каждая пара даёт один запрос `fetchContentItems` без категории — начальное состояние «Все» в кэше по `cacheKey`.
+ */
+export const extractContentListPrefetchPairsFromCraftContent = (
   content: string,
-): string[] {
+): ContentListPrefetchPair[] => {
   if (!content.trim()) return []
 
   let nodes: SerializedNodes
@@ -33,16 +43,35 @@ export function extractContentListTypeIdsFromCraftContent(
     return []
   }
 
-  const ids = new Set<string>()
+  const byDedupeKey = new Map<string, ContentListPrefetchPair>()
   for (const nodeId of Object.keys(nodes)) {
     const node = nodes[nodeId]
     if (!node || node.hidden) continue
     if (resolveTypeName(node.type) !== "ContentList") continue
-    const raw = node.props?.selectedSource
-    if (typeof raw === "string" && raw.trim().length > 0) {
-      ids.add(raw.trim())
-    }
+    const rawSource = node.props?.selectedSource
+    if (typeof rawSource !== "string" || !rawSource.trim()) continue
+    const selectedSource = rawSource.trim()
+    const rawScope = node.props?.filterScope
+    const scope =
+      typeof rawScope === "string" && rawScope.trim() ? rawScope.trim() : undefined
+    // Совпадает с getCollectionItemsCacheKey: одна запись на пару (scope, type), без дублей в префетче.
+    const dedupeKey = scope ? `${scope}::${selectedSource}` : selectedSource
+    byDedupeKey.set(dedupeKey, {
+      selectedSource,
+      filterScope: scope,
+    })
   }
 
+  return Array.from(byDedupeKey.values())
+}
+
+export function extractContentListTypeIdsFromCraftContent(
+  content: string,
+): string[] {
+  const pairs = extractContentListPrefetchPairsFromCraftContent(content)
+  const ids = new Set<string>()
+  for (const p of pairs) {
+    ids.add(p.selectedSource)
+  }
   return Array.from(ids)
 }

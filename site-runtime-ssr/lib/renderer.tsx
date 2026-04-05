@@ -5,6 +5,7 @@ import { Text } from "@/components/Text"
 import { LinkText } from "@/components/LinkText"
 import { Image } from "@/components/Image"
 import { ContentList } from "@/components/ContentList"
+import { CategoryFilter } from "@/components/CategoryFilter"
 import type { ComponentNode } from "./interface"
 
 const componentMap: Record<string, React.ComponentType<any>> = {
@@ -14,6 +15,7 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   LinkText,
   Image,
   ContentList,
+  CategoryFilter, // выбор категории в контексте для ContentList с тем же filterScope
 }
 
 export function renderComponent(

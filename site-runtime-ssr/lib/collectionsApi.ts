@@ -15,21 +15,36 @@ export type CollectionsMap = Record<string, CollectionInfo>
 
 const API_BASE_URL = process.env.API_URL || "https://dev-api.cezyo.com"
 
+/** JSON для query-параметра `filter`: всегда тип контента; при фильтре категорий добавляем `category_id`. */
+function buildContentItemsFilter(
+  contentTypeId: string,
+  categoryIds?: string[],
+): string {
+  const payload: Record<string, string[]> = {
+    content_type_id: [contentTypeId.trim()],
+  }
+  const ids = categoryIds?.map((id) => id.trim()).filter(Boolean)
+  if (ids?.length) payload.category_id = ids
+  return JSON.stringify(payload)
+}
+
 /**
- * GET /v3/sites/{domain}/content/items с filter по content_type_id (UUID).
+ * GET /v3/sites/{domain}/content/items с filter по content_type_id (UUID), опционально category_id.
  */
 export const fetchContentItems = async (
   domain: string,
   contentTypeId: string,
-  params?: { limit?: number; offset?: number },
+  params?: {
+    limit?: number
+    offset?: number
+    categoryIds?: string[]
+  },
 ): Promise<IContentItem[] | null> => {
   const cleanDomain = normalizeSiteDomain(domain)
   if (!cleanDomain || !contentTypeId.trim()) return null
 
   try {
-    const filter = JSON.stringify({
-      content_type_id: [contentTypeId],
-    })
+    const filter = buildContentItemsFilter(contentTypeId, params?.categoryIds)
     const searchParams = new URLSearchParams({filter})
     if (params?.limit != null) searchParams.set("limit", String(params.limit))
     if (params?.offset != null) searchParams.set("offset", String(params.offset))

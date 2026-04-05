@@ -1,14 +1,24 @@
 import React from "react"
 import { renderComponent } from "@/lib/renderer"
 import type { ComponentNode } from "@/lib/interface"
-import { getCollectionByKey } from "@/lib/collectionsApi"
+import { fetchContentItems, getCollectionByKey } from "@/lib/collectionsApi"
 import { ContentDataProvider } from "@/components/ContentDataContext"
 import { useSiteCollections } from "@/components/SiteCollectionsContext"
+import { useCollectionFilterScope } from "@/components/CollectionFilterScopeContext"
+import { getCollectionItemsCacheKey } from "@/lib/collectionItemsCacheKey"
 import type { IContentItem } from "@/lib/contentTypes"
+
+/**
+ * Маркер «эффект ещё не сопоставлял категорию с предыдущим запуском».
+ * Нужен, чтобы при первом монтировании со scope не устроить лишний fetch, если SSR уже положил items в кэш под «Все».
+ */
+const CATEGORY_FETCH_INIT = Symbol("categoryFetchInit")
 
 type CellLayoutMode = "block" | "flex" | "grid" | "absolute"
 
 interface ContentListProps {
+  /** Должен совпадать с `filterScope` на блоке фильтра категорий, если используется. */
+  filterScope?: string
   selectedSource?: string
   itemsPerRow?: number
   cellLayout?: CellLayoutMode
@@ -44,8 +54,12 @@ interface ContentListProps {
  * 1. Получает коллекцию по selectedSource из API
  * 2. Для каждого элемента коллекции рендерит шаблон из children (первая ячейка)
  * 3. Подставляет данные элемента в шаблон через ContentDataProvider
+ *
+ * Фильтр категорий: при непустом `filterScope` слушаем `useCollectionFilterScope`, перезапрашиваем items с `categoryIds`.
+ * Пока идёт запрос при уже показанном списке — stale-while-revalidate: список не скрываем, показываем оверлей.
  */
 export const ContentList = ({
+  filterScope,
   selectedSource = "",
   itemsPerRow: itemsPerRowProp,
   cellLayout = "block",
@@ -62,19 +76,97 @@ export const ContentList = ({
 }: ContentListProps) => {
   const itemsPerRow: number = itemsPerRowProp ?? 1
   const children: ComponentNode[] = childrenProp ?? []
-  const { domain, collectionItemsByTypeId } = useSiteCollections()
-  const fromSsr = collectionItemsByTypeId[selectedSource]
+  const { domain, collectionItemsByKey, setItemsForKey } = useSiteCollections()
+  const { selectedCategoryIdByScope } = useCollectionFilterScope()
+  const scopeTrimmed = filterScope?.trim() ?? ""
+  const selectedCategoryId = scopeTrimmed
+    ? selectedCategoryIdByScope[scopeTrimmed] ?? null
+    : null
+
+  const cacheKey = getCollectionItemsCacheKey(filterScope, selectedSource)
+  const fromSsr = collectionItemsByKey[cacheKey]
   const [fallbackItems, setFallbackItems] = React.useState<IContentItem[] | null>(
     null,
   )
+  // Загрузка коллекции без scope (клиентский fallback, если слот в провайдере пуст).
   const [fetchLoading, setFetchLoading] = React.useState(
     () =>
       !!selectedSource &&
       fromSsr === undefined &&
       !!domain,
   )
+  // Загрузка после смены категории при включённом filterScope (оверлей или блокирующий плейсхолдер).
+  const [filterLoading, setFilterLoading] = React.useState(
+    () =>
+      !!scopeTrimmed &&
+      !!selectedSource &&
+      collectionItemsByKey[cacheKey] === undefined,
+  )
 
+  const prevCategoryRef = React.useRef<string | null | typeof CATEGORY_FETCH_INIT>(
+    CATEGORY_FETCH_INIT,
+  )
+
+  // Смена scope/source — снова считаем первый проход эффекта «инициализацией».
   React.useEffect(() => {
+    prevCategoryRef.current = CATEGORY_FETCH_INIT
+  }, [filterScope, selectedSource])
+
+  // Клиентский fetch при смене категории (или при первом появлении данных для scope-списка).
+  React.useEffect(() => {
+    if (!scopeTrimmed || !selectedSource || !domain) {
+      return
+    }
+
+    const cat = selectedCategoryId
+
+    if (prevCategoryRef.current === CATEGORY_FETCH_INIT) {
+      prevCategoryRef.current = cat
+      // Уже есть префетч SSR для «Все» (cat === null) — не дублируем запрос при гидрации.
+      if (cat === null && collectionItemsByKey[cacheKey] !== undefined) {
+        return
+      }
+    } else if (prevCategoryRef.current === cat) {
+      return
+    } else {
+      prevCategoryRef.current = cat
+    }
+
+    let cancelled = false
+    setFilterLoading(true)
+    fetchContentItems(domain, selectedSource, {
+      categoryIds: cat ? [cat] : undefined,
+    })
+      .then((items) => {
+        if (!cancelled && items != null) {
+          setItemsForKey(cacheKey, items)
+        }
+      })
+      .catch((error) => {
+        console.error("Ошибка при загрузке коллекции с фильтром:", error)
+      })
+      .finally(() => {
+        if (!cancelled) setFilterLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    scopeTrimmed,
+    selectedSource,
+    domain,
+    selectedCategoryId,
+    setItemsForKey,
+    cacheKey,
+    collectionItemsByKey[cacheKey],
+  ])
+
+  // Без filterScope — данные из SSR или единичный getCollectionByKey на клиенте (старый путь без категорий).
+  React.useEffect(() => {
+    if (scopeTrimmed) {
+      return
+    }
     if (fromSsr !== undefined) {
       setFallbackItems(null)
       setFetchLoading(false)
@@ -104,15 +196,23 @@ export const ContentList = ({
     return () => {
       cancelled = true
     }
-  }, [selectedSource, domain, fromSsr])
+  }, [selectedSource, domain, fromSsr, cacheKey, scopeTrimmed])
 
   const collectionItems: IContentItem[] =
     fromSsr !== undefined ? fromSsr : (fallbackItems ?? [])
 
-  const isLoading =
-    !!selectedSource && fromSsr === undefined && fetchLoading
+  // Плейсхолдер без списка: только когда показывать нечего и идёт первичная загрузка (фильтр или без SSR).
+  const blockingLoading =
+    !!selectedSource &&
+    collectionItems.length === 0 &&
+    (filterLoading ||
+      (!scopeTrimmed && fromSsr === undefined && fetchLoading))
 
-  if (!selectedSource || isLoading) {
+  // Список уже на экране — не схлопываем высоту; затемняем и блокируем клики до прихода новых items.
+  const showFilterOverlay =
+    filterLoading && collectionItems.length > 0
+
+  if (!selectedSource || blockingLoading) {
     return (
       <div
         style={{
@@ -121,6 +221,7 @@ export const ContentList = ({
           flexDirection: "column",
           minHeight: 300,
         }}
+        aria-busy={blockingLoading ? true : undefined}
       />
     )
   }
@@ -146,44 +247,68 @@ export const ContentList = ({
   return (
     <div
       style={{
+        position: "relative",
         width: "100%",
-        display: "flex",
-        flexDirection: "column",
       }}
+      aria-busy={filterLoading ? true : undefined}
     >
-      {rows.map((row, rowIndex) => (
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {rows.map((row, rowIndex) => (
+          <div
+            key={rowIndex}
+            style={{
+              display: "flex",
+              flexDirection: itemsPerRow === 1 ? "column" : "row",
+            }}
+          >
+            {row.map((itemData, itemIndex) => {
+              const flatIndex = rowIndex * itemsPerRow + itemIndex
+              return (
+                <ContentListItem
+                  key={flatIndex}
+                  itemData={itemData}
+                  collectionKey={selectedSource}
+                  itemsPerRow={itemsPerRow}
+                  layout={cellLayout}
+                  gridColumns={cellGridColumns}
+                  gridRows={cellGridRows}
+                  gridAutoFlow={cellGridAutoFlow ?? undefined}
+                  gap={cellGap ?? undefined}
+                  flexFlow={cellFlexFlow ?? undefined}
+                  flexJustifyContent={cellFlexJustifyContent ?? undefined}
+                  flexAlignItems={cellFlexAlignItems ?? undefined}
+                  placeItemsY={cellPlaceItemsY ?? undefined}
+                  placeItemsX={cellPlaceItemsX ?? undefined}
+                >
+                  {children}
+                </ContentListItem>
+              )
+            })}
+          </div>
+        ))}
+      </div>
+      {showFilterOverlay ? (
         <div
-          key={rowIndex}
           style={{
+            position: "absolute",
+            inset: 0,
+            backgroundColor: "rgba(255, 255, 255, 0.6)",
+            pointerEvents: "auto",
             display: "flex",
-            flexDirection: itemsPerRow === 1 ? "column" : "row",
+            alignItems: "center",
+            justifyContent: "center",
           }}
+          aria-hidden
         >
-          {row.map((itemData, itemIndex) => {
-            const flatIndex = rowIndex * itemsPerRow + itemIndex
-            return (
-              <ContentListItem
-                key={flatIndex}
-                itemData={itemData}
-                collectionKey={selectedSource}
-                itemsPerRow={itemsPerRow}
-                layout={cellLayout}
-                gridColumns={cellGridColumns}
-                gridRows={cellGridRows}
-                gridAutoFlow={cellGridAutoFlow ?? undefined}
-                gap={cellGap ?? undefined}
-                flexFlow={cellFlexFlow ?? undefined}
-                flexJustifyContent={cellFlexJustifyContent ?? undefined}
-                flexAlignItems={cellFlexAlignItems ?? undefined}
-                placeItemsY={cellPlaceItemsY ?? undefined}
-                placeItemsX={cellPlaceItemsX ?? undefined}
-              >
-                {children}
-              </ContentListItem>
-            )
-          })}
+          <span style={{ fontSize: 14, color: "#666" }}>Обновление…</span>
         </div>
-      ))}
+      ) : null}
     </div>
   )
 }
