@@ -177,7 +177,12 @@ export const BuilderPage = () => {
     if (!isTemplateWithCollection || !templateItemsSuccess || !templateItemsResponse)
       return null
     const items = templateItemsResponse.data ?? []
-    return items[0] ?? null
+    const withSlug = items.find(
+      (i) =>
+        typeof (i as { slug?: string }).slug === "string" &&
+        (i as { slug: string }).slug.trim().length > 0,
+    )
+    return withSlug ?? items[0] ?? null
   }, [isTemplateWithCollection, templateItemsSuccess, templateItemsResponse])
   console.log("templatePreviewItem12321", templatePreviewItem)
   const builderTemplatePageValue = useMemo(

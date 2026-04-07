@@ -22,12 +22,14 @@ export const CollectionFilterScopeContext =
 /** Оборачивает canvas билдера, чтобы фильтр и списки делили состояние выбора категории. */
 export const CollectionFilterScopeProvider = ({
   children,
+  initialSelectedCategoryIdByScope = {},
 }: {
   children: React.ReactNode
+  initialSelectedCategoryIdByScope?: Record<string, string | null>
 }) => {
   const [selectedCategoryIdByScope, setSelectedCategoryIdByScope] = useState<
     Record<string, string | null>
-  >({})
+  >(() => ({ ...initialSelectedCategoryIdByScope }))
 
   const setCategoryForScope = useCallback(
     (scope: string, categoryId: string | null) => {
