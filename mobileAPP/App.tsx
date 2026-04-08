@@ -1,13 +1,16 @@
-import { ComponentType, useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { StatusBar } from "expo-status-bar"
 import {
   ActivityIndicator,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native"
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+} from "react-native-safe-area-context"
 import { WebView } from "react-native-webview"
 import { NavigationContainer } from "@react-navigation/native"
 import {
@@ -16,15 +19,12 @@ import {
 } from "@react-navigation/native-stack"
 import type { IContentItem } from "./src/api/contentTypes"
 import { SITE_DOMAIN, WEB_VIEW_BASE_URL } from "./src/api/config"
-import {
-  fetchSitePages,
-  fetchTemplatePageItem,
-  resolveSitePageForSlugPath,
-  type SitePage,
-} from "./src/api/sitePagesApi"
+import { fetchSitePages, type SitePage } from "./src/api/sitePagesApi"
+import { resolveStorefrontRoute } from "./src/api/resolveStorefrontRoute"
 import { isTemplateSitePage } from "./src/lib/templateRoute"
 import { ContentDataProvider } from "./src/contexts/ContentDataContext"
 import { CollectionFilterScopeProvider } from "./src/contexts/CollectionFilterScopeContext"
+import { StorefrontPageProvider } from "./src/contexts/StorefrontPageContext"
 import { SiteCollectionsProvider } from "./src/contexts/SiteCollectionsContext"
 import { craftContentToComponents } from "./src/content/craftContentToComponents"
 import { renderPage } from "./src/content/renderer"
@@ -38,8 +38,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>()
 type PageScreenProps = NativeStackScreenProps<RootStackParamList, "Page">
 
 /**
- * загрузка страницы по slug => при is_mobile_content и наличии content — нативный рендер (craftContentToComponents + renderPage в ScrollView),
- *  иначе WebView по WEB_VIEW_BASE_URL + path.
+ * Загрузка страницы по slug: паритет с site-runtime-ssr [[...slug]] (статика / template / категория).
  */
 const PageScreen = ({ route }: PageScreenProps) => {
   const slug = route.params?.slug ?? "/"
@@ -49,6 +48,16 @@ const PageScreen = ({ route }: PageScreenProps) => {
     Record<string, IContentItem[]>
   >({})
   const [templateItem, setTemplateItem] = useState<IContentItem | null>(null)
+  const [pageBaseSlug, setPageBaseSlug] = useState("/")
+  const [categorySlugTrailFromUrl, setCategorySlugTrailFromUrl] = useState<
+    string | null
+  >(null)
+  const [initialCategoryIdByScope, setInitialCategoryIdByScope] = useState<
+    Record<string, string | null>
+  >({})
+  const [initialCategorySlugByScope, setInitialCategorySlugByScope] = useState<
+    Record<string, string | null>
+  >({})
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -65,6 +74,10 @@ const PageScreen = ({ route }: PageScreenProps) => {
     setSitePages([])
     setCollectionItemsByKey({})
     setTemplateItem(null)
+    setPageBaseSlug("/")
+    setCategorySlugTrailFromUrl(null)
+    setInitialCategoryIdByScope({})
+    setInitialCategorySlugByScope({})
 
     let cancelled = false
 
@@ -79,42 +92,26 @@ const PageScreen = ({ route }: PageScreenProps) => {
         return
       }
 
-      setSitePages(pages)
-      const resolved = resolveSitePageForSlugPath(pages, slug)
-      if (!resolved) {
-        setPage(null)
-        setLoading(false)
-        return
-      }
-
-      setPage(resolved.page)
-
-      if (resolved.kind === "static") {
-        setCollectionItemsByKey({})
-        setTemplateItem(null)
-        setLoading(false)
-        return
-      }
-
-      const itemResult = await fetchTemplatePageItem(
-        SITE_DOMAIN,
-        resolved.page,
-        resolved.itemSegment,
-      )
+      const resolved = await resolveStorefrontRoute(SITE_DOMAIN, pages, slug)
       if (cancelled) return
 
-      if (!itemResult) {
-        setTemplateItem(null)
-        setCollectionItemsByKey({})
+      if (!resolved) {
+        setPage(null)
+        setSitePages([])
         setLoading(false)
         return
       }
 
-      const typeId = resolved.page.collection_type_id?.trim() ?? ""
-      setTemplateItem(itemResult.item)
-      setCollectionItemsByKey({
-        [typeId]: itemResult.itemsForTemplateType,
-      })
+      setSitePages(resolved.sitePages)
+      setPage(resolved.page)
+      setCollectionItemsByKey(resolved.collectionItemsByKey)
+      setPageBaseSlug(resolved.pageBaseSlug)
+      setCategorySlugTrailFromUrl(resolved.categorySlugTrailFromUrl)
+      setInitialCategoryIdByScope(resolved.initialSelectedCategoryIdByScope)
+      setInitialCategorySlugByScope(
+        resolved.initialSelectedCategorySlugByScope,
+      )
+      setTemplateItem(resolved.templateContentData?.itemData ?? null)
       setLoading(false)
     })().catch(() => {
       if (!cancelled) {
@@ -132,7 +129,9 @@ const PageScreen = ({ route }: PageScreenProps) => {
   }, [slug])
 
   const templateNeedsItem =
-    page != null && isTemplateSitePage(page) && Boolean(page.collection_type_id?.trim())
+    page != null &&
+    isTemplateSitePage(page) &&
+    Boolean(page.collection_type_id?.trim())
   const templateItemResolved = !templateNeedsItem || templateItem != null
 
   const showNativeContent =
@@ -197,9 +196,16 @@ const PageScreen = ({ route }: PageScreenProps) => {
             sitePages={sitePages}
             collectionItemsByKey={collectionItemsByKey}
           >
-            <CollectionFilterScopeProvider>
-              {/* Общий выбор категории для CategoryFilter + ContentList в превью */}
-              {nativeTree}
+            <CollectionFilterScopeProvider
+              initialSelectedCategoryIdByScope={initialCategoryIdByScope}
+              initialSelectedCategorySlugByScope={initialCategorySlugByScope}
+            >
+              <StorefrontPageProvider
+                pageBaseSlug={pageBaseSlug}
+                categorySlugTrailFromUrl={categorySlugTrailFromUrl}
+              >
+                {nativeTree}
+              </StorefrontPageProvider>
             </CollectionFilterScopeProvider>
           </SiteCollectionsProvider>
         ) : null}
@@ -232,19 +238,21 @@ const PageScreen = ({ route }: PageScreenProps) => {
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen
-          name="Page"
-          component={PageScreen as ComponentType}
-          initialParams={{ slug: "/" }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen
+            name="Page"
+            component={PageScreen}
+            initialParams={{ slug: "/" }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
   )
 }
 
-const styles = StyleSheet.create({ //TODO
+const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#F5F5F5",
