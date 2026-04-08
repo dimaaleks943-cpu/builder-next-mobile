@@ -105,6 +105,19 @@ export function isTemplateSitePage(page: SitePage): boolean {
 /**
  * Выбирает template-страницу с наиболее длинным подходящим префиксом (при пересечениях).
  */
+export function getItemContentTypeId(item: IContentItem): string | undefined {
+  const raw = item as Record<string, unknown>;
+  const a =
+    typeof item.content_type_id === "string"
+      ? item.content_type_id
+      : undefined;
+  const b =
+    typeof raw.collection_type_id === "string"
+      ? raw.collection_type_id
+      : undefined;
+  return a ?? b;
+}
+
 export function resolveTemplatePageForSlug(
   pages: SitePage[],
   slugPath: string,

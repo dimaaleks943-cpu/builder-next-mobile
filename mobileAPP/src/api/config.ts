@@ -29,10 +29,12 @@ const normalizeWebBaseUrl = (value: string): string => {
   return `https://${trimmed}`;
 };
 
-export const WEB_VIEW_BASE_URL = normalizeWebBaseUrl(
-  cleanPublicEnv(process.env.EXPO_PUBLIC_SITE_WEB_URL) ??
-    `https://${SITE_DOMAIN}`,
-);
+export const WEB_VIEW_BASE_URL = "https://sites-test.cezyo.com/"
+
+  // normalizeWebBaseUrl(
+  // cleanPublicEnv(process.env.EXPO_PUBLIC_SITE_WEB_URL) ??
+  //   `https://${SITE_DOMAIN}`,
+// );
 
 export const cleanDomain = (domain: string): string =>
   domain.includes(":") ? domain.split(":")[0] : domain;

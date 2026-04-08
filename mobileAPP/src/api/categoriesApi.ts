@@ -1,4 +1,5 @@
 import { API_BASE_URL, cleanDomain } from "./config";
+import { parseSingleEntityJson } from "./apiParsers";
 import type { ContentCategory, PaginatedResponse } from "./contentTypes";
 
 /**
@@ -22,10 +23,7 @@ export const fetchContentCategories = async (
 
   try {
     const searchParams = new URLSearchParams();
-    searchParams.set("filter", JSON.stringify({ category_id: [rootId] }));
-    if (params?.limit != null) searchParams.set("limit", String(params.limit));
-    if (params?.offset != null)
-      searchParams.set("offset", String(params.offset));
+    searchParams.set("filter", JSON.stringify({ content_type_id: [rootId] }));
     const qs = searchParams.toString();
 
     const response = await fetch(
@@ -41,6 +39,36 @@ export const fetchContentCategories = async (
 
     const json = (await response.json()) as PaginatedResponse<ContentCategory>;
     return json.data || [];
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * GET /v3/sites/{domain}/content/categories/s/{slug}
+ */
+export const fetchContentCategoryBySlug = async (
+  domain: string,
+  slug: string,
+): Promise<ContentCategory | null> => {
+  const domainClean = cleanDomain(domain);
+  const s = slug.trim();
+  if (!domainClean || !s) return null;
+
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/v3/sites/${encodeURIComponent(domainClean)}/content/categories/s/${encodeURIComponent(s)}`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      },
+    );
+
+    if (!response.ok) return null;
+
+    const json: unknown = await response.json();
+    return parseSingleEntityJson<ContentCategory>(json);
   } catch {
     return null;
   }

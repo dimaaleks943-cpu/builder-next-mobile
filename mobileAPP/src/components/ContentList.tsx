@@ -12,6 +12,7 @@ import {
 } from "../api/collectionsApi";
 import type { IContentItem } from "../api/contentTypes";
 import { ContentDataProvider } from "../contexts/ContentDataContext";
+import { ContentListProvider } from "../contexts/ContentListContext";
 import { useCollectionFilterScope } from "../contexts/CollectionFilterScopeContext";
 import { useSiteCollections } from "../contexts/SiteCollectionsContext";
 import { getCollectionItemsCacheKey } from "../lib/collectionItemsCacheKey";
@@ -216,7 +217,7 @@ export const ContentList = ({
   }
 
   if (collectionItems.length === 0) {
-    return <View style={styles.placeholder} />;
+    return <View style={styles.placeholder}/>;
   }
 
   const rows: IContentItem[][] = [];
@@ -226,54 +227,56 @@ export const ContentList = ({
   }
 
   return (
-    <View
-      style={styles.listOuter}
-      accessibilityState={filterLoading ? { busy: true } : undefined}
-    >
-      <View style={styles.root}>
-        {rows.map((row, rowIndex) => (
-          <View
-            key={rowIndex}
-            style={[
-              styles.row,
-              { flexDirection: itemsPerRow === 1 ? "column" : "row" },
-            ]}
-          >
-            {row.map((itemData, itemIndex) => {
-              const flatIndex = rowIndex * itemsPerRow + itemIndex;
-              return (
-                <ContentListItem
-                  key={itemData.id || String(flatIndex)}
-                  itemData={itemData}
-                  collectionKey={selectedSource}
-                  itemsPerRow={itemsPerRow}
-                  layout={cellLayout}
-                  gap={cellGap ?? undefined}
-                  flexFlow={cellFlexFlow ?? undefined}
-                  flexJustifyContent={cellFlexJustifyContent ?? undefined}
-                  flexAlignItems={cellFlexAlignItems ?? undefined}
-                  placeItemsY={cellPlaceItemsY ?? undefined}
-                  placeItemsX={cellPlaceItemsX ?? undefined}
-                >
-                  {children}
-                </ContentListItem>
-              );
-            })}
-          </View>
-        ))}
-      </View>
-      {showFilterOverlay ? (
-        <View
-          style={styles.filterOverlay}
-          pointerEvents="auto"
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-        >
-          <ActivityIndicator size="small" color="#666666" />
-          <RNText style={styles.overlayHint}>Обновление…</RNText>
+    <ContentListProvider filterScope={scopeTrimmed || undefined}>
+      <View
+        style={styles.listOuter}
+        accessibilityState={filterLoading ? { busy: true } : undefined}
+      >
+        <View style={styles.root}>
+          {rows.map((row, rowIndex) => (
+            <View
+              key={rowIndex}
+              style={[
+                styles.row,
+                { flexDirection: itemsPerRow === 1 ? "column" : "row" },
+              ]}
+            >
+              {row.map((itemData, itemIndex) => {
+                const flatIndex = rowIndex * itemsPerRow + itemIndex;
+                return (
+                  <ContentListItem
+                    key={itemData.id || String(flatIndex)}
+                    itemData={itemData}
+                    collectionKey={selectedSource}
+                    itemsPerRow={itemsPerRow}
+                    layout={cellLayout}
+                    gap={cellGap ?? undefined}
+                    flexFlow={cellFlexFlow ?? undefined}
+                    flexJustifyContent={cellFlexJustifyContent ?? undefined}
+                    flexAlignItems={cellFlexAlignItems ?? undefined}
+                    placeItemsY={cellPlaceItemsY ?? undefined}
+                    placeItemsX={cellPlaceItemsX ?? undefined}
+                  >
+                    {children}
+                  </ContentListItem>
+                );
+              })}
+            </View>
+          ))}
         </View>
-      ) : null}
-    </View>
+        {showFilterOverlay ? (
+          <View
+            style={styles.filterOverlay}
+            pointerEvents="auto"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            <ActivityIndicator size="small" color="#666666"/>
+            <RNText style={styles.overlayHint}>Обновление…</RNText>
+          </View>
+        ) : null}
+      </View>
+    </ContentListProvider>
   );
 };
 
@@ -372,15 +375,15 @@ const ContentListItem = ({
       >
         {hasTemplate
           ? children.map((child, index) => (
-              <React.Fragment key={index}>
-                {renderComponent(child)}
-              </React.Fragment>
-            ))
+            <React.Fragment key={index}>
+              {renderComponent(child)}
+            </React.Fragment>
+          ))
           : (
-              <RNText style={{ color: "#999999", fontSize: 12 }}>
-                No template
-              </RNText>
-            )}
+            <RNText style={{ color: "#999999", fontSize: 12 }}>
+              No template
+            </RNText>
+          )}
       </View>
     </ContentDataProvider>
   );

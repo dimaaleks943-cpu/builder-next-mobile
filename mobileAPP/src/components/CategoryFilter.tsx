@@ -6,10 +6,13 @@ import {
   Text,
   View,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { fetchContentCategories } from "../api/categoriesApi";
 import type { ContentCategory } from "../api/contentTypes";
 import { useCollectionFilterScope } from "../contexts/CollectionFilterScopeContext";
+import { useStorefrontPage } from "../contexts/StorefrontPageContext";
 import { useSiteCollections } from "../contexts/SiteCollectionsContext";
+import { buildStorefrontCategoryUrl } from "../lib/catalogPathResolve";
 
 /** Настройки блока с сервера; `filterScope` связывает фильтр с ContentList. */
 export type CategoryFilterProps = {
@@ -29,7 +32,9 @@ export const CategoryFilter = ({
   direction = "row",
   showAllLabel = "Все",
 }: CategoryFilterProps) => {
+  const navigation = useNavigation<any>();
   const { domain } = useSiteCollections();
+  const { pageBaseSlug } = useStorefrontPage();
   const { selectedCategoryIdByScope, setCategoryForScope } =
     useCollectionFilterScope();
   const scope = filterScope.trim();
@@ -68,15 +73,27 @@ export const CategoryFilter = ({
   }, [domain, rootId]);
 
   const onSelectAll = useCallback(() => {
-    if (scope) setCategoryForScope(scope, null);
-  }, [scope, setCategoryForScope]);
+    if (scope) {
+      setCategoryForScope(scope, null);
+      navigation.navigate("Page", {
+        slug: pageBaseSlug && pageBaseSlug !== "/" ? pageBaseSlug : "/",
+      });
+    }
+  }, [scope, setCategoryForScope, navigation, pageBaseSlug]);
 
-  /** Выбор конкретной категории: ContentList с тем же scope запросит items с `categoryIds`. */
+  /** Выбор категории: state + навигация на slug-URL как на SSR. */
   const onSelectCategory = useCallback(
-    (id: string) => {
-      if (scope) setCategoryForScope(scope, id);
+    (id: string, categorySlug?: string | null) => {
+      if (!scope) return;
+      const s = categorySlug?.trim() || null;
+      setCategoryForScope(scope, id, s ?? undefined);
+      if (s) {
+        navigation.navigate("Page", {
+          slug: buildStorefrontCategoryUrl(pageBaseSlug, s),
+        });
+      }
     },
-    [scope, setCategoryForScope],
+    [scope, setCategoryForScope, navigation, pageBaseSlug],
   );
 
   if (!scope) {
@@ -145,7 +162,7 @@ export const CategoryFilter = ({
               return (
                 <Pressable
                   key={cat.id}
-                  onPress={() => onSelectCategory(cat.id)}
+                  onPress={() => onSelectCategory(cat.id, cat.slug)}
                   style={({ pressed }) => [
                     styles.baseItem,
                     styles.radioRow,
@@ -164,7 +181,7 @@ export const CategoryFilter = ({
             return (
               <Pressable
                 key={cat.id}
-                onPress={() => onSelectCategory(cat.id)}
+                onPress={() => onSelectCategory(cat.id, cat.slug)}
                 style={({ pressed }) => [
                   styles.baseItem,
                   isList && styles.listItem,
