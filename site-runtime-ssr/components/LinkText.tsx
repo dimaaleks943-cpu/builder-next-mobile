@@ -6,26 +6,11 @@ import {
   getContentFieldDisplayValue,
 } from "@/lib/contentFieldValue";
 import type { IContentItem } from "@/lib/contentTypes";
+import { buildStorefrontTemplateHref } from "@/lib/catalogPathResolve";
 import { normalizeItemPathPrefix } from "@/lib/templateRoute";
-
-function buildCollectionItemTemplateHref(
-  prefixNormalized: string,
-  segment: string,
-): string {
-  const raw = segment.trim();
-  if (!raw) return "#";
-  const encoded = raw
-    .split("/")
-    .filter(Boolean)
-    .map((p) => encodeURIComponent(p))
-    .join("/");
-  if (!encoded) return "#";
-  if (prefixNormalized === "/") {
-    return `/${encoded}`;
-  }
-  const base = prefixNormalized.replace(/\/+$/, "");
-  return `${base}/${encoded}`;
-}
+import { useContentListContext } from "@/components/ContentListContext";
+import { useCollectionFilterScope } from "@/components/CollectionFilterScopeContext";
+import { useStorefrontPage } from "@/components/StorefrontPageContext";
 
 interface LinkTextProps {
   text?: string;
@@ -88,6 +73,9 @@ export const LinkText = ({
 }: LinkTextProps) => {
   const contentData = useContentData();
   const { sitePages } = useSiteCollections();
+  const { filterScope } = useContentListContext();
+  const { selectedCategorySlugByScope } = useCollectionFilterScope();
+  const { categorySlugTrailFromUrl } = useStorefrontPage();
 
   const displayText = useMemo(() => {
     if (collectionField && contentData?.itemData) {
@@ -138,9 +126,26 @@ export const LinkText = ({
     }
 
     const prefix = normalizeItemPathPrefix(page.item_path_prefix ?? page.slug);
+    const rawSlug = (item as Record<string, unknown>).slug;
     const segment =
-      typeof item.id === "string" ? item.id.trim() : String(item.id ?? "").trim();
-    return buildCollectionItemTemplateHref(prefix, segment);
+      typeof rawSlug === "string" && rawSlug.trim()
+        ? rawSlug.trim()
+        : "";
+    if (!segment) {
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "[LinkText] collection item template link needs item.slug; using fallback href.",
+        );
+      }
+      return href?.trim() ? href : "#";
+    }
+    const scopeKey = filterScope?.trim() ?? "";
+    const categoryTrail =
+      (scopeKey && selectedCategorySlugByScope[scopeKey]) ??
+      categorySlugTrailFromUrl ??
+      null;
+    return buildStorefrontTemplateHref(prefix, segment, categoryTrail);
   }, [
     href,
     linkMode,
@@ -148,6 +153,9 @@ export const LinkText = ({
     collectionItemTemplatePageId,
     sitePages,
     contentData?.itemData,
+    filterScope,
+    selectedCategorySlugByScope,
+    categorySlugTrailFromUrl,
   ]);
 
   const textDecoration = [

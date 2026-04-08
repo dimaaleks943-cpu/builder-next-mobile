@@ -3,6 +3,7 @@ import type {
   IContentItem,
   PaginatedResponse,
 } from "@/lib/contentTypes"
+import { parseSingleEntityJson } from "@/lib/apiParsers"
 import { normalizeSiteDomain } from "@/lib/sitePages"
 
 export type CollectionInfo = {
@@ -75,31 +76,20 @@ export const fetchContentItems = async (
   }
 }
 
-function parseSingleContentItemJson(json: unknown): IContentItem | null {
-  if (!json || typeof json !== "object") return null
-  const o = json as Record<string, unknown>
-  if (o.data != null && typeof o.data === "object" && !Array.isArray(o.data)) {
-    const inner = o.data as Record<string, unknown>
-    if (typeof inner.id === "string") return o.data as IContentItem
-  }
-  if (typeof o.id === "string") return json as IContentItem
-  return null
-}
-
 /**
- * GET /v3/sites/{domain}/content/items/{content_item_id}
+ * GET /v3/sites/{domain}/content/items/s/{slug}
  */
-export const fetchContentItemById = async (
+export const fetchContentItemBySlug = async (
   domain: string,
-  contentItemId: string,
+  slug: string,
 ): Promise<IContentItem | null> => {
   const cleanDomain = normalizeSiteDomain(domain)
-  const id = contentItemId.trim()
-  if (!cleanDomain || !id) return null
+  const s = slug.trim()
+  if (!cleanDomain || !s) return null
 
   try {
     const response = await fetch(
-      `${API_BASE_URL}/v3/sites/${encodeURIComponent(cleanDomain)}/content/items/${encodeURIComponent(id)}`,
+      `${API_BASE_URL}/v3/sites/${encodeURIComponent(cleanDomain)}/content/items/s/${encodeURIComponent(s)}`,
       {
         headers: {
           Accept: "application/json",
@@ -110,7 +100,7 @@ export const fetchContentItemById = async (
     if (!response.ok) {
       if (response.status !== 404) {
         console.error(
-          `Не удалось получить content item ${id} для ${cleanDomain}:`,
+          `Не удалось получить content item по slug для ${cleanDomain}:`,
           response.status,
           response.statusText,
         )
@@ -119,9 +109,9 @@ export const fetchContentItemById = async (
     }
 
     const json: unknown = await response.json()
-    return parseSingleContentItemJson(json)
+    return parseSingleEntityJson<IContentItem>(json)
   } catch (error) {
-    console.error("Ошибка при запросе content item по id:", error)
+    console.error("Ошибка при запросе content item по slug:", error)
     return null
   }
 }

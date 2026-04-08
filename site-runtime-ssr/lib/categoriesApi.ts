@@ -1,4 +1,5 @@
 import type { ContentCategory, PaginatedResponse } from "@/lib/contentTypes"
+import { parseSingleEntityJson } from "@/lib/apiParsers"
 import { normalizeSiteDomain } from "@/lib/sitePages"
 
 const API_BASE_URL = process.env.API_URL || "https://dev-api.cezyo.com"
@@ -37,7 +38,6 @@ export const fetchContentCategories = async (
         },
       },
     )
-    console.log("response123123123", `${API_BASE_URL}/v3/sites/${encodeURIComponent(cleanDomain)}/content/categories${qs ? `?${qs}` : ""}`)
     if (!response.ok) {
       console.error(
         `Не удалось получить content categories для ${cleanDomain}:`,
@@ -51,6 +51,46 @@ export const fetchContentCategories = async (
     return json.data ?? []
   } catch (error) {
     console.error("Ошибка при запросе content categories:", error)
+    return null
+  }
+}
+
+/**
+ * GET /v3/sites/{domain}/content/categories/s/{slug}
+ */
+export const fetchContentCategoryBySlug = async (
+  domain: string,
+  slug: string,
+): Promise<ContentCategory | null> => {
+  const cleanDomain = normalizeSiteDomain(domain)
+  const s = slug.trim()
+  if (!cleanDomain || !s) return null
+
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/v3/sites/${encodeURIComponent(cleanDomain)}/content/categories/s/${encodeURIComponent(s)}`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      },
+    )
+
+    if (!response.ok) {
+      if (response.status !== 404) {
+        console.error(
+          `Не удалось получить category по slug для ${cleanDomain}:`,
+          response.status,
+          response.statusText,
+        )
+      }
+      return null
+    }
+
+    const json: unknown = await response.json()
+    return parseSingleEntityJson<ContentCategory>(json)
+  } catch (error) {
+    console.error("Ошибка при запросе category по slug:", error)
     return null
   }
 }

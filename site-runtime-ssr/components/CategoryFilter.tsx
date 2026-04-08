@@ -1,8 +1,11 @@
 import React from "react"
+import { useRouter } from "next/router"
 import { fetchContentCategories } from "@/lib/categoriesApi"
 import type { ContentCategory } from "@/lib/contentTypes"
+import { buildStorefrontCategoryUrl } from "@/lib/catalogPathResolve"
 import { useSiteCollections } from "@/components/SiteCollectionsContext"
 import { useCollectionFilterScope } from "@/components/CollectionFilterScopeContext"
+import { useStorefrontPage } from "@/components/StorefrontPageContext"
 
 /** Пропсы сериализованного блока; `filterScope` должен совпадать с ContentList на той же странице. */
 export type CategoryFilterProps = {
@@ -23,9 +26,23 @@ const CategoryFilterComponent = ({
   showAllLabel = "Все",
 }: CategoryFilterProps) => {
   const { domain } = useSiteCollections()
+  const router = useRouter()
+  const { pageBaseSlug } = useStorefrontPage()
   const { selectedCategoryIdByScope, setCategoryForScope } =
     useCollectionFilterScope()
   const scope = filterScope.trim()
+
+  const applyCategory = React.useCallback(
+    (categoryId: string | null, categorySlug: string | null) => {
+      setCategoryForScope(scope, categoryId, categorySlug)
+      if (categoryId !== null && !categorySlug?.trim()) {
+        return
+      }
+      const url = buildStorefrontCategoryUrl(pageBaseSlug, categorySlug)
+      void router.push(url, undefined, { scroll: false })
+    },
+    [pageBaseSlug, router, scope, setCategoryForScope],
+  )
   const selectedId = scope ? selectedCategoryIdByScope[scope] ?? null : null
   const rootId = contentCategoryRootId.trim()
   const rootMissing = !rootId
@@ -48,8 +65,6 @@ const CategoryFilterComponent = ({
       limit: 500,
     })
       .then((data) => {
-        console.log("fetchContentCategories1231", data)
-
         if (!cancelled) setCategories(data ?? [])
       })
       .catch(() => {
@@ -122,7 +137,14 @@ const CategoryFilterComponent = ({
             type="radio"
             name={`category-filter-${scope}`}
             checked={active}
-            onChange={() => setCategoryForScope(scope, cat.id)}
+            onChange={() =>
+              applyCategory(
+                cat.id,
+                typeof cat.slug === "string" && cat.slug.trim()
+                  ? cat.slug.trim()
+                  : null,
+              )
+            }
           />
           <span>{cat.name}</span>
         </label>
@@ -134,7 +156,14 @@ const CategoryFilterComponent = ({
         key={cat.id}
         type="button"
         style={style}
-        onClick={() => setCategoryForScope(scope, cat.id)}
+        onClick={() =>
+          applyCategory(
+            cat.id,
+            typeof cat.slug === "string" && cat.slug.trim()
+              ? cat.slug.trim()
+              : null,
+          )
+        }
       >
         {cat.name}
       </button>
@@ -176,7 +205,7 @@ const CategoryFilterComponent = ({
                 type="radio"
                 name={`category-filter-${scope}`}
                 checked={selectedId === null}
-                onChange={() => setCategoryForScope(scope, null)}
+                onChange={() => applyCategory(null, null)}
               />
               <span>{showAllLabel}</span>
             </label>
@@ -193,7 +222,7 @@ const CategoryFilterComponent = ({
                     }
                   : {}),
               }}
-              onClick={() => setCategoryForScope(scope, null)}
+              onClick={() => applyCategory(null, null)}
             >
               {showAllLabel}
             </button>

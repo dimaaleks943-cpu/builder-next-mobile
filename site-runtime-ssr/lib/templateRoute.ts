@@ -1,6 +1,5 @@
 import type { IContentItem } from "@/lib/contentTypes"
 import type { SitePage } from "@/lib/sitePages"
-import { getContentFieldDisplayValue } from "@/lib/contentFieldValue"
 
 /** Согласовано с builder `normalizeItemPathPrefix`: префикс URL записей коллекции на template-странице. */
 export function normalizeItemPathPrefix(
@@ -17,14 +16,6 @@ export function normalizeItemPathPrefix(
  * Для template-страницы: сегмент пути записи после префикса (например `/blog/post` → `post`).
  * `null`, если URL не соответствует шаблону или это только префикс без хвоста.
  */
-/** Простая проверка UUID в сегменте URL (для прямой загрузки записи по id на SSR). */
-export function isUuidLikePathSegment(segment: string): boolean {
-  const s = segment.trim()
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    s,
-  )
-}
-
 export function extractTemplateItemPathSegment(
   slugPath: string,
   page: SitePage,
@@ -53,44 +44,6 @@ export function extractTemplateItemPathSegment(
   }
 }
 
-function fieldLooksLikeSlug(f: {
-  name?: string
-  field_type?: string
-}): boolean {
-  const name = typeof f.name === "string" ? f.name.toLowerCase() : ""
-  if (name === "slug" || name.endsWith("_slug")) return true
-  const ft = typeof f.field_type === "string" ? f.field_type.toLowerCase() : ""
-  return ft.includes("slug")
-}
-
-/**
- * Находит запись коллекции по сегменту из URL: `id`, верхнеуровневый `slug`, поле slug в fields.
- */
-export function findContentItemByUrlSegment(
-  items: IContentItem[],
-  segment: string,
-): IContentItem | undefined {
-  const decoded = segment.trim()
-  if (!decoded) return undefined
-
-  for (const item of items) {
-    const topSlug = (item as Record<string, unknown>).slug
-    if (typeof topSlug === "string" && topSlug === decoded) return item
-    if (item.id === decoded) return item
-  }
-
-  for (const item of items) {
-    if (!item.fields?.length) continue
-    for (const f of item.fields) {
-      if (!fieldLooksLikeSlug(f)) continue
-      const v = getContentFieldDisplayValue(f).trim()
-      if (v === decoded) return item
-    }
-  }
-
-  return undefined
-}
-
 const SORT_FALLBACK = Number.POSITIVE_INFINITY
 
 function pageSortKey(page: SitePage): number {
@@ -114,7 +67,6 @@ export function resolveTemplatePageForSlug(
       isTemplateSitePage(p) &&
       Boolean(p.collection_type_id?.trim()),
   )
-  console.log("candidates", candidates)
   const scored = candidates
     .map((page) => {
       const segment = extractTemplateItemPathSegment(slugPath, page)
@@ -134,4 +86,17 @@ export function resolveTemplatePageForSlug(
 
   const best = scored[0]
   return best ? { page: best.page, itemSegment: best.itemSegment } : null
+}
+
+export function getItemContentTypeId(item: IContentItem): string | undefined {
+  const raw = item as Record<string, unknown>
+  const a =
+    typeof item.content_type_id === "string"
+      ? item.content_type_id
+      : undefined
+  const b =
+    typeof raw.collection_type_id === "string"
+      ? raw.collection_type_id
+      : undefined
+  return a ?? b
 }

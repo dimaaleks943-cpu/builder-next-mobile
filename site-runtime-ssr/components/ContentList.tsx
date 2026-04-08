@@ -3,6 +3,7 @@ import { renderComponent } from "@/lib/renderer"
 import type { ComponentNode } from "@/lib/interface"
 import { fetchContentItems, getCollectionByKey } from "@/lib/collectionsApi"
 import { ContentDataProvider } from "@/components/ContentDataContext"
+import { ContentListProvider } from "@/components/ContentListContext"
 import { useSiteCollections } from "@/components/SiteCollectionsContext"
 import { useCollectionFilterScope } from "@/components/CollectionFilterScopeContext"
 import { getCollectionItemsCacheKey } from "@/lib/collectionItemsCacheKey"
@@ -122,8 +123,8 @@ export const ContentList = ({
 
     if (prevCategoryRef.current === CATEGORY_FETCH_INIT) {
       prevCategoryRef.current = cat
-      // Уже есть префетч SSR для «Все» (cat === null) — не дублируем запрос при гидрации.
-      if (cat === null && collectionItemsByKey[cacheKey] !== undefined) {
+      // Уже есть префетч SSR — не дублируем запрос при гидрации (все или с category_id).
+      if (collectionItemsByKey[cacheKey] !== undefined) {
         return
       }
     } else if (prevCategoryRef.current === cat) {
@@ -245,6 +246,7 @@ export const ContentList = ({
   }
 
   return (
+    <ContentListProvider filterScope={scopeTrimmed || undefined}>
     <div
       style={{
         position: "relative",
@@ -310,6 +312,7 @@ export const ContentList = ({
         </div>
       ) : null}
     </div>
+    </ContentListProvider>
   )
 }
 

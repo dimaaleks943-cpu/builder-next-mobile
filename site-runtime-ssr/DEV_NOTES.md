@@ -208,17 +208,20 @@
 
 - `selectedSource` = `content_type_id` (UUID);
 - items: `GET /v3/sites/{domain}/content/items?filter={"content_type_id":["<UUID>"]}`;
+- одна запись по **slug** (уникален среди items и categories на сайте): `GET /v3/sites/{domain}/content/items/s/{slug}`;
+- одна категория по **slug**: `GET /v3/sites/{domain}/content/categories/s/{slug}`;
 - `GET /v3/sites/{domain}/content/types` - optional endpoint (используется там, где нужен список типов).
 
 ### 7.1 SSR flow для ContentList (prefetch + fallback)
 
 Актуальный поток в `pages/[[...slug]].tsx`:
 
-1. извлекаем все `content_type_id` из Craft JSON через `extractContentListTypeIdsFromCraftContent`;
-2. на сервере prefetch'им items по каждому typeId через `fetchContentItems(domain, typeId)`;
+1. из Craft JSON извлекаются пары `(filterScope?, selectedSource)` через `extractContentListPrefetchPairsFromCraftContent` — ключ кэша `getCollectionItemsCacheKey(filterScope, content_type_id)`;
+2. на сервере prefetch'им items по каждой паре через `fetchContentItems` (с `category_id` в filter, если в URL задана категория и у блока есть `filterScope`);
 3. складываем результат в `collectionItemsByTypeId` и прокидываем в `SiteCollectionsProvider`;
-4. `ContentList` на клиенте сначала использует prefetched data из provider;
-5. если данных нет/они не были префетчены - выполняется client fallback (дозагрузка по API).
+4. при URL вида `/страница/slug-категории` начальный выбор категории задаётся через `CollectionFilterScopeProvider` (`initialSelectedCategoryIdByScope` с SSR);
+5. `ContentList` на клиенте сначала использует prefetched data из provider;
+6. если данных нет/они не были префетчены - выполняется client fallback (дозагрузка по API).
 
 Это позволяет:
 
@@ -228,64 +231,46 @@
 
 ---
 
-### 7.2 Template-страницы: маппинг URL → страница + запись (SSR)
+### 7.2 Маршрутизация по `slugPath` (статика, template-запись, витрина с категорией)
 
-**Смысл**: страница с `type: "template"` в API — это один layout (Craft JSON в `content`), который показывается для **множества URL**: префикс списка/каталога задаётся `slug` / `item_path_prefix`, а **хвост пути** идентифицирует **одну запись** коллекции с `content_type_id === collection_type_id` страницы.
+**Где код**: `pages/[[...slug]].tsx`, разбор базы и хвоста — `lib/catalogPathResolve.ts` (`splitBaseSlugAndTail`), выбор template по префиксу — `lib/templateRoute.ts`.
 
-**Где код**: `pages/[[...slug]].tsx`, общая логика префикса/сегмента — `lib/templateRoute.ts` (тот же контракт имён и нормализации, что в `builder` и `mobileAPP`).
+**Домен для API**: `normalizeSiteDomain(context.req.headers.host)` (без захардкоженного хоста).
 
-**Поля `SitePage`, нужные для template** (см. `lib/sitePages.ts`):
+**Разбор пути**:
 
-- `type: "template"`;
-- `collection_type_id` — UUID типа контента (та же семантика, что `ContentList.selectedSource`);
-- `item_path_prefix` — приоритетный префикс URL записей; если пусто, в рантайме берётся `page.slug`;
-- `sort` — при нескольких подходящих template с одинаковой длиной префикса помогает выбрать страницу (меньший `sort` предпочтительнее).
+- `slugPath` собирается из catch-all (ведущий `/`, корень = `"/"`).
+- `splitBaseSlugAndTail(slugPath)`: если в пути **один** сегмент страницы или только корень (`/`, `/gid`) — `tailSlug === null` (только статическая страница, без запросов item/category по slug).
+- Если сегментов **два и больше**: `baseSlug` — путь без последнего сегмента, `tailSlug` — последний сегмент (после `decodeURIComponent`).
 
-**Нормализация входящего пути** (`[[...slug]].tsx`):
+**Если `tailSlug === null`**
 
-- catch-all `slug` склеивается в строку `rawSlug`; итоговый `slugPath` всегда с ведущим `/`, корень = `"/"`.
+- Ищется **статическая** страница: `page.slug === slugPath`, `!isTemplateSitePage(page)`; для корня — допускается `slug === "/"`.
+- Prefetch ContentList — как в §7.1 (без фильтра категории).
 
-**Шаг 1 — статика vs template**:
+**Если `tailSlug` задан** (публичный slug уникален среди items и categories):
 
-- Ищем **статическую** страницу: `page.slug === slugPath` и `!isTemplateSitePage(page)` (`lib/templateRoute.ts`).
-- Для корня дополнительно допускается страница со `slug === "/"`.
-- Если не нашли — **шаг 2**.
+1. `GET .../content/items/s/{tailSlug}`. Если запись есть — **ветка template**:
+   - `resolveTemplatePageForSlug(pages, slugPath)` выбирает страницу с `type === "template"` и префиксом (`item_path_prefix ?? slug`); при нескольких кандидатах — более длинный префикс, затем `sort`, затем `id`.
+   - Проверка: `content_type_id` / `collection_type_id` записи совпадает с `page.collection_type_id` (без учёта регистра). Иначе — `notFound`.
+   - Запись берётся **только** из ответа `items/s/{slug}` (без загрузки по UUID и без поиска по полному списку).
+   - `templateContentData = { collectionKey, itemData }`; в `collectionItemsByTypeId` для списков с тем же `selectedSource`, что и `collection_type_id`, кладётся `[item]` под ключом `getCollectionItemsCacheKey(...)`; остальные пары догружаются через `fetchContentItems`.
+2. Если итема нет — `GET .../content/categories/s/{tailSlug}`. Если категория есть — **ветка витрины**:
+   - Загружается **статическая** страница с `slug === baseSlug` (не template).
+   - Prefetch: для каждой пары ContentList с `filterScope` — `fetchContentItems` с `category_id`; для пар без scope — без фильтра.
+   - `CollectionFilterScopeProvider` получает `initialSelectedCategoryIdByScope`: для каждого встреченного `filterScope` — `category.id`.
+3. Если категория не найдена — `notFound`.
 
-**Шаг 2 — выбор template-страницы и сегмента записи**:
+**Поля `SitePage` для template** (см. `lib/sitePages.ts`): `type: "template"`, `collection_type_id`, `item_path_prefix`, `sort` — как раньше для `resolveTemplatePageForSlug`.
 
-- `resolveTemplatePageForSlug(pages, slugPath)` перебирает страницы с `type === "template"` и непустым `collection_type_id`.
-- Для каждой кандидатной страницы `extractTemplateItemPathSegment(slugPath, page)` сравнивает `slugPath` с префиксом `normalizeItemPathPrefix(page.item_path_prefix ?? page.slug)`:
-  - если путь — только префикс без хвоста, сегмента нет → страница **не** подходит для отображения записи (404 на SSR);
-  - иначе возвращается **декодированный** сегмент (один сегмент после префикса; внутри сегмента допускаются закодированные `/` после `encodeURIComponent` в ссылках).
-- Если подходит несколько template, побеждает **более длинный** префикс; при равенстве — меньший `sort`, затем стабильный порядок по `id`.
+**Рендер**:
 
-**Шаг 3 — загрузка записи** (в `getServerSideProps`, только если выбранная `page` — template с `collection_type_id`):
-
-- Если сегмента нет → `notFound`.
-- Если сегмент похож на UUID (`isUuidLikePathSegment`):
-  - `fetchContentItemById(domain, segment)`;
-  - проверка, что тип записи совпадает с `page.collection_type_id` (поля `content_type_id` / `collection_type_id` в ответе);
-  - в `collectionItemsByTypeId[typeId]` кладётся массив из **одной** записи (как prefetch для контекста);
-  - `templateContentData = { collectionKey: typeId, itemData }` — для полей вне списка.
-- Иначе (slug-текст и т.п.):
-  - `fetchContentItems(domain, typeId)` — полный список типа;
-  - `findContentItemByUrlSegment(items, segment)` — совпадение по `id`, верхнеуровневому `slug`, либо по полям с именем/`field_type`, похожим на slug (см. `templateRoute.ts`);
-  - весь список попадает в `collectionItemsByTypeId[typeId]`;
-  - `templateContentData` — найденный `item`.
-
-**Шаг 4 — prefetch для ContentList** (как в §7.1):
-
-- Из того же `page.content` извлекаются дополнительные `content_type_id` списков; для типов, ещё не лежащих в `collectionItemsByTypeId`, догружаются items.
-
-**Шаг 5 — рендер**:
-
-- `SiteCollectionsProvider` получает `domain`, `sitePages`, `collectionItemsByTypeId`.
-- Если `templateContentData` задан — корень контента оборачивается в `ContentDataProvider` с `collectionKey` и `itemData`, чтобы `Text` / `Image` / `LinkText` с `collectionField` на template работали **вне** `ContentList` так же, как внутри ячейки списка.
-- `renderPage(components)` не меняется: вся привязка данных — через контексты.
+- `SiteCollectionsProvider` + `CollectionFilterScopeProvider` + при необходимости `ContentDataProvider` вокруг `<main>` (см. `[[...slug]].tsx`).
+- `renderPage(components)` без изменений.
 
 **LinkText на template-URL** (`components/LinkText.tsx`):
 
-- При `linkMode === "collectionItemPage"`, `collectionItemLinkTarget === "template"` и выбранном `collectionItemTemplatePageId` в `href` подставляется путь `normalizeItemPathPrefix(...) + "/" + encodeURIComponent(item.id)` (см. `buildCollectionItemTemplateHref` в компоненте), где `item` — текущий `itemData` из контекста (обычно ячейка `ContentList`).
+- При `linkMode === "collectionItemPage"` и template: в путь подставляется **`item.slug`** (не `item.id`); при пустом slug — предупреждение в dev и fallback `href`.
 
 ---
 

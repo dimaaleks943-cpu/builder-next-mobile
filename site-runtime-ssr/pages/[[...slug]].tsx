@@ -4,17 +4,29 @@ import { renderPage } from "@/lib/renderer"
 import type { ComponentNode } from "@/lib/interface"
 import { getSitePages, normalizeSiteDomain, type SitePage } from "@/lib/sitePages"
 import { craftContentToComponents } from "@/lib/craftContentToComponents"
-import { fetchContentItemById, fetchContentItems } from "@/lib/collectionsApi"
-import { extractContentListTypeIdsFromCraftContent } from "@/lib/extractContentListSources"
+import { fetchContentItemBySlug, fetchContentItems } from "@/lib/collectionsApi"
+import { fetchContentCategoryBySlug } from "@/lib/categoriesApi"
+import {
+  extractContentListPrefetchPairsFromCraftContent,
+} from "@/lib/extractContentListSources"
+import { getCollectionItemsCacheKey } from "@/lib/collectionItemsCacheKey"
+import {
+  categoryTrailBetweenPrefixAndItemSlug,
+  splitBaseSlugAndTail,
+} from "@/lib/catalogPathResolve"
 import type { IContentItem } from "@/lib/contentTypes"
 import { SiteCollectionsProvider } from "@/components/SiteCollectionsContext"
 import { ContentDataProvider } from "@/components/ContentDataContext"
+import { CollectionFilterScopeProvider } from "@/components/CollectionFilterScopeContext"
+import { StorefrontPageProvider } from "@/components/StorefrontPageContext"
 import {
-  findContentItemByUrlSegment,
+  getItemContentTypeId,
   isTemplateSitePage,
-  isUuidLikePathSegment,
+  normalizeItemPathPrefix,
   resolveTemplatePageForSlug,
 } from "@/lib/templateRoute"
+
+const EMPTY_CATEGORY_SCOPE: Record<string, string | null> = {}
 
 interface PageProps {
   domain: string
@@ -27,6 +39,74 @@ interface PageProps {
     collectionKey: string
     itemData: IContentItem
   } | null
+  /** Начальный выбор категории по filterScope (SSR, URL вида /страница/slug-категории). */
+  initialSelectedCategoryIdByScope: Record<string, string | null>
+  initialSelectedCategorySlugByScope: Record<string, string | null>
+  /** Slug статической витрины (`/gid`) или префикс template — для push и ссылок. */
+  pageBaseSlug: string
+  /** Хвост категории из URL между витриной и итемом (`europe` для `/gid/europe/luvr`). */
+  categorySlugTrailFromUrl: string | null
+}
+
+function findStaticPage(
+  pages: SitePage[],
+  slugPath: string,
+): SitePage | undefined {
+  const isStatic = (p: SitePage) => !isTemplateSitePage(p)
+  return (
+    pages.find((p) => p.slug === slugPath && isStatic(p)) ||
+    (slugPath === "/"
+      ? pages.find((p) => p.slug === "/" && isStatic(p))
+      : undefined)
+  )
+}
+
+async function prefetchContentListPairs(
+  domain: string,
+  pageContent: string,
+  category?: { id: string; slug?: string | null },
+): Promise<{
+  collectionItemsByTypeId: Record<string, IContentItem[]>
+  initialSelectedCategoryIdByScope: Record<string, string | null>
+  initialSelectedCategorySlugByScope: Record<string, string | null>
+}> {
+  const pairs = extractContentListPrefetchPairsFromCraftContent(pageContent)
+  const collectionItemsByTypeId: Record<string, IContentItem[]> = {}
+  const initialSelectedCategoryIdByScope: Record<string, string | null> = {}
+  const initialSelectedCategorySlugByScope: Record<string, string | null> = {}
+
+  const catSlug = category?.slug?.trim() || null
+
+  if (category) {
+    for (const p of pairs) {
+      if (p.filterScope) {
+        initialSelectedCategoryIdByScope[p.filterScope] = category.id
+        if (catSlug) {
+          initialSelectedCategorySlugByScope[p.filterScope] = catSlug
+        }
+      }
+    }
+  }
+
+  await Promise.all(
+    pairs.map(async (pair) => {
+      const key = getCollectionItemsCacheKey(
+        pair.filterScope,
+        pair.selectedSource,
+      )
+      const useCat = Boolean(category && pair.filterScope)
+      const data = await fetchContentItems(domain, pair.selectedSource, {
+        categoryIds: useCat && category ? [category.id] : undefined,
+      })
+      collectionItemsByTypeId[key] = data ?? []
+    }),
+  )
+
+  return {
+    collectionItemsByTypeId,
+    initialSelectedCategoryIdByScope,
+    initialSelectedCategorySlugByScope,
+  }
 }
 
 export const getServerSideProps: GetServerSideProps<PageProps> = async (
@@ -39,115 +119,176 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
     return { notFound: true }
   }
 
-  // 2. Определяем slug из catch-all-роута:
-  // "/" -> slug пустой -> считаем, что это корень "/"
-  const rawSlug = (context.params?.slug as string[] | undefined)?.join("/") ?? ""
+  const rawSlug =
+    (context.params?.slug as string[] | undefined)?.join("/") ?? ""
   const slugPath =
     rawSlug.length === 0 ? "/" : rawSlug.startsWith("/") ? rawSlug : `/${rawSlug}`
 
-  console.log(`[SSR] Rendering page for domain=${domain}, slug=${slugPath}`)
-
-  // 3. Получаем с бэкенда список страниц для домена
   const pages = await getSitePages(domain)
 
   if (!pages) {
     return { notFound: true }
   }
 
-  // 4. Статическая страница: точное совпадение slug; template-страницы с тем же slug не берём
-  // (для них нужен хвост пути с записью коллекции).
-  const isStaticPage = (p: SitePage) => !isTemplateSitePage(p)
+  const { baseSlug, tailSlug } = splitBaseSlugAndTail(slugPath)
 
-  let page: SitePage | undefined =
-    pages.find((p) => p.slug === slugPath && isStaticPage(p)) ||
-    (slugPath === "/"
-      ? pages.find((p) => p.slug === "/" && isStaticPage(p))
-      : undefined)
+  if (tailSlug === null) {
+    const page = findStaticPage(pages, slugPath)
+    if (!page?.content) {
+      return { notFound: true }
+    }
 
-  let templateItemSegment: string | null = null
+    const components = craftContentToComponents(page.content)
+    if (components.length === 0) {
+      return { notFound: true }
+    }
 
-  if (!page) {
-    const resolved = resolveTemplatePageForSlug(pages, slugPath)
-    if (resolved) {
-      page = resolved.page
-      templateItemSegment = resolved.itemSegment
+    const pageBaseSlug = normalizeItemPathPrefix(page.slug)
+
+    const {
+      collectionItemsByTypeId,
+      initialSelectedCategoryIdByScope,
+      initialSelectedCategorySlugByScope,
+    } = await prefetchContentListPairs(domain, page.content)
+
+    return {
+      props: {
+        domain,
+        slug: slugPath,
+        components,
+        collectionItemsByTypeId,
+        sitePages: pages,
+        templateContentData: null,
+        initialSelectedCategoryIdByScope,
+        initialSelectedCategorySlugByScope,
+        pageBaseSlug,
+        categorySlugTrailFromUrl: null,
+      },
     }
   }
 
-  if (!page || !page.content) {
+  const item = await fetchContentItemBySlug(domain, tailSlug)
+
+  if (item) {
+    const resolved = resolveTemplatePageForSlug(pages, slugPath)
+    if (!resolved) {
+      return { notFound: true }
+    }
+
+    const page = resolved.page
+    const typeId = page.collection_type_id?.trim()
+    if (!typeId || !isTemplateSitePage(page)) {
+      return { notFound: true }
+    }
+
+    const itemTypeId = getItemContentTypeId(item)?.trim()
+    if (
+      !itemTypeId ||
+      itemTypeId.toLowerCase() !== typeId.toLowerCase()
+    ) {
+      return { notFound: true }
+    }
+
+    if (!page.content) {
+      return { notFound: true }
+    }
+
+    const components = craftContentToComponents(page.content)
+    if (components.length === 0) {
+      return { notFound: true }
+    }
+
+    const templateContentData = {
+      collectionKey: typeId,
+      itemData: item,
+    }
+
+    const pairs = extractContentListPrefetchPairsFromCraftContent(page.content)
+    const collectionItemsByTypeId: Record<string, IContentItem[]> = {}
+    const typeIdLower = typeId.toLowerCase()
+
+    for (const pair of pairs) {
+      if (pair.selectedSource.trim().toLowerCase() === typeIdLower) {
+        const key = getCollectionItemsCacheKey(
+          pair.filterScope,
+          pair.selectedSource,
+        )
+        collectionItemsByTypeId[key] = [item]
+      }
+    }
+    if (Object.keys(collectionItemsByTypeId).length === 0) {
+      collectionItemsByTypeId[typeId] = [item]
+    }
+
+    const extraPairs = pairs.filter((p) => {
+      const key = getCollectionItemsCacheKey(p.filterScope, p.selectedSource)
+      return collectionItemsByTypeId[key] === undefined
+    })
+
+    await Promise.all(
+      extraPairs.map(async (pair) => {
+        const key = getCollectionItemsCacheKey(
+          pair.filterScope,
+          pair.selectedSource,
+        )
+        const data = await fetchContentItems(domain, pair.selectedSource)
+        collectionItemsByTypeId[key] = data ?? []
+      }),
+    )
+
+    const pageBaseSlug = normalizeItemPathPrefix(
+      page.item_path_prefix ?? page.slug,
+    )
+    const categorySlugTrailFromUrl = categoryTrailBetweenPrefixAndItemSlug(
+      pageBaseSlug,
+      slugPath,
+      tailSlug,
+    )
+
+    return {
+      props: {
+        domain,
+        slug: slugPath,
+        components,
+        collectionItemsByTypeId,
+        sitePages: pages,
+        templateContentData,
+        initialSelectedCategoryIdByScope: EMPTY_CATEGORY_SCOPE,
+        initialSelectedCategorySlugByScope: EMPTY_CATEGORY_SCOPE,
+        pageBaseSlug,
+        categorySlugTrailFromUrl,
+      },
+    }
+  }
+
+  const category = await fetchContentCategoryBySlug(domain, tailSlug)
+  if (!category) {
     return { notFound: true }
   }
 
-  // 5. Преобразуем content из формата Craft.js в ComponentNode[],
-  // который уже умеет рендерить site-runtime-ssr
-  const components = craftContentToComponents(page.content)
+  const page = findStaticPage(pages, baseSlug)
+  if (!page?.content) {
+    return { notFound: true }
+  }
 
+  const components = craftContentToComponents(page.content)
   if (components.length === 0) {
     return { notFound: true }
   }
 
-  const contentListTypeIds = extractContentListTypeIdsFromCraftContent(
-    page.content,
-  )
-  const collectionItemsByTypeId: Record<string, IContentItem[]> = {}
+  const categorySlugForState =
+    category.slug?.trim() || tailSlug.trim() || null
 
-  let templateContentData: PageProps["templateContentData"] = null
+  const {
+    collectionItemsByTypeId,
+    initialSelectedCategoryIdByScope,
+    initialSelectedCategorySlugByScope,
+  } = await prefetchContentListPairs(domain, page.content, {
+    id: category.id,
+    slug: categorySlugForState,
+  })
 
-  if (isTemplateSitePage(page) && page.collection_type_id?.trim()) {
-    //@ts-ignore
-    const typeId = page.collection_type_id.trim()
-
-    if (!templateItemSegment) {
-      return { notFound: true }
-    }
-
-    if (isUuidLikePathSegment(templateItemSegment)) {
-      const byId = await fetchContentItemById(domain, templateItemSegment)
-      if (!byId) {
-        return { notFound: true }
-      }
-      const raw = byId as Record<string, unknown>
-      const itemTypeId =
-        (typeof byId.content_type_id === "string"
-          ? byId.content_type_id
-          : undefined) ??
-        (typeof raw.collection_type_id === "string"
-          ? raw.collection_type_id
-          : undefined)
-      if (
-        !itemTypeId ||
-        itemTypeId.trim().toLowerCase() !== typeId.toLowerCase()
-      ) {
-        return { notFound: true }
-      }
-      collectionItemsByTypeId[typeId] = [byId]
-      templateContentData = { collectionKey: typeId, itemData: byId }
-    } else {
-      const items = (await fetchContentItems(domain, typeId)) ?? []
-      collectionItemsByTypeId[typeId] = items
-      const item = findContentItemByUrlSegment(items, templateItemSegment)
-      if (!item) {
-        return { notFound: true }
-      }
-      templateContentData = { collectionKey: typeId, itemData: item }
-    }
-  }
-
-  const extraTypeIds = contentListTypeIds.filter(
-    (id) => collectionItemsByTypeId[id] === undefined,
-  )
-
-  if (extraTypeIds.length > 0) {
-    const batches = await Promise.all(
-      extraTypeIds.map(async (typeId) => {
-        const data = await fetchContentItems(domain, typeId)
-        return [typeId, data ?? []] as const
-      }),
-    )
-    for (const [typeId, items] of batches) {
-      collectionItemsByTypeId[typeId] = items
-    }
-  }
+  const pageBaseSlug = normalizeItemPathPrefix(page.slug)
 
   return {
     props: {
@@ -156,7 +297,11 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       components,
       collectionItemsByTypeId,
       sitePages: pages,
-      templateContentData,
+      templateContentData: null,
+      initialSelectedCategoryIdByScope,
+      initialSelectedCategorySlugByScope,
+      pageBaseSlug,
+      categorySlugTrailFromUrl: categorySlugForState,
     },
   }
 }
@@ -168,6 +313,10 @@ export default function Page({
   collectionItemsByTypeId,
   sitePages,
   templateContentData,
+  initialSelectedCategoryIdByScope,
+  initialSelectedCategorySlugByScope,
+  pageBaseSlug,
+  categorySlugTrailFromUrl,
 }: PageProps) {
   const urlPath = slug === "/" ? "" : slug
 
@@ -176,6 +325,18 @@ export default function Page({
       {renderPage(components)}
     </main>
   )
+
+  const inner =
+    templateContentData ? (
+      <ContentDataProvider
+        collectionKey={templateContentData.collectionKey}
+        itemData={templateContentData.itemData}
+      >
+        {main}
+      </ContentDataProvider>
+    ) : (
+      main
+    )
 
   return (
     <>
@@ -186,19 +347,20 @@ export default function Page({
       </Head>
       <SiteCollectionsProvider
         domain={domain}
-        collectionItemsByTypeId={collectionItemsByTypeId}
+        collectionItemsByKey={collectionItemsByTypeId}
         sitePages={sitePages}
       >
-        {templateContentData ? (
-          <ContentDataProvider
-            collectionKey={templateContentData.collectionKey}
-            itemData={templateContentData.itemData}
+        <CollectionFilterScopeProvider
+          initialSelectedCategoryIdByScope={initialSelectedCategoryIdByScope}
+          initialSelectedCategorySlugByScope={initialSelectedCategorySlugByScope}
+        >
+          <StorefrontPageProvider
+            pageBaseSlug={pageBaseSlug}
+            categorySlugTrailFromUrl={categorySlugTrailFromUrl}
           >
-            {main}
-          </ContentDataProvider>
-        ) : (
-          main
-        )}
+            {inner}
+          </StorefrontPageProvider>
+        </CollectionFilterScopeProvider>
       </SiteCollectionsProvider>
     </>
   )
