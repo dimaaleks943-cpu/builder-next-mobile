@@ -11,6 +11,7 @@ import { MODE_TYPE, type PreviewViewport } from "../builder.enum"
 import { encodeSerializedNodesStyleProps } from "../../../utils/stylePropsCodec"
 import { compactContentListCells } from "../../../utils/compactContentListCells"
 import { normalizeItemPathPrefix } from "../../../utils/normalizeItemPathPrefix.ts"
+import { computePageContentTypes } from "../../../utils/computePageContentTypes"
 import { MonitorIcon } from "../../../icons/MonitorIcon.tsx";
 import { TabletIcon } from "../../../icons/TabletIcon.tsx";
 import { MobileIcon } from "../../../icons/MobileIcon.tsx";
@@ -111,12 +112,19 @@ export const BuilderHeader = ({
       pageType === PageType.TEMPLATE
         ? normalizeItemPathPrefix(itemPathPrefix ?? "")
         : itemPathPrefix ?? null
+    const contentTypes = computePageContentTypes({
+      content: contentPayload,
+      contentMobile: mobContentPayload,
+      pageType,
+      collectionTypeId,
+    })
 
     const body = {
       directory_id: directoryId,
       name: pageName,
       slug: pageSlug,
       type: pageType,
+      content_types: contentTypes,
       collection_type_id: collectionTypeId,
       item_path_prefix: itemPathForApi,
       content: contentPayload,

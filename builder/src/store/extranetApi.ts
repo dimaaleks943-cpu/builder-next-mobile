@@ -30,6 +30,7 @@ export type CreateExtranetPageBody = {
   name: string
   slug: string
   type: PageType
+  content_types: string[]
   collection_type_id: string | null
   item_path_prefix: string | null
   content: string | null
@@ -43,6 +44,7 @@ export type UpdateExtranetPageBody = {
   name: string
   slug: string
   type: PageType
+  content_types: string[]
   collection_type_id: string | null
   item_path_prefix: string | null
   content: string | null

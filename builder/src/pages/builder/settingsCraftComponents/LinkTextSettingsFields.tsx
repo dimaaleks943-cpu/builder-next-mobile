@@ -19,6 +19,7 @@ import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts";
 import { EMPTY_SERIALIZED_NODES } from "../BuilderPage.tsx";
 import { normalizeItemPathPrefix } from "../../../utils/normalizeItemPathPrefix.ts";
 import { PageType } from "../../../api/extranet.ts";
+import { computePageContentTypes } from "../../../utils/computePageContentTypes.ts";
 
 type LinkMode = "url" | "page" | "collectionItemPage";
 
@@ -246,14 +247,22 @@ export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
       }
 
       try {
+        const emptyContent = JSON.stringify(EMPTY_SERIALIZED_NODES);
+        const contentTypes = computePageContentTypes({
+          content: emptyContent,
+          contentMobile: null,
+          pageType: PageType.TEMPLATE,
+          collectionTypeId: contentListContentTypeId,
+        });
         const created = await createExtranetPage({
           directory_id: current?.directory_id ?? null,
           name: `Шаблон: ${contentListCollectionLabel}`,
           slug,
           type: PageType.TEMPLATE,
+          content_types: contentTypes,
           collection_type_id: contentListContentTypeId,
           item_path_prefix: normalizeItemPathPrefix(current?.slug),
-          content: JSON.stringify(EMPTY_SERIALIZED_NODES),
+          content: emptyContent,
           content_mobile: null,
           sort: 0,
           site_id: siteId,
