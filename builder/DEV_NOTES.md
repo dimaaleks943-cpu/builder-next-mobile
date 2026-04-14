@@ -440,6 +440,40 @@ Source of truth для сокращений зафиксирован в `src/uti
 
 ---
 
+### 8. Локализация страницы (i18n, этап builder)
+
+#### Модель данных
+
+- На уровне страницы (extranet pages API) к полям `content` и `content_mobile` добавлены **`translate`** и **`translate_mobile`**: для каждой локали (`ru`, `en`) — словарь `i18nKey → строка`.
+- Типы: `Locale`, `TranslationsByLocale`, `SUPPORTED_LOCALES` в `src/api/extranet.ts`; тела `CreateExtranetPageBody` / `UpdateExtranetPageBody` в `src/store/extranetApi.ts` включают оба словаря.
+- **Layout и переводы разделены:** в craft JSON остаётся структура и пропсы узла; строки для ручного текста живут в `translate*` по ключу `i18nKey`. Текст из **коллекции** (`collectionField`) в i18n-словари не пишется — источник данных там другой.
+
+#### Контекст и UI
+
+- `src/pages/builder/context/BuilderModeContext.tsx`: помимо режима WEB/RN и двух JSON-строк контента хранятся **`activeLocale`**, **`translateWeb` / `translateMobile`** и сеттеры.
+- Переключатель языка и сохранение с `translate*` — `src/pages/builder/components/BuilderHeader.tsx` (селект локали; при save — `collectUsedI18nKeys` → `pruneTranslationsByKeys` → payload + `saveStoredTranslations`).
+- Инициализация при загрузке страницы: `src/pages/builder/BuilderPage.tsx` — нормализация `page.translate` / `page.translate_mobile`, merge с `loadStoredTranslations(page.id)` из `localStorage`, затем `setTranslateWeb` / `setTranslateMobile`.
+
+#### Текстовые узлы (`Text`, `LinkText`)
+
+- Файлы: `src/craft/Text.tsx`, `src/craft/LinkText.tsx`.
+- Общая логика отображаемой строки и коммита инлайн-черновика вынесена в **`src/utils/craftLocalizedText.ts`** (`getCraftTextDisplayText`, `commitCraftTextDraft`), чтобы не дублировать код.
+- Правка текста в правой панели (`TextSettingsFields`) также обновляет словарь для активной локали и платформы.
+
+#### Утилиты `src/utils/i18nTranslations.ts`
+
+- `normalizeTranslations` / `mergeTranslations` — приведение ответа API и слияние с локальным кэшем.
+- `resolveTranslationText` — порядок fallback: активная локаль → `ru` → `props.text`.
+- `collectUsedI18nKeys` + `pruneTranslationsByKeys` — при сохранении удаляются ключи, которых нет у живых узлов `Text`/`LinkText` без `collectionField`, и пустые строки.
+- `loadStoredTranslations` / `saveStoredTranslations` — временная персистенция по `pageId` до полной поддержки полей на бэкенде.
+- `makeTextI18nKey` — генерация ключа `txt_<nodeId>_<field>`.
+
+#### Рантайм и бэкенд (вне текущего этапа)
+
+- SSR (`site-runtime-ssr`) и мобилка должны будут читать `translate*` / активную локаль запроса по отдельной задаче; при изменении контракта или резолва строк обновить этот раздел и соответствующие `DEV_NOTES` в SSR/mobile.
+
+---
+
 ### 6. Как дальше развивать документацию
 
 - При добавлении новых Craft‑компонентов:
@@ -467,6 +501,7 @@ Source of truth для сокращений зафиксирован в `src/uti
   - `sync` структуры и props между ячейками;
   - `delete` с fallback через serialized subtree при сбое Craft `actions.delete`.
 - При изменении **template-страниц** (`type`, `collection_type_id`, `item_path_prefix`, сохранение в `BuilderHeader`), **LinkText** в режиме `collectionItemPage` + template или логики в `LinkTextSettingsFields` — обновляем §1 (template + LinkText) и синхронизируем `site-runtime-ssr/DEV_NOTES.md` §7.2–7.3 и `mobileAPP/DEV_NOTES.md` §4.
+- При изменении **локализации** (`translate` / `translate_mobile`, `i18nKey`, `BuilderModeContext`, `craftLocalizedText`, `i18nTranslations`, сохранение/merge в `BuilderPage` / `BuilderHeader`) — обновляем **§8** и краткий блок в `builder/README.md`; при появлении резолва на SSR/mobile — синхронизируем их `DEV_NOTES`.
 - Терминология в описаниях и комментариях всегда единая:
   - `selectedSource` = `content_type_id` (UUID),
   - items через `content/items` c filter по `content_type_id`.
