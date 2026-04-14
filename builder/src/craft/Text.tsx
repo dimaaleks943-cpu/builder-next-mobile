@@ -8,14 +8,18 @@ import { useContentListData } from "../pages/builder/context/ContentListDataCont
 import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
 import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 import { TextSettingsFields } from "../pages/builder/settingsCraftComponents"
-import type { IContentItem } from "../api/extranet"
-import { findContentItemField, getContentFieldDisplayValue } from "../utils/contentFieldValue"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
+import { useBuilderModeContext } from "../pages/builder/context/BuilderModeContext.tsx"
+import {
+  commitCraftTextDraft,
+  getCraftTextDisplayText,
+} from "../utils/craftLocalizedText.ts"
 
 export type TextAlign = "left" | "center" | "right"
 
 export interface TextProps {
   text?: string
+  i18nKey?: string | null
   collectionField?: string | null
   fontSize?: number
   fontWeight?: "normal" | "bold"
@@ -41,6 +45,7 @@ export interface TextProps {
 
 export const CraftText = ({
   text = "Текст",
+  i18nKey = null,
   collectionField = null,
   fontSize = 14,
   fontWeight = "normal",
@@ -85,17 +90,19 @@ export const CraftText = ({
   const rightPanelContext = useRightPanelContext()
   const isInsideContentList = useInsideContentListCell()
   const contentListData = useContentListData()
+  const modeContext = useBuilderModeContext()
 
-  // Вычисляем отображаемый текст: либо значение поля коллекции, либо статический текст
-  const displayText = useMemo(() => {
-    if (!collectionField || !contentListData?.itemData) {
-      return text
-    }
-    const item = contentListData.itemData as IContentItem
-    const field = findContentItemField(item, collectionField)
-    const resolved = getContentFieldDisplayValue(field)
-    return resolved !== "" ? resolved : text
-  }, [collectionField, contentListData?.itemData, text])
+  const displayText = useMemo(
+    () =>
+      getCraftTextDisplayText({
+        text,
+        collectionField,
+        itemData: contentListData?.itemData,
+        i18nKey,
+        modeContext,
+      }),
+    [collectionField, contentListData?.itemData, text, modeContext, i18nKey],
+  )
 
   /**
    / Синхронизируем локальное состояние с пропсами, когда не редактируем
@@ -150,8 +157,13 @@ export const CraftText = ({
   const saveDraft = () => {
     if (!id) return
     const value = spanRef.current?.textContent ?? draft
-    actions.setProp(id, (props: any) => {
-      props.text = value
+    commitCraftTextDraft({
+      nodeId: id,
+      value,
+      i18nKey,
+      collectionField,
+      modeContext,
+      setProp: actions.setProp,
     })
     setIsEditing(false)
   }
@@ -277,6 +289,7 @@ export const CraftText = ({
   displayName: CRAFT_DISPLAY_NAME.Text,
   props: {
     text: "Текст",
+    i18nKey: null,
     collectionField: null,
     fontSize: 14,
     fontWeight: "normal" as const,

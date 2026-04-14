@@ -7,14 +7,18 @@ import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
 import { LinkTextSettingsFields } from "../pages/builder/settingsCraftComponents"
-import type { IContentItem } from "../api/extranet"
-import { findContentItemField, getContentFieldDisplayValue } from "../utils/contentFieldValue"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
+import { useBuilderModeContext } from "../pages/builder/context/BuilderModeContext.tsx"
+import {
+  commitCraftTextDraft,
+  getCraftTextDisplayText,
+} from "../utils/craftLocalizedText.ts"
 
 export type TextAlign = "left" | "center" | "right"
 
 export interface LinkTextProps {
   text?: string
+  i18nKey?: string | null
   collectionField?: string | null
   href?: string
   linkMode?: "url" | "page" | "collectionItemPage"
@@ -45,6 +49,7 @@ export interface LinkTextProps {
 
 export const CraftLinkText = ({
   text = "Ссылка",
+  i18nKey = null,
   collectionField = null,
   href = "http://www.google.com",
   openInNewTab = false,
@@ -88,16 +93,19 @@ export const CraftLinkText = ({
   const { actions } = useEditor()
   const rightPanelContext = useRightPanelContext()
   const contentListData = useContentListData()
+  const modeContext = useBuilderModeContext()
 
-  const displayText = useMemo(() => {
-    if (!collectionField || !contentListData?.itemData) {
-      return text
-    }
-    const item = contentListData.itemData as IContentItem
-    const field = findContentItemField(item, collectionField)
-    const resolved = getContentFieldDisplayValue(field)
-    return resolved !== "" ? resolved : text
-  }, [collectionField, contentListData?.itemData, text])
+  const displayText = useMemo(
+    () =>
+      getCraftTextDisplayText({
+        text,
+        collectionField,
+        itemData: contentListData?.itemData,
+        i18nKey,
+        modeContext,
+      }),
+    [collectionField, contentListData?.itemData, text, modeContext, i18nKey],
+  )
 
   useEffect(() => {
     if (!isEditing) {
@@ -107,7 +115,7 @@ export const CraftLinkText = ({
       }
     }
   }, [displayText, isEditing])
-  console.log("displayText123123123", contentListData)
+
   const handleDoubleClick = (e: React.MouseEvent<HTMLSpanElement>) => {
     e.stopPropagation()
     e.preventDefault()
@@ -124,8 +132,13 @@ export const CraftLinkText = ({
   const saveDraft = () => {
     if (!id) return
     const value = spanRef.current?.textContent ?? draft
-    actions.setProp(id, (props: any) => {
-      props.text = value
+    commitCraftTextDraft({
+      nodeId: id,
+      value,
+      i18nKey,
+      collectionField,
+      modeContext,
+      setProp: actions.setProp,
     })
     setIsEditing(false)
   }
@@ -277,6 +290,7 @@ export const CraftLinkText = ({
   displayName: CRAFT_DISPLAY_NAME.LinkText,
   props: {
     text: "Ссылка",
+    i18nKey: null,
     collectionField: null,
     href: "http://www.google.com",
     linkMode: "url" as const,

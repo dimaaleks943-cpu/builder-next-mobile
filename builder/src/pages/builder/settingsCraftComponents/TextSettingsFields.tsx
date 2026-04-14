@@ -14,9 +14,13 @@ import {
   findContentItemField,
   getContentFieldDisplayValue,
 } from "../../../utils/contentFieldValue";
+import { useBuilderModeContext } from "../context/BuilderModeContext.tsx";
+import { MODE_TYPE } from "../builder.enum.ts";
+import { makeTextI18nKey } from "../../../utils/i18nTranslations.ts";
 
 interface SelectedTextProps {
   text?: string;
+  i18nKey?: string | null;
   collectionField?: string | null;
 }
 
@@ -70,6 +74,7 @@ export const TextSettingsFields = ({ asAccordion }: Props) => {
   );
 
   const contentListData = useContentListData();
+  const modeContext = useBuilderModeContext();
   const { templatePageCollectionKey, templatePreviewItem } = useBuilderTemplatePage();
   const collectionsContext = useCollectionsContext();
 
@@ -116,11 +121,33 @@ export const TextSettingsFields = ({ asAccordion }: Props) => {
   const handleTextChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const value = event.target.value;
     setTextDraft(value);
+    const nextI18nKey =
+      selectedProps?.i18nKey && selectedProps.i18nKey.trim().length > 0
+        ? selectedProps.i18nKey
+        : makeTextI18nKey(selectedId, "text");
     actions.setProp(selectedId, (props: any) => {
       props.text = value;
+      props.i18nKey = nextI18nKey;
       /** При ручном вводе текста сбрасываем привязку к коллекции */
       props.collectionField = null;
     });
+    if (modeContext) {
+      const setTranslations =
+        modeContext.mode === MODE_TYPE.WEB
+          ? modeContext.setTranslateWeb
+          : modeContext.setTranslateMobile;
+      const currentTranslations =
+        modeContext.mode === MODE_TYPE.WEB
+          ? modeContext.translateWeb
+          : modeContext.translateMobile;
+      setTranslations({
+        ...currentTranslations,
+        [modeContext.activeLocale]: {
+          ...currentTranslations[modeContext.activeLocale],
+          [nextI18nKey]: value,
+        },
+      });
+    }
   };
 
   const resolveCollectionText = (fieldId: string | null): string | undefined => {

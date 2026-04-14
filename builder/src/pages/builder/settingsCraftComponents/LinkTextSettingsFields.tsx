@@ -20,6 +20,7 @@ import { EMPTY_SERIALIZED_NODES } from "../BuilderPage.tsx";
 import { normalizeItemPathPrefix } from "../../../utils/normalizeItemPathPrefix.ts";
 import { PageType } from "../../../api/extranet.ts";
 import { computePageContentTypes } from "../../../utils/computePageContentTypes.ts";
+import { createEmptyTranslations } from "../../../utils/i18nTranslations.ts";
 
 type LinkMode = "url" | "page" | "collectionItemPage";
 
@@ -264,6 +265,8 @@ export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
           item_path_prefix: normalizeItemPathPrefix(current?.slug),
           content: emptyContent,
           content_mobile: null,
+          translate: createEmptyTranslations(),
+          translate_mobile: createEmptyTranslations(),
           sort: 0,
           site_id: siteId,
         }).unwrap();

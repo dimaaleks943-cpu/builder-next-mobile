@@ -1,4 +1,5 @@
-import { Box, Button, IconButton } from "@mui/material"
+import { Box, Button, IconButton, Menu, MenuItem } from "@mui/material"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
@@ -16,6 +17,13 @@ import { MonitorIcon } from "../../../icons/MonitorIcon.tsx";
 import { TabletIcon } from "../../../icons/TabletIcon.tsx";
 import { MobileIcon } from "../../../icons/MobileIcon.tsx";
 import { PageType } from "../../../api/extranet";
+import { SUPPORTED_LOCALES, type Locale } from "../../../api/extranet"
+import {
+  collectUsedI18nKeys,
+  pruneTranslationsByKeys,
+  saveStoredTranslations,
+  toLocaleLabel,
+} from "../../../utils/i18nTranslations.ts"
 
 interface BuilderHeaderProps {
   pageId?: string
@@ -56,6 +64,7 @@ export const BuilderHeader = ({
   const modeContext = useBuilderModeContext()
   const [updateExtranetPage, { isLoading: isSaving }] =
     useUpdateExtranetPageMutation()
+  const [langMenuAnchorEl, setLangMenuAnchorEl] = useState<null | HTMLElement>(null)
 
   const handleClick = () => {
     actions.clearEvents()
@@ -107,6 +116,15 @@ export const BuilderHeader = ({
       modeContext.mode === MODE_TYPE.WEB ? currentJson : modeContext.contentWeb
     const mobContentPayload =
       modeContext.mode === MODE_TYPE.RN ? currentJson : modeContext.contentMobile
+    const { webKeys, mobileKeys } = collectUsedI18nKeys(
+      contentPayload ?? "",
+      mobContentPayload ?? "",
+    )
+    const prunedTranslate = pruneTranslationsByKeys(modeContext.translateWeb, webKeys)
+    const prunedTranslateMobile = pruneTranslationsByKeys(
+      modeContext.translateMobile,
+      mobileKeys,
+    )
 
     const itemPathForApi =
       pageType === PageType.TEMPLATE
@@ -129,12 +147,20 @@ export const BuilderHeader = ({
       item_path_prefix: itemPathForApi,
       content: contentPayload,
       content_mobile: mobContentPayload,
+      translate: prunedTranslate,
+      translate_mobile: prunedTranslateMobile,
       sort: 0,
       site_id: siteId,
     }
 
     try {
       await updateExtranetPage({ id: pageId, body }).unwrap()
+      modeContext.setTranslateWeb(prunedTranslate)
+      modeContext.setTranslateMobile(prunedTranslateMobile)
+      saveStoredTranslations(pageId, {
+        translate: prunedTranslate,
+        translate_mobile: prunedTranslateMobile,
+      })
       console.log("Страница extranet успешно сохранена:", pageId)
     } catch (error) {
       console.error(
@@ -144,6 +170,8 @@ export const BuilderHeader = ({
       )
     }
   }
+
+  const isLangMenuOpen = Boolean(langMenuAnchorEl)
 
   return (
     <Box
@@ -208,49 +236,132 @@ export const BuilderHeader = ({
 
       <Box sx={{ display: "flex", alignItems: "center", columnGap: "12px" }}>
         {modeContext && (
-          <Box
-            sx={{
-              display: "flex",
-              border: `1px solid ${COLORS.gray200}`,
-              borderRadius: "4px",
-              overflow: "hidden",
-            }}
-          >
-            {MODES.map(({ value, label }) => (
-              <Box
-                key={value}
-                component="button"
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleModeChange(value)
-                }}
-                sx={{
-                  paddingTop: "4px",
-                  paddingRight: "10px",
-                  paddingBottom: "4px",
-                  paddingLeft: "10px",
-                  fontSize: "12px",
-                  border: "none",
-                  cursor: "pointer",
-                  backgroundColor:
-                    modeContext.mode === value ? COLORS.purple100 : "transparent",
-                  color:
-                    modeContext.mode === value
-                      ? COLORS.purple400
-                      : COLORS.gray600,
-                  "&:hover": {
+          <>
+            <Box
+              sx={{
+                display: "flex",
+                border: `1px solid ${COLORS.gray200}`,
+                borderRadius: "4px",
+                overflow: "hidden",
+              }}
+            >
+              {MODES.map(({ value, label }) => (
+                <Box
+                  key={value}
+                  component="button"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleModeChange(value)
+                  }}
+                  sx={{
+                    paddingTop: "4px",
+                    paddingRight: "10px",
+                    paddingBottom: "4px",
+                    paddingLeft: "10px",
+                    fontSize: "12px",
+                    border: "none",
+                    cursor: "pointer",
                     backgroundColor:
+                      modeContext.mode === value ? COLORS.purple100 : "transparent",
+                    color:
                       modeContext.mode === value
-                        ? COLORS.purple100
-                        : COLORS.gray100,
-                  },
+                        ? COLORS.purple400
+                        : COLORS.gray600,
+                    "&:hover": {
+                      backgroundColor:
+                        modeContext.mode === value
+                          ? COLORS.purple100
+                          : COLORS.gray100,
+                    },
+                  }}
+                >
+                  {label}
+                </Box>
+              ))}
+            </Box>
+
+            <Box
+              component="button"
+              type="button"
+              onClick={(e) => {
+                console.log("asd123123")
+                e.stopPropagation()
+                setLangMenuAnchorEl(e.currentTarget)
+              }}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                padding: "2px 4px",
+                border: "none",
+                borderRadius: "4px",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                "&:hover": {
+                  backgroundColor: COLORS.gray100,
+                },
+              }}
+            >
+              <Box
+                component="span"
+                sx={{ display: "inline-flex", width: "16px", height: "16px" }}
+                aria-hidden
+              >
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="none">
+                  <circle cx="8" cy="8" r="6" stroke="#1B1D21" strokeWidth="1"/>
+                  <path d="M2 8H14" stroke="#1B1D21" strokeWidth="1"/>
+                  <path d="M8 2C6.2 3.8 5.2 6 5.2 8C5.2 10 6.2 12.2 8 14" stroke="#1B1D21" strokeWidth="1"/>
+                  <path d="M8 2C9.8 3.8 10.8 6 10.8 8C10.8 10 9.8 12.2 8 14" stroke="#1B1D21" strokeWidth="1"/>
+                </svg>
+              </Box>
+              <Box
+                component="span"
+                sx={{
+                  fontFamily: "Roboto, sans-serif",
+                  fontWeight: 400,
+                  fontSize: "12px",
+                  lineHeight: "14px",
+                  letterSpacing: "0.0125em",
+                  color: "#1B1D21",
                 }}
               >
-                {label}
+                {toLocaleLabel(modeContext.activeLocale)}
               </Box>
-            ))}
-          </Box>
+              <Box
+                component="span"
+                sx={{ display: "inline-flex", width: "12px", height: "12px" }}
+                aria-hidden
+              >
+                <svg viewBox="0 0 12 12" width="12" height="12" fill="none">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="#727280" strokeWidth="1.2" strokeLinecap="round"
+                        strokeLinejoin="round"/>
+                </svg>
+              </Box>
+            </Box>
+            <Menu
+              anchorEl={langMenuAnchorEl}
+              open={isLangMenuOpen}
+              onClose={() => setLangMenuAnchorEl(null)}
+              onClick={(e) => e.stopPropagation()}
+              anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+              transformOrigin={{ vertical: "top", horizontal: "left" }}
+              sx={{ zIndex: 12000 }}
+            >
+              {SUPPORTED_LOCALES.map((locale) => (
+                <MenuItem
+                  key={locale}
+                  selected={modeContext.activeLocale === locale}
+                  onClick={() => {
+                    modeContext.setActiveLocale(locale as Locale)
+                    setLangMenuAnchorEl(null)
+                  }}
+                >
+                  {toLocaleLabel(locale)}
+                </MenuItem>
+              ))}
+            </Menu>
+          </>
         )}
         <Button
           variant="outlined"

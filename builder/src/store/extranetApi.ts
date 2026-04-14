@@ -3,6 +3,7 @@ import {
   EXTRANET_API_TOKEN,
   EXTRANET_SITES_BASE,
   type IContentItem,
+  type TranslationsByLocale,
   type ContentType,
   type ContentCategory,
   type ExtranetPageResponse,
@@ -35,6 +36,8 @@ export type CreateExtranetPageBody = {
   item_path_prefix: string | null
   content: string | null
   content_mobile: string | null
+  translate: TranslationsByLocale
+  translate_mobile: TranslationsByLocale
   sort: number
   site_id: number
 }
@@ -49,6 +52,8 @@ export type UpdateExtranetPageBody = {
   item_path_prefix: string | null
   content: string | null
   content_mobile: string | null
+  translate: TranslationsByLocale
+  translate_mobile: TranslationsByLocale
   sort: number
   site_id: number
 }

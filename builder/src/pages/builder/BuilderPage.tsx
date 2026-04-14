@@ -33,6 +33,13 @@ import { MODE_TYPE, type PreviewViewport } from "./builder.enum"
 import { decodeSerializedNodesStyleProps } from "../../utils/stylePropsCodec"
 import { CRAFT_DISPLAY_NAME } from "../../craft/craftDisplayNames.ts"
 import { normalizeItemPathPrefix } from "../../utils/normalizeItemPathPrefix.ts"
+import {
+  createEmptyTranslations,
+  loadStoredTranslations,
+  mergeTranslations,
+  normalizeTranslations,
+} from "../../utils/i18nTranslations.ts"
+import type { Locale, TranslationsByLocale } from "../../api/extranet.ts"
 
 function pickBindableTypeFields(
   fields: IContentTypeField[] | undefined,
@@ -76,8 +83,15 @@ export const BuilderPage = () => {
     Record<string, IContentItem[]>
   >({})
   const [mode, setMode] = useState<MODE_TYPE.WEB | MODE_TYPE.RN>(MODE_TYPE.WEB)
+  const [activeLocale, setActiveLocale] = useState<Locale>("ru")
   const [contentWeb, setContentWeb] = useState("")
   const [contentMobile, setContentMobile] = useState("")
+  const [translateWeb, setTranslateWeb] = useState<TranslationsByLocale>(
+    createEmptyTranslations(),
+  )
+  const [translateMobile, setTranslateMobile] = useState<TranslationsByLocale>(
+    createEmptyTranslations(),
+  )
   const [loaded, setLoaded] = useState(false)
   const [previewViewport, setPreviewViewport] = useState<PreviewViewport>("desktop")
   const [templateItemPathPrefix, setTemplateItemPathPrefix] = useState("")
@@ -107,6 +121,19 @@ export const BuilderPage = () => {
     const page = pageResponse.data
     setContentWeb(page.content ?? "")
     setContentMobile(page.content_mobile ?? "")
+    // --- TODO времено, пока храним перевод в локал сторалд, до тех пор пока сервер не предоставит поля для сохранения
+    const stored = loadStoredTranslations(page.id)
+    const apiTranslateWeb = normalizeTranslations(page.translate)
+    const apiTranslateMobile = normalizeTranslations(page.translate_mobile)
+    setTranslateWeb(
+      stored ? mergeTranslations(stored.translate, apiTranslateWeb) : apiTranslateWeb,
+    )
+    setTranslateMobile(
+      stored
+        ? mergeTranslations(stored.translate_mobile, apiTranslateMobile)
+        : apiTranslateMobile,
+    )
+    // ---
     if (page.type === PageType.TEMPLATE) {
       setTemplateItemPathPrefix(
         normalizeItemPathPrefix(page.item_path_prefix ?? page.slug),
@@ -200,12 +227,25 @@ export const BuilderPage = () => {
     () => ({
       mode,
       setMode,
+      activeLocale,
+      setActiveLocale,
       contentWeb,
       contentMobile,
       setContentWeb,
       setContentMobile,
+      translateWeb,
+      translateMobile,
+      setTranslateWeb,
+      setTranslateMobile,
     }),
-    [mode, contentWeb, contentMobile],
+    [
+      mode,
+      activeLocale,
+      contentWeb,
+      contentMobile,
+      translateWeb,
+      translateMobile,
+    ],
   )
 
   return (
