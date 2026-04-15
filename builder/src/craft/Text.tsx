@@ -41,6 +41,9 @@ export interface TextProps {
   paddingRight?: number
   paddingBottom?: number
   paddingLeft?: number
+  backgroundColor?: string
+  /** Зарезервировано под будущий UI; в рендере пока не используется */
+  backgroundClip?: string
 }
 
 export const CraftText = ({
@@ -67,6 +70,8 @@ export const CraftText = ({
   paddingRight = 0,
   paddingBottom = 0,
   paddingLeft = 0,
+  backgroundColor,
+  backgroundClip: _backgroundClip,
 }: TextProps) => {
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(text)
@@ -223,6 +228,7 @@ export const CraftText = ({
     outline: "none",
     cursor: collectionField ? "default" : isEditing ? "text" : selected ? "move" : "default",
     userSelect: collectionField ? "none" : isEditing ? "text" : "none",
+    ...(backgroundColor ? { backgroundColor } : {}),
   }
 
   const showSettingsButton = isInsideContentList && selected
@@ -311,6 +317,8 @@ export const CraftText = ({
     paddingRight: 0,
     paddingBottom: 0,
     paddingLeft: 0,
+    backgroundColor: undefined,
+    backgroundClip: undefined,
   },
 }
 

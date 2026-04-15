@@ -7,6 +7,7 @@ import {
   LayoutAccordion,
   SpacingAccordion,
   BordersAccordion,
+  BackgroundAccordion,
   TypographyAccordion,
 } from "../craftStylesComponents"
 import {
@@ -139,6 +140,7 @@ export const BuilderRightPanel = ({
                 <SpacingAccordion/>
 
                 <BordersAccordion/>
+                <BackgroundAccordion />
                 {(selectedType === "Text" || selectedType === "LinkText") && (
                 <TypographyAccordion />
               )}

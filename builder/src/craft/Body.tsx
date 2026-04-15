@@ -25,6 +25,9 @@ export type BodyProps = {
   borderColor?: string
   borderStyle?: "none" | "solid" | "dashed"
   borderOpacity?: number
+  backgroundColor?: string
+  /** Зарезервировано под будущий UI; в рендере пока не используется */
+  backgroundClip?: string
 }
 
 // Root component используется только как стартовый элемент холста, не удаляется
@@ -47,6 +50,8 @@ export const CraftBody = ({
   borderColor = COLORS.gray400,
   borderStyle = "solid",
   borderOpacity = 1,
+  backgroundColor,
+  backgroundClip: _backgroundClip,
 }: BodyProps) => {
   const {
     connectors: { connect, drag },
@@ -92,7 +97,7 @@ export const CraftBody = ({
         borderRightWidth: selected ? 2 : hasCustomBorder ? borderRightWidth : 0,
         borderBottomWidth: selected ? 2 : hasCustomBorder ? borderBottomWidth : 0,
         borderLeftWidth: selected ? 2 : hasCustomBorder ? borderLeftWidth : 0,
-        backgroundColor: COLORS.white,
+        backgroundColor: backgroundColor ?? COLORS.white,
         boxSizing: "border-box",
       }}
     >
@@ -121,6 +126,8 @@ export const CraftBody = ({
     borderColor: COLORS.gray400,
     borderStyle: "solid" as const,
     borderOpacity: 1,
+    backgroundColor: undefined,
+    backgroundClip: undefined,
   },
   rules: {
     canMoveIn: () => true,

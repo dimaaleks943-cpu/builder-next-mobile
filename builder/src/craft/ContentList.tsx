@@ -29,6 +29,9 @@ export type ContentListProps = {
    * и включает передачу `categoryIds` в запрос элементов при смене категории в контексте.
    */
   filterScope?: string
+  backgroundColor?: string
+  /** Зарезервировано под будущий UI; в рендере пока не используется */
+  backgroundClip?: string
 }
 
 /**
@@ -457,7 +460,9 @@ export const CraftContentList = ({}: ContentListProps) => {
         width: "100%",
         display: "flex",
         flexDirection: "column",
-        backgroundColor: selected ? COLORS.lightPurple : COLORS.white,
+        backgroundColor: selected
+          ? COLORS.lightPurple
+          : (props.backgroundColor ?? COLORS.white),
         border: selected
           ? `2px solid ${COLORS.purple400}`
           : `1px solid ${COLORS.gray300}`,
@@ -802,6 +807,8 @@ export const CraftContentList = ({}: ContentListProps) => {
     selectedSource: "",
     itemsPerRow: 1,
     filterScope: "",
+    backgroundColor: undefined,
+    backgroundClip: undefined,
   },
   rules: {
     canMoveIn: (nodes: { data: { type: { resolvedName?: string } } }[]) =>

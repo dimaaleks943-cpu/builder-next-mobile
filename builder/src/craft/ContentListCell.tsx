@@ -24,6 +24,9 @@ export type ContentListCellProps = {
   flexAlignItems?: FlexAlignItems
   placeItemsY?: PlaceItemsValue
   placeItemsX?: PlaceItemsValue
+  backgroundColor?: string
+  /** Зарезервировано под будущий UI; в рендере пока не используется */
+  backgroundClip?: string
 }
 
 /**
@@ -45,6 +48,8 @@ export const CraftContentListCell = ({
   flexAlignItems,
   placeItemsY,
   placeItemsX,
+  backgroundColor,
+  backgroundClip: _backgroundClip,
 }: ContentListCellProps) => {
   const {
     connectors: { connect, drag },
@@ -95,7 +100,9 @@ export const CraftContentListCell = ({
             ? `${placeItemsY} ${placeItemsX}`
             : undefined,
         boxSizing: "border-box",
-        backgroundColor: selected ? "rgba(108, 93, 211, 0.08)" : "transparent",
+        backgroundColor: selected
+          ? "rgba(108, 93, 211, 0.08)"
+          : (backgroundColor ?? "transparent"),
         border: selected ? `1px dashed ${COLORS.purple400}` : "none",
         borderRadius: 4,
         // alignItems в конце объекта, чтобы не перезаписаться другими стилями при мерже/каскаде.
@@ -123,6 +130,8 @@ export const CraftContentListCell = ({
     flexAlignItems: undefined,
     placeItemsY: undefined,
     placeItemsX: undefined,
+    backgroundColor: undefined,
+    backgroundClip: undefined,
   },
   rules: {
     canMoveIn: () => true,

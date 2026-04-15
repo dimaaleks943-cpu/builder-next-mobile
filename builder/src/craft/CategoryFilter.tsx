@@ -22,6 +22,9 @@ type CategoryFilterProps = {
   direction?: "row" | "column"
   /** Подпись пункта «все категории» (`categoryId === null` в контексте). */
   showAllLabel?: string
+  backgroundColor?: string
+  /** Зарезервировано под будущий UI; в рендере пока не используется */
+  backgroundClip?: string
 }
 
 /**
@@ -182,7 +185,9 @@ export const CraftCategoryFilter = () => {
         width: "100%",
         display: "flex",
         flexDirection: "column",
-        backgroundColor: selected ? COLORS.lightPurple : COLORS.white,
+        backgroundColor: selected
+          ? COLORS.lightPurple
+          : (props.backgroundColor ?? COLORS.white),
         border: selected
           ? `2px solid ${COLORS.purple400}`
           : `1px solid ${COLORS.gray300}`,
@@ -476,5 +481,7 @@ export const CraftCategoryFilter = () => {
     variant: "buttons" as const,
     direction: "row" as const,
     showAllLabel: "Все",
+    backgroundColor: undefined,
+    backgroundClip: undefined,
   },
 }

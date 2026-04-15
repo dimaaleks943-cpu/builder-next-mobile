@@ -46,6 +46,9 @@ export type BlockProps = {
   borderStyle?: "none" | "solid" | "dashed"
   /** 0–1, применяется к цвету бордера */
   borderOpacity?: number
+  backgroundColor?: string
+  /** Зарезервировано под будущий UI; в рендере пока не используется */
+  backgroundClip?: string
 }
 
 export const CraftBlock = ({
@@ -77,6 +80,8 @@ export const CraftBlock = ({
   borderColor = COLORS.gray400,
   borderStyle = "solid",
   borderOpacity = 1,
+  backgroundColor,
+  backgroundClip: _backgroundClip,
 }: BlockProps) => {
   const {
     connectors: { connect, drag },
@@ -156,7 +161,7 @@ export const CraftBlock = ({
         borderRightWidth: selected ? 2 : hasCustomBorder ? borderRightWidth : 0,
         borderBottomWidth: selected ? 2 : hasCustomBorder ? borderBottomWidth : 0,
         borderLeftWidth: selected ? 2 : hasCustomBorder ? borderLeftWidth : 0,
-        backgroundColor: COLORS.white,
+        backgroundColor: backgroundColor ?? COLORS.white,
         boxShadow: fullSize ? "none" : "0 1px 2px rgba(15, 23, 42, 0.08)",
         boxSizing: "border-box",
         // alignItems в конце, чтобы не перезаписаться при мерже/каскаде стилей.
@@ -205,6 +210,8 @@ export const CraftBlock = ({
     borderColor: COLORS.gray400,
     borderStyle: "solid" as const,
     borderOpacity: 1,
+    backgroundColor: undefined,
+    backgroundClip: undefined,
   },
   rules: {
     canMoveIn: () => true,

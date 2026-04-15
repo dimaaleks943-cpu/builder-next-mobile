@@ -17,6 +17,9 @@ interface Props {
   borderRadius?: number;
   /** Поле коллекции, содержащее URL изображения (если компонент внутри ContentList). */
   collectionField?: string | null;
+  backgroundColor?: string;
+  /** Зарезервировано под будущий UI; в рендере пока не используется */
+  backgroundClip?: string;
 }
 
 export const CraftImage = ({
@@ -26,6 +29,8 @@ export const CraftImage = ({
   height,
   borderRadius = 8,
   collectionField = null,
+  backgroundColor,
+  backgroundClip: _backgroundClip,
 }: Props) => {
   const {
     connectors: { connect, drag },
@@ -74,7 +79,7 @@ export const CraftImage = ({
     borderRadius,
     boxSizing: "border-box",
     border: selected ? `2px solid ${COLORS.purple400}` : "1px solid transparent",
-    backgroundColor: COLORS.gray100,
+    backgroundColor: backgroundColor ?? COLORS.gray100,
   }
 
   const openSettings = useCallback(
@@ -145,6 +150,8 @@ export const CraftImage = ({
     height: undefined,
     borderRadius: 8,
     collectionField: null,
+    backgroundColor: undefined,
+    backgroundClip: undefined,
   },
 }
 

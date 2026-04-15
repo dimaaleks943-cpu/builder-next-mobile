@@ -45,6 +45,9 @@ export interface LinkTextProps {
   paddingRight?: number
   paddingBottom?: number
   paddingLeft?: number
+  backgroundColor?: string
+  /** Зарезервировано под будущий UI; в рендере пока не используется */
+  backgroundClip?: string
 }
 
 export const CraftLinkText = ({
@@ -73,6 +76,8 @@ export const CraftLinkText = ({
   paddingRight = 0,
   paddingBottom = 0,
   paddingLeft = 0,
+  backgroundColor,
+  backgroundClip: _backgroundClip,
 }: LinkTextProps) => {
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(text)
@@ -225,6 +230,7 @@ export const CraftLinkText = ({
     outline: "none",
     cursor: collectionField ? "default" : isEditing ? "text" : selected ? "move" : "pointer",
     userSelect: collectionField ? "none" : isEditing ? "text" : "none",
+    ...(backgroundColor ? { backgroundColor } : {}),
   }
 
   return (
@@ -317,5 +323,7 @@ export const CraftLinkText = ({
     paddingRight: 0,
     paddingBottom: 0,
     paddingLeft: 0,
+    backgroundColor: undefined,
+    backgroundClip: undefined,
   },
 }
