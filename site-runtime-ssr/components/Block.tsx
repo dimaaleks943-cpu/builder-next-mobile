@@ -40,6 +40,7 @@ interface BlockProps {
   borderColor?: string
   borderStyle?: "none" | "solid" | "dashed"
   borderOpacity?: number
+  backgroundColor?: string
 }
 
 export const Block = ({
@@ -71,6 +72,7 @@ export const Block = ({
   borderColor = "#CBD5E0",
   borderStyle = "solid",
   borderOpacity = 1,
+  backgroundColor = "#FFFFFF",
 }: BlockProps) => {
   const hasCustomBorder =
     borderTopWidth > 0 ||
@@ -134,7 +136,7 @@ export const Block = ({
         borderLeftWidth: hasCustomBorder ? borderLeftWidth : 0,
         borderColor: effectiveBorderColor,
         borderStyle: hasCustomBorder ? (borderStyle || "solid") : "solid",
-        backgroundColor: "#FFFFFF",
+        backgroundColor,
         boxShadow: fullSize ? "none" : "0 1px 2px rgba(15, 23, 42, 0.08)",
         boxSizing: "border-box",
       }}

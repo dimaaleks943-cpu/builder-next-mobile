@@ -8,6 +8,7 @@ interface ImageProps {
   height?: number
   borderRadius?: number
   collectionField?: string | null
+  backgroundColor?: string
 }
 
 const DEFAULT_PLACEHOLDER =
@@ -20,6 +21,7 @@ export const Image = ({
   height,
   borderRadius = 8,
   collectionField = null,
+  backgroundColor = "#F9F9F9",
 }: ImageProps) => {
   const contentData = useContentData()
 
@@ -46,7 +48,7 @@ export const Image = ({
         objectFit: "cover",
         borderRadius,
         boxSizing: "border-box",
-        backgroundColor: "#F9F9F9",
+        backgroundColor,
       }}
     />
   )

@@ -20,6 +20,7 @@ interface BodyProps {
   borderColor?: string
   borderStyle?: "none" | "solid" | "dashed"
   borderOpacity?: number
+  backgroundColor?: string
 }
 
 export const Body = ({
@@ -41,6 +42,7 @@ export const Body = ({
   borderColor = "#CBD5E0",
   borderStyle = "solid",
   borderOpacity = 1,
+  backgroundColor = "#FFFFFF",
 }: BodyProps) => {
   const hasBorder =
     borderTopWidth > 0 ||
@@ -75,7 +77,7 @@ export const Body = ({
         borderLeftWidth: hasBorder ? borderLeftWidth : 0,
         borderColor: effectiveBorderColor,
         borderStyle: hasBorder ? borderStyle : "solid",
-        backgroundColor: "#FFFFFF",
+        backgroundColor,
         boxSizing: "border-box",
       }}
     >

@@ -44,6 +44,7 @@ interface LinkTextProps {
   paddingRight?: number;
   paddingBottom?: number;
   paddingLeft?: number;
+  backgroundColor?: string;
 }
 
 export const LinkText = ({
@@ -75,6 +76,7 @@ export const LinkText = ({
   paddingRight = 0,
   paddingBottom = 0,
   paddingLeft = 0,
+  backgroundColor,
 }: LinkTextProps) => {
   const contentData = useContentData();
   const { sitePages } = useSiteCollections();
@@ -227,6 +229,7 @@ export const LinkText = ({
         paddingBottom,
         paddingLeft,
         boxSizing: "border-box",
+        ...(backgroundColor ? { backgroundColor } : {}),
       }}
     >
       {displayText}

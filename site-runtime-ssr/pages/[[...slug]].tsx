@@ -350,7 +350,7 @@ export default function Page({
   const ogUrlSuffix = publicPath === "/" ? "" : publicPath
 
   const main = (
-    <main style={{ minHeight: "100vh", padding: "20px" }}>
+    <main style={{ minHeight: "100vh" }}>
       {renderPage(components)}
     </main>
   )

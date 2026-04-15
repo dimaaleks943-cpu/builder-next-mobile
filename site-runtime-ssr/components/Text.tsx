@@ -32,6 +32,7 @@ interface TextProps {
   paddingRight?: number
   paddingBottom?: number
   paddingLeft?: number
+  backgroundColor?: string
 }
 
 export const Text = ({
@@ -58,6 +59,7 @@ export const Text = ({
   paddingRight = 0,
   paddingBottom = 0,
   paddingLeft = 0,
+  backgroundColor,
 }: TextProps) => {
   const contentData = useContentData()
   const pageLocale = usePageLocale()
@@ -120,6 +122,7 @@ export const Text = ({
         paddingBottom,
         paddingLeft,
         boxSizing: "border-box",
+        ...(backgroundColor ? { backgroundColor } : {}),
       }}
     >
       {displayText}

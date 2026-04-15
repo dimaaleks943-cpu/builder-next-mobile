@@ -44,6 +44,10 @@ interface ContentListProps {
     | null
   cellPlaceItemsY?: "start" | "center" | "end" | "stretch" | "baseline" | null
   cellPlaceItemsX?: "start" | "center" | "end" | "stretch" | "baseline" | null
+  /** Фон корня списка (как в конструкторе). */
+  backgroundColor?: string
+  /** Фон ячейки из первой ContentListCell в конструкторе. */
+  cellBackgroundColor?: string | null
   children?: ComponentNode[]
 }
 
@@ -73,6 +77,8 @@ export const ContentList = ({
   cellFlexAlignItems,
   cellPlaceItemsY,
   cellPlaceItemsX,
+  backgroundColor = "#FFFFFF",
+  cellBackgroundColor,
   children: childrenProp,
 }: ContentListProps) => {
   const itemsPerRow: number = itemsPerRowProp ?? 1
@@ -221,6 +227,7 @@ export const ContentList = ({
           display: "flex",
           flexDirection: "column",
           minHeight: 300,
+          backgroundColor,
         }}
         aria-busy={blockingLoading ? true : undefined}
       />
@@ -235,6 +242,7 @@ export const ContentList = ({
           display: "flex",
           flexDirection: "column",
           minHeight: 300,
+          backgroundColor,
         }}
       />
     )
@@ -251,6 +259,7 @@ export const ContentList = ({
       style={{
         position: "relative",
         width: "100%",
+        backgroundColor,
       }}
       aria-busy={filterLoading ? true : undefined}
     >
@@ -287,6 +296,7 @@ export const ContentList = ({
                   flexAlignItems={cellFlexAlignItems ?? undefined}
                   placeItemsY={cellPlaceItemsY ?? undefined}
                   placeItemsX={cellPlaceItemsX ?? undefined}
+                  backgroundColor={cellBackgroundColor ?? undefined}
                 >
                   {children}
                 </ContentListItem>
@@ -340,6 +350,7 @@ interface ContentListItemProps {
     | "baseline"
   placeItemsY?: "start" | "center" | "end" | "stretch" | "baseline"
   placeItemsX?: "start" | "center" | "end" | "stretch" | "baseline"
+  backgroundColor?: string
   children: ComponentNode[]
 }
 
@@ -361,6 +372,7 @@ const ContentListItem = ({
   flexAlignItems,
   placeItemsY,
   placeItemsX,
+  backgroundColor,
   children,
 }: ContentListItemProps) => {
   const displayStyle =
@@ -406,6 +418,7 @@ const ContentListItem = ({
               ? `${placeItemsY} ${placeItemsX}`
               : undefined,
           boxSizing: "border-box",
+          ...(backgroundColor ? { backgroundColor } : {}),
         }}
       >
         {children && children.length > 0 ? (

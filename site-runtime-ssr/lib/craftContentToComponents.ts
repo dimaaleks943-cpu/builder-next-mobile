@@ -174,6 +174,7 @@ const buildNodeTree = (
       cellFlexAlignItems: cellProps.flexAlignItems ?? null,
       cellPlaceItemsY: cellProps.placeItemsY ?? null,
       cellPlaceItemsX: cellProps.placeItemsX ?? null,
+      cellBackgroundColor: cellProps.backgroundColor ?? null,
     }
 
     return {

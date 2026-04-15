@@ -16,6 +16,7 @@ export type CategoryFilterProps = {
   variant?: "buttons" | "radio" | "list"
   direction?: "row" | "column"
   showAllLabel?: string
+  backgroundColor?: string
 }
 
 /** Навигация по категориям: пишет выбор в контекст: ContentList с тем же `filterScope` перезапрашивает items. */
@@ -25,6 +26,7 @@ const CategoryFilterComponent = ({
   variant = "buttons",
   direction = "row",
   showAllLabel = "Все",
+  backgroundColor = "#FFFFFF",
 }: CategoryFilterProps) => {
   const { domain } = useSiteCollections()
   const router = useRouter()
@@ -184,6 +186,10 @@ const CategoryFilterComponent = ({
         gap: direction === "row" ? 8 : 6,
         alignItems: flexDirection === "column" ? "stretch" : "center",
         marginBottom: 16,
+        backgroundColor,
+        padding: 12,
+        borderRadius: 4,
+        boxSizing: "border-box",
       }}
     >
       {loading ? (
