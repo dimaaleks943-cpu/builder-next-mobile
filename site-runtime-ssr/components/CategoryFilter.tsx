@@ -3,6 +3,7 @@ import { useRouter } from "next/router"
 import { fetchContentCategories } from "@/lib/categoriesApi"
 import type { ContentCategory } from "@/lib/contentTypes"
 import { buildStorefrontCategoryUrl } from "@/lib/catalogPathResolve"
+import { prefixPublicPath } from "@/lib/localeFromPath"
 import { useSiteCollections } from "@/components/SiteCollectionsContext"
 import { useCollectionFilterScope } from "@/components/CollectionFilterScopeContext"
 import { useStorefrontPage } from "@/components/StorefrontPageContext"
@@ -27,7 +28,7 @@ const CategoryFilterComponent = ({
 }: CategoryFilterProps) => {
   const { domain } = useSiteCollections()
   const router = useRouter()
-  const { pageBaseSlug } = useStorefrontPage()
+  const { locale, pageBaseSlug } = useStorefrontPage()
   const { selectedCategoryIdByScope, setCategoryForScope } =
     useCollectionFilterScope()
   const scope = filterScope.trim()
@@ -38,13 +39,16 @@ const CategoryFilterComponent = ({
       if (categoryId !== null && !categorySlug?.trim()) {
         return
       }
-      const url = buildStorefrontCategoryUrl(pageBaseSlug, categorySlug)
+      const url = prefixPublicPath(
+        buildStorefrontCategoryUrl(pageBaseSlug, categorySlug),
+        locale,
+      )
       void router.push(url, undefined, { scroll: false })
     },
-    [pageBaseSlug, router, scope, setCategoryForScope],
+    [locale, pageBaseSlug, router, scope, setCategoryForScope],
   )
   const selectedId = scope ? selectedCategoryIdByScope[scope] ?? null : null
-  const rootId = contentCategoryRootId.trim()
+  const rootId = (contentCategoryRootId as string).trim()
   const rootMissing = !rootId
 
   const [categories, setCategories] = React.useState<ContentCategory[]>([])

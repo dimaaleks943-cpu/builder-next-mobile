@@ -93,12 +93,13 @@
 
 - Принимает:
   - `text` — статический текст по умолчанию.
+  - `i18nKey?: string | null` — ключ в словаре страницы (`PageLocaleProvider` / `resolveTranslationText`), если нет привязки к коллекции.
   - `collectionField?: string | null` — ключ поля в данных элемента коллекции (`itemData`).
 - Логика:
   - Через `useContentData()` получает `itemData` для текущего элемента.
-  - Если `collectionField` задан и в `itemData` есть соответствующее поле:
-    - подставляет его значение (с приведением к строке, объекты — через `JSON.stringify`).
-  - Иначе — показывает обычный `text`.
+  - Если заданы и `collectionField`, и `itemData`, и найдено поле — показывает его отображаемое значение (как в билдере: пустое значение → fallback на `text`).
+  - Если **нет** `collectionField` или **нет** `itemData` — подстановка через `i18nKey` и `usePageLocale()` / `resolveTranslationText` (как в билдере для веб-режима).
+  - В остальных случаях — `text`.
 
 Таким образом, один и тот же `Text` может быть как статическим, так и «привязанным»
 к данным коллекции/таблицы.
@@ -237,10 +238,21 @@
 
 **Домен для API**: `normalizeSiteDomain(context.req.headers.host)` (без захардкоженного хоста).
 
+#### 7.2.1 Публичный URL и локаль (`ru` / `en`)
+
+- **Дефолтная локаль** `ru` — в адресе **нет** языкового префикса: `/`, `/gid`, `/gid/europe/item`.
+- **Английская** `en` — префикс **первого сегмента**: `/en`, `/en/gid`, `/en/gid/europe/item`.
+- Список префиксов локалей (пока только `en`) и дефолт — `lib/localeFromPath.ts`: `LOCALE_PREFIXES`, `DEFAULT_LOCALE`, функции `parseLocaleFromSlugPath` (из полного catch-all пути получаем `{ locale, slugPathWithoutLocale }`) и `prefixPublicPath` (сборка пути для ссылок и `og:url`).
+- В `getServerSideProps` после сборки `slugPath` из `[[...slug]]` вызывается `parseLocaleFromSlugPath`; **вся** дальнейшая маршрутизация (`splitBaseSlugAndTail`, `findStaticPage`, `resolveTemplatePageForSlug`, `categoryTrailBetweenPrefixAndItemSlug`, `notFound`) работает только с **`slugPathWithoutLocale`**, чтобы префикс `en` не воспринимался как часть `SitePage.slug`.
+- В пропсы страницы уходят `locale`, `slug` (путь **без** префикса локали), объект `pageTranslate` (ветки `translate` / `translate_mobile`).
+- **Заглушка переводов** по `page.id`: `lib/hardcodedPageTranslations.ts` (`PAGE_TRANSLATIONS_BY_ID`, `getHardcodedTranslationsForPage`). Для неизвестного `id` возвращаются пустые словари — рендер как раньше по полю `text` в Craft. Дальше словари и список локалей планируется брать из API (`translate` и метаданные локалей), как в билдере.
+- **Резолв строки** (как `resolveTranslationText` в билдере): `lib/resolvePageTranslation.ts` — `translations[locale][key] ?? translations.ru[key] ?? fallbackText`.
+- **Контекст**: `components/PageLocaleContext.tsx` (`PageLocaleProvider` / `usePageLocale`) оборачивает дерево страницы в `[[...slug]].tsx`; в `components/StorefrontPageContext.tsx` дополнительно прокидывается `locale` для префиксации внутренних URL (`LinkText`, `CategoryFilter` через `prefixPublicPath`).
+
 **Разбор пути**:
 
-- `slugPath` собирается из catch-all (ведущий `/`, корень = `"/"`).
-- `splitBaseSlugAndTail(slugPath)`: если в пути **один** сегмент страницы или только корень (`/`, `/gid`) — `tailSlug === null` (только статическая страница, без запросов item/category по slug).
+- `slugPath` собирается из catch-all (ведущий `/`, корень = `"/"`); затем вычитается префикс локали → `slugPathWithoutLocale`.
+- `splitBaseSlugAndTail(slugPathWithoutLocale)`: если в пути **один** сегмент страницы или только корень (`/`, `/gid`) — `tailSlug === null` (только статическая страница, без запросов item/category по slug).
 - Если сегментов **два и больше**: `baseSlug` — путь без последнего сегмента, `tailSlug` — последний сегмент (после `decodeURIComponent`).
 
 **Если `tailSlug === null`**
@@ -270,7 +282,8 @@
 
 **LinkText на template-URL** (`components/LinkText.tsx`):
 
-- При `linkMode === "collectionItemPage"` и template: в путь подставляется **`item.slug`** (не `item.id`); при пустом slug — предупреждение в dev и fallback `href`.
+- При `linkMode === "collectionItemPage"` и template: в путь подставляется **`item.slug`** (не `item.id`); при пустом slug — предупреждение в dev и fallback `href`; итоговый путь префиксуется через `prefixPublicPath` при `locale === "en"`.
+- При `linkMode === "page"` и `href`, начинающемся с `/`, тот же префикс добавляется для согласованности с URL вида `/en/...`.
 
 ---
 

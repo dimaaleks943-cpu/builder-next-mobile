@@ -15,10 +15,20 @@ import {
   splitBaseSlugAndTail,
 } from "@/lib/catalogPathResolve"
 import type { IContentItem } from "@/lib/contentTypes"
+import {
+  parseLocaleFromSlugPath,
+  prefixPublicPath,
+  type SsrLocale,
+} from "@/lib/localeFromPath"
+import {
+  getHardcodedTranslationsForPage,
+  type PageTranslatePayload,
+} from "@/lib/hardcodedPageTranslations"
 import { SiteCollectionsProvider } from "@/components/SiteCollectionsContext"
 import { ContentDataProvider } from "@/components/ContentDataContext"
 import { CollectionFilterScopeProvider } from "@/components/CollectionFilterScopeContext"
 import { StorefrontPageProvider } from "@/components/StorefrontPageContext"
+import { PageLocaleProvider } from "@/components/PageLocaleContext"
 import {
   getItemContentTypeId,
   isTemplateSitePage,
@@ -30,7 +40,10 @@ const EMPTY_CATEGORY_SCOPE: Record<string, string | null> = {}
 
 interface PageProps {
   domain: string
+  /** Публичный путь без языкового префикса (как `SitePage.slug`). */
   slug: string
+  locale: SsrLocale
+  pageTranslate: PageTranslatePayload
   components: ComponentNode[]
   collectionItemsByTypeId: Record<string, IContentItem[]>
   sitePages: SitePage[]
@@ -124,16 +137,18 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
   const slugPath =
     rawSlug.length === 0 ? "/" : rawSlug.startsWith("/") ? rawSlug : `/${rawSlug}`
 
+  const { locale, slugPathWithoutLocale } = parseLocaleFromSlugPath(slugPath)
+
   const pages = await getSitePages(domain)
 
   if (!pages) {
     return { notFound: true }
   }
 
-  const { baseSlug, tailSlug } = splitBaseSlugAndTail(slugPath)
+  const { baseSlug, tailSlug } = splitBaseSlugAndTail(slugPathWithoutLocale)
 
   if (tailSlug === null) {
-    const page = findStaticPage(pages, slugPath)
+    const page = findStaticPage(pages, slugPathWithoutLocale)
     if (!page?.content) {
       return { notFound: true }
     }
@@ -144,6 +159,8 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
     }
 
     const pageBaseSlug = normalizeItemPathPrefix(page.slug)
+    //TODO временно получаем переводы из хардкода, в дальнейшем переводы прихоядт вместе со страницей
+    const pageTranslate = getHardcodedTranslationsForPage(page.id)
 
     const {
       collectionItemsByTypeId,
@@ -154,7 +171,9 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
     return {
       props: {
         domain,
-        slug: slugPath,
+        slug: slugPathWithoutLocale,
+        locale,
+        pageTranslate,
         components,
         collectionItemsByTypeId,
         sitePages: pages,
@@ -170,7 +189,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
   const item = await fetchContentItemBySlug(domain, tailSlug)
 
   if (item) {
-    const resolved = resolveTemplatePageForSlug(pages, slugPath)
+    const resolved = resolveTemplatePageForSlug(pages, slugPathWithoutLocale)
     if (!resolved) {
       return { notFound: true }
     }
@@ -241,14 +260,18 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
     )
     const categorySlugTrailFromUrl = categoryTrailBetweenPrefixAndItemSlug(
       pageBaseSlug,
-      slugPath,
+      slugPathWithoutLocale,
       tailSlug,
     )
+    //TODO временно получаем переводы из хардкода, в дальнейшем переводы прихоядт вместе со страницей
+    const pageTranslate = getHardcodedTranslationsForPage(page.id)
 
     return {
       props: {
         domain,
-        slug: slugPath,
+        slug: slugPathWithoutLocale,
+        locale,
+        pageTranslate,
         components,
         collectionItemsByTypeId,
         sitePages: pages,
@@ -289,11 +312,14 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
   })
 
   const pageBaseSlug = normalizeItemPathPrefix(page.slug)
+  const pageTranslate = getHardcodedTranslationsForPage(page.id)
 
   return {
     props: {
       domain,
-      slug: slugPath,
+      slug: slugPathWithoutLocale,
+      locale,
+      pageTranslate,
       components,
       collectionItemsByTypeId,
       sitePages: pages,
@@ -309,6 +335,8 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
 export default function Page({
   domain,
   slug,
+  locale,
+  pageTranslate,
   components,
   collectionItemsByTypeId,
   sitePages,
@@ -318,7 +346,8 @@ export default function Page({
   pageBaseSlug,
   categorySlugTrailFromUrl,
 }: PageProps) {
-  const urlPath = slug === "/" ? "" : slug
+  const publicPath = prefixPublicPath(slug, locale)
+  const ogUrlSuffix = publicPath === "/" ? "" : publicPath
 
   const main = (
     <main style={{ minHeight: "100vh", padding: "20px" }}>
@@ -343,7 +372,7 @@ export default function Page({
       <Head>
         <title>{`Страница ${slug} — ${domain}`}</title>
         <meta property="og:title" content={`Страница ${slug} — ${domain}`} />
-        <meta property="og:url" content={`https://${domain}${urlPath}`} />
+        <meta property="og:url" content={`https://${domain}${ogUrlSuffix}`} />
       </Head>
       <SiteCollectionsProvider
         domain={domain}
@@ -355,10 +384,16 @@ export default function Page({
           initialSelectedCategorySlugByScope={initialSelectedCategorySlugByScope}
         >
           <StorefrontPageProvider
+            locale={locale}
             pageBaseSlug={pageBaseSlug}
             categorySlugTrailFromUrl={categorySlugTrailFromUrl}
           >
-            {inner}
+            <PageLocaleProvider
+              locale={locale}
+              translate={pageTranslate.translate}
+            >
+              {inner}
+            </PageLocaleProvider>
           </StorefrontPageProvider>
         </CollectionFilterScopeProvider>
       </SiteCollectionsProvider>

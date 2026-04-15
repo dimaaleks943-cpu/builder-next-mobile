@@ -11,9 +11,13 @@ import { normalizeItemPathPrefix } from "@/lib/templateRoute";
 import { useContentListContext } from "@/components/ContentListContext";
 import { useCollectionFilterScope } from "@/components/CollectionFilterScopeContext";
 import { useStorefrontPage } from "@/components/StorefrontPageContext";
+import { usePageLocale } from "@/components/PageLocaleContext";
+import { prefixPublicPath } from "@/lib/localeFromPath";
+import { resolveTranslationText } from "@/lib/resolvePageTranslation";
 
 interface LinkTextProps {
   text?: string;
+  i18nKey?: string | null;
   collectionField?: string | null;
   href?: string;
   linkMode?: "url" | "page" | "collectionItemPage";
@@ -44,6 +48,7 @@ interface LinkTextProps {
 
 export const LinkText = ({
   text = "Ссылка",
+  i18nKey = null,
   collectionField = null,
   href = "http://www.google.com",
   linkMode = "url",
@@ -75,18 +80,35 @@ export const LinkText = ({
   const { sitePages } = useSiteCollections();
   const { filterScope } = useContentListContext();
   const { selectedCategorySlugByScope } = useCollectionFilterScope();
-  const { categorySlugTrailFromUrl } = useStorefrontPage();
+  const { locale, categorySlugTrailFromUrl } = useStorefrontPage();
+  const pageLocale = usePageLocale();
 
   const displayText = useMemo(() => {
     if (collectionField && contentData?.itemData) {
       const item = contentData.itemData as IContentItem;
       const field = findContentItemField(item, collectionField);
       if (field) {
-        return getContentFieldDisplayValue(field);
+        const resolved = getContentFieldDisplayValue(field);
+        return resolved !== "" ? resolved : text;
       }
     }
+    if (!collectionField || !contentData?.itemData) {
+      return resolveTranslationText(
+        pageLocale.translate,
+        pageLocale.locale,
+        i18nKey,
+        text as string,
+      );
+    }
     return text;
-  }, [collectionField, contentData?.itemData, text]);
+  }, [
+    collectionField,
+    contentData?.itemData,
+    i18nKey,
+    pageLocale.locale,
+    pageLocale.translate,
+    text,
+  ]);
 
   const resolvedHref = useMemo(() => {
     const templateId =
@@ -99,6 +121,12 @@ export const LinkText = ({
       templateId.length > 0;
 
     if (!useTemplate) {
+      if (linkMode === "page") {
+        const h = href?.trim() ?? "";
+        if (h.startsWith("/") && !h.startsWith("//")) {
+          return prefixPublicPath(h, locale);
+        }
+      }
       return href;
     }
 
@@ -145,7 +173,12 @@ export const LinkText = ({
       (scopeKey && selectedCategorySlugByScope[scopeKey]) ??
       categorySlugTrailFromUrl ??
       null;
-    return buildStorefrontTemplateHref(prefix, segment, categoryTrail);
+    const internal = buildStorefrontTemplateHref(
+      prefix,
+      segment,
+      categoryTrail,
+    );
+    return prefixPublicPath(internal, locale);
   }, [
     href,
     linkMode,
@@ -156,6 +189,7 @@ export const LinkText = ({
     filterScope,
     selectedCategorySlugByScope,
     categorySlugTrailFromUrl,
+    locale,
   ]);
 
   const textDecoration = [

@@ -1,13 +1,16 @@
 import { useMemo } from "react"
 import { useContentData } from "./ContentDataContext"
+import { usePageLocale } from "./PageLocaleContext"
 import {
   findContentItemField,
   getContentFieldDisplayValue,
 } from "@/lib/contentFieldValue"
 import type { IContentItem } from "@/lib/contentTypes"
+import { resolveTranslationText } from "@/lib/resolvePageTranslation"
 
 interface TextProps {
   text?: string
+  i18nKey?: string | null
   collectionField?: string | null
   fontSize?: number
   fontWeight?: "normal" | "bold"
@@ -33,6 +36,7 @@ interface TextProps {
 
 export const Text = ({
   text = "Текст",
+  i18nKey = null,
   collectionField = null,
   fontSize = 14,
   fontWeight = "normal",
@@ -56,17 +60,34 @@ export const Text = ({
   paddingLeft = 0,
 }: TextProps) => {
   const contentData = useContentData()
+  const pageLocale = usePageLocale()
 
   const displayText = useMemo(() => {
     if (collectionField && contentData?.itemData) {
       const item = contentData.itemData as IContentItem
       const field = findContentItemField(item, collectionField)
       if (field) {
-        return getContentFieldDisplayValue(field)
+        const resolved = getContentFieldDisplayValue(field)
+        return resolved !== "" ? resolved : text
       }
     }
+    if (!collectionField || !contentData?.itemData) {
+      return resolveTranslationText(
+        pageLocale.translate,
+        pageLocale.locale,
+        i18nKey,
+        text as string,
+      )
+    }
     return text
-  }, [collectionField, contentData?.itemData, text])
+  }, [
+    collectionField,
+    contentData?.itemData,
+    i18nKey,
+    pageLocale.locale,
+    pageLocale.translate,
+    text,
+  ])
 
   const textDecoration = [
     isUnderline ? "underline" : "",
