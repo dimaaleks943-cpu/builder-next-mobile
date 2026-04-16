@@ -7,6 +7,11 @@ import { prefixPublicPath } from "@/lib/localeFromPath"
 import { useSiteCollections } from "@/components/SiteCollectionsContext"
 import { useCollectionFilterScope } from "@/components/CollectionFilterScopeContext"
 import { useStorefrontPage } from "@/components/StorefrontPageContext"
+import {
+  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+  resolveCraftVisualEffectsStyle,
+  type CraftVisualEffectsProps,
+} from "@/lib/craftVisualEffects"
 
 /** Пропсы сериализованного блока; `filterScope` должен совпадать с ContentList на той же странице. */
 export type CategoryFilterProps = {
@@ -17,7 +22,9 @@ export type CategoryFilterProps = {
   direction?: "row" | "column"
   showAllLabel?: string
   backgroundColor?: string
-}
+  /** Зарезервировано под будущий UI; в рендере пока не используется */
+  backgroundClip?: string
+} & CraftVisualEffectsProps
 
 /** Навигация по категориям: пишет выбор в контекст: ContentList с тем же `filterScope` перезапрашивает items. */
 const CategoryFilterComponent = ({
@@ -27,6 +34,13 @@ const CategoryFilterComponent = ({
   direction = "row",
   showAllLabel = "Все",
   backgroundColor = "#FFFFFF",
+  backgroundClip: _backgroundClip,
+  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
+  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
+  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
+  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
+  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
+  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
 }: CategoryFilterProps) => {
   const { domain } = useSiteCollections()
   const router = useRouter()
@@ -190,6 +204,14 @@ const CategoryFilterComponent = ({
         padding: 12,
         borderRadius: 4,
         boxSizing: "border-box",
+        ...resolveCraftVisualEffectsStyle({
+          mixBlendMode,
+          opacityPercent,
+          outlineStyleMode,
+          outlineWidth,
+          outlineOffset,
+          outlineColor,
+        }),
       }}
     >
       {loading ? (

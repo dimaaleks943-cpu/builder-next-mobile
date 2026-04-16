@@ -14,8 +14,13 @@ import { useStorefrontPage } from "@/components/StorefrontPageContext";
 import { usePageLocale } from "@/components/PageLocaleContext";
 import { prefixPublicPath } from "@/lib/localeFromPath";
 import { resolveTranslationText } from "@/lib/resolvePageTranslation";
+import {
+  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+  resolveCraftVisualEffectsStyle,
+  type CraftVisualEffectsProps,
+} from "@/lib/craftVisualEffects";
 
-interface LinkTextProps {
+interface LinkTextProps extends CraftVisualEffectsProps {
   text?: string;
   i18nKey?: string | null;
   collectionField?: string | null;
@@ -45,6 +50,8 @@ interface LinkTextProps {
   paddingBottom?: number;
   paddingLeft?: number;
   backgroundColor?: string;
+  /** Зарезервировано под будущий UI; в рендере пока не используется */
+  backgroundClip?: string;
 }
 
 export const LinkText = ({
@@ -77,6 +84,13 @@ export const LinkText = ({
   paddingBottom = 0,
   paddingLeft = 0,
   backgroundColor,
+  backgroundClip: _backgroundClip,
+  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
+  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
+  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
+  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
+  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
+  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
 }: LinkTextProps) => {
   const contentData = useContentData();
   const { sitePages } = useSiteCollections();
@@ -230,6 +244,14 @@ export const LinkText = ({
         paddingLeft,
         boxSizing: "border-box",
         ...(backgroundColor ? { backgroundColor } : {}),
+        ...resolveCraftVisualEffectsStyle({
+          mixBlendMode,
+          opacityPercent,
+          outlineStyleMode,
+          outlineWidth,
+          outlineOffset,
+          outlineColor,
+        }),
       }}
     >
       {displayText}

@@ -1,7 +1,12 @@
 import type { ReactNode } from "react"
 import { withOpacity } from "@/lib/colorUtils"
+import {
+  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+  resolveCraftVisualEffectsStyle,
+  type CraftVisualEffectsProps,
+} from "@/lib/craftVisualEffects"
 
-interface BlockProps {
+interface BlockProps extends CraftVisualEffectsProps {
   children?: ReactNode
   fullSize?: boolean
   layout?: "block" | "flex" | "grid" | "absolute"
@@ -41,6 +46,8 @@ interface BlockProps {
   borderStyle?: "none" | "solid" | "dashed"
   borderOpacity?: number
   backgroundColor?: string
+  /** Зарезервировано под будущий UI; в рендере пока не используется */
+  backgroundClip?: string
 }
 
 export const Block = ({
@@ -73,6 +80,13 @@ export const Block = ({
   borderStyle = "solid",
   borderOpacity = 1,
   backgroundColor = "#FFFFFF",
+  backgroundClip: _backgroundClip,
+  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
+  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
+  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
+  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
+  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
+  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
 }: BlockProps) => {
   const hasCustomBorder =
     borderTopWidth > 0 ||
@@ -139,6 +153,14 @@ export const Block = ({
         backgroundColor,
         boxShadow: fullSize ? "none" : "0 1px 2px rgba(15, 23, 42, 0.08)",
         boxSizing: "border-box",
+        ...resolveCraftVisualEffectsStyle({
+          mixBlendMode,
+          opacityPercent,
+          outlineStyleMode,
+          outlineWidth,
+          outlineOffset,
+          outlineColor,
+        }),
       }}
     >
       {children}

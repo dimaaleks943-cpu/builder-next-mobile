@@ -8,6 +8,13 @@ import { useSiteCollections } from "@/components/SiteCollectionsContext"
 import { useCollectionFilterScope } from "@/components/CollectionFilterScopeContext"
 import { getCollectionItemsCacheKey } from "@/lib/collectionItemsCacheKey"
 import type { IContentItem } from "@/lib/contentTypes"
+import {
+  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+  resolveCraftVisualEffectsStyle,
+  type CraftMixBlendMode,
+  type CraftOutlineStyleMode,
+  type CraftVisualEffectsProps,
+} from "@/lib/craftVisualEffects"
 
 /**
  * Маркер «эффект ещё не сопоставлял категорию с предыдущим запуском».
@@ -17,7 +24,7 @@ const CATEGORY_FETCH_INIT = Symbol("categoryFetchInit")
 
 type CellLayoutMode = "block" | "flex" | "grid" | "absolute"
 
-interface ContentListProps {
+interface ContentListProps extends CraftVisualEffectsProps {
   /** Должен совпадать с `filterScope` на блоке фильтра категорий, если используется. */
   filterScope?: string
   selectedSource?: string
@@ -48,6 +55,15 @@ interface ContentListProps {
   backgroundColor?: string
   /** Фон ячейки из первой ContentListCell в конструкторе. */
   cellBackgroundColor?: string | null
+  /** Эффекты первой ячейки (шаблон) — на обёртке каждой ячейки в рантайме. */
+  cellMixBlendMode?: CraftMixBlendMode | null
+  cellOpacityPercent?: number | null
+  cellOutlineStyleMode?: CraftOutlineStyleMode | null
+  cellOutlineWidth?: number | null
+  cellOutlineOffset?: number | null
+  cellOutlineColor?: string | null
+  /** Зарезервировано под будущий UI; в рендере пока не используется */
+  backgroundClip?: string
   children?: ComponentNode[]
 }
 
@@ -79,8 +95,29 @@ export const ContentList = ({
   cellPlaceItemsX,
   backgroundColor = "#FFFFFF",
   cellBackgroundColor,
+  backgroundClip: _backgroundClip,
+  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
+  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
+  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
+  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
+  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
+  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
+  cellMixBlendMode = null,
+  cellOpacityPercent = null,
+  cellOutlineStyleMode = null,
+  cellOutlineWidth = null,
+  cellOutlineOffset = null,
+  cellOutlineColor = null,
   children: childrenProp,
 }: ContentListProps) => {
+  const listRootEffects = resolveCraftVisualEffectsStyle({
+    mixBlendMode,
+    opacityPercent,
+    outlineStyleMode,
+    outlineWidth,
+    outlineOffset,
+    outlineColor,
+  })
   const itemsPerRow: number = itemsPerRowProp ?? 1
   const children: ComponentNode[] = childrenProp ?? []
   const { domain, collectionItemsByKey, setItemsForKey } = useSiteCollections()
@@ -228,6 +265,7 @@ export const ContentList = ({
           flexDirection: "column",
           minHeight: 300,
           backgroundColor,
+          ...listRootEffects,
         }}
         aria-busy={blockingLoading ? true : undefined}
       />
@@ -243,6 +281,7 @@ export const ContentList = ({
           flexDirection: "column",
           minHeight: 300,
           backgroundColor,
+          ...listRootEffects,
         }}
       />
     )
@@ -260,6 +299,7 @@ export const ContentList = ({
         position: "relative",
         width: "100%",
         backgroundColor,
+        ...listRootEffects,
       }}
       aria-busy={filterLoading ? true : undefined}
     >
@@ -297,6 +337,12 @@ export const ContentList = ({
                   placeItemsY={cellPlaceItemsY ?? undefined}
                   placeItemsX={cellPlaceItemsX ?? undefined}
                   backgroundColor={cellBackgroundColor ?? undefined}
+                  cellMixBlendMode={cellMixBlendMode ?? undefined}
+                  cellOpacityPercent={cellOpacityPercent ?? undefined}
+                  cellOutlineStyleMode={cellOutlineStyleMode ?? undefined}
+                  cellOutlineWidth={cellOutlineWidth ?? undefined}
+                  cellOutlineOffset={cellOutlineOffset ?? undefined}
+                  cellOutlineColor={cellOutlineColor ?? undefined}
                 >
                   {children}
                 </ContentListItem>
@@ -351,6 +397,12 @@ interface ContentListItemProps {
   placeItemsY?: "start" | "center" | "end" | "stretch" | "baseline"
   placeItemsX?: "start" | "center" | "end" | "stretch" | "baseline"
   backgroundColor?: string
+  cellMixBlendMode?: CraftMixBlendMode
+  cellOpacityPercent?: number
+  cellOutlineStyleMode?: CraftOutlineStyleMode
+  cellOutlineWidth?: number
+  cellOutlineOffset?: number
+  cellOutlineColor?: string
   children: ComponentNode[]
 }
 
@@ -373,8 +425,22 @@ const ContentListItem = ({
   placeItemsY,
   placeItemsX,
   backgroundColor,
+  cellMixBlendMode,
+  cellOpacityPercent,
+  cellOutlineStyleMode,
+  cellOutlineWidth,
+  cellOutlineOffset,
+  cellOutlineColor,
   children,
 }: ContentListItemProps) => {
+  const cellEffects = resolveCraftVisualEffectsStyle({
+    mixBlendMode: cellMixBlendMode,
+    opacityPercent: cellOpacityPercent,
+    outlineStyleMode: cellOutlineStyleMode,
+    outlineWidth: cellOutlineWidth,
+    outlineOffset: cellOutlineOffset,
+    outlineColor: cellOutlineColor,
+  })
   const displayStyle =
     layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block"
 
@@ -419,6 +485,7 @@ const ContentListItem = ({
               : undefined,
           boxSizing: "border-box",
           ...(backgroundColor ? { backgroundColor } : {}),
+          ...cellEffects,
         }}
       >
         {children && children.length > 0 ? (

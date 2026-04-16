@@ -1,7 +1,12 @@
 import type { ReactNode } from "react"
 import { withOpacity } from "@/lib/colorUtils"
+import {
+  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+  resolveCraftVisualEffectsStyle,
+  type CraftVisualEffectsProps,
+} from "@/lib/craftVisualEffects"
 
-interface BodyProps {
+interface BodyProps extends CraftVisualEffectsProps {
   children?: ReactNode
   layout?: "block" | "flex" | "grid" | "absolute"
   marginTop?: number
@@ -21,6 +26,8 @@ interface BodyProps {
   borderStyle?: "none" | "solid" | "dashed"
   borderOpacity?: number
   backgroundColor?: string
+  /** Зарезервировано под будущий UI; в рендере пока не используется */
+  backgroundClip?: string
 }
 
 export const Body = ({
@@ -43,6 +50,13 @@ export const Body = ({
   borderStyle = "solid",
   borderOpacity = 1,
   backgroundColor = "#FFFFFF",
+  backgroundClip: _backgroundClip,
+  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
+  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
+  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
+  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
+  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
+  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
 }: BodyProps) => {
   const hasBorder =
     borderTopWidth > 0 ||
@@ -79,6 +93,14 @@ export const Body = ({
         borderStyle: hasBorder ? borderStyle : "solid",
         backgroundColor,
         boxSizing: "border-box",
+        ...resolveCraftVisualEffectsStyle({
+          mixBlendMode,
+          opacityPercent,
+          outlineStyleMode,
+          outlineWidth,
+          outlineOffset,
+          outlineColor,
+        }),
       }}
     >
       {children}

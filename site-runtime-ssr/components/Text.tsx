@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useMemo, type CSSProperties } from "react"
 import { useContentData } from "./ContentDataContext"
 import { usePageLocale } from "./PageLocaleContext"
 import {
@@ -7,8 +7,13 @@ import {
 } from "@/lib/contentFieldValue"
 import type { IContentItem } from "@/lib/contentTypes"
 import { resolveTranslationText } from "@/lib/resolvePageTranslation"
+import {
+  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+  resolveCraftVisualEffectsStyle,
+  type CraftVisualEffectsProps,
+} from "@/lib/craftVisualEffects"
 
-interface TextProps {
+interface TextProps extends CraftVisualEffectsProps {
   text?: string
   i18nKey?: string | null
   collectionField?: string | null
@@ -33,6 +38,8 @@ interface TextProps {
   paddingBottom?: number
   paddingLeft?: number
   backgroundColor?: string
+  /** Зарезервировано под будущий UI; в рендере пока не используется */
+  backgroundClip?: string
 }
 
 export const Text = ({
@@ -60,6 +67,13 @@ export const Text = ({
   paddingBottom = 0,
   paddingLeft = 0,
   backgroundColor,
+  backgroundClip: _backgroundClip,
+  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
+  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
+  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
+  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
+  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
+  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
 }: TextProps) => {
   const contentData = useContentData()
   const pageLocale = usePageLocale()
@@ -98,34 +112,46 @@ export const Text = ({
     .filter(Boolean)
     .join(" ") || "none"
 
+  const innerStyle: CSSProperties = {
+    display: "inline-block",
+    fontSize,
+    fontWeight,
+    textAlign,
+    color,
+    fontFamily,
+    lineHeight: typeof lineHeight === "number" ? `${lineHeight}px` : undefined,
+    textTransform,
+    fontStyle: isItalic ? "italic" : "normal",
+    textDecoration,
+    WebkitTextStrokeWidth: strokeWidth ? strokeWidth : undefined,
+    WebkitTextStrokeColor: strokeColor,
+    marginTop,
+    marginRight,
+    marginBottom,
+    marginLeft,
+    paddingTop,
+    paddingRight,
+    paddingBottom,
+    paddingLeft,
+    boxSizing: "border-box",
+    ...(backgroundColor ? { backgroundColor } : {}),
+  }
+
   return (
     <span
       style={{
         display: "inline-block",
-        fontSize,
-        fontWeight,
-        textAlign,
-        color,
-        fontFamily,
-        lineHeight: typeof lineHeight === "number" ? `${lineHeight}px` : undefined,
-        textTransform,
-        fontStyle: isItalic ? "italic" : "normal",
-        textDecoration,
-        WebkitTextStrokeWidth: strokeWidth ? strokeWidth : undefined,
-        WebkitTextStrokeColor: strokeColor,
-        marginTop,
-        marginRight,
-        marginBottom,
-        marginLeft,
-        paddingTop,
-        paddingRight,
-        paddingBottom,
-        paddingLeft,
-        boxSizing: "border-box",
-        ...(backgroundColor ? { backgroundColor } : {}),
+        ...resolveCraftVisualEffectsStyle({
+          mixBlendMode,
+          opacityPercent,
+          outlineStyleMode,
+          outlineWidth,
+          outlineOffset,
+          outlineColor,
+        }),
       }}
     >
-      {displayText}
+      <span style={innerStyle}>{displayText}</span>
     </span>
   )
 }

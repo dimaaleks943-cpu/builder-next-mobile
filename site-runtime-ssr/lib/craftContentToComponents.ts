@@ -175,6 +175,12 @@ const buildNodeTree = (
       cellPlaceItemsY: cellProps.placeItemsY ?? null,
       cellPlaceItemsX: cellProps.placeItemsX ?? null,
       cellBackgroundColor: cellProps.backgroundColor ?? null,
+      cellMixBlendMode: cellProps.mixBlendMode ?? null,
+      cellOpacityPercent: cellProps.opacityPercent ?? null,
+      cellOutlineStyleMode: cellProps.outlineStyleMode ?? null,
+      cellOutlineWidth: cellProps.outlineWidth ?? null,
+      cellOutlineOffset: cellProps.outlineOffset ?? null,
+      cellOutlineColor: cellProps.outlineColor ?? null,
     }
 
     return {

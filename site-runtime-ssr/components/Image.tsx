@@ -1,7 +1,12 @@
 import { useMemo } from "react"
 import { useContentData } from "./ContentDataContext"
+import {
+  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+  resolveCraftVisualEffectsStyle,
+  type CraftVisualEffectsProps,
+} from "@/lib/craftVisualEffects"
 
-interface ImageProps {
+interface ImageProps extends CraftVisualEffectsProps {
   src?: string
   alt?: string
   width?: number
@@ -9,6 +14,8 @@ interface ImageProps {
   borderRadius?: number
   collectionField?: string | null
   backgroundColor?: string
+  /** Зарезервировано под будущий UI; в рендере пока не используется */
+  backgroundClip?: string
 }
 
 const DEFAULT_PLACEHOLDER =
@@ -22,6 +29,13 @@ export const Image = ({
   borderRadius = 8,
   collectionField = null,
   backgroundColor = "#F9F9F9",
+  backgroundClip: _backgroundClip,
+  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
+  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
+  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
+  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
+  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
+  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
 }: ImageProps) => {
   const contentData = useContentData()
 
@@ -49,6 +63,14 @@ export const Image = ({
         borderRadius,
         boxSizing: "border-box",
         backgroundColor,
+        ...resolveCraftVisualEffectsStyle({
+          mixBlendMode,
+          opacityPercent,
+          outlineStyleMode,
+          outlineWidth,
+          outlineOffset,
+          outlineColor,
+        }),
       }}
     />
   )
