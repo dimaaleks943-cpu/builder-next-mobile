@@ -258,6 +258,23 @@ export const craftContentToComponents = (
     }
   }
 
+  const rootTypeName = resolveTypeName(root.type, "ROOT")
+  const rootIsBody =
+    rootTypeName === "Body" || rootTypeName === "CraftBody"
+
+  if (rootIsBody) {
+    if (result.length === 0) {
+      return []
+    }
+    return [
+      {
+        type: "Body",
+        props: root.props ?? {},
+        children: result,
+      },
+    ]
+  }
+
   return result
 }
 
