@@ -12,6 +12,11 @@ import type {
   PlaceItemsValue,
 } from "../builder.enum"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
+import {
+  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+  resolveCraftVisualEffectsStyle,
+  type CraftVisualEffectsProps,
+} from "./craftVisualEffects.ts"
 
 export type BlockProps = {
   children?: ReactNode
@@ -49,7 +54,7 @@ export type BlockProps = {
   backgroundColor?: string
   /** Зарезервировано под будущий UI; в рендере пока не используется */
   backgroundClip?: string
-}
+} & CraftVisualEffectsProps
 
 export const CraftBlock = ({
   children,
@@ -82,6 +87,12 @@ export const CraftBlock = ({
   borderOpacity = 1,
   backgroundColor,
   backgroundClip: _backgroundClip,
+  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
+  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
+  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
+  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
+  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
+  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
 }: BlockProps) => {
   const {
     connectors: { connect, drag },
@@ -166,6 +177,14 @@ export const CraftBlock = ({
         boxSizing: "border-box",
         // alignItems в конце, чтобы не перезаписаться при мерже/каскаде стилей.
         alignItems: layout === "flex" ? flexAlignItems : undefined,
+        ...resolveCraftVisualEffectsStyle({
+          mixBlendMode,
+          opacityPercent,
+          outlineStyleMode,
+          outlineWidth,
+          outlineOffset,
+          outlineColor,
+        }),
       }}
     >
       {selected && (
@@ -212,6 +231,7 @@ export const CraftBlock = ({
     borderOpacity: 1,
     backgroundColor: undefined,
     backgroundClip: undefined,
+    ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
   },
   rules: {
     canMoveIn: () => true,

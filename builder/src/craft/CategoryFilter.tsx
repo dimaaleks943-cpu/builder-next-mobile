@@ -8,6 +8,11 @@ import { useCollectionFilterScope } from "../pages/builder/context/CollectionFil
 import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
 import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
+import {
+  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+  resolveCraftVisualEffectsStyle,
+  type CraftVisualEffectsProps,
+} from "./craftVisualEffects.ts"
 
 /**
  * Пропсы блока «Фильтр категорий». Выбор пользователя хранится в {@link useCollectionFilterScope}
@@ -25,7 +30,7 @@ type CategoryFilterProps = {
   backgroundColor?: string
   /** Зарезервировано под будущий UI; в рендере пока не используется */
   backgroundClip?: string
-}
+} & CraftVisualEffectsProps
 
 /**
  * Редакторский блок фильтра: загрузка категорий через RTK Query и запись выбора в `CollectionFilterScope`.
@@ -195,6 +200,7 @@ export const CraftCategoryFilter = () => {
         overflow: "visible",
         position: "relative",
         minHeight: 48,
+        ...resolveCraftVisualEffectsStyle(props),
       }}
     >
       {selected && (
@@ -483,5 +489,6 @@ export const CraftCategoryFilter = () => {
     showAllLabel: "Все",
     backgroundColor: undefined,
     backgroundClip: undefined,
+    ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
   },
 }

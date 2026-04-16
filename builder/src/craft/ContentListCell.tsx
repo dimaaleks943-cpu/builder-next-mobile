@@ -11,6 +11,11 @@ import type {
   PlaceItemsValue,
 } from "../builder.enum"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
+import {
+  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+  resolveCraftVisualEffectsStyle,
+  type CraftVisualEffectsProps,
+} from "./craftVisualEffects.ts"
 
 export type ContentListCellProps = {
   children?: ReactNode
@@ -27,7 +32,7 @@ export type ContentListCellProps = {
   backgroundColor?: string
   /** Зарезервировано под будущий UI; в рендере пока не используется */
   backgroundClip?: string
-}
+} & CraftVisualEffectsProps
 
 /**
  * Одна ячейка списка коллекции. Canvas: в неё можно перетащить элементы (Text и т.д.).
@@ -50,6 +55,12 @@ export const CraftContentListCell = ({
   placeItemsX,
   backgroundColor,
   backgroundClip: _backgroundClip,
+  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
+  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
+  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
+  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
+  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
+  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
 }: ContentListCellProps) => {
   const {
     connectors: { connect, drag },
@@ -108,6 +119,14 @@ export const CraftContentListCell = ({
         // alignItems в конце объекта, чтобы не перезаписаться другими стилями при мерже/каскаде.
         alignItems:
           layout === "flex" ? (flexAlignItems ?? "flex-start") : "flex-start",
+        ...resolveCraftVisualEffectsStyle({
+          mixBlendMode,
+          opacityPercent,
+          outlineStyleMode,
+          outlineWidth,
+          outlineOffset,
+          outlineColor,
+        }),
       }}
     >
       <ContentListCellContext.Provider value={true}>
@@ -132,6 +151,7 @@ export const CraftContentListCell = ({
     placeItemsX: undefined,
     backgroundColor: undefined,
     backgroundClip: undefined,
+    ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
   },
   rules: {
     canMoveIn: () => true,

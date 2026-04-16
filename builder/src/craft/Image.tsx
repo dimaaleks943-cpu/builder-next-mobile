@@ -8,8 +8,13 @@ import { useContentListData } from "../pages/builder/context/ContentListDataCont
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import { ImageSettingsFields } from "../pages/builder/settingsCraftComponents"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
+import {
+  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+  resolveCraftVisualEffectsStyle,
+  type CraftVisualEffectsProps,
+} from "./craftVisualEffects.ts"
 
-interface Props {
+interface Props extends CraftVisualEffectsProps {
   src?: string;
   alt?: string;
   width?: number;
@@ -31,6 +36,12 @@ export const CraftImage = ({
   collectionField = null,
   backgroundColor,
   backgroundClip: _backgroundClip,
+  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
+  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
+  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
+  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
+  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
+  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
 }: Props) => {
   const {
     connectors: { connect, drag },
@@ -80,6 +91,14 @@ export const CraftImage = ({
     boxSizing: "border-box",
     border: selected ? `2px solid ${COLORS.purple400}` : "1px solid transparent",
     backgroundColor: backgroundColor ?? COLORS.gray100,
+    ...resolveCraftVisualEffectsStyle({
+      mixBlendMode,
+      opacityPercent,
+      outlineStyleMode,
+      outlineWidth,
+      outlineOffset,
+      outlineColor,
+    }),
   }
 
   const openSettings = useCallback(
@@ -152,6 +171,7 @@ export const CraftImage = ({
     collectionField: null,
     backgroundColor: undefined,
     backgroundClip: undefined,
+    ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
   },
 }
 

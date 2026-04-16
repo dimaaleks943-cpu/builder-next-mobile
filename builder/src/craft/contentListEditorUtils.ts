@@ -76,6 +76,7 @@ type EditorStateLike = {
 /**
  * Fingerprint поддерева по type+props всех узлов (корень, затем потомки в порядке descendants(true)).
  * Совпадает по смыслу с цепочкой JSON.stringify({ type, props }) из getSerializedNodes(), без сериализации всего стора.
+ * В `props` сериализуется весь объект узла — новые поля (например визуальные эффекты крафта) попадают в подпись и soft-sync без отдельного whitelist.
  */
 export const buildSubtreeTypePropsFingerprint = (
   state: EditorStateLike,

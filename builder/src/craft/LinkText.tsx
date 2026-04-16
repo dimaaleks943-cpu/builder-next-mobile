@@ -8,6 +8,11 @@ import { useRightPanelContext } from "../pages/builder/context/RightPanelContext
 import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
 import { LinkTextSettingsFields } from "../pages/builder/settingsCraftComponents"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
+import {
+  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+  resolveCraftVisualEffectsStyle,
+  type CraftVisualEffectsProps,
+} from "./craftVisualEffects.ts"
 import { useBuilderModeContext } from "../pages/builder/context/BuilderModeContext.tsx"
 import {
   commitCraftTextDraft,
@@ -16,7 +21,7 @@ import {
 
 export type TextAlign = "left" | "center" | "right"
 
-export interface LinkTextProps {
+export interface LinkTextProps extends CraftVisualEffectsProps {
   text?: string
   i18nKey?: string | null
   collectionField?: string | null
@@ -78,6 +83,12 @@ export const CraftLinkText = ({
   paddingLeft = 0,
   backgroundColor,
   backgroundClip: _backgroundClip,
+  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
+  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
+  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
+  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
+  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
+  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
 }: LinkTextProps) => {
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(text)
@@ -245,6 +256,15 @@ export const CraftLinkText = ({
           color: "inherit",
           position: "relative",
           display: "inline-block",
+          maxWidth: "max-content",
+          ...resolveCraftVisualEffectsStyle({
+            mixBlendMode,
+            opacityPercent,
+            outlineStyleMode,
+            outlineWidth,
+            outlineOffset,
+            outlineColor,
+          }),
         }}
       >
         {selected && (
@@ -325,5 +345,6 @@ export const CraftLinkText = ({
     paddingLeft: 0,
     backgroundColor: undefined,
     backgroundClip: undefined,
+    ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
   },
 }

@@ -3,6 +3,11 @@ import type { ReactNode } from "react"
 import { COLORS } from "../theme/colors"
 import { withOpacity } from "../utils/colorUtils"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
+import {
+  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+  resolveCraftVisualEffectsStyle,
+  type CraftVisualEffectsProps,
+} from "./craftVisualEffects.ts"
 
 export type BodyLayoutMode = "block" | "flex" | "grid" | "absolute"
 
@@ -28,7 +33,7 @@ export type BodyProps = {
   backgroundColor?: string
   /** Зарезервировано под будущий UI; в рендере пока не используется */
   backgroundClip?: string
-}
+} & CraftVisualEffectsProps
 
 // Root component используется только как стартовый элемент холста, не удаляется
 export const CraftBody = ({
@@ -52,6 +57,12 @@ export const CraftBody = ({
   borderOpacity = 1,
   backgroundColor,
   backgroundClip: _backgroundClip,
+  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
+  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
+  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
+  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
+  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
+  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
 }: BodyProps) => {
   const {
     connectors: { connect, drag },
@@ -99,6 +110,14 @@ export const CraftBody = ({
         borderLeftWidth: selected ? 2 : hasCustomBorder ? borderLeftWidth : 0,
         backgroundColor: backgroundColor ?? COLORS.white,
         boxSizing: "border-box",
+        ...resolveCraftVisualEffectsStyle({
+          mixBlendMode,
+          opacityPercent,
+          outlineStyleMode,
+          outlineWidth,
+          outlineOffset,
+          outlineColor,
+        }),
       }}
     >
       {children}
@@ -128,6 +147,7 @@ export const CraftBody = ({
     borderOpacity: 1,
     backgroundColor: undefined,
     backgroundClip: undefined,
+    ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
   },
   rules: {
     canMoveIn: () => true,

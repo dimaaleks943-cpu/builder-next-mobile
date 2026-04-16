@@ -19,6 +19,11 @@ import {
   typesMatch,
 } from "./contentListEditorUtils"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
+import {
+  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+  resolveCraftVisualEffectsStyle,
+  type CraftVisualEffectsProps,
+} from "./craftVisualEffects.ts"
 import { getCollectionItemsCacheKey } from "../utils/collectionItemsCacheKey"
 
 export type ContentListProps = {
@@ -32,7 +37,7 @@ export type ContentListProps = {
   backgroundColor?: string
   /** Зарезервировано под будущий UI; в рендере пока не используется */
   backgroundClip?: string
-}
+} & CraftVisualEffectsProps
 
 /**
  * Список контента (коллекция) с шаблоном ячеек и синхронизацией.
@@ -469,6 +474,7 @@ export const CraftContentList = ({}: ContentListProps) => {
         borderRadius: 4,
         overflow: "visible",
         position: "relative",
+        ...resolveCraftVisualEffectsStyle(props),
       }}
     >
       {selected && (
@@ -809,6 +815,7 @@ export const CraftContentList = ({}: ContentListProps) => {
     filterScope: "",
     backgroundColor: undefined,
     backgroundClip: undefined,
+    ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
   },
   rules: {
     canMoveIn: (nodes: { data: { type: { resolvedName?: string } } }[]) =>

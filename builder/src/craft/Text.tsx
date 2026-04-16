@@ -9,6 +9,11 @@ import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
 import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 import { TextSettingsFields } from "../pages/builder/settingsCraftComponents"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
+import {
+  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+  resolveCraftVisualEffectsStyle,
+  type CraftVisualEffectsProps,
+} from "./craftVisualEffects.ts"
 import { useBuilderModeContext } from "../pages/builder/context/BuilderModeContext.tsx"
 import {
   commitCraftTextDraft,
@@ -17,7 +22,7 @@ import {
 
 export type TextAlign = "left" | "center" | "right"
 
-export interface TextProps {
+export interface TextProps extends CraftVisualEffectsProps {
   text?: string
   i18nKey?: string | null
   collectionField?: string | null
@@ -72,6 +77,12 @@ export const CraftText = ({
   paddingLeft = 0,
   backgroundColor,
   backgroundClip: _backgroundClip,
+  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
+  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
+  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
+  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
+  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
+  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
 }: TextProps) => {
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(text)
@@ -231,17 +242,24 @@ export const CraftText = ({
     ...(backgroundColor ? { backgroundColor } : {}),
   }
 
+  const outerWrapperStyle: CSSProperties = {
+    display: "inline-block",
+    ...resolveCraftVisualEffectsStyle({
+      mixBlendMode,
+      opacityPercent,
+      outlineStyleMode,
+      outlineWidth,
+      outlineOffset,
+      outlineColor,
+    }),
+    ...(selected ? { position: "relative" as const, zIndex: 1 } : {}),
+  }
+
   const showSettingsButton = isInsideContentList && selected
 
   return (
     <>
-      <span
-        style={
-          selected
-            ? { position: "relative" as const, display: "inline-block", zIndex: 1 }
-            : undefined
-        }
-      >
+      <span style={outerWrapperStyle}>
         {selected && (
         <InlineSettingsBadge
             ref={badgeRef}
@@ -319,6 +337,7 @@ export const CraftText = ({
     paddingLeft: 0,
     backgroundColor: undefined,
     backgroundClip: undefined,
+    ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
   },
 }
 
