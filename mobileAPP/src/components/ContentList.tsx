@@ -50,6 +50,8 @@ interface ContentListProps {
     | null;
   cellPlaceItemsY?: "start" | "center" | "end" | "stretch" | "baseline" | null;
   cellPlaceItemsX?: "start" | "center" | "end" | "stretch" | "baseline" | null;
+  backgroundColor?: string;
+  cellBackgroundColor?: string | null;
   children?: ComponentNode[];
 }
 
@@ -68,6 +70,8 @@ export const ContentList = ({
   cellFlexAlignItems,
   cellPlaceItemsY,
   cellPlaceItemsX,
+  backgroundColor = "#FFFFFF",
+  cellBackgroundColor,
   children: childrenProp,
 }: ContentListProps) => {
   const itemsPerRow: number = itemsPerRowProp ?? 1;
@@ -210,14 +214,14 @@ export const ContentList = ({
   if (!selectedSource || blockingLoading) {
     return (
       <View
-        style={styles.placeholder}
+        style={[styles.placeholder, { backgroundColor }]}
         accessibilityState={blockingLoading ? { busy: true } : undefined}
       />
     );
   }
 
   if (collectionItems.length === 0) {
-    return <View style={styles.placeholder}/>;
+    return <View style={[styles.placeholder, { backgroundColor }]}/>;
   }
 
   const rows: IContentItem[][] = [];
@@ -229,7 +233,7 @@ export const ContentList = ({
   return (
     <ContentListProvider filterScope={scopeTrimmed || undefined}>
       <View
-        style={styles.listOuter}
+        style={[styles.listOuter, { backgroundColor }]}
         accessibilityState={filterLoading ? { busy: true } : undefined}
       >
         <View style={styles.root}>
@@ -256,6 +260,7 @@ export const ContentList = ({
                     flexAlignItems={cellFlexAlignItems ?? undefined}
                     placeItemsY={cellPlaceItemsY ?? undefined}
                     placeItemsX={cellPlaceItemsX ?? undefined}
+                    backgroundColor={cellBackgroundColor ?? undefined}
                   >
                     {children}
                   </ContentListItem>
@@ -301,6 +306,7 @@ interface ContentListItemProps {
     | "baseline";
   placeItemsY?: "start" | "center" | "end" | "stretch" | "baseline";
   placeItemsX?: "start" | "center" | "end" | "stretch" | "baseline";
+  backgroundColor?: string;
   children: ComponentNode[];
 }
 
@@ -333,6 +339,7 @@ const ContentListItem = ({
   flexAlignItems,
   placeItemsY,
   placeItemsX,
+  backgroundColor: cellBg,
   children,
 }: ContentListItemProps) => {
   const effectiveLayout = layout === "grid" ? "flex" : layout;
@@ -370,6 +377,7 @@ const ContentListItem = ({
             gap: gap != null && gap >= 0 ? gap : undefined,
             alignItems: alignItems ?? undefined,
             justifyContent: justifyContent ?? undefined,
+            ...(cellBg ? { backgroundColor: cellBg } : {}),
           },
         ]}
       >

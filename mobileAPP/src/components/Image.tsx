@@ -10,6 +10,7 @@ interface ImageProps {
   borderRadius?: number;
   /** todo кол-во полей для коллекций пока не поддерживаем в мобилке */
   collectionField?: string | null;
+  backgroundColor?: string;
 }
 
 export const Image = ({
@@ -19,6 +20,7 @@ export const Image = ({
   height,
   borderRadius = 8,
   collectionField = null,
+  backgroundColor = "#F9F9F9",
 }: ImageProps) => {
   const contentData = useContentData();
 
@@ -56,7 +58,7 @@ export const Image = ({
     minHeight: height ?? 140,
     borderRadius,
     resizeMode: "cover",
-    backgroundColor: "#F9F9F9",
+    backgroundColor,
   };
 
   return (

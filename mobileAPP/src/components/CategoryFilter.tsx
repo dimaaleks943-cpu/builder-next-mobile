@@ -22,6 +22,7 @@ export type CategoryFilterProps = {
   variant?: "buttons" | "radio" | "list";
   direction?: "row" | "column";
   showAllLabel?: string;
+  backgroundColor?: string;
 };
 
 /** Рендер кнопок/радио категорий и запись выбора в `CollectionFilterScope` для связанных списков. */
@@ -31,6 +32,7 @@ export const CategoryFilter = ({
   variant = "buttons",
   direction = "row",
   showAllLabel = "Все",
+  backgroundColor = "#FFFFFF",
 }: CategoryFilterProps) => {
   const navigation = useNavigation<any>();
   const { domain } = useSiteCollections();
@@ -113,6 +115,7 @@ export const CategoryFilter = ({
       style={[
         styles.nav,
         row ? styles.navRow : styles.navCol,
+        { backgroundColor },
       ]}
       accessibilityRole="none"
     >

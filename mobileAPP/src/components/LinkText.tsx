@@ -47,6 +47,7 @@ interface LinkTextProps {
   paddingRight?: number;
   paddingBottom?: number;
   paddingLeft?: number;
+  backgroundColor?: string;
 }
 
 export const LinkText = ({
@@ -75,6 +76,7 @@ export const LinkText = ({
   paddingRight = 0,
   paddingBottom = 0,
   paddingLeft = 0,
+  backgroundColor,
 }: LinkTextProps) => {
   const navigation = useNavigation<any>();
   const contentData = useContentData();
@@ -196,6 +198,7 @@ export const LinkText = ({
     paddingRight,
     paddingBottom,
     paddingLeft,
+    ...(backgroundColor ? { backgroundColor } : {}),
   } as TextStyle;
 
   return (

@@ -40,6 +40,10 @@ export const FULL_TO_SHORT = {
   borderStyle: "bs",
   borderOpacity: "bo",
 
+  // background
+  backgroundColor: "bgc",
+  backgroundClip: "bgcl",
+
   // size
   width: "w",
   height: "h",

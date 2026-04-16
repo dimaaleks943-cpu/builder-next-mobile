@@ -27,6 +27,7 @@ interface TextProps {
   paddingRight?: number;
   paddingBottom?: number;
   paddingLeft?: number;
+  backgroundColor?: string;
 }
 
 export const Text = ({
@@ -50,6 +51,7 @@ export const Text = ({
   paddingRight = 0,
   paddingBottom = 0,
   paddingLeft = 0,
+  backgroundColor,
 }: TextProps) => {
   const contentData = useContentData();
 
@@ -91,6 +93,7 @@ export const Text = ({
     paddingRight,
     paddingBottom,
     paddingLeft,
+    ...(backgroundColor ? { backgroundColor } : {}),
   } as TextStyle;
 
   return <RNText style={[styles.base, style]}>{displayText}</RNText>;
