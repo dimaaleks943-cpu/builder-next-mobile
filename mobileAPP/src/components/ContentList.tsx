@@ -17,6 +17,7 @@ import { useCollectionFilterScope } from "../contexts/CollectionFilterScopeConte
 import { useSiteCollections } from "../contexts/SiteCollectionsContext";
 import { getCollectionItemsCacheKey } from "../lib/collectionItemsCacheKey";
 import { renderComponent } from "../content/renderer";
+import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 
 /** См. site-runtime ContentList: отличаем первый запуск эффекта от смены категории, чтобы не дублировать fetch при SSR-кэше «Все». */
 const CATEGORY_FETCH_INIT = Symbol("categoryFetchInit");
@@ -52,6 +53,8 @@ interface ContentListProps {
   cellPlaceItemsX?: "start" | "center" | "end" | "stretch" | "baseline" | null;
   backgroundColor?: string;
   cellBackgroundColor?: string | null;
+  opacityPercent?: number;
+  cellOpacityPercent?: number | null;
   children?: ComponentNode[];
 }
 
@@ -72,8 +75,13 @@ export const ContentList = ({
   cellPlaceItemsX,
   backgroundColor = "#FFFFFF",
   cellBackgroundColor,
+  opacityPercent,
+  cellOpacityPercent = null,
   children: childrenProp,
 }: ContentListProps) => {
+  const listRootOpacityStyle = resolveCraftVisualEffectsRnStyle({
+    opacityPercent,
+  });
   const itemsPerRow: number = itemsPerRowProp ?? 1;
   const children: ComponentNode[] = childrenProp ?? [];
   const { domain, collectionItemsByKey, setItemsForKey } = useSiteCollections();
@@ -214,14 +222,22 @@ export const ContentList = ({
   if (!selectedSource || blockingLoading) {
     return (
       <View
-        style={[styles.placeholder, { backgroundColor }]}
+        style={[
+          styles.placeholder,
+          { backgroundColor },
+          listRootOpacityStyle,
+        ]}
         accessibilityState={blockingLoading ? { busy: true } : undefined}
       />
     );
   }
 
   if (collectionItems.length === 0) {
-    return <View style={[styles.placeholder, { backgroundColor }]}/>;
+    return (
+      <View
+        style={[styles.placeholder, { backgroundColor }, listRootOpacityStyle]}
+      />
+    );
   }
 
   const rows: IContentItem[][] = [];
@@ -233,7 +249,11 @@ export const ContentList = ({
   return (
     <ContentListProvider filterScope={scopeTrimmed || undefined}>
       <View
-        style={[styles.listOuter, { backgroundColor }]}
+        style={[
+          styles.listOuter,
+          { backgroundColor },
+          listRootOpacityStyle,
+        ]}
         accessibilityState={filterLoading ? { busy: true } : undefined}
       >
         <View style={styles.root}>
@@ -261,6 +281,7 @@ export const ContentList = ({
                     placeItemsY={cellPlaceItemsY ?? undefined}
                     placeItemsX={cellPlaceItemsX ?? undefined}
                     backgroundColor={cellBackgroundColor ?? undefined}
+                    cellOpacityPercent={cellOpacityPercent ?? undefined}
                   >
                     {children}
                   </ContentListItem>
@@ -307,6 +328,7 @@ interface ContentListItemProps {
   placeItemsY?: "start" | "center" | "end" | "stretch" | "baseline";
   placeItemsX?: "start" | "center" | "end" | "stretch" | "baseline";
   backgroundColor?: string;
+  cellOpacityPercent?: number;
   children: ComponentNode[];
 }
 
@@ -340,8 +362,12 @@ const ContentListItem = ({
   placeItemsY,
   placeItemsX,
   backgroundColor: cellBg,
+  cellOpacityPercent,
   children,
 }: ContentListItemProps) => {
+  const cellOpacityStyle = resolveCraftVisualEffectsRnStyle({
+    opacityPercent: cellOpacityPercent,
+  });
   const effectiveLayout = layout === "grid" ? "flex" : layout;
   const isFlex = effectiveLayout === "flex";
 
@@ -378,6 +404,7 @@ const ContentListItem = ({
             alignItems: alignItems ?? undefined,
             justifyContent: justifyContent ?? undefined,
             ...(cellBg ? { backgroundColor: cellBg } : {}),
+            ...cellOpacityStyle,
           },
         ]}
       >

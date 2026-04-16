@@ -142,6 +142,7 @@ const buildNodeTree = (
       cellPlaceItemsY: cellProps.placeItemsY ?? null,
       cellPlaceItemsX: cellProps.placeItemsX ?? null,
       cellBackgroundColor: cellProps.backgroundColor ?? null,
+      cellOpacityPercent: cellProps.opacityPercent ?? null,
     };
 
     return {

@@ -1,17 +1,28 @@
 import type { ReactNode } from "react";
 import { View, StyleSheet } from "react-native";
+import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 
 interface BodyProps {
-  children?: ReactNode;
   backgroundColor?: string;
+  opacityPercent?: number;
+  children?: ReactNode;
 }
 
 export const Body = ({
   children,
   backgroundColor = "#FFFFFF",
+  opacityPercent,
 }: BodyProps) => {
   return (
-    <View style={[styles.root, { backgroundColor }]}>{children}</View>
+    <View
+      style={[
+        styles.root,
+        { backgroundColor },
+        resolveCraftVisualEffectsRnStyle({ opacityPercent }),
+      ]}
+    >
+      {children}
+    </View>
   );
 };
 

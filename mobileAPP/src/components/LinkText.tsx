@@ -20,6 +20,7 @@ import {
   findContentItemField,
   getContentFieldDisplayValue,
 } from "../content/contentFieldValue";
+import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 
 interface LinkTextProps {
   text?: string;
@@ -48,6 +49,7 @@ interface LinkTextProps {
   paddingBottom?: number;
   paddingLeft?: number;
   backgroundColor?: string;
+  opacityPercent?: number;
 }
 
 export const LinkText = ({
@@ -77,6 +79,7 @@ export const LinkText = ({
   paddingBottom = 0,
   paddingLeft = 0,
   backgroundColor,
+  opacityPercent,
 }: LinkTextProps) => {
   const navigation = useNavigation<any>();
   const contentData = useContentData();
@@ -199,6 +202,7 @@ export const LinkText = ({
     paddingBottom,
     paddingLeft,
     ...(backgroundColor ? { backgroundColor } : {}),
+    ...resolveCraftVisualEffectsRnStyle({ opacityPercent }),
   } as TextStyle;
 
   return (

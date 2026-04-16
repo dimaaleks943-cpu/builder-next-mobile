@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { View, StyleSheet } from "react-native";
+import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 
 type BlockLayoutMode = "block" | "flex" | "absolute";
 
@@ -45,6 +46,8 @@ interface BlockProps {
   borderStyle?: "none" | "solid" | "dashed";
   borderOpacity?: number; // 0–1
   backgroundColor?: string;
+  /** 0–100; на RN маппится только в нативный `opacity`. */
+  opacityPercent?: number;
 }
 
 const withOpacity = (color: string, opacity: number): string => {
@@ -81,6 +84,7 @@ export const Block = ({
   borderStyle = "solid",
   borderOpacity = 1,
   backgroundColor = "#FFFFFF",
+  opacityPercent,
 }: BlockProps) => {
   const hasCustomBorder =
     borderTopWidth > 0 ||
@@ -151,6 +155,7 @@ export const Block = ({
           borderBottomWidth: hasCustomBorder ? borderBottomWidth : 0,
           borderLeftWidth: hasCustomBorder ? borderLeftWidth : 0,
           backgroundColor,
+          ...resolveCraftVisualEffectsRnStyle({ opacityPercent }),
         },
       ]}
     >

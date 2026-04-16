@@ -13,6 +13,7 @@ import { useCollectionFilterScope } from "../contexts/CollectionFilterScopeConte
 import { useStorefrontPage } from "../contexts/StorefrontPageContext";
 import { useSiteCollections } from "../contexts/SiteCollectionsContext";
 import { buildStorefrontCategoryUrl } from "../lib/catalogPathResolve";
+import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 
 /** Настройки блока с сервера; `filterScope` связывает фильтр с ContentList. */
 export type CategoryFilterProps = {
@@ -23,6 +24,7 @@ export type CategoryFilterProps = {
   direction?: "row" | "column";
   showAllLabel?: string;
   backgroundColor?: string;
+  opacityPercent?: number;
 };
 
 /** Рендер кнопок/радио категорий и запись выбора в `CollectionFilterScope` для связанных списков. */
@@ -33,6 +35,7 @@ export const CategoryFilter = ({
   direction = "row",
   showAllLabel = "Все",
   backgroundColor = "#FFFFFF",
+  opacityPercent,
 }: CategoryFilterProps) => {
   const navigation = useNavigation<any>();
   const { domain } = useSiteCollections();
@@ -116,6 +119,7 @@ export const CategoryFilter = ({
         styles.nav,
         row ? styles.navRow : styles.navCol,
         { backgroundColor },
+        resolveCraftVisualEffectsRnStyle({ opacityPercent }),
       ]}
       accessibilityRole="none"
     >

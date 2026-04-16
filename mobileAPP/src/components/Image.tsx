@@ -1,6 +1,7 @@
 import { Image as RNImage, StyleSheet, View, type ImageStyle } from "react-native";
 import { useContentData } from "../contexts/ContentDataContext";
 import { findContentItemField } from "../content/contentFieldValue";
+import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 
 interface ImageProps {
   src?: string;
@@ -11,6 +12,7 @@ interface ImageProps {
   /** todo кол-во полей для коллекций пока не поддерживаем в мобилке */
   collectionField?: string | null;
   backgroundColor?: string;
+  opacityPercent?: number;
 }
 
 export const Image = ({
@@ -21,6 +23,7 @@ export const Image = ({
   borderRadius = 8,
   collectionField = null,
   backgroundColor = "#F9F9F9",
+  opacityPercent,
 }: ImageProps) => {
   const contentData = useContentData();
 
@@ -59,6 +62,7 @@ export const Image = ({
     borderRadius,
     resizeMode: "cover",
     backgroundColor,
+    ...resolveCraftVisualEffectsRnStyle({ opacityPercent }),
   };
 
   return (

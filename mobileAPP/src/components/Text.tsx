@@ -5,6 +5,7 @@ import {
   findContentItemField,
   getContentFieldDisplayValue,
 } from "../content/contentFieldValue";
+import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 
 interface TextProps {
   text?: string;
@@ -28,6 +29,7 @@ interface TextProps {
   paddingBottom?: number;
   paddingLeft?: number;
   backgroundColor?: string;
+  opacityPercent?: number;
 }
 
 export const Text = ({
@@ -52,6 +54,7 @@ export const Text = ({
   paddingBottom = 0,
   paddingLeft = 0,
   backgroundColor,
+  opacityPercent,
 }: TextProps) => {
   const contentData = useContentData();
 
@@ -94,6 +97,7 @@ export const Text = ({
     paddingBottom,
     paddingLeft,
     ...(backgroundColor ? { backgroundColor } : {}),
+    ...resolveCraftVisualEffectsRnStyle({ opacityPercent }),
   } as TextStyle;
 
   return <RNText style={[styles.base, style]}>{displayText}</RNText>;
