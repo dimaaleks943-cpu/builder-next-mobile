@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, type DimensionValue } from "react-native";
 import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 
 type BlockLayoutMode = "block" | "flex" | "absolute";
@@ -21,6 +21,10 @@ type FlexAlignItems =
 interface BlockProps {
   children?: ReactNode;
   fullSize?: boolean;
+  /** Dip, `%`, or `auto` only (sanitized); web-only units from JSON are ignored. */
+  width?: string | number;
+  height?: string | number;
+  minHeight?: string | number;
   layout?: BlockLayoutMode | "grid"; //TODo врменно
   flexFlow?: FlexFlowOption;
   flexJustifyContent?: FlexJustifyContent;
@@ -62,6 +66,9 @@ const withOpacity = (color: string, opacity: number): string => {
 export const Block = ({
   children,
   fullSize,
+  width,
+  height,
+  minHeight,
   layout = "block",
   flexFlow = "row",
   flexJustifyContent,
@@ -137,8 +144,11 @@ export const Block = ({
           ...(isFlex && flexJustifyContent != null && { justifyContent: flexJustifyContent }),
           ...(isFlex && flexAlignItems != null && { alignItems: flexAlignItems }),
           ...gapStyle,
-          width: fullSize ? "100%" : undefined,
-          height: fullSize ? "100%" : undefined,
+          width: (fullSize ? "100%" : width) as DimensionValue | undefined,
+          height: (fullSize ? "100%" : height) as DimensionValue | undefined,
+          ...(!fullSize && minHeight !== undefined
+            ? { minHeight: minHeight as DimensionValue }
+            : {}),
           marginTop,
           marginRight,
           marginBottom,

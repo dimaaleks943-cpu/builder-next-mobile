@@ -47,7 +47,11 @@ export const FULL_TO_SHORT = {
   // size
   width: "w",
   height: "h",
+  minWidth: "miw",
   minHeight: "mih",
+  maxWidth: "maw",
+  maxHeight: "mah",
+  overflow: "ovf",
 
   // typography
   fontSize: "fz",

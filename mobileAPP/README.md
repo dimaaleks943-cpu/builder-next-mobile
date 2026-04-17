@@ -9,12 +9,23 @@
 - **Бэкенд конструктора (API):** список страниц сайта, контент страницы (JSON), content items для `ContentList`.
 - Конфигурация через переменные окружения Expo: базовый URL API, домен сайта, URL веб-версии для WebView.
 
+### Контракт поля `content` (публичный API для приложения)
+
+В ответе `GET …/v3/sites/{domain}/pages` (с заголовком `x-mobile-client`) **JSON дерева Craft всегда приходит в поле `content`**. Отдельного поля `content_mobile` в этом контракте для mobileAPP **нет**.
+
+Смысл строки в `content` задаётся флагом **`is_mobile_content`**:
+
+- **`is_mobile_content === true`** — в `content` лежит дерево для **нативного** рендера (RN-компоненты из `craftContentToComponents`).
+- **`is_mobile_content === false`** (или флаг отсутствует) — страницу нужно показывать **через WebView** по URL витрины (`WEB_VIEW_BASE_URL` + path); поле `content` для нативного разбора в этом режиме не используется.
+
+В extranet конструктор по-прежнему может хранить веб и мобильные снимки раздельно (`content` / `content_mobile` на стороне сохранения страницы); для **этого** клиента бэкенд отдаёт уже выбранный снимок в одном поле `content` и помечает его флагом.
+
 ## Flow отображения страницы
 
 1. По slug запрашивается страница с API (список страниц, затем выбор по slug).
 2. Нативный рендер включается только если одновременно:
    - `is_mobile_content === true`,
-   - `content != null`,
+   - в `content` есть непустая строка для парсинга,
    - после парсинга есть хотя бы один компонент (`nativeComponents.length > 0`).
 3. Во всех остальных случаях используется fallback в **WebView** (`WEB_VIEW_BASE_URL` + path).
 
@@ -54,7 +65,7 @@ npm start
 import { fetchSitePageBySlug } from "./src/api/sitePagesApi";
 
 const page = await fetchSitePageBySlug("/"); // корневая страница
-// if (page?.is_mobile_content && page?.content && nativeComponents.length > 0) -> native render
+// if (page?.is_mobile_content && page?.content && nativeComponents.length > 0) -> native render по page.content
 // else -> WebView fallback по WEB_VIEW_BASE_URL + slug
 ```
 
