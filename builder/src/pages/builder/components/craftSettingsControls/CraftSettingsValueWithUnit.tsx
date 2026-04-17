@@ -70,13 +70,14 @@ const viewStateFromProp = (
 }
 
 interface Props {
-  label: string
-  value: unknown
-  onCommit: (next: string | number | undefined) => void
-  allowedUnits?: readonly CraftSizeMenuToken[]
-  disabled?: boolean
-  placeholder?: string
-  mode?: FormatSizePropMode
+  label: string;
+  value: unknown;
+  onCommit: (next: string | number | undefined) => void;
+  allowedUnits?: readonly CraftSizeMenuToken[];
+  disabled?: boolean;
+  placeholder?: string;
+  mode?: FormatSizePropMode;
+  inputWidth?: string;
 }
 
 export const CraftSettingsValueWithUnit = ({
@@ -87,6 +88,7 @@ export const CraftSettingsValueWithUnit = ({
   disabled = false,
   placeholder = "Auto",
   mode = "web",
+  inputWidth,
 }: Props) => {
   const resolvedAllowed = allowedUnits ?? CRAFT_SIZE_MENU_UNITS_WEB
   const unitOptions = useMemo(
@@ -193,8 +195,6 @@ export const CraftSettingsValueWithUnit = ({
   return (
     <Box
       sx={{
-        flex: 1,
-        minWidth: 0,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -213,16 +213,18 @@ export const CraftSettingsValueWithUnit = ({
       </Typography>
       <Box
         sx={{
-          width: "100%",
+          width: inputWidth,
+          maxWidth: inputWidth,
+          display: "flex",
+          justifyContent: "space-between",
           flex: 4,
           minWidth: 0,
-          display: "flex",
           alignItems: "center",
           boxSizing: "border-box",
           borderRadius: "4px",
           border: `1px solid ${COLORS.purple100}`,
           backgroundColor: COLORS.white,
-          paddingLeft: "8px",
+          paddingLeft: "4px",
           paddingRight: "4px",
           "&:focus-within": {
             borderColor: COLORS.purple400,
@@ -243,8 +245,6 @@ export const CraftSettingsValueWithUnit = ({
           autoComplete="off"
           aria-label={label}
           sx={{
-            flex: 1,
-            minWidth: 0,
             border: "none",
             outline: "none",
             backgroundColor: "transparent",
@@ -252,6 +252,7 @@ export const CraftSettingsValueWithUnit = ({
             fontSize: "12px",
             lineHeight: "14px",
             color: "inherit",
+            width: "42px",
           }}
         />
         <Box
@@ -267,13 +268,12 @@ export const CraftSettingsValueWithUnit = ({
             setAnchorEl((prev) => (prev === el ? null : el))
           }}
           sx={{
-            flex: "0 0 auto",
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
             border: "none",
             margin: 0,
-            padding: "6px 4px 6px 6px",
+            padding: 0,
             fontFamily: "inherit",
             fontSize: "11px",
             lineHeight: "14px",
@@ -291,6 +291,7 @@ export const CraftSettingsValueWithUnit = ({
           {chipLabel}
         </Box>
       </Box>
+
       <Popper
         open={Boolean(anchorEl)}
         anchorEl={anchorEl}

@@ -1,4 +1,3 @@
-import type { ChangeEvent } from "react"
 import {
   Accordion,
   AccordionDetails,
@@ -8,15 +7,19 @@ import {
 } from "@mui/material"
 import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors.ts"
-import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSettingsInput.tsx"
 import { CraftSettingsValueWithUnit } from "../components/craftSettingsControls/CraftSettingsValueWithUnit.tsx"
 import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
 import { useBuilderModeContext } from "../context/BuilderModeContext.tsx"
 import { MODE_TYPE } from "../builder.enum.ts"
 import { CSS_SIZE_UNITS_RN } from "../../../utils/craftCssSizeProp.ts"
 
-type SizeNumericKey = "minWidth" | "minHeight"
-type SizeDimensionKey = "width" | "height"
+type SizeFieldKey =
+  | "width"
+  | "height"
+  | "minWidth"
+  | "minHeight"
+  | "maxWidth"
+  | "maxHeight"
 
 const OVERFLOW_OPTIONS = [
   { id: "auto", content: "Auto" },
@@ -25,19 +28,7 @@ const OVERFLOW_OPTIONS = [
   { id: "scroll", content: "Scroll" },
 ]
 
-const formatMaxInput = (value: unknown): string => {
-  if (value === undefined || value === null) return ""
-  if (typeof value === "number") return String(value)
-  return String(value)
-}
-
-const parseMaxSize = (raw: string): string | number | undefined => {
-  const t = raw.trim()
-  if (t === "") return undefined
-  if (/^none$/i.test(t)) return "none"
-  if (/^-?\d*\.?\d+$/.test(t)) return Number(t)
-  return t
-}
+const SIZE_VALUE_INPUT_WIDTH_PX = "80px";
 
 export const SizeAccordion = () => {
   const modeContext = useBuilderModeContext()
@@ -56,37 +47,8 @@ export const SizeAccordion = () => {
     return null
   }
 
-  const handleNumericSizeChange =
-    (key: SizeNumericKey) => (event: ChangeEvent<HTMLInputElement>) => {
-      const rawValue = event.target.value
-      actions.setProp(selectedId, (props: any) => {
-        if (rawValue === "") {
-          delete props[key]
-          return
-        }
-
-        const numericValue = Number(rawValue)
-        if (Number.isNaN(numericValue)) {
-          delete props[key]
-          return
-        }
-
-        props[key] = numericValue
-      })
-    }
-
-  const handleMaxSizeChange =
-    (key: "maxWidth" | "maxHeight") => (event: ChangeEvent<HTMLInputElement>) => {
-      const raw = event.target.value
-      actions.setProp(selectedId, (props: any) => {
-        const next = parseMaxSize(raw)
-        if (next === undefined) delete props[key]
-        else props[key] = next
-      })
-    }
-
-  const handleDimensionCommit =
-    (key: SizeDimensionKey) => (next: string | number | undefined) => {
+  const handleSizeCommit =
+    (key: SizeFieldKey) => (next: string | number | undefined) => {
       actions.setProp(selectedId, (props: any) => {
         if (next === undefined) delete props[key]
         else props[key] = next
@@ -98,6 +60,8 @@ export const SizeAccordion = () => {
       props.overflow = value
     })
   }
+
+  const inputWidth = SIZE_VALUE_INPUT_WIDTH_PX
 
   return (
     <Accordion defaultExpanded disableGutters>
@@ -125,23 +89,27 @@ export const SizeAccordion = () => {
               <CraftSettingsValueWithUnit
                 label="Width"
                 value={selectedProps.width}
-                onCommit={handleDimensionCommit("width")}
+                onCommit={handleSizeCommit("width")}
                 allowedUnits={CSS_SIZE_UNITS_RN}
                 mode="rn"
+                inputWidth={inputWidth}
               />
               <CraftSettingsValueWithUnit
                 label="Height"
                 value={selectedProps.height}
-                onCommit={handleDimensionCommit("height")}
+                onCommit={handleSizeCommit("height")}
                 allowedUnits={CSS_SIZE_UNITS_RN}
                 mode="rn"
+                inputWidth={inputWidth}
               />
               <Box sx={{ gridColumn: "1 / -1" }}>
-                <CraftSettingsInput
+                <CraftSettingsValueWithUnit
                   label="Min H"
-                  type="number"
-                  value={selectedProps.minHeight ?? ""}
-                  onChange={handleNumericSizeChange("minHeight")}
+                  value={selectedProps.minHeight}
+                  onCommit={handleSizeCommit("minHeight")}
+                  allowedUnits={CSS_SIZE_UNITS_RN}
+                  mode="rn"
+                  inputWidth={inputWidth}
                 />
               </Box>
             </Box>
@@ -157,40 +125,46 @@ export const SizeAccordion = () => {
               <CraftSettingsValueWithUnit
                 label="Width"
                 value={selectedProps.width}
-                onCommit={handleDimensionCommit("width")}
+                onCommit={handleSizeCommit("width")}
                 mode="web"
+                inputWidth={inputWidth}
               />
               <CraftSettingsValueWithUnit
                 label="Height"
                 value={selectedProps.height}
-                onCommit={handleDimensionCommit("height")}
+                onCommit={handleSizeCommit("height")}
                 mode="web"
+                inputWidth={inputWidth}
               />
-              <CraftSettingsInput
+              <CraftSettingsValueWithUnit
                 label="Min W"
-                type="number"
-                value={selectedProps.minWidth ?? ""}
-                onChange={handleNumericSizeChange("minWidth")}
+                value={selectedProps.minWidth}
+                onCommit={handleSizeCommit("minWidth")}
+                mode="web"
+                inputWidth={inputWidth}
               />
-              <CraftSettingsInput
+              <CraftSettingsValueWithUnit
                 label="Min H"
-                type="number"
-                value={selectedProps.minHeight ?? ""}
-                onChange={handleNumericSizeChange("minHeight")}
+                value={selectedProps.minHeight}
+                onCommit={handleSizeCommit("minHeight")}
+                mode="web"
+                inputWidth={inputWidth}
               />
-              <CraftSettingsInput
+              <CraftSettingsValueWithUnit
                 label="Max W"
-                type="text"
+                value={selectedProps.maxWidth}
+                onCommit={handleSizeCommit("maxWidth")}
+                mode="web"
                 placeholder="None"
-                value={formatMaxInput(selectedProps.maxWidth)}
-                onChange={handleMaxSizeChange("maxWidth")}
+                inputWidth={inputWidth}
               />
-              <CraftSettingsInput
+              <CraftSettingsValueWithUnit
                 label="Max H"
-                type="text"
+                value={selectedProps.maxHeight}
+                onCommit={handleSizeCommit("maxHeight")}
+                mode="web"
                 placeholder="None"
-                value={formatMaxInput(selectedProps.maxHeight)}
-                onChange={handleMaxSizeChange("maxHeight")}
+                inputWidth={inputWidth}
               />
             </Box>
           )}
