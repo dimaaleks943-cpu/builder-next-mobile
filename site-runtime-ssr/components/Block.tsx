@@ -9,6 +9,16 @@ import {
 interface BlockProps extends CraftVisualEffectsProps {
   children?: ReactNode
   fullSize?: boolean
+  /**
+   * CSS width / height. Bare `number` is legacy px (React/CSS accept numeric px).
+   */
+  width?: string | number
+  height?: string | number
+  minWidth?: number
+  minHeight?: number
+  maxWidth?: string | number
+  maxHeight?: string | number
+  overflow?: "auto" | "hidden" | "visible" | "scroll"
   layout?: "block" | "flex" | "grid" | "absolute"
   gridColumns?: number
   gridRows?: number
@@ -53,6 +63,13 @@ interface BlockProps extends CraftVisualEffectsProps {
 export const Block = ({
   children,
   fullSize = false,
+  width,
+  height,
+  minWidth,
+  minHeight,
+  maxWidth,
+  maxHeight,
+  overflow,
   layout = "block",
   gridColumns,
   gridRows,
@@ -129,12 +146,17 @@ export const Block = ({
             : undefined,
         gridAutoFlow: layout === "grid" ? gridAutoFlow : undefined,
         placeItems:
-          layout === "grid" && placeItemsY && placeItemsX
+          layout === "grid" && placeItemsY != null && placeItemsX != null
             ? `${placeItemsY} ${placeItemsX}`
             : undefined,
         position: layout === "absolute" ? "absolute" : "relative",
-        width: fullSize ? "100%" : undefined,
-        height: fullSize ? "100%" : undefined,
+        width: fullSize ? "100%" : width,
+        height: fullSize ? "100%" : height,
+        minWidth,
+        minHeight: fullSize ? undefined : (minHeight ?? 80),
+        maxWidth,
+        maxHeight,
+        overflow,
         marginTop,
         marginRight,
         marginBottom,
