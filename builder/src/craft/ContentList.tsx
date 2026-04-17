@@ -27,6 +27,13 @@ import {
 import { getCollectionItemsCacheKey } from "../utils/collectionItemsCacheKey"
 
 export type ContentListProps = {
+  width?: string | number
+  height?: string | number
+  minWidth?: number
+  minHeight?: number
+  maxWidth?: string | number
+  maxHeight?: string | number
+  overflow?: "auto" | "hidden" | "visible" | "scroll"
   selectedSource?: string
   itemsPerRow?: number
   /**
@@ -464,7 +471,12 @@ export const CraftContentList = ({}: ContentListProps) => {
         connect(drag(ref))
       }}
       style={{
-        width: "100%",
+        width: props.width ?? "100%",
+        height: props.height,
+        minWidth: props.minWidth,
+        minHeight: props.minHeight,
+        maxWidth: props.maxWidth,
+        maxHeight: props.maxHeight,
         display: "flex",
         flexDirection: "column",
         backgroundColor: selected
@@ -474,7 +486,7 @@ export const CraftContentList = ({}: ContentListProps) => {
           ? `2px solid ${COLORS.purple400}`
           : `1px solid ${COLORS.gray300}`,
         borderRadius: 4,
-        overflow: "visible",
+        overflow: props.overflow ?? "visible",
         position: "relative",
         ...resolveCraftVisualEffectsStyle(props),
       }}
@@ -815,6 +827,13 @@ export const CraftContentList = ({}: ContentListProps) => {
   displayName: CRAFT_DISPLAY_NAME.ContentList,
   props: {
     selectedSource: "",
+    width: undefined,
+    height: undefined,
+    minWidth: undefined,
+    minHeight: undefined,
+    maxWidth: undefined,
+    maxHeight: undefined,
+    overflow: undefined,
     itemsPerRow: 1,
     filterScope: "",
     backgroundColor: undefined,

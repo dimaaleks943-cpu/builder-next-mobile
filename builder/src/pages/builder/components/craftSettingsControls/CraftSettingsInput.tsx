@@ -8,6 +8,7 @@ interface Props {
   value: string | number;
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
   customStyles?: any;
+  placeholder?: string;
 }
 
 export const CraftSettingsInput = ({
@@ -15,7 +16,8 @@ export const CraftSettingsInput = ({
   type = "text",
   value,
   onChange,
-  customStyles
+  customStyles,
+  placeholder,
 }: Props) => {
   return (
     <Box
@@ -44,6 +46,7 @@ export const CraftSettingsInput = ({
         type={type}
         value={value}
         onChange={onChange}
+        placeholder={placeholder}
         sx={{
           width: "100%",
           flex: 4,

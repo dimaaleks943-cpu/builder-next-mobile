@@ -19,6 +19,13 @@ import {
  * по строке `filterScope`; у {@link CraftContentList} в том же scope подставляются `categoryIds` в запрос items.
  */
 type CategoryFilterProps = {
+  width?: string | number
+  height?: string | number
+  minWidth?: number
+  minHeight?: number
+  maxWidth?: string | number
+  maxHeight?: string | number
+  overflow?: "auto" | "hidden" | "visible" | "scroll"
   /** Идентификатор группы фильтра на странице; должен совпадать с `filterScope` у ContentList. */
   filterScope: string
   /** UUID корня дерева категорий в extranet — по нему грузится список кнопок/радио. */
@@ -189,7 +196,12 @@ export const CraftCategoryFilter = () => {
         connect(drag(ref))
       }}
       style={{
-        width: "100%",
+        width: props.width ?? "100%",
+        height: props.height,
+        minWidth: props.minWidth,
+        minHeight: props.minHeight ?? 48,
+        maxWidth: props.maxWidth,
+        maxHeight: props.maxHeight,
         display: "flex",
         flexDirection: "column",
         backgroundColor: selected
@@ -199,9 +211,8 @@ export const CraftCategoryFilter = () => {
           ? `2px solid ${COLORS.purple400}`
           : `1px solid ${COLORS.gray300}`,
         borderRadius: 4,
-        overflow: "visible",
+        overflow: props.overflow ?? "visible",
         position: "relative",
-        minHeight: 48,
         ...resolveCraftVisualEffectsStyle(props),
       }}
     >
@@ -487,6 +498,13 @@ export const CraftCategoryFilter = () => {
   displayName: CRAFT_DISPLAY_NAME.CategoryFilter,
   props: {
     filterScope: "",
+    width: undefined,
+    height: undefined,
+    minWidth: undefined,
+    minHeight: undefined,
+    maxWidth: undefined,
+    maxHeight: undefined,
+    overflow: undefined,
     contentCategoryRootId: "",
     variant: "buttons" as const,
     direction: "row" as const,

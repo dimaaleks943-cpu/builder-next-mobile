@@ -19,6 +19,13 @@ import {
 
 export type ContentListCellProps = {
   children?: ReactNode
+  width?: string | number
+  height?: string | number
+  minWidth?: number
+  minHeight?: number
+  maxWidth?: string | number
+  maxHeight?: string | number
+  overflow?: "auto" | "hidden" | "visible" | "scroll"
   layout?: BlockLayoutMode
   gridColumns?: number
   gridRows?: number
@@ -43,6 +50,13 @@ export type ContentListCellProps = {
  */
 export const CraftContentListCell = ({
   children,
+  width,
+  height,
+  minWidth,
+  minHeight,
+  maxWidth,
+  maxHeight,
+  overflow,
   layout = "block",
   gridColumns,
   gridRows,
@@ -77,7 +91,13 @@ export const CraftContentListCell = ({
       }}
       style={{
         flex: 1,
-        minHeight: 48,
+        width,
+        height,
+        minWidth,
+        minHeight: minHeight ?? 48,
+        maxWidth,
+        maxHeight,
+        overflow,
         padding: "16px",
         position: "relative" as const,
         display:
@@ -140,6 +160,13 @@ export const CraftContentListCell = ({
   displayName: CRAFT_DISPLAY_NAME.ContentListCell,
   props: {
     layout: "block" as BlockLayoutMode,
+    width: undefined,
+    height: undefined,
+    minWidth: undefined,
+    minHeight: undefined,
+    maxWidth: undefined,
+    maxHeight: undefined,
+    overflow: undefined,
     gridColumns: undefined,
     gridRows: undefined,
     gridAutoFlow: "row" as const,

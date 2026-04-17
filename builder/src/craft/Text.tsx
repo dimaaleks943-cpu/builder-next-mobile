@@ -47,6 +47,13 @@ export interface TextProps extends CraftVisualEffectsProps {
   paddingBottom?: number
   paddingLeft?: number
   backgroundColor?: string
+  width?: string | number
+  height?: string | number
+  minWidth?: number
+  minHeight?: number
+  maxWidth?: string | number
+  maxHeight?: string | number
+  overflow?: "auto" | "hidden" | "visible" | "scroll"
   /** Зарезервировано под будущий UI; в рендере пока не используется */
   backgroundClip?: string
 }
@@ -76,6 +83,13 @@ export const CraftText = ({
   paddingBottom = 0,
   paddingLeft = 0,
   backgroundColor,
+  width,
+  height,
+  minWidth,
+  minHeight,
+  maxWidth,
+  maxHeight,
+  overflow,
   backgroundClip: _backgroundClip,
   mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
   opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
@@ -235,7 +249,13 @@ export const CraftText = ({
     borderRadius: 2,
     border: selected ? `2px solid ${COLORS.purple400}` : "1px solid transparent",
     boxSizing: "border-box",
-    minWidth: 20,
+    width,
+    height,
+    minWidth: minWidth ?? 20,
+    minHeight,
+    maxWidth,
+    maxHeight,
+    overflow,
     outline: "none",
     cursor: collectionField ? "default" : isEditing ? "text" : selected ? "move" : "default",
     userSelect: collectionField ? "none" : isEditing ? "text" : "none",
@@ -338,6 +358,13 @@ export const CraftText = ({
     paddingBottom: 0,
     paddingLeft: 0,
     backgroundColor: undefined,
+    width: undefined,
+    height: undefined,
+    minWidth: undefined,
+    minHeight: undefined,
+    maxWidth: undefined,
+    maxHeight: undefined,
+    overflow: undefined,
     backgroundClip: undefined,
     ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
   },

@@ -22,6 +22,17 @@ import {
 export type BlockProps = {
   children?: ReactNode
   fullSize?: boolean
+  /**
+   * CSS width / height passed to the DOM. Use strings such as `"120px"`, `"50%"`, `"10em"`, or `"auto"`.
+   * A bare `number` is still supported as legacy px. In RN builder mode, px is stored as a number; `%` and `auto` stay strings (see `craftCssSizeProp`).
+   */
+  width?: string | number
+  height?: string | number
+  minWidth?: number
+  minHeight?: number
+  maxWidth?: string | number
+  maxHeight?: string | number
+  overflow?: "auto" | "hidden" | "visible" | "scroll"
   layout?: BlockLayoutMode
   gridColumns?: number
   gridRows?: number
@@ -60,6 +71,13 @@ export type BlockProps = {
 export const CraftBlock = ({
   children,
   fullSize,
+  width,
+  height,
+  minWidth,
+  minHeight,
+  maxWidth,
+  maxHeight,
+  overflow,
   layout = "block",
   gridColumns,
   gridRows,
@@ -157,9 +175,14 @@ export const CraftBlock = ({
             ? `${placeItemsY} ${placeItemsX}`
             : undefined,
         position: layout === "absolute" ? "absolute" : "relative",
-        width: fullSize ? "100%" : undefined,
-        height: fullSize ? "100%" : undefined,
-        minHeight: fullSize ? undefined : 80,
+        // `width` / `height`: React accepts unit strings and numeric px; matches `formatSizeProp` / craft JSON.
+        width: fullSize ? "100%" : width,
+        height: fullSize ? "100%" : height,
+        minWidth,
+        minHeight: fullSize ? undefined : (minHeight ?? 80),
+        maxWidth,
+        maxHeight,
+        overflow,
         marginTop,
         marginRight,
         marginBottom,
@@ -208,6 +231,13 @@ export const CraftBlock = ({
   displayName: CRAFT_DISPLAY_NAME.Block,
   props: {
     fullSize: false,
+    width: undefined,
+    height: undefined,
+    minWidth: undefined,
+    minHeight: undefined,
+    maxWidth: undefined,
+    maxHeight: undefined,
+    overflow: undefined,
     layout: "block" as BlockLayoutMode,
     gridColumns: undefined,
     gridRows: undefined,

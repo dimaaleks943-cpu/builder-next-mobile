@@ -17,8 +17,13 @@ import {
 interface Props extends CraftVisualEffectsProps {
   src?: string;
   alt?: string;
-  width?: number;
-  height?: number;
+  width?: string | number;
+  height?: string | number;
+  minWidth?: number;
+  minHeight?: number;
+  maxWidth?: string | number;
+  maxHeight?: string | number;
+  overflow?: "auto" | "hidden" | "visible" | "scroll";
   borderRadius?: number;
   /** Поле коллекции, содержащее URL изображения (если компонент внутри ContentList). */
   collectionField?: string | null;
@@ -32,6 +37,11 @@ export const CraftImage = ({
   alt = "Изображение",
   width,
   height,
+  minWidth,
+  minHeight,
+  maxWidth,
+  maxHeight,
+  overflow,
   borderRadius = 8,
   collectionField = null,
   backgroundColor,
@@ -86,7 +96,11 @@ export const CraftImage = ({
     display: "block",
     width: width ?? "100%",
     height: height ?? "auto",
-    minHeight: height ?? 140,
+    minWidth,
+    minHeight: minHeight ?? height ?? 140,
+    maxWidth,
+    maxHeight,
+    overflow,
     objectFit: "cover",
     borderRadius,
     boxSizing: "border-box",
@@ -171,6 +185,11 @@ export const CraftImage = ({
     alt: "",
     width: undefined,
     height: undefined,
+    minWidth: undefined,
+    minHeight: undefined,
+    maxWidth: undefined,
+    maxHeight: undefined,
+    overflow: undefined,
     borderRadius: 8,
     collectionField: null,
     backgroundColor: undefined,
