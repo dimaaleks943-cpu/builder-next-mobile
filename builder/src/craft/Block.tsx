@@ -1,4 +1,5 @@
 import { useNode } from "@craftjs/core"
+import { useRef } from "react"
 import type { ReactNode } from "react"
 import { COLORS } from "../theme/colors"
 import { withOpacity } from "../utils/colorUtils"
@@ -94,6 +95,7 @@ export const CraftBlock = ({
   outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
   outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
 }: BlockProps) => {
+  const blockRef = useRef<HTMLDivElement | null>(null)
   const {
     connectors: { connect, drag },
     selected,
@@ -115,6 +117,7 @@ export const CraftBlock = ({
   return (
     <div
       ref={(ref) => {
+        blockRef.current = ref
         if (!ref) return
         connect(drag(ref))
       }}
@@ -192,6 +195,8 @@ export const CraftBlock = ({
           label="Div блок"
           icon={<span style={{ fontSize: 11 }}>B</span>}
           showSettingsButton={false}
+          anchorElement={blockRef.current}
+          usePortal
         />
       )}
       {children}

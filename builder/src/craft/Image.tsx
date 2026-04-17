@@ -56,6 +56,7 @@ export const CraftImage = ({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
   const badgeRef = useRef<HTMLDivElement | null>(null)
+  const imageWrapperRef = useRef<HTMLDivElement | null>(null)
 
   const effectiveSrc = useMemo(() => {
     // Если есть выбранное поле коллекции и данные элемента — берём URL из коллекции.
@@ -127,6 +128,7 @@ export const CraftImage = ({
     <>
       <div
         ref={(ref) => {
+          imageWrapperRef.current = ref
           if (!ref) return
           connect(drag(ref))
         }}
@@ -138,6 +140,8 @@ export const CraftImage = ({
             ref={badgeRef}
             icon={<span style={{ fontSize: 11 }}>🖼</span>}
             label="Изображение"
+            anchorElement={imageWrapperRef.current}
+            usePortal
             onSettingsClick={() => openSettings()}
           />
         )}

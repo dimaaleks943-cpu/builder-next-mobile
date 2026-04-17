@@ -218,6 +218,7 @@ export const BuilderCanvas = ({
           flex: 1,
           padding: "0 8px 8px",
           display: "flex",
+          position: "relative",
           outline: "none",
           overflowY: "auto",
           overflowX: "hidden",
@@ -262,6 +263,15 @@ export const BuilderCanvas = ({
             </Frame>
           )}
         </Box>
+        <Box
+          id="builder-badge-overlay-root"
+          sx={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            zIndex: 20,
+          }}
+        />
       </Box>
     </Box>
   )

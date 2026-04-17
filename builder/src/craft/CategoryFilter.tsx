@@ -39,6 +39,7 @@ export const CraftCategoryFilter = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
   const badgeRef = useRef<HTMLDivElement | null>(null)
+  const rootRef = useRef<HTMLDivElement | null>(null)
 
   const {
     connectors: { connect, drag },
@@ -183,6 +184,7 @@ export const CraftCategoryFilter = () => {
   return (
     <div
       ref={(ref) => {
+        rootRef.current = ref
         if (!ref) return
         connect(drag(ref))
       }}
@@ -208,6 +210,8 @@ export const CraftCategoryFilter = () => {
           ref={badgeRef}
           icon={<span>CF</span>}
           label="Фильтр категорий"
+          anchorElement={rootRef.current}
+          usePortal
           onSettingsClick={openSettings}
         />
       )}

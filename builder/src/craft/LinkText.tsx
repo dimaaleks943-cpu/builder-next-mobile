@@ -93,6 +93,7 @@ export const CraftLinkText = ({
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(text)
   const spanRef = useRef<HTMLSpanElement | null>(null)
+  const linkRef = useRef<HTMLAnchorElement | null>(null)
   const badgeRef = useRef<HTMLDivElement | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
@@ -247,6 +248,7 @@ export const CraftLinkText = ({
   return (
     <>
       <a
+        ref={linkRef}
         href={href}
         target={openInNewTab ? "_blank" : "_self"}
         rel={openInNewTab ? "noopener noreferrer" : undefined}
@@ -274,6 +276,8 @@ export const CraftLinkText = ({
             label="Текст-ссылка"
             maxWidth={140}
             showSettingsButton
+            anchorElement={linkRef.current}
+            usePortal
             onSettingsClick={openSettingsModal}
           />
         )}

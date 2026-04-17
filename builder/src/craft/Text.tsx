@@ -261,12 +261,14 @@ export const CraftText = ({
     <>
       <span style={outerWrapperStyle}>
         {selected && (
-        <InlineSettingsBadge
+          <InlineSettingsBadge
             ref={badgeRef}
             icon={<span style={{ fontSize: 11 }}>T</span>}
             label="Текст"
             maxWidth={120}
             showSettingsButton={showSettingsButton}
+            anchorElement={spanRef.current}
+            usePortal
             onSettingsClick={
               showSettingsButton ? () => openTextModal() : undefined
             }

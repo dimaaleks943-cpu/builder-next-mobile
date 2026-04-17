@@ -49,6 +49,7 @@ export const CraftContentList = ({}: ContentListProps) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
   const badgeRef = useRef<HTMLDivElement | null>(null)
+  const rootRef = useRef<HTMLDivElement | null>(null)
   const syncInProgressRef = useRef(false)
   const prevSignaturePartsRef = useRef<string[]>([])
   const lastSeedKeyRef = useRef<string>("")
@@ -458,6 +459,7 @@ export const CraftContentList = ({}: ContentListProps) => {
   return (
     <div
       ref={(ref) => {
+        rootRef.current = ref
         if (!ref) return
         connect(drag(ref))
       }}
@@ -482,6 +484,8 @@ export const CraftContentList = ({}: ContentListProps) => {
           ref={badgeRef}
           icon={<span>CL</span>}
           label="Список-контента"
+          anchorElement={rootRef.current}
+          usePortal
           onSettingsClick={openSettings}
         />
       )}
