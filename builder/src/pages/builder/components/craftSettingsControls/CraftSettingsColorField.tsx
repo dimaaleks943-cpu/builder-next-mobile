@@ -29,10 +29,13 @@ export const CraftSettingsColorField = ({ label, value, onChange }: Props) => {
     >
       <Typography
         sx={{
+          width: "48px",
           minWidth: "48px",
+          flexShrink: 0,
           fontSize: "10px",
           lineHeight: "14px",
           color: COLORS.gray700,
+          textAlign: "left",
         }}
       >
         {label}

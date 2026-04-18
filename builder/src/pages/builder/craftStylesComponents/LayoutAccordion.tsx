@@ -30,7 +30,7 @@ const LAYOUT_OPTIONS_WEB: { id: LayoutMode; content: string }[] = [
   { id: "block", content: "Блок" },
   { id: "flex", content: "Флекс" },
   { id: "grid", content: "Сетка" },
-  { id: "absolute", content: "Абс. позиция" },
+  { id: "absolute", content: "Абс" },
 ]
 
 const LAYOUT_OPTIONS_RN: { id: LayoutMode; content: string }[] = [

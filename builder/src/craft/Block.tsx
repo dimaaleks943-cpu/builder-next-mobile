@@ -20,52 +20,52 @@ import {
 } from "./craftVisualEffects.ts"
 
 export type BlockProps = {
-  children?: ReactNode
-  fullSize?: boolean
+  children?: ReactNode;
+  fullSize?: boolean;
   /**
    * CSS width / height passed to the DOM. Use strings such as `"120px"`, `"50%"`, `"10em"`, or `"auto"`.
    * A bare `number` is still supported as legacy px. In RN builder mode, px is stored as a number; `%` and `auto` stay strings (see `craftCssSizeProp`).
    */
-  width?: string | number
-  height?: string | number
-  minWidth?: number
-  minHeight?: number
-  maxWidth?: string | number
-  maxHeight?: string | number
-  overflow?: "auto" | "hidden" | "visible" | "scroll"
-  layout?: BlockLayoutMode
-  gridColumns?: number
-  gridRows?: number
-  gridAutoFlow?: GridAutoFlow
-  gap?: number
-  flexFlow?: FlexFlowOption
-  flexJustifyContent?: FlexJustifyContent
-  flexAlignItems?: FlexAlignItems
-  placeItemsY?: PlaceItemsValue
-  placeItemsX?: PlaceItemsValue
+  width?: string | number;
+  height?: string | number;
+  minWidth?: number;
+  minHeight?: number;
+  maxWidth?: string | number;
+  maxHeight?: string | number;
+  overflow?: "auto" | "hidden" | "visible" | "scroll";
+  layout?: BlockLayoutMode;
+  gridColumns?: number;
+  gridRows?: number;
+  gridAutoFlow?: GridAutoFlow;
+  gap?: number;
+  flexFlow?: FlexFlowOption;
+  flexJustifyContent?: FlexJustifyContent;
+  flexAlignItems?: FlexAlignItems;
+  placeItemsY?: PlaceItemsValue;
+  placeItemsX?: PlaceItemsValue;
   // margins
-  marginTop?: number
-  marginRight?: number
-  marginBottom?: number
-  marginLeft?: number
+  marginTop?: number;
+  marginRight?: number;
+  marginBottom?: number;
+  marginLeft?: number;
   // paddings
-  paddingTop?: number
-  paddingRight?: number
-  paddingBottom?: number
-  paddingLeft?: number
+  paddingTop?: number;
+  paddingRight?: number;
+  paddingBottom?: number;
+  paddingLeft?: number;
   // borders
-  borderRadius?: number
-  borderTopWidth?: number
-  borderRightWidth?: number
-  borderBottomWidth?: number
-  borderLeftWidth?: number
-  borderColor?: string
-  borderStyle?: "none" | "solid" | "dashed"
+  borderRadius?: number;
+  borderTopWidth?: number;
+  borderRightWidth?: number;
+  borderBottomWidth?: number;
+  borderLeftWidth?: number;
+  borderColor?: string;
+  borderStyle?: "none" | "solid" | "dotted";
   /** 0–1, применяется к цвету бордера */
-  borderOpacity?: number
-  backgroundColor?: string
+  borderOpacity?: number;
+  backgroundColor?: string;
   /** Зарезервировано под будущий UI; в рендере пока не используется */
-  backgroundClip?: string
+  backgroundClip?: string;
 } & CraftVisualEffectsProps
 
 export const CraftBlock = ({

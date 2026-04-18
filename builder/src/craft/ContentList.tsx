@@ -2,6 +2,7 @@ import { useNode, useEditor, Element } from "@craftjs/core"
 import { useState, useEffect, useRef, startTransition } from "react"
 import { useLazyGetContentItemsQuery } from "../store/extranetApi"
 import { COLORS } from "../theme/colors"
+import { withOpacity } from "../utils/colorUtils"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import { useCollectionsContext } from "../pages/builder/context/CollectionsContext.tsx"
 import { useCollectionFilterScope } from "../pages/builder/context/CollectionFilterScopeContext.tsx"
@@ -34,6 +35,14 @@ export type ContentListProps = {
   maxWidth?: string | number
   maxHeight?: string | number
   overflow?: "auto" | "hidden" | "visible" | "scroll"
+  borderRadius?: number
+  borderTopWidth?: number
+  borderRightWidth?: number
+  borderBottomWidth?: number
+  borderLeftWidth?: number
+  borderColor?: string
+  borderStyle?: "none" | "solid" | "dotted"
+  borderOpacity?: number
   selectedSource?: string
   itemsPerRow?: number
   /**
@@ -79,6 +88,28 @@ export const CraftContentList = ({}: ContentListProps) => {
   const collectionsContext = useCollectionsContext()
   const { selectedCategoryIdByScope } = useCollectionFilterScope()
   const [fetchContentItems] = useLazyGetContentItemsQuery()
+
+  const borderTopWidth = props.borderTopWidth ?? 0
+  const borderRightWidth = props.borderRightWidth ?? 0
+  const borderBottomWidth = props.borderBottomWidth ?? 0
+  const borderLeftWidth = props.borderLeftWidth ?? 0
+  const borderColor = props.borderColor ?? COLORS.gray400
+  const borderStyle = props.borderStyle ?? "solid"
+  const borderOpacity = props.borderOpacity ?? 1
+  const borderRadius = props.borderRadius ?? 4
+
+  const hasCustomBorder =
+    borderTopWidth > 0 ||
+    borderRightWidth > 0 ||
+    borderBottomWidth > 0 ||
+    borderLeftWidth > 0
+
+  const effectiveBorderColor = hasCustomBorder
+    ? withOpacity(borderColor, borderOpacity)
+    : "transparent"
+
+  /** Как раньше: лёгкая серая обводка в редакторе, пока нет своих границ из панели «Границы». */
+  const defaultEditorChrome = !selected && !hasCustomBorder
 
   const openSettings = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -482,10 +513,17 @@ export const CraftContentList = ({}: ContentListProps) => {
         backgroundColor: selected
           ? COLORS.lightPurple
           : (props.backgroundColor ?? COLORS.white),
-        border: selected
-          ? `2px solid ${COLORS.purple400}`
-          : `1px solid ${COLORS.gray300}`,
-        borderRadius: 4,
+        borderStyle: selected ? "solid" : hasCustomBorder ? (borderStyle || "solid") : "solid",
+        borderColor: selected
+          ? COLORS.purple400
+          : hasCustomBorder
+            ? effectiveBorderColor
+            : COLORS.gray300,
+        borderTopWidth: selected ? 2 : hasCustomBorder ? borderTopWidth : defaultEditorChrome ? 1 : 0,
+        borderRightWidth: selected ? 2 : hasCustomBorder ? borderRightWidth : defaultEditorChrome ? 1 : 0,
+        borderBottomWidth: selected ? 2 : hasCustomBorder ? borderBottomWidth : defaultEditorChrome ? 1 : 0,
+        borderLeftWidth: selected ? 2 : hasCustomBorder ? borderLeftWidth : defaultEditorChrome ? 1 : 0,
+        borderRadius,
         overflow: props.overflow ?? "visible",
         position: "relative",
         ...resolveCraftVisualEffectsStyle(props),
@@ -834,6 +872,14 @@ export const CraftContentList = ({}: ContentListProps) => {
     maxWidth: undefined,
     maxHeight: undefined,
     overflow: undefined,
+    borderRadius: 4,
+    borderTopWidth: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+    borderLeftWidth: 0,
+    borderColor: COLORS.gray400,
+    borderStyle: "solid" as const,
+    borderOpacity: 1,
     itemsPerRow: 1,
     filterScope: "",
     backgroundColor: undefined,

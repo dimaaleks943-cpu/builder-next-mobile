@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from "react"
 import { useNode } from "@craftjs/core"
 import type { CSSProperties } from "react"
 import { COLORS } from "../theme/colors"
+import { withOpacity } from "../utils/colorUtils"
 import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
 import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
@@ -25,6 +26,13 @@ interface Props extends CraftVisualEffectsProps {
   maxHeight?: string | number;
   overflow?: "auto" | "hidden" | "visible" | "scroll";
   borderRadius?: number;
+  borderTopWidth?: number;
+  borderRightWidth?: number;
+  borderBottomWidth?: number;
+  borderLeftWidth?: number;
+  borderColor?: string;
+  borderStyle?: "none" | "solid" | "dotted" | "dashed";
+  borderOpacity?: number;
   /** Поле коллекции, содержащее URL изображения (если компонент внутри ContentList). */
   collectionField?: string | null;
   backgroundColor?: string;
@@ -42,7 +50,14 @@ export const CraftImage = ({
   maxWidth,
   maxHeight,
   overflow,
-  borderRadius = 8,
+  borderRadius = 0,
+  borderTopWidth = 0,
+  borderRightWidth = 0,
+  borderBottomWidth = 0,
+  borderLeftWidth = 0,
+  borderColor = COLORS.gray400,
+  borderStyle = "solid",
+  borderOpacity = 1,
   collectionField = null,
   backgroundColor,
   backgroundClip: _backgroundClip,
@@ -92,6 +107,16 @@ export const CraftImage = ({
     setIsSettingsOpen(false)
   }
 
+  const hasCustomBorder =
+    borderTopWidth > 0 ||
+    borderRightWidth > 0 ||
+    borderBottomWidth > 0 ||
+    borderLeftWidth > 0
+
+  const effectiveBorderColor = hasCustomBorder
+    ? withOpacity(borderColor, borderOpacity)
+    : "transparent"
+
   const style: CSSProperties = {
     display: "block",
     width: width ?? "100%",
@@ -104,7 +129,12 @@ export const CraftImage = ({
     objectFit: "cover",
     borderRadius,
     boxSizing: "border-box",
-    border: selected ? `2px solid ${COLORS.purple400}` : "1px solid transparent",
+    borderStyle: selected ? "solid" : hasCustomBorder ? (borderStyle || "solid") : "solid",
+    borderColor: selected ? COLORS.purple400 : effectiveBorderColor,
+    borderTopWidth: selected ? 2 : hasCustomBorder ? borderTopWidth : 0,
+    borderRightWidth: selected ? 2 : hasCustomBorder ? borderRightWidth : 0,
+    borderBottomWidth: selected ? 2 : hasCustomBorder ? borderBottomWidth : 0,
+    borderLeftWidth: selected ? 2 : hasCustomBorder ? borderLeftWidth : 0,
     backgroundColor: backgroundColor ?? COLORS.gray100,
     ...resolveCraftVisualEffectsStyle({
       mixBlendMode,
@@ -191,6 +221,13 @@ export const CraftImage = ({
     maxHeight: undefined,
     overflow: undefined,
     borderRadius: 8,
+    borderTopWidth: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+    borderLeftWidth: 0,
+    borderColor: COLORS.gray400,
+    borderStyle: "solid" as const,
+    borderOpacity: 1,
     collectionField: null,
     backgroundColor: undefined,
     backgroundClip: undefined,

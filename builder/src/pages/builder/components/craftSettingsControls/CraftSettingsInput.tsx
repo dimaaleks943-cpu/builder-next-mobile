@@ -33,10 +33,13 @@ export const CraftSettingsInput = ({
     >
       <Typography
         sx={{
+          width: "48px",
+          minWidth: "48px",
+          flexShrink: 0,
           fontSize: "10px",
           lineHeight: "14px",
           color: COLORS.gray700,
-          flex: 1,
+          textAlign: "left",
         }}
       >
         {label}
@@ -48,8 +51,8 @@ export const CraftSettingsInput = ({
         onChange={onChange}
         placeholder={placeholder}
         sx={{
-          width: "100%",
-          flex: 4,
+          flex: 1,
+          minWidth: 0,
           boxSizing: "border-box",
           padding: "6px 8px",
           fontSize: "12px",

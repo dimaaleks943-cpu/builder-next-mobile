@@ -24,20 +24,25 @@ export const CraftSettingsButtonGroup = ({
 }: Props) => {
   return (
     <Box
-      sx={{ display: "flex", alignItems: "center", gap: "8px" }}
+      sx={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}
     >
       {!withoutLabel && <Typography
         sx={{
+          width: "48px",
           minWidth: "48px",
+          flexShrink: 0,
           fontSize: "10px",
           lineHeight: "14px",
           color: COLORS.gray700,
+          textAlign: "left",
         }}
       >
         {label}
       </Typography>}
       <Box
         sx={{
+          flex: 1,
+          minWidth: 0,
           display: "flex",
           backgroundColor: COLORS.purple100,
           padding: "1px",
@@ -53,6 +58,8 @@ export const CraftSettingsButtonGroup = ({
               type="button"
               onClick={() => onChange(option.id)}
               sx={{
+                flex: 1,
+                minWidth: 0,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
