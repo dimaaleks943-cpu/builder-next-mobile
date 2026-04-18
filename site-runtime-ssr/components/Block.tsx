@@ -53,7 +53,7 @@ interface BlockProps extends CraftVisualEffectsProps {
   borderBottomWidth?: number
   borderLeftWidth?: number
   borderColor?: string
-  borderStyle?: "none" | "solid" | "dashed"
+  borderStyle?: "none" | "solid" | "dotted"
   borderOpacity?: number
   backgroundColor?: string
   /** Зарезервировано под будущий UI; в рендере пока не используется */

@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { useContentData } from "./ContentDataContext"
+import { withOpacity } from "@/lib/colorUtils"
 import {
   DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
   resolveCraftVisualEffectsStyle,
@@ -12,6 +13,13 @@ interface ImageProps extends CraftVisualEffectsProps {
   width?: number
   height?: number
   borderRadius?: number
+  borderTopWidth?: number
+  borderRightWidth?: number
+  borderBottomWidth?: number
+  borderLeftWidth?: number
+  borderColor?: string
+  borderStyle?: "none" | "solid" | "dotted"
+  borderOpacity?: number
   collectionField?: string | null
   backgroundColor?: string
   /** Зарезервировано под будущий UI; в рендере пока не используется */
@@ -27,6 +35,13 @@ export const Image = ({
   width,
   height,
   borderRadius = 8,
+  borderTopWidth = 0,
+  borderRightWidth = 0,
+  borderBottomWidth = 0,
+  borderLeftWidth = 0,
+  borderColor = "#CBD5E0",
+  borderStyle = "solid",
+  borderOpacity = 1,
   collectionField = null,
   backgroundColor = "#F9F9F9",
   backgroundClip: _backgroundClip,
@@ -38,6 +53,16 @@ export const Image = ({
   outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
 }: ImageProps) => {
   const contentData = useContentData()
+
+  const hasCustomBorder =
+    borderTopWidth > 0 ||
+    borderRightWidth > 0 ||
+    borderBottomWidth > 0 ||
+    borderLeftWidth > 0
+
+  const effectiveBorderColor = hasCustomBorder
+    ? withOpacity(borderColor ?? "#CBD5E0", borderOpacity ?? 1)
+    : "transparent"
 
   const effectiveSrc = useMemo(() => {
     // TODO: когда в контенте появится тип поля «изображение» с URL, резолвить из item.fields по collectionField.
@@ -62,6 +87,12 @@ export const Image = ({
         objectFit: "cover",
         borderRadius,
         boxSizing: "border-box",
+        borderStyle: hasCustomBorder ? (borderStyle || "solid") : "solid",
+        borderColor: effectiveBorderColor,
+        borderTopWidth: hasCustomBorder ? borderTopWidth : 0,
+        borderRightWidth: hasCustomBorder ? borderRightWidth : 0,
+        borderBottomWidth: hasCustomBorder ? borderBottomWidth : 0,
+        borderLeftWidth: hasCustomBorder ? borderLeftWidth : 0,
         backgroundColor,
         ...resolveCraftVisualEffectsStyle({
           mixBlendMode,

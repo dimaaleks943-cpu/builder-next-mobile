@@ -18,6 +18,7 @@ import { useSiteCollections } from "../contexts/SiteCollectionsContext";
 import { getCollectionItemsCacheKey } from "../lib/collectionItemsCacheKey";
 import { renderComponent } from "../content/renderer";
 import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
+import { withOpacityHex } from "../lib/withOpacityHex";
 
 /** См. site-runtime ContentList: отличаем первый запуск эффекта от смены категории, чтобы не дублировать fetch при SSR-кэше «Все». */
 const CATEGORY_FETCH_INIT = Symbol("categoryFetchInit");
@@ -51,6 +52,14 @@ interface ContentListProps {
     | null;
   cellPlaceItemsY?: "start" | "center" | "end" | "stretch" | "baseline" | null;
   cellPlaceItemsX?: "start" | "center" | "end" | "stretch" | "baseline" | null;
+  borderRadius?: number;
+  borderTopWidth?: number;
+  borderRightWidth?: number;
+  borderBottomWidth?: number;
+  borderLeftWidth?: number;
+  borderColor?: string;
+  borderStyle?: "none" | "solid" | "dotted";
+  borderOpacity?: number;
   backgroundColor?: string;
   cellBackgroundColor?: string | null;
   opacityPercent?: number;
@@ -74,6 +83,14 @@ export const ContentList = ({
   cellPlaceItemsY,
   cellPlaceItemsX,
   backgroundColor = "#FFFFFF",
+  borderRadius = 4,
+  borderTopWidth = 0,
+  borderRightWidth = 0,
+  borderBottomWidth = 0,
+  borderLeftWidth = 0,
+  borderColor = "#CBD5E0",
+  borderStyle = "solid",
+  borderOpacity = 1,
   cellBackgroundColor,
   opacityPercent,
   cellOpacityPercent = null,
@@ -82,6 +99,29 @@ export const ContentList = ({
   const listRootOpacityStyle = resolveCraftVisualEffectsRnStyle({
     opacityPercent,
   });
+
+  const hasCustomBorder =
+    borderTopWidth > 0 ||
+    borderRightWidth > 0 ||
+    borderBottomWidth > 0 ||
+    borderLeftWidth > 0;
+
+  const showBorder = hasCustomBorder && borderStyle !== "none";
+
+  const effectiveListBorderColor = showBorder
+    ? withOpacityHex(borderColor ?? "#CBD5E0", borderOpacity ?? 1)
+    : "transparent";
+
+  const listRootBorderStyle = {
+    borderRadius,
+    borderStyle: showBorder ? (borderStyle === "dotted" ? "dotted" as const : "solid" as const) : ("solid" as const),
+    borderColor: effectiveListBorderColor,
+    borderTopWidth: showBorder ? borderTopWidth : 0,
+    borderRightWidth: showBorder ? borderRightWidth : 0,
+    borderBottomWidth: showBorder ? borderBottomWidth : 0,
+    borderLeftWidth: showBorder ? borderLeftWidth : 0,
+  };
+
   const itemsPerRow: number = itemsPerRowProp ?? 1;
   const children: ComponentNode[] = childrenProp ?? [];
   const { domain, collectionItemsByKey, setItemsForKey } = useSiteCollections();
@@ -225,6 +265,7 @@ export const ContentList = ({
         style={[
           styles.placeholder,
           { backgroundColor },
+          listRootBorderStyle,
           listRootOpacityStyle,
         ]}
         accessibilityState={blockingLoading ? { busy: true } : undefined}
@@ -235,7 +276,12 @@ export const ContentList = ({
   if (collectionItems.length === 0) {
     return (
       <View
-        style={[styles.placeholder, { backgroundColor }, listRootOpacityStyle]}
+        style={[
+          styles.placeholder,
+          { backgroundColor },
+          listRootBorderStyle,
+          listRootOpacityStyle,
+        ]}
       />
     );
   }
@@ -252,6 +298,7 @@ export const ContentList = ({
         style={[
           styles.listOuter,
           { backgroundColor },
+          listRootBorderStyle,
           listRootOpacityStyle,
         ]}
         accessibilityState={filterLoading ? { busy: true } : undefined}

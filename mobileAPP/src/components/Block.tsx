@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { View, StyleSheet, type DimensionValue } from "react-native";
 import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
+import { withOpacityHex } from "../lib/withOpacityHex";
 
 type BlockLayoutMode = "block" | "flex" | "absolute";
 
@@ -47,21 +48,12 @@ interface BlockProps {
   borderBottomWidth?: number;
   borderLeftWidth?: number;
   borderColor?: string;
-  borderStyle?: "none" | "solid" | "dashed";
+  borderStyle?: "none" | "solid" | "dotted";
   borderOpacity?: number; // 0–1
   backgroundColor?: string;
   /** 0–100; на RN маппится только в нативный `opacity`. */
   opacityPercent?: number;
 }
-
-const withOpacity = (color: string, opacity: number): string => {
-  const normalized = color.startsWith("#") ? color.slice(1) : color;
-  if (normalized.length !== 6) return color;
-  const alpha = Math.round(Math.min(Math.max(opacity, 0), 1) * 255)
-    .toString(16)
-    .padStart(2, "0");
-  return `#${normalized}${alpha}`;
-};
 
 export const Block = ({
   children,
@@ -99,8 +91,10 @@ export const Block = ({
     borderBottomWidth > 0 ||
     borderLeftWidth > 0;
 
-  const effectiveBorderColor = hasCustomBorder
-    ? withOpacity(borderColor ?? "#CBD5E0", borderOpacity ?? 1)
+  const showBorder = hasCustomBorder && borderStyle !== "none";
+
+  const effectiveBorderColor = showBorder
+    ? withOpacityHex(borderColor ?? "#CBD5E0", borderOpacity ?? 1)
     : "transparent";
 
   /** при layout="flex" направление и выравнивание задаются flexFlow, flexJustifyContent, flexAlignItems.
@@ -158,12 +152,12 @@ export const Block = ({
           paddingBottom,
           paddingLeft,
           borderRadius: fullSize ? 0 : borderRadius,
-          borderStyle: hasCustomBorder && borderStyle !== "none" ? borderStyle : "solid",
+          borderStyle: showBorder ? (borderStyle === "dotted" ? "dotted" : "solid") : "solid",
           borderColor: effectiveBorderColor,
-          borderTopWidth: hasCustomBorder ? borderTopWidth : 0,
-          borderRightWidth: hasCustomBorder ? borderRightWidth : 0,
-          borderBottomWidth: hasCustomBorder ? borderBottomWidth : 0,
-          borderLeftWidth: hasCustomBorder ? borderLeftWidth : 0,
+          borderTopWidth: showBorder ? borderTopWidth : 0,
+          borderRightWidth: showBorder ? borderRightWidth : 0,
+          borderBottomWidth: showBorder ? borderBottomWidth : 0,
+          borderLeftWidth: showBorder ? borderLeftWidth : 0,
           backgroundColor,
           ...resolveCraftVisualEffectsRnStyle({ opacityPercent }),
         },

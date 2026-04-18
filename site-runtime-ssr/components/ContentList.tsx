@@ -8,6 +8,7 @@ import { useSiteCollections } from "@/components/SiteCollectionsContext"
 import { useCollectionFilterScope } from "@/components/CollectionFilterScopeContext"
 import { getCollectionItemsCacheKey } from "@/lib/collectionItemsCacheKey"
 import type { IContentItem } from "@/lib/contentTypes"
+import { withOpacity } from "@/lib/colorUtils"
 import {
   DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
   resolveCraftVisualEffectsStyle,
@@ -26,15 +27,15 @@ type CellLayoutMode = "block" | "flex" | "grid" | "absolute"
 
 interface ContentListProps extends CraftVisualEffectsProps {
   /** Должен совпадать с `filterScope` на блоке фильтра категорий, если используется. */
-  filterScope?: string
-  selectedSource?: string
-  itemsPerRow?: number
-  cellLayout?: CellLayoutMode
-  cellGridColumns?: number
-  cellGridRows?: number
-  cellGridAutoFlow?: "row" | "column" | null
-  cellGap?: number | null
-  cellFlexFlow?: "row" | "column" | "wrap" | null
+  filterScope?: string;
+  selectedSource?: string;
+  itemsPerRow?: number;
+  cellLayout?: CellLayoutMode;
+  cellGridColumns?: number;
+  cellGridRows?: number;
+  cellGridAutoFlow?: "row" | "column" | null;
+  cellGap?: number | null;
+  cellFlexFlow?: "row" | "column" | "wrap" | null;
   cellFlexJustifyContent?:
     | "flex-start"
     | "flex-end"
@@ -48,23 +49,33 @@ interface ContentListProps extends CraftVisualEffectsProps {
     | "center"
     | "stretch"
     | "baseline"
-    | null
-  cellPlaceItemsY?: "start" | "center" | "end" | "stretch" | "baseline" | null
-  cellPlaceItemsX?: "start" | "center" | "end" | "stretch" | "baseline" | null
+    | null;
+  cellPlaceItemsY?: "start" | "center" | "end" | "stretch" | "baseline" | null;
+  cellPlaceItemsX?: "start" | "center" | "end" | "stretch" | "baseline" | null;
+
+  /** Границы корня списка (как в конструкторе / CraftJSON). */
+  borderRadius?: number;
+  borderTopWidth?: number;
+  borderRightWidth?: number;
+  borderBottomWidth?: number;
+  borderLeftWidth?: number;
+  borderColor?: string;
+  borderStyle?: "none" | "solid" | "dotted";
+  borderOpacity?: number;
   /** Фон корня списка (как в конструкторе). */
-  backgroundColor?: string
+  backgroundColor?: string;
   /** Фон ячейки из первой ContentListCell в конструкторе. */
-  cellBackgroundColor?: string | null
+  cellBackgroundColor?: string | null;
   /** Эффекты первой ячейки (шаблон) — на обёртке каждой ячейки в рантайме. */
-  cellMixBlendMode?: CraftMixBlendMode | null
-  cellOpacityPercent?: number | null
-  cellOutlineStyleMode?: CraftOutlineStyleMode | null
-  cellOutlineWidth?: number | null
-  cellOutlineOffset?: number | null
-  cellOutlineColor?: string | null
+  cellMixBlendMode?: CraftMixBlendMode | null;
+  cellOpacityPercent?: number | null;
+  cellOutlineStyleMode?: CraftOutlineStyleMode | null;
+  cellOutlineWidth?: number | null;
+  cellOutlineOffset?: number | null;
+  cellOutlineColor?: string | null;
   /** Зарезервировано под будущий UI; в рендере пока не используется */
-  backgroundClip?: string
-  children?: ComponentNode[]
+  backgroundClip?: string;
+  children?: ComponentNode[];
 }
 
 /**
@@ -94,6 +105,14 @@ export const ContentList = ({
   cellPlaceItemsY,
   cellPlaceItemsX,
   backgroundColor = "#FFFFFF",
+  borderRadius = 4,
+  borderTopWidth = 0,
+  borderRightWidth = 0,
+  borderBottomWidth = 0,
+  borderLeftWidth = 0,
+  borderColor = "#CBD5E0",
+  borderStyle = "solid",
+  borderOpacity = 1,
   cellBackgroundColor,
   backgroundClip: _backgroundClip,
   mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
@@ -118,6 +137,28 @@ export const ContentList = ({
     outlineOffset,
     outlineColor,
   })
+
+  const hasCustomBorder =
+    borderTopWidth > 0 ||
+    borderRightWidth > 0 ||
+    borderBottomWidth > 0 ||
+    borderLeftWidth > 0
+
+  const effectiveListBorderColor = hasCustomBorder
+    ? withOpacity(borderColor ?? "#CBD5E0", borderOpacity ?? 1)
+    : "transparent"
+
+  const listRootBorderStyle: React.CSSProperties = {
+    borderRadius,
+    borderTopWidth: hasCustomBorder ? borderTopWidth : 0,
+    borderRightWidth: hasCustomBorder ? borderRightWidth : 0,
+    borderBottomWidth: hasCustomBorder ? borderBottomWidth : 0,
+    borderLeftWidth: hasCustomBorder ? borderLeftWidth : 0,
+    borderColor: effectiveListBorderColor,
+    borderStyle: hasCustomBorder ? (borderStyle || "solid") : "solid",
+    boxSizing: "border-box",
+  }
+
   const itemsPerRow: number = itemsPerRowProp ?? 1
   const children: ComponentNode[] = childrenProp ?? []
   const { domain, collectionItemsByKey, setItemsForKey } = useSiteCollections()
@@ -265,6 +306,7 @@ export const ContentList = ({
           flexDirection: "column",
           minHeight: 300,
           backgroundColor,
+          ...listRootBorderStyle,
           ...listRootEffects,
         }}
         aria-busy={blockingLoading ? true : undefined}
@@ -281,6 +323,7 @@ export const ContentList = ({
           flexDirection: "column",
           minHeight: 300,
           backgroundColor,
+          ...listRootBorderStyle,
           ...listRootEffects,
         }}
       />
@@ -299,6 +342,7 @@ export const ContentList = ({
         position: "relative",
         width: "100%",
         backgroundColor,
+        ...listRootBorderStyle,
         ...listRootEffects,
       }}
       aria-busy={filterLoading ? true : undefined}

@@ -1,7 +1,14 @@
-import { Image as RNImage, StyleSheet, View, type ImageStyle } from "react-native";
+import {
+  Image as RNImage,
+  StyleSheet,
+  View,
+  type ImageStyle,
+  type ViewStyle,
+} from "react-native";
 import { useContentData } from "../contexts/ContentDataContext";
 import { findContentItemField } from "../content/contentFieldValue";
 import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
+import { withOpacityHex } from "../lib/withOpacityHex";
 
 interface ImageProps {
   src?: string;
@@ -9,6 +16,13 @@ interface ImageProps {
   width?: number;
   height?: number;
   borderRadius?: number;
+  borderTopWidth?: number;
+  borderRightWidth?: number;
+  borderBottomWidth?: number;
+  borderLeftWidth?: number;
+  borderColor?: string;
+  borderStyle?: "none" | "solid" | "dotted";
+  borderOpacity?: number;
   /** todo кол-во полей для коллекций пока не поддерживаем в мобилке */
   collectionField?: string | null;
   backgroundColor?: string;
@@ -21,6 +35,13 @@ export const Image = ({
   width,
   height,
   borderRadius = 8,
+  borderTopWidth = 0,
+  borderRightWidth = 0,
+  borderBottomWidth = 0,
+  borderLeftWidth = 0,
+  borderColor = "#CBD5E0",
+  borderStyle = "solid",
+  borderOpacity = 1,
   collectionField = null,
   backgroundColor = "#F9F9F9",
   opacityPercent,
@@ -55,18 +76,43 @@ export const Image = ({
         : "https://cdn-icons-png.flaticon.com/128/17807/17807769.png";  //TODO заменить на дефолт
   }
 
+  const hasCustomBorder =
+    borderTopWidth > 0 ||
+    borderRightWidth > 0 ||
+    borderBottomWidth > 0 ||
+    borderLeftWidth > 0;
+
+  const showBorder = hasCustomBorder && borderStyle !== "none";
+
+  const effectiveBorderColor = showBorder
+    ? withOpacityHex(borderColor ?? "#CBD5E0", borderOpacity ?? 1)
+    : "transparent";
+
+  const frameStyle: ViewStyle | undefined = showBorder
+    ? {
+        borderRadius,
+        borderStyle: borderStyle === "dotted" ? "dotted" : "solid",
+        borderColor: effectiveBorderColor,
+        borderTopWidth,
+        borderRightWidth,
+        borderBottomWidth,
+        borderLeftWidth,
+        overflow: "hidden",
+      }
+    : undefined;
+
   const imageStyle: ImageStyle = {
     width: width ?? "100%",
     height: height ?? undefined,
     minHeight: height ?? 140,
-    borderRadius,
+    borderRadius: showBorder ? 0 : borderRadius,
     resizeMode: "cover",
     backgroundColor,
     ...resolveCraftVisualEffectsRnStyle({ opacityPercent }),
   };
 
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, frameStyle]}>
       <RNImage
         source={{ uri: effectiveSrc }}
         accessibilityLabel={alt}
