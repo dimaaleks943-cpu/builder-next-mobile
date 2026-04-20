@@ -17,6 +17,11 @@ import {
   type BorderSide,
 } from "./BorderSidesFrame.tsx"
 import { useBorderSidesControl } from "../hooks/useBorderSidesControl.tsx";
+import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
+import {
+  getResponsiveStyleProp,
+  setResponsiveStyleProp,
+} from "../responsiveStyle.ts"
 
 const BORDER_RADIUS_MAX_PX = 100
 
@@ -39,6 +44,7 @@ const borderStyleForButtonGroup = (value: string | undefined): BorderStyleUi => 
 
 export const BordersAccordion = () => {
   const { actions } = useEditor()
+  const viewport = usePreviewViewport()
   const { selectedId, selectedProps } = useEditor((state) => {
     const [id] = Array.from(state.events.selected)
     const node = id ? state.nodes[id] : null
@@ -52,6 +58,7 @@ export const BordersAccordion = () => {
     selectedId,
     selectedProps,
     actions,
+    viewport,
   )
 
   if (!selectedId || !selectedProps) {
@@ -61,17 +68,21 @@ export const BordersAccordion = () => {
   const handleRadiusPercentChange = (value: number) => {
     const px = percentToBorderRadius(value)
     actions.setProp(selectedId, (props: any) => {
-      props.borderRadius = px
+      setResponsiveStyleProp(props, "borderRadius", px, viewport)
     })
   }
 
-  const radiusPercent = borderRadiusToPercent(selectedProps?.borderRadius ?? 0)
+  const radiusPercent = borderRadiusToPercent(
+    (getResponsiveStyleProp(selectedProps, "borderRadius", viewport) as number | undefined) ?? 0,
+  )
 
-  const styleGroupValue = borderStyleForButtonGroup(selectedProps?.borderStyle)
+  const styleGroupValue = borderStyleForButtonGroup(
+    getResponsiveStyleProp(selectedProps, "borderStyle", viewport) as string | undefined,
+  )
 
   const handleBorderStyleChange = (id: string) => {
     actions.setProp(selectedId, (props: any) => {
-      props.borderStyle = id
+      setResponsiveStyleProp(props, "borderStyle", id, viewport)
     })
   }
 
@@ -156,26 +167,34 @@ export const BordersAccordion = () => {
                 <CraftSettingsInput
                   label="Width"
                   type="number"
-                  value={selectedProps?.borderTopWidth ?? 0}
+                  value={(getResponsiveStyleProp(selectedProps, "borderTopWidth", viewport) as number | undefined) ?? 0}
                   onChange={(event: ChangeEvent<HTMLInputElement>) => {
                     const next = Number(event.target.value)
                     const safe = Number.isNaN(next) ? 0 : next
 
                     actions.setProp(selectedId, (props: any) => {
-                      if (sidesForWidth.includes("top")) props.borderTopWidth = safe
-                      if (sidesForWidth.includes("right")) props.borderRightWidth = safe
-                      if (sidesForWidth.includes("bottom")) props.borderBottomWidth = safe
-                      if (sidesForWidth.includes("left")) props.borderLeftWidth = safe
+                      if (sidesForWidth.includes("top")) {
+                        setResponsiveStyleProp(props, "borderTopWidth", safe, viewport)
+                      }
+                      if (sidesForWidth.includes("right")) {
+                        setResponsiveStyleProp(props, "borderRightWidth", safe, viewport)
+                      }
+                      if (sidesForWidth.includes("bottom")) {
+                        setResponsiveStyleProp(props, "borderBottomWidth", safe, viewport)
+                      }
+                      if (sidesForWidth.includes("left")) {
+                        setResponsiveStyleProp(props, "borderLeftWidth", safe, viewport)
+                      }
                     })
                   }}
                 />
 
                 <CraftSettingsColorField
                   label="Color"
-                  value={selectedProps?.borderColor ?? "#000000"}
+                  value={(getResponsiveStyleProp(selectedProps, "borderColor", viewport) as string | undefined) ?? "#000000"}
                   onChange={(value) => {
                     actions.setProp(selectedId, (props: any) => {
-                      props.borderColor = value
+                      setResponsiveStyleProp(props, "borderColor", value, viewport)
                     })
                   }}
                 />
@@ -183,12 +202,12 @@ export const BordersAccordion = () => {
                 <CraftSettingsInput
                   label="Opacity"
                   type="number"
-                  value={Math.round((selectedProps?.borderOpacity ?? 1) * 100)}
+                  value={Math.round((((getResponsiveStyleProp(selectedProps, "borderOpacity", viewport) as number | undefined) ?? 1) * 100))}
                   onChange={(event: ChangeEvent<HTMLInputElement>) => {
                     const next = Number(event.target.value)
                     const safe = Math.min(100, Math.max(0, Number.isNaN(next) ? 0 : next))
                     actions.setProp(selectedId, (props: any) => {
-                      props.borderOpacity = safe / 100
+                      setResponsiveStyleProp(props, "borderOpacity", safe / 100, viewport)
                     })
                   }}
                 />

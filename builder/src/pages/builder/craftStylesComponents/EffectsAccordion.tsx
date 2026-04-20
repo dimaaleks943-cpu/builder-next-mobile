@@ -19,10 +19,16 @@ import { CraftSettingsColorField } from "../components/craftSettingsControls/Cra
 import { AddIcon } from "../../../icons/AddIcon.tsx"
 import { useBuilderModeContext } from "../context/BuilderModeContext.tsx"
 import { MODE_TYPE } from "../builder.enum.ts"
+import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
+import {
+  getResponsiveStyleProp,
+  setResponsiveStyleProp,
+} from "../responsiveStyle.ts"
 
 export const EffectsAccordion = () => {
   const modeContext = useBuilderModeContext()
   const isRn = modeContext?.mode === MODE_TYPE.RN
+  const viewport = usePreviewViewport()
   const { actions } = useEditor()
   const { selectedId, selectedProps } = useEditor((state) => {
     const [id] = Array.from(state.events.selected)
@@ -38,24 +44,24 @@ export const EffectsAccordion = () => {
   }
 
   const outlineMode: CraftOutlineStyleMode =
-    selectedProps.outlineStyleMode ?? "none"
+    (getResponsiveStyleProp(selectedProps, "outlineStyleMode", viewport) as CraftOutlineStyleMode | undefined) ?? "none"
 
   const handleBlendChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value
     actions.setProp(selectedId, (props: any) => {
-      props.mixBlendMode = value
+      setResponsiveStyleProp(props, "mixBlendMode", value, viewport)
     })
   }
 
   const handleOpacityChange = (value: number) => {
     actions.setProp(selectedId, (props: any) => {
-      props.opacityPercent = value
+      setResponsiveStyleProp(props, "opacityPercent", value, viewport)
     })
   }
 
   const handleOutlineModeChange = (id: string) => {
     actions.setProp(selectedId, (props: any) => {
-      props.outlineStyleMode = id
+      setResponsiveStyleProp(props, "outlineStyleMode", id, viewport)
     })
   }
 
@@ -83,7 +89,7 @@ export const EffectsAccordion = () => {
           {!isRn ? (
             <CraftSettingsSelect
               label="Blending"
-              value={selectedProps.mixBlendMode ?? "normal"}
+              value={(getResponsiveStyleProp(selectedProps, "mixBlendMode", viewport) as string | undefined) ?? "normal"}
               onChange={handleBlendChange}
               options={CRAFT_MIX_BLEND_MODE_OPTIONS}
             />
@@ -91,7 +97,7 @@ export const EffectsAccordion = () => {
 
           <CraftSettingsPercentSliderRow
             label="Opacity"
-            value={selectedProps.opacityPercent ?? 100}
+            value={(getResponsiveStyleProp(selectedProps, "opacityPercent", viewport) as number | undefined) ?? 100}
             onChange={handleOpacityChange}
           />
 
@@ -120,33 +126,33 @@ export const EffectsAccordion = () => {
                   <CraftSettingsInput
                     label="Width"
                     type="number"
-                    value={selectedProps.outlineWidth ?? 0}
+                    value={(getResponsiveStyleProp(selectedProps, "outlineWidth", viewport) as number | undefined) ?? 0}
                     onChange={(event: ChangeEvent<HTMLInputElement>) => {
                       const next = Number(event.target.value)
                       const safe = Number.isNaN(next) ? 0 : next
                       actions.setProp(selectedId, (props: any) => {
-                        props.outlineWidth = safe
+                        setResponsiveStyleProp(props, "outlineWidth", safe, viewport)
                       })
                     }}
                   />
                   <CraftSettingsInput
                     label="Offset"
                     type="number"
-                    value={selectedProps.outlineOffset ?? 0}
+                    value={(getResponsiveStyleProp(selectedProps, "outlineOffset", viewport) as number | undefined) ?? 0}
                     onChange={(event: ChangeEvent<HTMLInputElement>) => {
                       const next = Number(event.target.value)
                       const safe = Number.isNaN(next) ? 0 : next
                       actions.setProp(selectedId, (props: any) => {
-                        props.outlineOffset = safe
+                        setResponsiveStyleProp(props, "outlineOffset", safe, viewport)
                       })
                     }}
                   />
                   <CraftSettingsColorField
                     label="Color"
-                    value={selectedProps.outlineColor ?? "#000000"}
+                    value={(getResponsiveStyleProp(selectedProps, "outlineColor", viewport) as string | undefined) ?? "#000000"}
                     onChange={(value) => {
                       actions.setProp(selectedId, (props: any) => {
-                        props.outlineColor = value
+                        setResponsiveStyleProp(props, "outlineColor", value, viewport)
                       })
                     }}
                   />

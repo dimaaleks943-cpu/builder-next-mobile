@@ -13,6 +13,8 @@ import {
   resolveCraftVisualEffectsStyle,
   type CraftVisualEffectsProps,
 } from "./craftVisualEffects.ts"
+import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
+import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 import { useBuilderModeContext } from "../pages/builder/context/BuilderModeContext.tsx"
 import {
   commitCraftTextDraft,
@@ -60,50 +62,55 @@ export interface LinkTextProps extends CraftVisualEffectsProps {
   overflow?: "auto" | "hidden" | "visible" | "scroll"
   /** Зарезервировано под будущий UI; в рендере пока не используется */
   backgroundClip?: string
+  style?: ResponsiveStyle
 }
 
-export const CraftLinkText = ({
-  text = "Ссылка",
-  i18nKey = null,
-  collectionField = null,
-  href = "http://www.google.com",
-  openInNewTab = false,
-  fontSize = 14,
-  fontWeight = "normal",
-  textAlign = "left",
-  color = COLORS.green300,
-  fontFamily,
-  lineHeight = 20,
-  textTransform = "none",
-  strokeColor,
-  strokeWidth = 0,
-  isItalic = false,
-  isUnderline = false,
-  isStrikethrough = false,
-  marginTop = 0,
-  marginRight = 0,
-  marginBottom = 0,
-  marginLeft = 0,
-  paddingTop = 0,
-  paddingRight = 0,
-  paddingBottom = 0,
-  paddingLeft = 0,
-  backgroundColor,
-  width,
-  height,
-  minWidth,
-  minHeight,
-  maxWidth,
-  maxHeight,
-  overflow,
-  backgroundClip: _backgroundClip,
-  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
-  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
-  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
-  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
-  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
-  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
-}: LinkTextProps) => {
+export const CraftLinkText = (props: LinkTextProps) => {
+  const viewport = usePreviewViewport()
+  const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
+  const text = props.text ?? "Ссылка"
+  const i18nKey = props.i18nKey ?? null
+  const collectionField = props.collectionField ?? null
+  const href = props.href ?? "http://www.google.com"
+  const openInNewTab = props.openInNewTab ?? false
+  const fontSize = (responsiveStyle.fontSize as number | undefined) ?? props.fontSize ?? 14
+  const fontWeight = (responsiveStyle.fontWeight as "normal" | "bold" | undefined) ?? props.fontWeight ?? "normal"
+  const textAlign = (responsiveStyle.textAlign as TextAlign | undefined) ?? props.textAlign ?? "left"
+  const color = (responsiveStyle.color as string | undefined) ?? props.color ?? COLORS.green300
+  const fontFamily = (responsiveStyle.fontFamily as string | undefined) ?? props.fontFamily
+  const lineHeight = (responsiveStyle.lineHeight as number | undefined) ?? props.lineHeight ?? 20
+  const textTransform =
+    (responsiveStyle.textTransform as "none" | "uppercase" | "lowercase" | "capitalize" | undefined) ??
+    props.textTransform ??
+    "none"
+  const strokeColor = (responsiveStyle.strokeColor as string | undefined) ?? props.strokeColor
+  const strokeWidth = (responsiveStyle.strokeWidth as number | undefined) ?? props.strokeWidth ?? 0
+  const isItalic = (responsiveStyle.isItalic as boolean | undefined) ?? props.isItalic ?? false
+  const isUnderline = (responsiveStyle.isUnderline as boolean | undefined) ?? props.isUnderline ?? false
+  const isStrikethrough =
+    (responsiveStyle.isStrikethrough as boolean | undefined) ?? props.isStrikethrough ?? false
+  const marginTop = (responsiveStyle.marginTop as number | undefined) ?? props.marginTop ?? 0
+  const marginRight = (responsiveStyle.marginRight as number | undefined) ?? props.marginRight ?? 0
+  const marginBottom = (responsiveStyle.marginBottom as number | undefined) ?? props.marginBottom ?? 0
+  const marginLeft = (responsiveStyle.marginLeft as number | undefined) ?? props.marginLeft ?? 0
+  const paddingTop = (responsiveStyle.paddingTop as number | undefined) ?? props.paddingTop ?? 0
+  const paddingRight = (responsiveStyle.paddingRight as number | undefined) ?? props.paddingRight ?? 0
+  const paddingBottom = (responsiveStyle.paddingBottom as number | undefined) ?? props.paddingBottom ?? 0
+  const paddingLeft = (responsiveStyle.paddingLeft as number | undefined) ?? props.paddingLeft ?? 0
+  const backgroundColor = (responsiveStyle.backgroundColor as string | undefined) ?? props.backgroundColor
+  const width = (responsiveStyle.width as string | number | undefined) ?? props.width
+  const height = (responsiveStyle.height as string | number | undefined) ?? props.height
+  const minWidth = (responsiveStyle.minWidth as number | undefined) ?? props.minWidth
+  const minHeight = (responsiveStyle.minHeight as number | undefined) ?? props.minHeight
+  const maxWidth = (responsiveStyle.maxWidth as string | number | undefined) ?? props.maxWidth
+  const maxHeight = (responsiveStyle.maxHeight as string | number | undefined) ?? props.maxHeight
+  const overflow = (responsiveStyle.overflow as LinkTextProps["overflow"] | undefined) ?? props.overflow
+  const mixBlendMode = (responsiveStyle.mixBlendMode as string | undefined) ?? props.mixBlendMode ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode
+  const opacityPercent = (responsiveStyle.opacityPercent as number | undefined) ?? props.opacityPercent ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent
+  const outlineStyleMode = (responsiveStyle.outlineStyleMode as any) ?? props.outlineStyleMode ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode
+  const outlineWidth = (responsiveStyle.outlineWidth as number | undefined) ?? props.outlineWidth ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth
+  const outlineOffset = (responsiveStyle.outlineOffset as number | undefined) ?? props.outlineOffset ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset
+  const outlineColor = (responsiveStyle.outlineColor as string | undefined) ?? props.outlineColor ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(text)
   const spanRef = useRef<HTMLSpanElement | null>(null)

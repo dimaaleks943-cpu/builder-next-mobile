@@ -1,6 +1,8 @@
 import type { ChangeEvent } from "react"
 import { Box } from "@mui/material"
 import { useEditor } from "@craftjs/core"
+import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
+import { setResponsiveStyleProp } from "../responsiveStyle.ts"
 
 export type Edge = "Top" | "Right" | "Bottom" | "Left"
 
@@ -15,6 +17,7 @@ type EdgeInputProps = {
 
 export const EdgeInput = ({ nodeId, kind, side, value, onChangeProp, sx }: EdgeInputProps) => {
   const { actions } = useEditor()
+  const viewport = usePreviewViewport()
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const next = Number(event.target.value)
@@ -28,7 +31,7 @@ export const EdgeInput = ({ nodeId, kind, side, value, onChangeProp, sx }: EdgeI
       const key = `${kind}${side}` as
         | "marginTop" | "marginRight" | "marginBottom" | "marginLeft"
         | "paddingTop" | "paddingRight" | "paddingBottom" | "paddingLeft"
-      props[key] = safe
+      setResponsiveStyleProp(props, key, safe, viewport)
     })
   }
 

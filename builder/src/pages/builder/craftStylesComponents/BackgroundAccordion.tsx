@@ -13,11 +13,17 @@ import { COLORS } from "../../../theme/colors.ts"
 import { AddIcon } from "../../../icons/AddIcon.tsx"
 import { CraftSettingsColorField } from "../components/craftSettingsControls/CraftSettingsColorField.tsx"
 import { CraftSettingsSelect } from "../components/craftSettingsControls/CraftSettingsSelect.tsx"
+import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
+import {
+  getResponsiveStyleProp,
+  setResponsiveStyleProp,
+} from "../responsiveStyle.ts"
 
 const DEFAULT_BG_DISPLAY = COLORS.white
 
 export const BackgroundAccordion = () => {
   const { actions } = useEditor()
+  const viewport = usePreviewViewport()
   const { selectedId, selectedProps } = useEditor((state) => {
     const [id] = Array.from(state.events.selected)
     const node = id ? state.nodes[id] : null
@@ -31,8 +37,11 @@ export const BackgroundAccordion = () => {
   const colorTimeoutRef = useRef<number | undefined>(undefined)
 
   useEffect(() => {
-    setColorDraft(selectedProps?.backgroundColor ?? DEFAULT_BG_DISPLAY)
-  }, [selectedProps?.backgroundColor, selectedId])
+    setColorDraft(
+      (getResponsiveStyleProp(selectedProps, "backgroundColor", viewport) as string | undefined) ??
+        DEFAULT_BG_DISPLAY,
+    )
+  }, [selectedProps, selectedId, viewport])
 
   if (!selectedId || !selectedProps) {
     return null
@@ -45,7 +54,7 @@ export const BackgroundAccordion = () => {
     }
     colorTimeoutRef.current = window.setTimeout(() => {
       actions.setProp(selectedId, (props: any) => {
-        props.backgroundColor = value
+        setResponsiveStyleProp(props, "backgroundColor", value, viewport)
       })
     }, 200)
   }
@@ -58,7 +67,7 @@ export const BackgroundAccordion = () => {
   const handleClipChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value
     actions.setProp(selectedId, (props: any) => {
-      props.backgroundClip = value
+      setResponsiveStyleProp(props, "backgroundClip", value, viewport)
     })
   }
 
@@ -118,7 +127,7 @@ export const BackgroundAccordion = () => {
 
           <CraftSettingsSelect
             label="Clipping"
-            value={selectedProps.backgroundClip ?? "none"}
+            value={(getResponsiveStyleProp(selectedProps, "backgroundClip", viewport) as string | undefined) ?? "none"}
             onChange={handleClipChange}
             options={[{ id: "none", value: "None" }]}
           />

@@ -15,6 +15,11 @@ import {
 } from "../components/craftSettingsControls/CraftAlignControl"
 import { useBuilderModeContext } from "../context/BuilderModeContext"
 import { MODE_TYPE } from "../builder.enum"
+import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
+import {
+  getResponsiveStyleProp,
+  setResponsiveStyleProp,
+} from "../responsiveStyle.ts"
 import type {
   PlaceItemsValue,
   FlexFlowOption,
@@ -41,6 +46,7 @@ export const LayoutAccordion = () => {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("block")
   const modeContext = useBuilderModeContext()
   const isRn = modeContext?.mode === MODE_TYPE.RN
+  const viewport = usePreviewViewport()
 
   const { actions } = useEditor()
   const { selectedId, selectedProps } = useEditor((state) => {
@@ -57,7 +63,11 @@ export const LayoutAccordion = () => {
   }
 
   const effectiveLayout: LayoutMode =
-    (selectedProps?.layout as LayoutMode | undefined) ?? layoutMode
+    (getResponsiveStyleProp(
+      selectedProps,
+      "layout",
+      viewport,
+    ) as LayoutMode | undefined) ?? layoutMode
 
   /** В режиме RN показываем только флекс; значение для UI принудительно "flex". */
   const displayLayout: LayoutMode = isRn ? "flex" : effectiveLayout
@@ -66,7 +76,7 @@ export const LayoutAccordion = () => {
   const handleLayoutChange = (value: LayoutMode) => {
     setLayoutMode(value)
     actions.setProp(selectedId, (props: any) => {
-      props.layout = value
+      setResponsiveStyleProp(props, "layout", value, viewport)
     })
   }
 
@@ -74,8 +84,8 @@ export const LayoutAccordion = () => {
     const next = Number(event.target.value)
     const safe = Number.isNaN(next) ? undefined : next
     actions.setProp(selectedId, (props: any) => {
-      props.gridColumns = safe
-      props.itemsPerRow = safe
+      setResponsiveStyleProp(props, "gridColumns", safe, viewport)
+      setResponsiveStyleProp(props, "itemsPerRow", safe, viewport)
     })
   }
 
@@ -83,13 +93,13 @@ export const LayoutAccordion = () => {
     const next = Number(event.target.value)
     const safe = Number.isNaN(next) ? undefined : next
     actions.setProp(selectedId, (props: any) => {
-      props.gridRows = safe
+      setResponsiveStyleProp(props, "gridRows", safe, viewport)
     })
   }
 
   const handleGridAutoFlowChange = (value: GridFlowOption) => {
     actions.setProp(selectedId, (props: any) => {
-      props.gridAutoFlow = value
+      setResponsiveStyleProp(props, "gridAutoFlow", value, viewport)
     })
   }
 
@@ -97,13 +107,13 @@ export const LayoutAccordion = () => {
     const next = Number(event.target.value)
     const safe = Number.isNaN(next) ? undefined : next
     actions.setProp(selectedId, (props: any) => {
-      props.gap = safe
+      setResponsiveStyleProp(props, "gap", safe, viewport)
     })
   }
 
   const handleFlexFlowChange = (value: FlexFlowOption) => {
     actions.setProp(selectedId, (props: any) => {
-      props.flexFlow = value
+      setResponsiveStyleProp(props, "flexFlow", value, viewport)
     })
   }
 
@@ -113,11 +123,15 @@ export const LayoutAccordion = () => {
   ) => {
     actions.setProp(selectedId, (props: any) => {
       if (justifyContent === undefined && alignItems === undefined) {
-        delete props.flexJustifyContent
-        delete props.flexAlignItems
+        setResponsiveStyleProp(props, "flexJustifyContent", undefined, viewport)
+        setResponsiveStyleProp(props, "flexAlignItems", undefined, viewport)
       } else {
-        if (justifyContent != null) props.flexJustifyContent = justifyContent
-        if (alignItems != null) props.flexAlignItems = alignItems
+        if (justifyContent != null) {
+          setResponsiveStyleProp(props, "flexJustifyContent", justifyContent, viewport)
+        }
+        if (alignItems != null) {
+          setResponsiveStyleProp(props, "flexAlignItems", alignItems, viewport)
+        }
       }
     })
   }
@@ -128,30 +142,54 @@ export const LayoutAccordion = () => {
   ) => {
     actions.setProp(selectedId, (props: any) => {
       if (alignY === undefined && alignX === undefined) {
-        delete props.placeItemsY
-        delete props.placeItemsX
+        setResponsiveStyleProp(props, "placeItemsY", undefined, viewport)
+        setResponsiveStyleProp(props, "placeItemsX", undefined, viewport)
       } else if (alignY != null && alignX != null) {
-        props.placeItemsY = alignY
-        props.placeItemsX = alignX
+        setResponsiveStyleProp(props, "placeItemsY", alignY, viewport)
+        setResponsiveStyleProp(props, "placeItemsX", alignX, viewport)
       }
     })
   }
 
   const effectiveGridAutoFlow: GridFlowOption =
-    (selectedProps?.gridAutoFlow as GridFlowOption | undefined) ?? "row"
+    (getResponsiveStyleProp(
+      selectedProps,
+      "gridAutoFlow",
+      viewport,
+    ) as GridFlowOption | undefined) ?? "row"
 
   const effectiveFlexFlow: FlexFlowOption =
-    (selectedProps?.flexFlow as FlexFlowOption | undefined) ?? "row"
+    (getResponsiveStyleProp(
+      selectedProps,
+      "flexFlow",
+      viewport,
+    ) as FlexFlowOption | undefined) ?? "row"
 
-  const effectiveFlexJustify = selectedProps?.flexJustifyContent as
+  const effectiveFlexJustify = getResponsiveStyleProp(
+    selectedProps,
+    "flexJustifyContent",
+    viewport,
+  ) as
     | FlexJustifyContent
     | undefined
-  const effectiveFlexAlign = selectedProps?.flexAlignItems as
+  const effectiveFlexAlign = getResponsiveStyleProp(
+    selectedProps,
+    "flexAlignItems",
+    viewport,
+  ) as
     | FlexAlignItems
     | undefined
 
-  const effectivePlaceItemsY = selectedProps?.placeItemsY as PlaceItemsValue | undefined
-  const effectivePlaceItemsX = selectedProps?.placeItemsX as PlaceItemsValue | undefined
+  const effectivePlaceItemsY = getResponsiveStyleProp(
+    selectedProps,
+    "placeItemsY",
+    viewport,
+  ) as PlaceItemsValue | undefined
+  const effectivePlaceItemsX = getResponsiveStyleProp(
+    selectedProps,
+    "placeItemsX",
+    viewport,
+  ) as PlaceItemsValue | undefined
 
   return (
     <Accordion defaultExpanded disableGutters>
@@ -210,7 +248,7 @@ export const LayoutAccordion = () => {
               <CraftSettingsInput
                 label="Gap"
                 type="number"
-                value={selectedProps?.gap ?? ""}
+                value={getResponsiveStyleProp(selectedProps, "gap", viewport) ?? ""}
                 onChange={handleGapChange}
               />
             </Box>
@@ -229,13 +267,13 @@ export const LayoutAccordion = () => {
                 <CraftSettingsInput
                   label="Columns"
                   type="number"
-                  value={selectedProps?.gridColumns ?? ""}
+                  value={getResponsiveStyleProp(selectedProps, "gridColumns", viewport) ?? ""}
                   onChange={handleGridColumnsChange}
                 />
                 <CraftSettingsInput
                   label="Rows"
                   type="number"
-                  value={selectedProps?.gridRows ?? ""}
+                  value={getResponsiveStyleProp(selectedProps, "gridRows", viewport) ?? ""}
                   onChange={handleGridRowsChange}
                 />
               </Box>
@@ -260,7 +298,7 @@ export const LayoutAccordion = () => {
               <CraftSettingsInput
                 label="Gap"
                 type="number"
-                value={selectedProps?.gap ?? ""}
+                value={getResponsiveStyleProp(selectedProps, "gap", viewport) ?? ""}
                 onChange={handleGapChange}
               />
             </Box>

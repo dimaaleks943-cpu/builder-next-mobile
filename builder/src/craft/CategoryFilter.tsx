@@ -13,6 +13,8 @@ import {
   resolveCraftVisualEffectsStyle,
   type CraftVisualEffectsProps,
 } from "./craftVisualEffects.ts"
+import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
+import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 
 /**
  * Пропсы блока «Фильтр категорий». Выбор пользователя хранится в {@link useCollectionFilterScope}
@@ -37,6 +39,7 @@ type CategoryFilterProps = {
   backgroundColor?: string
   /** Зарезервировано под будущий UI; в рендере пока не используется */
   backgroundClip?: string
+  style?: ResponsiveStyle
 } & CraftVisualEffectsProps
 
 /**
@@ -65,6 +68,8 @@ export const CraftCategoryFilter = () => {
     useCollectionFilterScope()
   const [fetchCategories, { data: categoriesResponse, isFetching }] =
     useLazyGetContentCategoriesQuery()
+  const viewport = usePreviewViewport()
+  const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
 
   const filterScope = props.filterScope ?? ""
   const contentCategoryRootId = props.contentCategoryRootId ?? ""
@@ -196,24 +201,54 @@ export const CraftCategoryFilter = () => {
         connect(drag(ref))
       }}
       style={{
-        width: props.width ?? "100%",
-        height: props.height,
-        minWidth: props.minWidth,
-        minHeight: props.minHeight ?? 48,
-        maxWidth: props.maxWidth,
-        maxHeight: props.maxHeight,
+        width: (responsiveStyle.width as string | number | undefined) ?? props.width ?? "100%",
+        height: (responsiveStyle.height as string | number | undefined) ?? props.height,
+        minWidth: (responsiveStyle.minWidth as number | undefined) ?? props.minWidth,
+        minHeight: (responsiveStyle.minHeight as number | undefined) ?? props.minHeight ?? 48,
+        maxWidth: (responsiveStyle.maxWidth as string | number | undefined) ?? props.maxWidth,
+        maxHeight: (responsiveStyle.maxHeight as string | number | undefined) ?? props.maxHeight,
         display: "flex",
         flexDirection: "column",
         backgroundColor: selected
           ? COLORS.lightPurple
-          : (props.backgroundColor ?? COLORS.white),
+          : ((responsiveStyle.backgroundColor as string | undefined) ??
+            props.backgroundColor ??
+            COLORS.white),
         border: selected
           ? `2px solid ${COLORS.purple400}`
           : `1px solid ${COLORS.gray300}`,
         borderRadius: 4,
-        overflow: props.overflow ?? "visible",
+        overflow:
+          (responsiveStyle.overflow as CategoryFilterProps["overflow"] | undefined) ??
+          props.overflow ??
+          "visible",
         position: "relative",
-        ...resolveCraftVisualEffectsStyle(props),
+        ...resolveCraftVisualEffectsStyle({
+          mixBlendMode:
+            (responsiveStyle.mixBlendMode as string | undefined) ??
+            props.mixBlendMode ??
+            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
+          opacityPercent:
+            (responsiveStyle.opacityPercent as number | undefined) ??
+            props.opacityPercent ??
+            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
+          outlineStyleMode:
+            (responsiveStyle.outlineStyleMode as any) ??
+            props.outlineStyleMode ??
+            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
+          outlineWidth:
+            (responsiveStyle.outlineWidth as number | undefined) ??
+            props.outlineWidth ??
+            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
+          outlineOffset:
+            (responsiveStyle.outlineOffset as number | undefined) ??
+            props.outlineOffset ??
+            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
+          outlineColor:
+            (responsiveStyle.outlineColor as string | undefined) ??
+            props.outlineColor ??
+            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
+        }),
       }}
     >
       {selected && (

@@ -26,6 +26,8 @@ import {
   type CraftVisualEffectsProps,
 } from "./craftVisualEffects.ts"
 import { getCollectionItemsCacheKey } from "../utils/collectionItemsCacheKey"
+import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
+import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 
 export type ContentListProps = {
   width?: string | number
@@ -53,6 +55,7 @@ export type ContentListProps = {
   backgroundColor?: string
   /** Зарезервировано под будущий UI; в рендере пока не используется */
   backgroundClip?: string
+  style?: ResponsiveStyle
 } & CraftVisualEffectsProps
 
 /**
@@ -88,15 +91,17 @@ export const CraftContentList = ({}: ContentListProps) => {
   const collectionsContext = useCollectionsContext()
   const { selectedCategoryIdByScope } = useCollectionFilterScope()
   const [fetchContentItems] = useLazyGetContentItemsQuery()
+  const viewport = usePreviewViewport()
+  const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
 
-  const borderTopWidth = props.borderTopWidth ?? 0
-  const borderRightWidth = props.borderRightWidth ?? 0
-  const borderBottomWidth = props.borderBottomWidth ?? 0
-  const borderLeftWidth = props.borderLeftWidth ?? 0
-  const borderColor = props.borderColor ?? COLORS.gray400
-  const borderStyle = props.borderStyle ?? "solid"
-  const borderOpacity = props.borderOpacity ?? 1
-  const borderRadius = props.borderRadius ?? 4
+  const borderTopWidth = (responsiveStyle.borderTopWidth as number | undefined) ?? props.borderTopWidth ?? 0
+  const borderRightWidth = (responsiveStyle.borderRightWidth as number | undefined) ?? props.borderRightWidth ?? 0
+  const borderBottomWidth = (responsiveStyle.borderBottomWidth as number | undefined) ?? props.borderBottomWidth ?? 0
+  const borderLeftWidth = (responsiveStyle.borderLeftWidth as number | undefined) ?? props.borderLeftWidth ?? 0
+  const borderColor = (responsiveStyle.borderColor as string | undefined) ?? props.borderColor ?? COLORS.gray400
+  const borderStyle = (responsiveStyle.borderStyle as "none" | "solid" | "dotted" | undefined) ?? props.borderStyle ?? "solid"
+  const borderOpacity = (responsiveStyle.borderOpacity as number | undefined) ?? props.borderOpacity ?? 1
+  const borderRadius = (responsiveStyle.borderRadius as number | undefined) ?? props.borderRadius ?? 4
 
   const hasCustomBorder =
     borderTopWidth > 0 ||
@@ -131,7 +136,7 @@ export const CraftContentList = ({}: ContentListProps) => {
   // Текущий выбранный source и layout берём из props узла Craft.js,
   // чтобы настройки сохранялись в JSON и восстанавливались при загрузке
   const selectedSource = props.selectedSource ?? ""
-  const itemsPerRow = props.itemsPerRow ?? 1
+  const itemsPerRow = (responsiveStyle.itemsPerRow as number | undefined) ?? props.itemsPerRow ?? 1
   const filterScope = props.filterScope
   const scopeTrimmed = filterScope?.trim() ?? ""
   // Категория для этого списка: берётся из того же scope, что у CategoryFilter на странице.
@@ -502,17 +507,17 @@ export const CraftContentList = ({}: ContentListProps) => {
         connect(drag(ref))
       }}
       style={{
-        width: props.width ?? "100%",
-        height: props.height,
-        minWidth: props.minWidth,
-        minHeight: props.minHeight,
-        maxWidth: props.maxWidth,
-        maxHeight: props.maxHeight,
+        width: (responsiveStyle.width as string | number | undefined) ?? props.width ?? "100%",
+        height: (responsiveStyle.height as string | number | undefined) ?? props.height,
+        minWidth: (responsiveStyle.minWidth as number | undefined) ?? props.minWidth,
+        minHeight: (responsiveStyle.minHeight as number | undefined) ?? props.minHeight,
+        maxWidth: (responsiveStyle.maxWidth as string | number | undefined) ?? props.maxWidth,
+        maxHeight: (responsiveStyle.maxHeight as string | number | undefined) ?? props.maxHeight,
         display: "flex",
         flexDirection: "column",
         backgroundColor: selected
           ? COLORS.lightPurple
-          : (props.backgroundColor ?? COLORS.white),
+          : ((responsiveStyle.backgroundColor as string | undefined) ?? props.backgroundColor ?? COLORS.white),
         borderStyle: selected ? "solid" : hasCustomBorder ? (borderStyle || "solid") : "solid",
         borderColor: selected
           ? COLORS.purple400
@@ -524,9 +529,37 @@ export const CraftContentList = ({}: ContentListProps) => {
         borderBottomWidth: selected ? 2 : hasCustomBorder ? borderBottomWidth : defaultEditorChrome ? 1 : 0,
         borderLeftWidth: selected ? 2 : hasCustomBorder ? borderLeftWidth : defaultEditorChrome ? 1 : 0,
         borderRadius,
-        overflow: props.overflow ?? "visible",
+        overflow:
+          (responsiveStyle.overflow as ContentListProps["overflow"] | undefined) ??
+          props.overflow ??
+          "visible",
         position: "relative",
-        ...resolveCraftVisualEffectsStyle(props),
+        ...resolveCraftVisualEffectsStyle({
+          mixBlendMode:
+            (responsiveStyle.mixBlendMode as string | undefined) ??
+            props.mixBlendMode ??
+            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
+          opacityPercent:
+            (responsiveStyle.opacityPercent as number | undefined) ??
+            props.opacityPercent ??
+            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
+          outlineStyleMode:
+            (responsiveStyle.outlineStyleMode as any) ??
+            props.outlineStyleMode ??
+            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
+          outlineWidth:
+            (responsiveStyle.outlineWidth as number | undefined) ??
+            props.outlineWidth ??
+            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
+          outlineOffset:
+            (responsiveStyle.outlineOffset as number | undefined) ??
+            props.outlineOffset ??
+            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
+          outlineColor:
+            (responsiveStyle.outlineColor as string | undefined) ??
+            props.outlineColor ??
+            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
+        }),
       }}
     >
       {selected && (

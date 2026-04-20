@@ -14,6 +14,11 @@ import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSet
 import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
 import { CraftSettingsMultiToggleGroup } from "../components/craftSettingsControls/CraftSettingsMultiToggleGroup.tsx"
 import { CraftSettingsColorField } from "../components/craftSettingsControls/CraftSettingsColorField.tsx"
+import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
+import {
+  getResponsiveStyleProp,
+  setResponsiveStyleProp,
+} from "../responsiveStyle.ts"
 
 interface SelectedTypographyProps {
   fontFamily?: string;
@@ -37,6 +42,7 @@ interface EditorSelection {
 
 export const TypographyAccordion = () => {
   const { actions } = useEditor()
+  const viewport = usePreviewViewport()
   const { selectedId, selectedProps } = useEditor(
     (state): EditorSelection => {
       const [id] = Array.from(state.events.selected)
@@ -63,12 +69,18 @@ export const TypographyAccordion = () => {
   const strokeColorTimeoutRef = useRef<number | undefined>(undefined)
 
   useEffect(() => {
-    setColorDraft(selectedProps.color ?? COLORS.black)
-  }, [selectedProps.color, selectedId])
+    setColorDraft(
+      (getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "color", viewport) as string | undefined) ??
+        COLORS.black,
+    )
+  }, [selectedProps, selectedId, viewport])
 
   useEffect(() => {
-    setStrokeColorDraft(selectedProps.strokeColor ?? COLORS.black)
-  }, [selectedProps.strokeColor, selectedId])
+    setStrokeColorDraft(
+      (getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "strokeColor", viewport) as string | undefined) ??
+        COLORS.black,
+    )
+  }, [selectedProps, selectedId, viewport])
 
   const scheduleColorUpdate = (value: string) => {
     if (!selectedId) return
@@ -77,7 +89,7 @@ export const TypographyAccordion = () => {
     }
     colorTimeoutRef.current = window.setTimeout(() => {
       actions.setProp(selectedId, (props: any) => {
-        props.color = value
+        setResponsiveStyleProp(props, "color", value, viewport)
       })
     }, 200)
   }
@@ -89,7 +101,7 @@ export const TypographyAccordion = () => {
     }
     strokeColorTimeoutRef.current = window.setTimeout(() => {
       actions.setProp(selectedId, (props: any) => {
-        props.strokeColor = value
+        setResponsiveStyleProp(props, "strokeColor", value, viewport)
       })
     }, 200)
   }
@@ -97,14 +109,19 @@ export const TypographyAccordion = () => {
   const handleFontFamilyChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value
     actions.setProp(selectedId, (props: any) => {
-      props.fontFamily = value === "system" ? undefined : value
+      setResponsiveStyleProp(
+        props,
+        "fontFamily",
+        value === "system" ? undefined : value,
+        viewport,
+      )
     })
   }
 
   const handleFontWeightChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value === "bold" ? "bold" : "normal"
     actions.setProp(selectedId, (props: any) => {
-      props.fontWeight = value
+      setResponsiveStyleProp(props, "fontWeight", value, viewport)
     })
   }
 
@@ -112,7 +129,7 @@ export const TypographyAccordion = () => {
     const next = Number(event.target.value)
     const safe = Number.isNaN(next) ? undefined : next
     actions.setProp(selectedId, (props: any) => {
-      props.fontSize = safe
+      setResponsiveStyleProp(props, "fontSize", safe, viewport)
     })
   }
 
@@ -120,7 +137,7 @@ export const TypographyAccordion = () => {
     const next = Number(event.target.value)
     const safe = Number.isNaN(next) ? undefined : next
     actions.setProp(selectedId, (props: any) => {
-      props.lineHeight = safe
+      setResponsiveStyleProp(props, "lineHeight", safe, viewport)
     })
   }
 
@@ -131,7 +148,7 @@ export const TypographyAccordion = () => {
 
   const handleAlignChange = (align: "left" | "center" | "right") => {
     actions.setProp(selectedId, (props: any) => {
-      props.textAlign = align
+      setResponsiveStyleProp(props, "textAlign", align, viewport)
     })
   }
 
@@ -139,7 +156,7 @@ export const TypographyAccordion = () => {
     transform: "none" | "uppercase" | "lowercase" | "capitalize",
   ) => {
     actions.setProp(selectedId, (props: any) => {
-      props.textTransform = transform
+      setResponsiveStyleProp(props, "textTransform", transform, viewport)
     })
   }
 
@@ -147,7 +164,7 @@ export const TypographyAccordion = () => {
     const next = Number(event.target.value)
     const safe = Number.isNaN(next) ? 0 : next
     actions.setProp(selectedId, (props: any) => {
-      props.strokeWidth = safe
+      setResponsiveStyleProp(props, "strokeWidth", safe, viewport)
     })
   }
 
@@ -173,7 +190,7 @@ export const TypographyAccordion = () => {
         <Box sx={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           <CraftSettingsSelect
             label="Font"
-            value={selectedProps.fontFamily ?? "system"}
+            value={(getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "fontFamily", viewport) as string | undefined) ?? "system"}
             onChange={handleFontFamilyChange}
             options={[
               { id: "system", value: "System" },
@@ -184,7 +201,7 @@ export const TypographyAccordion = () => {
 
           <CraftSettingsSelect
             label="Weight"
-            value={selectedProps.fontWeight ?? "normal"}
+            value={(getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "fontWeight", viewport) as string | undefined) ?? "normal"}
             onChange={handleFontWeightChange}
             options={[
               { id: "normal", value: "400 - Normal" },
@@ -197,7 +214,7 @@ export const TypographyAccordion = () => {
             <CraftSettingsInput
               label="Size"
               type="number"
-              value={selectedProps.fontSize ?? ""}
+              value={getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "fontSize", viewport) ?? ""}
               onChange={handleFontSizeChange}
               customStyles={{ columnGap: "36px" }}
             />
@@ -205,7 +222,7 @@ export const TypographyAccordion = () => {
             <CraftSettingsInput
               label="Height"
               type="number"
-              value={selectedProps.lineHeight ?? ""}
+              value={getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "lineHeight", viewport) ?? ""}
               onChange={handleLineHeightChange}
               customStyles={{ columnGap: "34px" }}
             />
@@ -221,7 +238,7 @@ export const TypographyAccordion = () => {
           {/* Align */}
           <CraftSettingsButtonGroup
             label="Align"
-            value={selectedProps.textAlign ?? "left"}
+            value={(getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "textAlign", viewport) as string | undefined) ?? "left"}
             options={[
               { id: "left", content: "≡" },
               { id: "center", content: "≡" },
@@ -235,9 +252,27 @@ export const TypographyAccordion = () => {
           <CraftSettingsMultiToggleGroup
             label="Format"
             values={[
-              selectedProps.isStrikethrough ? "strike" : "",
-              selectedProps.isUnderline ? "underline" : "",
-              selectedProps.isItalic ? "italic" : "",
+              getResponsiveStyleProp(
+                selectedProps as unknown as Record<string, unknown>,
+                "isStrikethrough",
+                viewport,
+              )
+                ? "strike"
+                : "",
+              getResponsiveStyleProp(
+                selectedProps as unknown as Record<string, unknown>,
+                "isUnderline",
+                viewport,
+              )
+                ? "underline"
+                : "",
+              getResponsiveStyleProp(
+                selectedProps as unknown as Record<string, unknown>,
+                "isItalic",
+                viewport,
+              )
+                ? "italic"
+                : "",
             ].filter(Boolean)}
             options={[
               { id: "strike", content: "S" },
@@ -246,9 +281,19 @@ export const TypographyAccordion = () => {
             ]}
             onChange={(next) => {
               actions.setProp(selectedId, (props: any) => {
-                props.isStrikethrough = next.includes("strike")
-                props.isUnderline = next.includes("underline")
-                props.isItalic = next.includes("italic")
+                setResponsiveStyleProp(
+                  props,
+                  "isStrikethrough",
+                  next.includes("strike"),
+                  viewport,
+                )
+                setResponsiveStyleProp(
+                  props,
+                  "isUnderline",
+                  next.includes("underline"),
+                  viewport,
+                )
+                setResponsiveStyleProp(props, "isItalic", next.includes("italic"), viewport)
               })
             }}
           />
@@ -256,7 +301,7 @@ export const TypographyAccordion = () => {
           {/* Capitalize */}
           <CraftSettingsButtonGroup
             label="Capitalize"
-            value={selectedProps.textTransform ?? "none"}
+            value={(getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "textTransform", viewport) as string | undefined) ?? "none"}
             options={[
               { id: "none", content: "x" },
               { id: "uppercase", content: "AA" },
@@ -283,7 +328,7 @@ export const TypographyAccordion = () => {
             <CraftSettingsInput
               label="Stroke"
               type="number"
-              value={selectedProps.strokeWidth ?? 0}
+              value={(getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "strokeWidth", viewport) as number | undefined) ?? 0}
               onChange={handleStrokeWidthChange}
               customStyles={{ columnGap: "26px" }}
             />

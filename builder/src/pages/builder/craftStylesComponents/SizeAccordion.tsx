@@ -11,7 +11,12 @@ import { CraftSettingsValueWithUnit } from "../components/craftSettingsControls/
 import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
 import { useBuilderModeContext } from "../context/BuilderModeContext.tsx"
 import { MODE_TYPE } from "../builder.enum.ts"
+import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
 import { CSS_SIZE_UNITS_RN } from "../../../utils/craftCssSizeProp.ts"
+import {
+  getResponsiveStyleProp,
+  setResponsiveStyleProp,
+} from "../responsiveStyle.ts"
 
 type SizeFieldKey =
   | "width"
@@ -33,6 +38,7 @@ const SIZE_VALUE_INPUT_WIDTH_PX = "80px";
 export const SizeAccordion = () => {
   const modeContext = useBuilderModeContext()
   const isRn = modeContext?.mode === MODE_TYPE.RN
+  const viewport = usePreviewViewport()
   const { actions } = useEditor()
   const { selectedId, selectedProps } = useEditor((state) => {
     const [id] = Array.from(state.events.selected)
@@ -50,14 +56,13 @@ export const SizeAccordion = () => {
   const handleSizeCommit =
     (key: SizeFieldKey) => (next: string | number | undefined) => {
       actions.setProp(selectedId, (props: any) => {
-        if (next === undefined) delete props[key]
-        else props[key] = next
+        setResponsiveStyleProp(props, key, next, viewport)
       })
     }
 
   const handleOverflowChange = (value: string) => {
     actions.setProp(selectedId, (props: any) => {
-      props.overflow = value
+      setResponsiveStyleProp(props, "overflow", value, viewport)
     })
   }
 
@@ -88,7 +93,7 @@ export const SizeAccordion = () => {
             >
               <CraftSettingsValueWithUnit
                 label="Width"
-                value={selectedProps.width}
+                value={getResponsiveStyleProp(selectedProps, "width", viewport)}
                 onCommit={handleSizeCommit("width")}
                 allowedUnits={CSS_SIZE_UNITS_RN}
                 mode="rn"
@@ -96,7 +101,7 @@ export const SizeAccordion = () => {
               />
               <CraftSettingsValueWithUnit
                 label="Height"
-                value={selectedProps.height}
+                value={getResponsiveStyleProp(selectedProps, "height", viewport)}
                 onCommit={handleSizeCommit("height")}
                 allowedUnits={CSS_SIZE_UNITS_RN}
                 mode="rn"
@@ -105,7 +110,7 @@ export const SizeAccordion = () => {
               <Box sx={{ gridColumn: "1 / -1" }}>
                 <CraftSettingsValueWithUnit
                   label="Min H"
-                  value={selectedProps.minHeight}
+                  value={getResponsiveStyleProp(selectedProps, "minHeight", viewport)}
                   onCommit={handleSizeCommit("minHeight")}
                   allowedUnits={CSS_SIZE_UNITS_RN}
                   mode="rn"
@@ -124,35 +129,35 @@ export const SizeAccordion = () => {
             >
               <CraftSettingsValueWithUnit
                 label="Width"
-                value={selectedProps.width}
+                value={getResponsiveStyleProp(selectedProps, "width", viewport)}
                 onCommit={handleSizeCommit("width")}
                 mode="web"
                 inputWidth={inputWidth}
               />
               <CraftSettingsValueWithUnit
                 label="Height"
-                value={selectedProps.height}
+                value={getResponsiveStyleProp(selectedProps, "height", viewport)}
                 onCommit={handleSizeCommit("height")}
                 mode="web"
                 inputWidth={inputWidth}
               />
               <CraftSettingsValueWithUnit
                 label="Min W"
-                value={selectedProps.minWidth}
+                value={getResponsiveStyleProp(selectedProps, "minWidth", viewport)}
                 onCommit={handleSizeCommit("minWidth")}
                 mode="web"
                 inputWidth={inputWidth}
               />
               <CraftSettingsValueWithUnit
                 label="Min H"
-                value={selectedProps.minHeight}
+                value={getResponsiveStyleProp(selectedProps, "minHeight", viewport)}
                 onCommit={handleSizeCommit("minHeight")}
                 mode="web"
                 inputWidth={inputWidth}
               />
               <CraftSettingsValueWithUnit
                 label="Max W"
-                value={selectedProps.maxWidth}
+                value={getResponsiveStyleProp(selectedProps, "maxWidth", viewport)}
                 onCommit={handleSizeCommit("maxWidth")}
                 mode="web"
                 placeholder="None"
@@ -160,7 +165,7 @@ export const SizeAccordion = () => {
               />
               <CraftSettingsValueWithUnit
                 label="Max H"
-                value={selectedProps.maxHeight}
+                value={getResponsiveStyleProp(selectedProps, "maxHeight", viewport)}
                 onCommit={handleSizeCommit("maxHeight")}
                 mode="web"
                 placeholder="None"
@@ -172,7 +177,7 @@ export const SizeAccordion = () => {
           {!isRn ? (
             <CraftSettingsButtonGroup
               label="Overflow"
-              value={selectedProps.overflow ?? "visible"}
+              value={(getResponsiveStyleProp(selectedProps, "overflow", viewport) as string | undefined) ?? "visible"}
               options={OVERFLOW_OPTIONS}
               onChange={handleOverflowChange}
             />

@@ -16,6 +16,8 @@ import {
   resolveCraftVisualEffectsStyle,
   type CraftVisualEffectsProps,
 } from "./craftVisualEffects.ts"
+import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
+import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 
 export type ContentListCellProps = {
   children?: ReactNode
@@ -39,6 +41,7 @@ export type ContentListCellProps = {
   backgroundColor?: string
   /** Зарезервировано под будущий UI; в рендере пока не используется */
   backgroundClip?: string
+  style?: ResponsiveStyle
 } & CraftVisualEffectsProps
 
 /**
@@ -48,34 +51,35 @@ export type ContentListCellProps = {
  * layout / gridColumns / gridRows управляются через LayoutAccordion и
  * описывают, как раскладывать дочерние элементы внутри ячейки.
  */
-export const CraftContentListCell = ({
-  children,
-  width,
-  height,
-  minWidth,
-  minHeight,
-  maxWidth,
-  maxHeight,
-  overflow,
-  layout = "block",
-  gridColumns,
-  gridRows,
-  gridAutoFlow = "row",
-  gap,
-  flexFlow = "row",
-  flexJustifyContent,
-  flexAlignItems,
-  placeItemsY,
-  placeItemsX,
-  backgroundColor,
-  backgroundClip: _backgroundClip,
-  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
-  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
-  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
-  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
-  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
-  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
-}: ContentListCellProps) => {
+export const CraftContentListCell = (props: ContentListCellProps) => {
+  const viewport = usePreviewViewport()
+  const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
+  const width = (responsiveStyle.width as string | number | undefined) ?? props.width
+  const height = (responsiveStyle.height as string | number | undefined) ?? props.height
+  const minWidth = (responsiveStyle.minWidth as number | undefined) ?? props.minWidth
+  const minHeight = (responsiveStyle.minHeight as number | undefined) ?? props.minHeight
+  const maxWidth = (responsiveStyle.maxWidth as string | number | undefined) ?? props.maxWidth
+  const maxHeight = (responsiveStyle.maxHeight as string | number | undefined) ?? props.maxHeight
+  const overflow = (responsiveStyle.overflow as ContentListCellProps["overflow"] | undefined) ?? props.overflow
+  const layout = (responsiveStyle.layout as BlockLayoutMode | undefined) ?? props.layout ?? "block"
+  const gridColumns = (responsiveStyle.gridColumns as number | undefined) ?? props.gridColumns
+  const gridRows = (responsiveStyle.gridRows as number | undefined) ?? props.gridRows
+  const gridAutoFlow = (responsiveStyle.gridAutoFlow as GridAutoFlow | undefined) ?? props.gridAutoFlow ?? "row"
+  const gap = (responsiveStyle.gap as number | undefined) ?? props.gap
+  const flexFlow = (responsiveStyle.flexFlow as FlexFlowOption | undefined) ?? props.flexFlow ?? "row"
+  const flexJustifyContent =
+    (responsiveStyle.flexJustifyContent as FlexJustifyContent | undefined) ?? props.flexJustifyContent
+  const flexAlignItems =
+    (responsiveStyle.flexAlignItems as FlexAlignItems | undefined) ?? props.flexAlignItems
+  const placeItemsY = (responsiveStyle.placeItemsY as PlaceItemsValue | undefined) ?? props.placeItemsY
+  const placeItemsX = (responsiveStyle.placeItemsX as PlaceItemsValue | undefined) ?? props.placeItemsX
+  const backgroundColor = (responsiveStyle.backgroundColor as string | undefined) ?? props.backgroundColor
+  const mixBlendMode = (responsiveStyle.mixBlendMode as string | undefined) ?? props.mixBlendMode ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode
+  const opacityPercent = (responsiveStyle.opacityPercent as number | undefined) ?? props.opacityPercent ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent
+  const outlineStyleMode = (responsiveStyle.outlineStyleMode as any) ?? props.outlineStyleMode ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode
+  const outlineWidth = (responsiveStyle.outlineWidth as number | undefined) ?? props.outlineWidth ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth
+  const outlineOffset = (responsiveStyle.outlineOffset as number | undefined) ?? props.outlineOffset ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset
+  const outlineColor = (responsiveStyle.outlineColor as string | undefined) ?? props.outlineColor ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor
   const {
     connectors: { connect, drag },
     selected,
@@ -150,7 +154,7 @@ export const CraftContentListCell = ({
       }}
     >
       <ContentListCellContext.Provider value={true}>
-        {children}
+        {props.children}
       </ContentListCellContext.Provider>
     </div>
   )

@@ -14,6 +14,8 @@ import {
   resolveCraftVisualEffectsStyle,
   type CraftVisualEffectsProps,
 } from "./craftVisualEffects.ts"
+import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
+import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 
 interface Props extends CraftVisualEffectsProps {
   src?: string;
@@ -38,36 +40,40 @@ interface Props extends CraftVisualEffectsProps {
   backgroundColor?: string;
   /** Зарезервировано под будущий UI; в рендере пока не используется */
   backgroundClip?: string;
+  style?: ResponsiveStyle;
 }
 
-export const CraftImage = ({
-  src,
-  alt = "Изображение",
-  width,
-  height,
-  minWidth,
-  minHeight,
-  maxWidth,
-  maxHeight,
-  overflow,
-  borderRadius = 0,
-  borderTopWidth = 0,
-  borderRightWidth = 0,
-  borderBottomWidth = 0,
-  borderLeftWidth = 0,
-  borderColor = COLORS.gray400,
-  borderStyle = "solid",
-  borderOpacity = 1,
-  collectionField = null,
-  backgroundColor,
-  backgroundClip: _backgroundClip,
-  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
-  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
-  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
-  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
-  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
-  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
-}: Props) => {
+export const CraftImage = (props: Props) => {
+  const viewport = usePreviewViewport()
+  const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
+  const src = props.src
+  const alt = props.alt ?? "Изображение"
+  const width = (responsiveStyle.width as string | number | undefined) ?? props.width
+  const height = (responsiveStyle.height as string | number | undefined) ?? props.height
+  const minWidth = (responsiveStyle.minWidth as number | undefined) ?? props.minWidth
+  const minHeight = (responsiveStyle.minHeight as number | undefined) ?? props.minHeight
+  const maxWidth = (responsiveStyle.maxWidth as string | number | undefined) ?? props.maxWidth
+  const maxHeight = (responsiveStyle.maxHeight as string | number | undefined) ?? props.maxHeight
+  const overflow = (responsiveStyle.overflow as Props["overflow"] | undefined) ?? props.overflow
+  const borderRadius = (responsiveStyle.borderRadius as number | undefined) ?? props.borderRadius ?? 0
+  const borderTopWidth = (responsiveStyle.borderTopWidth as number | undefined) ?? props.borderTopWidth ?? 0
+  const borderRightWidth = (responsiveStyle.borderRightWidth as number | undefined) ?? props.borderRightWidth ?? 0
+  const borderBottomWidth = (responsiveStyle.borderBottomWidth as number | undefined) ?? props.borderBottomWidth ?? 0
+  const borderLeftWidth = (responsiveStyle.borderLeftWidth as number | undefined) ?? props.borderLeftWidth ?? 0
+  const borderColor = (responsiveStyle.borderColor as string | undefined) ?? props.borderColor ?? COLORS.gray400
+  const borderStyle =
+    (responsiveStyle.borderStyle as "none" | "solid" | "dotted" | "dashed" | undefined) ??
+    props.borderStyle ??
+    "solid"
+  const borderOpacity = (responsiveStyle.borderOpacity as number | undefined) ?? props.borderOpacity ?? 1
+  const collectionField = props.collectionField ?? null
+  const backgroundColor = (responsiveStyle.backgroundColor as string | undefined) ?? props.backgroundColor
+  const mixBlendMode = (responsiveStyle.mixBlendMode as string | undefined) ?? props.mixBlendMode ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode
+  const opacityPercent = (responsiveStyle.opacityPercent as number | undefined) ?? props.opacityPercent ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent
+  const outlineStyleMode = (responsiveStyle.outlineStyleMode as any) ?? props.outlineStyleMode ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode
+  const outlineWidth = (responsiveStyle.outlineWidth as number | undefined) ?? props.outlineWidth ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth
+  const outlineOffset = (responsiveStyle.outlineOffset as number | undefined) ?? props.outlineOffset ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset
+  const outlineColor = (responsiveStyle.outlineColor as string | undefined) ?? props.outlineColor ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor
   const {
     connectors: { connect, drag },
     selected,
@@ -176,7 +182,7 @@ export const CraftImage = ({
           if (!ref) return
           connect(drag(ref))
         }}
-        style={{ width: "100%", position: "relative" }}
+        style={{ position: "relative" }}
       >
         {/* Бирка Image — показывается всегда при выделении компонента */}
         {selected && (

@@ -14,6 +14,7 @@ import {
 import { CollectionFilterScopeProvider } from "./context/CollectionFilterScopeContext.tsx"
 import { BuilderTemplatePageContext } from "./context/BuilderTemplatePageContext.tsx"
 import { BuilderModeContext } from "./context/BuilderModeContext.tsx"
+import { PreviewViewportContext } from "./context/PreviewViewportContext.tsx"
 import { COLORS } from "../../theme/colors"
 import { CraftBlock } from "../../craft/Block.tsx"
 import { CraftBody } from "../../craft/Body.tsx"
@@ -250,6 +251,7 @@ export const BuilderPage = () => {
 
   return (
     <BuilderModeContext.Provider value={modeContextValue}>
+      <PreviewViewportContext.Provider value={previewViewport}>
       <Editor
         resolver={{
           Block: CraftBlock,
@@ -329,6 +331,7 @@ export const BuilderPage = () => {
           </CollectionFilterScopeProvider>
         </RightPanelContext.Provider>
       </Editor>
+      </PreviewViewportContext.Provider>
     </BuilderModeContext.Provider>
   )
 }

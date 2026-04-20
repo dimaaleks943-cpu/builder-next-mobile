@@ -18,6 +18,8 @@ import {
   resolveCraftVisualEffectsStyle,
   type CraftVisualEffectsProps,
 } from "./craftVisualEffects.ts"
+import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
+import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 
 export type BlockProps = {
   children?: ReactNode;
@@ -66,53 +68,53 @@ export type BlockProps = {
   backgroundColor?: string;
   /** Зарезервировано под будущий UI; в рендере пока не используется */
   backgroundClip?: string;
+  style?: ResponsiveStyle;
 } & CraftVisualEffectsProps
 
-export const CraftBlock = ({
-  children,
-  fullSize,
-  width,
-  height,
-  minWidth,
-  minHeight,
-  maxWidth,
-  maxHeight,
-  overflow,
-  layout = "block",
-  gridColumns,
-  gridRows,
-  gridAutoFlow = "row",
-  gap,
-  flexFlow = "row",
-  flexJustifyContent,
-  flexAlignItems,
-  placeItemsY,
-  placeItemsX,
-  marginTop = 0,
-  marginRight = 0,
-  marginBottom = 0,
-  marginLeft = 0,
-  paddingTop = 0,
-  paddingRight = 0,
-  paddingBottom = 0,
-  paddingLeft = 0,
-  borderRadius = 0,
-  borderTopWidth = 0,
-  borderRightWidth = 0,
-  borderBottomWidth = 0,
-  borderLeftWidth = 0,
-  borderColor = COLORS.gray400,
-  borderStyle = "solid",
-  borderOpacity = 1,
-  backgroundColor,
-  backgroundClip: _backgroundClip,
-  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
-  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
-  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
-  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
-  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
-  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
-}: BlockProps) => {
+export const CraftBlock = (props: BlockProps) => {
+  const viewport = usePreviewViewport()
+  const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
+  const fullSize = (responsiveStyle.fullSize as boolean | undefined) ?? props.fullSize
+  const width = (responsiveStyle.width as string | number | undefined) ?? props.width
+  const height = (responsiveStyle.height as string | number | undefined) ?? props.height
+  const minWidth = (responsiveStyle.minWidth as number | undefined) ?? props.minWidth
+  const minHeight = (responsiveStyle.minHeight as number | undefined) ?? props.minHeight
+  const maxWidth = (responsiveStyle.maxWidth as string | number | undefined) ?? props.maxWidth
+  const maxHeight = (responsiveStyle.maxHeight as string | number | undefined) ?? props.maxHeight
+  const overflow = (responsiveStyle.overflow as BlockProps["overflow"] | undefined) ?? props.overflow
+  const layout = (responsiveStyle.layout as BlockLayoutMode | undefined) ?? props.layout ?? "block"
+  const gridColumns = (responsiveStyle.gridColumns as number | undefined) ?? props.gridColumns
+  const gridRows = (responsiveStyle.gridRows as number | undefined) ?? props.gridRows
+  const gridAutoFlow = (responsiveStyle.gridAutoFlow as GridAutoFlow | undefined) ?? props.gridAutoFlow ?? "row"
+  const gap = (responsiveStyle.gap as number | undefined) ?? props.gap
+  const flexFlow = (responsiveStyle.flexFlow as FlexFlowOption | undefined) ?? props.flexFlow ?? "row"
+  const flexJustifyContent = (responsiveStyle.flexJustifyContent as FlexJustifyContent | undefined) ?? props.flexJustifyContent
+  const flexAlignItems = (responsiveStyle.flexAlignItems as FlexAlignItems | undefined) ?? props.flexAlignItems
+  const placeItemsY = (responsiveStyle.placeItemsY as PlaceItemsValue | undefined) ?? props.placeItemsY
+  const placeItemsX = (responsiveStyle.placeItemsX as PlaceItemsValue | undefined) ?? props.placeItemsX
+  const marginTop = (responsiveStyle.marginTop as number | undefined) ?? props.marginTop ?? 0
+  const marginRight = (responsiveStyle.marginRight as number | undefined) ?? props.marginRight ?? 0
+  const marginBottom = (responsiveStyle.marginBottom as number | undefined) ?? props.marginBottom ?? 0
+  const marginLeft = (responsiveStyle.marginLeft as number | undefined) ?? props.marginLeft ?? 0
+  const paddingTop = (responsiveStyle.paddingTop as number | undefined) ?? props.paddingTop ?? 0
+  const paddingRight = (responsiveStyle.paddingRight as number | undefined) ?? props.paddingRight ?? 0
+  const paddingBottom = (responsiveStyle.paddingBottom as number | undefined) ?? props.paddingBottom ?? 0
+  const paddingLeft = (responsiveStyle.paddingLeft as number | undefined) ?? props.paddingLeft ?? 0
+  const borderRadius = (responsiveStyle.borderRadius as number | undefined) ?? props.borderRadius ?? 0
+  const borderTopWidth = (responsiveStyle.borderTopWidth as number | undefined) ?? props.borderTopWidth ?? 0
+  const borderRightWidth = (responsiveStyle.borderRightWidth as number | undefined) ?? props.borderRightWidth ?? 0
+  const borderBottomWidth = (responsiveStyle.borderBottomWidth as number | undefined) ?? props.borderBottomWidth ?? 0
+  const borderLeftWidth = (responsiveStyle.borderLeftWidth as number | undefined) ?? props.borderLeftWidth ?? 0
+  const borderColor = (responsiveStyle.borderColor as string | undefined) ?? props.borderColor ?? COLORS.gray400
+  const borderStyle = (responsiveStyle.borderStyle as "none" | "solid" | "dotted" | undefined) ?? props.borderStyle ?? "solid"
+  const borderOpacity = (responsiveStyle.borderOpacity as number | undefined) ?? props.borderOpacity ?? 1
+  const backgroundColor = (responsiveStyle.backgroundColor as string | undefined) ?? props.backgroundColor
+  const mixBlendMode = (responsiveStyle.mixBlendMode as string | undefined) ?? props.mixBlendMode ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode
+  const opacityPercent = (responsiveStyle.opacityPercent as number | undefined) ?? props.opacityPercent ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent
+  const outlineStyleMode = (responsiveStyle.outlineStyleMode as any) ?? props.outlineStyleMode ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode
+  const outlineWidth = (responsiveStyle.outlineWidth as number | undefined) ?? props.outlineWidth ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth
+  const outlineOffset = (responsiveStyle.outlineOffset as number | undefined) ?? props.outlineOffset ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset
+  const outlineColor = (responsiveStyle.outlineColor as string | undefined) ?? props.outlineColor ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor
   const blockRef = useRef<HTMLDivElement | null>(null)
   const {
     connectors: { connect, drag },
@@ -222,7 +224,7 @@ export const CraftBlock = ({
           usePortal
         />
       )}
-      {children}
+      {props.children}
     </div>
   )
 };

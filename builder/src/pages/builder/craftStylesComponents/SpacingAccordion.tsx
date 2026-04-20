@@ -8,8 +8,11 @@ import {
 import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors.ts"
 import { EdgeInput } from "../components/EdgeInput.tsx";
+import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
+import { getResponsiveStyleProp } from "../responsiveStyle.ts"
 
 export const SpacingAccordion = () => {
+  const viewport = usePreviewViewport()
   const { selectedId, selectedProps } = useEditor((state) => {
     const [id] = Array.from(state.events.selected)
     const node = id ? state.nodes[id] : null
@@ -70,7 +73,7 @@ export const SpacingAccordion = () => {
               nodeId={selectedId}
               kind="margin"
               side="Top"
-              value={selectedProps?.marginTop ?? 0}
+              value={(getResponsiveStyleProp(selectedProps, "marginTop", viewport) as number | undefined) ?? 0}
               sx={{
                 position: "absolute",
                 top: 0,
@@ -82,7 +85,7 @@ export const SpacingAccordion = () => {
               nodeId={selectedId}
               kind="margin"
               side="Bottom"
-              value={selectedProps?.marginBottom ?? 0}
+              value={(getResponsiveStyleProp(selectedProps, "marginBottom", viewport) as number | undefined) ?? 0}
               sx={{
                 position: "absolute",
                 bottom: 0,
@@ -94,7 +97,7 @@ export const SpacingAccordion = () => {
               nodeId={selectedId}
               kind="margin"
               side="Left"
-              value={selectedProps?.marginLeft ?? 0}
+              value={(getResponsiveStyleProp(selectedProps, "marginLeft", viewport) as number | undefined) ?? 0}
               sx={{
                 position: "absolute",
                 top: "50%",
@@ -109,7 +112,7 @@ export const SpacingAccordion = () => {
               nodeId={selectedId}
               kind="margin"
               side="Right"
-              value={selectedProps?.marginRight ?? 0}
+              value={(getResponsiveStyleProp(selectedProps, "marginRight", viewport) as number | undefined) ?? 0}
               sx={{
                 position: "absolute",
                 top: "50%",
@@ -152,7 +155,7 @@ export const SpacingAccordion = () => {
                 nodeId={selectedId}
                 kind="padding"
                 side="Top"
-                value={selectedProps?.paddingTop ?? 16}
+              value={(getResponsiveStyleProp(selectedProps, "paddingTop", viewport) as number | undefined) ?? 0}
                 sx={{
                   position: "absolute",
                   top: 0,
@@ -164,7 +167,7 @@ export const SpacingAccordion = () => {
                 nodeId={selectedId}
                 kind="padding"
                 side="Bottom"
-                value={selectedProps?.paddingBottom ?? 16}
+              value={(getResponsiveStyleProp(selectedProps, "paddingBottom", viewport) as number | undefined) ?? 0}
                 sx={{
                   position: "absolute",
                   bottom: 0,
@@ -176,7 +179,7 @@ export const SpacingAccordion = () => {
                 nodeId={selectedId}
                 kind="padding"
                 side="Left"
-                value={selectedProps?.paddingLeft ?? 16}
+              value={(getResponsiveStyleProp(selectedProps, "paddingLeft", viewport) as number | undefined) ?? 0}
                 sx={{
                   position: "absolute",
                   top: "50%",
@@ -191,7 +194,7 @@ export const SpacingAccordion = () => {
                 nodeId={selectedId}
                 kind="padding"
                 side="Right"
-                value={selectedProps?.paddingRight ?? 16}
+              value={(getResponsiveStyleProp(selectedProps, "paddingRight", viewport) as number | undefined) ?? 0}
                 sx={{
                   position: "absolute",
                   top: "50%",
