@@ -6,6 +6,26 @@ import {
 } from "./stylePropsShortMapV1"
 
 type StylePropsInput = Record<string, unknown> | null | undefined
+type StyleBranches = "base" | "tablet" | "phone"
+
+const RESPONSIVE_STYLE_BRANCHES: StyleBranches[] = ["base", "tablet", "phone"]
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === "object" && !Array.isArray(value)
+
+const STYLE_KEYS = Object.keys(FULL_TO_SHORT) as FullStylePropKey[]
+
+const decodeStyleBranch = (
+  shortStyleBranch: Record<string, unknown>,
+): Record<string, unknown> => {
+  const decoded: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(shortStyleBranch)) {
+    const fullKey = SHORT_TO_FULL[key as ShortStylePropKey] ?? key
+    decoded[fullKey] = value
+  }
+
+  return decoded
+}
 
 type SerializedNodes = Record<
   string,
@@ -22,31 +42,44 @@ type SerializedNodes = Record<
   }
 >
 
-export const encodeStyleProps = (
-  fullProps: StylePropsInput,
-): Record<string, unknown> => {
-  if (!fullProps) return {}
-
-  const encoded: Record<string, unknown> = {}
-  for (const [key, value] of Object.entries(fullProps)) {
-    const shortKey = FULL_TO_SHORT[key as FullStylePropKey] ?? key
-    encoded[shortKey] = value
-  }
-
-  return encoded
-}
 
 export const decodeStyleProps = (
   shortProps: StylePropsInput,
 ): Record<string, unknown> => {
   if (!shortProps) return {}
 
-  const decoded: Record<string, unknown> = {}
-  for (const [key, value] of Object.entries(shortProps)) {
-    const fullKey = SHORT_TO_FULL[key as ShortStylePropKey] ?? key
-    decoded[fullKey] = value
+  const decoded = { ...shortProps }
+  const style = shortProps.style
+  const styleRecord = isRecord(style) ? style : {}
+  const decodedStyle: Record<string, Record<string, unknown>> = {}
+  for (const branch of RESPONSIVE_STYLE_BRANCHES) {
+    const branchValue = styleRecord[branch]
+    if (!isRecord(branchValue)) continue
+    decodedStyle[branch] = decodeStyleBranch(branchValue)
   }
 
+  // Migration: support pages where style keys were still stored as flat props.
+  const baseBranch = { ...(decodedStyle.base ?? {}) }
+  for (const fullKey of STYLE_KEYS) {
+    const shortKey = FULL_TO_SHORT[fullKey]
+    if (Object.prototype.hasOwnProperty.call(baseBranch, fullKey)) continue
+    const flatFullValue = shortProps[fullKey]
+    const flatShortValue = shortProps[shortKey]
+    if (flatFullValue !== undefined) {
+      baseBranch[fullKey] = flatFullValue
+    } else if (flatShortValue !== undefined) {
+      baseBranch[fullKey] = flatShortValue
+    }
+  }
+  if (Object.keys(baseBranch).length > 0) {
+    decodedStyle.base = baseBranch
+  }
+
+  if (Object.keys(decodedStyle).length > 0) {
+    decoded.style = decodedStyle
+  } else {
+    delete decoded.style
+  }
   return decoded
 }
 

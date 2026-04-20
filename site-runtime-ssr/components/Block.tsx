@@ -1,189 +1,23 @@
 import type { ReactNode } from "react"
-import { withOpacity } from "@/lib/colorUtils"
-import {
-  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
-  resolveCraftVisualEffectsStyle,
-  type CraftVisualEffectsProps,
-} from "@/lib/craftVisualEffects"
+import { type CraftVisualEffectsProps } from "@/lib/craftVisualEffects"
 
 interface BlockProps extends CraftVisualEffectsProps {
   children?: ReactNode
-  fullSize?: boolean
-  /**
-   * CSS width / height. Bare `number` is legacy px (React/CSS accept numeric px).
-   */
-  width?: string | number
-  height?: string | number
-  minWidth?: number
-  minHeight?: number
-  maxWidth?: string | number
-  maxHeight?: string | number
-  overflow?: "auto" | "hidden" | "visible" | "scroll"
-  layout?: "block" | "flex" | "grid" | "absolute"
-  gridColumns?: number
-  gridRows?: number
-  gridAutoFlow?: "row" | "column"
-  gap?: number
-  flexFlow?: "row" | "column" | "wrap"
-  flexJustifyContent?:
-    | "flex-start"
-    | "flex-end"
-    | "center"
-    | "space-between"
-    | "space-around"
-  flexAlignItems?:
-    | "flex-start"
-    | "flex-end"
-    | "center"
-    | "stretch"
-    | "baseline"
-  placeItemsY?: "start" | "center" | "end" | "stretch" | "baseline"
-  placeItemsX?: "start" | "center" | "end" | "stretch" | "baseline"
-  marginTop?: number
-  marginRight?: number
-  marginBottom?: number
-  marginLeft?: number
-  paddingTop?: number
-  paddingRight?: number
-  paddingBottom?: number
-  paddingLeft?: number
-  borderRadius?: number
-  borderTopWidth?: number
-  borderRightWidth?: number
-  borderBottomWidth?: number
-  borderLeftWidth?: number
-  borderColor?: string
-  borderStyle?: "none" | "solid" | "dotted"
-  borderOpacity?: number
-  backgroundColor?: string
-  /** Зарезервировано под будущий UI; в рендере пока не используется */
-  backgroundClip?: string
+  className?: string
+  "data-craft-node-id"?: string
 }
 
 export const Block = ({
   children,
-  fullSize = false,
-  width,
-  height,
-  minWidth,
-  minHeight,
-  maxWidth,
-  maxHeight,
-  overflow,
-  layout = "block",
-  gridColumns,
-  gridRows,
-  gridAutoFlow = "row",
-  gap,
-  flexFlow = "row",
-  flexJustifyContent,
-  flexAlignItems,
-  placeItemsY,
-  placeItemsX,
-  marginTop = 0,
-  marginRight = 0,
-  marginBottom = 0,
-  marginLeft = 0,
-  paddingTop = 0,
-  paddingRight = 0,
-  paddingBottom = 0,
-  paddingLeft = 0,
-  borderRadius = 0,
-  borderTopWidth = 0,
-  borderRightWidth = 0,
-  borderBottomWidth = 0,
-  borderLeftWidth = 0,
-  borderColor = "#CBD5E0",
-  borderStyle = "solid",
-  borderOpacity = 1,
-  backgroundColor = "#FFFFFF",
-  backgroundClip: _backgroundClip,
-  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
-  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
-  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
-  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
-  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
-  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
+  className,
+  "data-craft-node-id": dataCraftNodeId,
+  // Responsive visual styles come from className CSS rules generated from props.style.*.
+  // Keep inline style empty to avoid overriding those rules with legacy flat props/defaults.
 }: BlockProps) => {
-  const hasCustomBorder =
-    borderTopWidth > 0 ||
-    borderRightWidth > 0 ||
-    borderBottomWidth > 0 ||
-    borderLeftWidth > 0
-
-  const effectiveBorderColor = hasCustomBorder
-    ? withOpacity(borderColor ?? "#CBD5E0", borderOpacity ?? 1)
-    : "transparent"
-
   return (
     <div
-      style={{
-        display:
-          layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block",
-        flexDirection:
-          layout === "flex"
-            ? flexFlow === "column"
-              ? "column"
-              : "row"
-            : undefined,
-        flexWrap:
-          layout === "flex" ? (flexFlow === "wrap" ? "wrap" : "nowrap") : undefined,
-        justifyContent: layout === "flex" ? flexJustifyContent : undefined,
-        alignItems: layout === "flex" ? flexAlignItems : undefined,
-        gap:
-          (layout === "grid" || layout === "flex") &&
-          gap != null &&
-          gap >= 0
-            ? gap
-            : undefined,
-        gridTemplateColumns:
-          layout === "grid" && gridColumns && gridColumns > 0
-            ? `repeat(${gridColumns}, minmax(0, 1fr))`
-            : undefined,
-        gridTemplateRows:
-          layout === "grid" && gridRows && gridRows > 0
-            ? `repeat(${gridRows}, auto)`
-            : undefined,
-        gridAutoFlow: layout === "grid" ? gridAutoFlow : undefined,
-        placeItems:
-          layout === "grid" && placeItemsY != null && placeItemsX != null
-            ? `${placeItemsY} ${placeItemsX}`
-            : undefined,
-        position: layout === "absolute" ? "absolute" : "relative",
-        width: fullSize ? "100%" : width,
-        height: fullSize ? "100%" : height,
-        minWidth,
-        minHeight: fullSize ? undefined : (minHeight ?? 80),
-        maxWidth,
-        maxHeight,
-        overflow,
-        marginTop,
-        marginRight,
-        marginBottom,
-        marginLeft,
-        paddingTop,
-        paddingRight,
-        paddingBottom,
-        paddingLeft,
-        borderRadius: fullSize ? 0 : borderRadius,
-        borderTopWidth: hasCustomBorder ? borderTopWidth : 0,
-        borderRightWidth: hasCustomBorder ? borderRightWidth : 0,
-        borderBottomWidth: hasCustomBorder ? borderBottomWidth : 0,
-        borderLeftWidth: hasCustomBorder ? borderLeftWidth : 0,
-        borderColor: effectiveBorderColor,
-        borderStyle: hasCustomBorder ? (borderStyle || "solid") : "solid",
-        backgroundColor,
-        boxShadow: fullSize ? "none" : "0 1px 2px rgba(15, 23, 42, 0.08)",
-        boxSizing: "border-box",
-        ...resolveCraftVisualEffectsStyle({
-          mixBlendMode,
-          opacityPercent,
-          outlineStyleMode,
-          outlineWidth,
-          outlineOffset,
-          outlineColor,
-        }),
-      }}
+      className={className}
+      data-craft-node-id={dataCraftNodeId}
     >
       {children}
     </div>

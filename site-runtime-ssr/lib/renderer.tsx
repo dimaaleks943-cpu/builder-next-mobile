@@ -69,7 +69,12 @@ export function renderComponent(
 
   return React.createElement(
     Component,
-    { ...node.props, key: componentType },
+    {
+      ...node.props,
+      key: node.nodeId,
+      className: node.className,
+      "data-craft-node-id": node.nodeId,
+    },
     children,
   )
 }
@@ -80,7 +85,7 @@ export function renderPage(
   return (
     <>
       {components.map((component, index) => (
-        <React.Fragment key={index}>
+        <React.Fragment key={component.nodeId || index}>
           {renderComponent(component)}
         </React.Fragment>
       ))}

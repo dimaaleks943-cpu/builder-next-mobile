@@ -1,5 +1,11 @@
 import type { ComponentNode } from "./interface"
-import { decodeSerializedNodesStyleProps } from "./stylePropsCodec"
+import {
+  decodeSerializedNodesStyleProps,
+  decodeStyleProps,
+} from "./stylePropsCodec"
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === "object" && !Array.isArray(value)
 
 // Сериализованный формат дерева Craft.js, который мы сохраняем в поле content
 type SerializedNodes = Record<
@@ -47,6 +53,17 @@ const resolveTypeName = (type: any, nodeId?: string): string => {
   return "div"
 }
 
+const toStableNodeClassName = (nodeId: string): string => {
+  const normalized = nodeId
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-+|-+$/g, "")
+
+  return normalized ? `cn-${normalized}` : "cn-node"
+}
+
 // Рекурсивно строим дерево ComponentNode из сериализованных узлов Craft, начиная с указанного id
 const buildNodeTree = (
   nodes: SerializedNodes,
@@ -88,12 +105,22 @@ const buildNodeTree = (
 
     const actualFirstCellId = pickTemplateCellId()
     if (!actualFirstCellId) {
-      return { type: "ContentList", props: node.props ?? {} }
+      return {
+        nodeId: id,
+        className: toStableNodeClassName(id),
+        type: "ContentList",
+        props: node.props ?? {},
+      }
     }
     const cellNode = nodes[actualFirstCellId]
 
     if (!cellNode) {
-      return { type: "ContentList", props: node.props ?? {} }
+      return {
+        nodeId: id,
+        className: toStableNodeClassName(id),
+        type: "ContentList",
+        props: node.props ?? {},
+      }
     }
 
     const templateChildren: ComponentNode[] = []
@@ -123,30 +150,10 @@ const buildNodeTree = (
 
     for (const templateChildId of templateChildIds) {
       const actualChildId = cellLinkedNodes[templateChildId] || templateChildId
-      const childNode = nodes[actualChildId]
-
-      console.log(`[craftContentToComponents] Processing template child:`, {
-        templateChildId,
-        actualChildId,
-        nodeExists: !!childNode,
-        nodeType: childNode?.type,
-        nodeTypeString: typeof childNode?.type === "string" ? childNode.type :
-                       typeof childNode?.type === "object" ? JSON.stringify(childNode.type) :
-                       String(childNode?.type),
-        nodeTypeResolved: childNode ? resolveTypeName(childNode.type) : null,
-      })
-
       const child = buildNodeTree(nodes, actualChildId)
       if (child) {
-        console.log(`[craftContentToComponents] Built child:`, {
-          type: child.type,
-          typeString: typeof child.type,
-          props: Object.keys(child.props || {}),
-          hasChildren: !!child.children,
-        })
         templateChildren.push(child)
       } else {
-        console.log(`[craftContentToComponents] Child is null, collecting from node`)
         collectTemplateFromNode(actualChildId)
       }
     }
@@ -159,31 +166,20 @@ const buildNodeTree = (
       type: String(child.type),
     }))
 
-    // Пропсы первой ячейки (layout, gridColumns, gridRows, gridAutoFlow, gap) применяем к каждой ячейке в runtime.
-    // undefined не допускается при сериализации getServerSideProps (JSON), поэтому подставляем null.
-    const cellProps = cellNode.props ?? {}
+    // Полный responsive style первой ячейки (ContentListCell) — единый контракт props.style.base/tablet/phone.
+    const normalizedCell = decodeStyleProps(
+      (cellNode.props ?? {}) as Record<string, unknown>,
+    )
+    const cellStyle = isRecord(normalizedCell.style) ? normalizedCell.style : {}
     const contentListProps = {
       ...(node.props ?? {}),
-      cellLayout: cellProps.layout ?? "block",
-      cellGridColumns: cellProps.gridColumns ?? null,
-      cellGridRows: cellProps.gridRows ?? null,
-      cellGridAutoFlow: cellProps.gridAutoFlow ?? null,
-      cellGap: cellProps.gap ?? null,
-      cellFlexFlow: cellProps.flexFlow ?? null,
-      cellFlexJustifyContent: cellProps.flexJustifyContent ?? null,
-      cellFlexAlignItems: cellProps.flexAlignItems ?? null,
-      cellPlaceItemsY: cellProps.placeItemsY ?? null,
-      cellPlaceItemsX: cellProps.placeItemsX ?? null,
-      cellBackgroundColor: cellProps.backgroundColor ?? null,
-      cellMixBlendMode: cellProps.mixBlendMode ?? null,
-      cellOpacityPercent: cellProps.opacityPercent ?? null,
-      cellOutlineStyleMode: cellProps.outlineStyleMode ?? null,
-      cellOutlineWidth: cellProps.outlineWidth ?? null,
-      cellOutlineOffset: cellProps.outlineOffset ?? null,
-      cellOutlineColor: cellProps.outlineColor ?? null,
+      cellClassName: toStableNodeClassName(actualFirstCellId),
+      cellStyle,
     }
 
     return {
+      nodeId: id,
+      className: toStableNodeClassName(id),
       type: "ContentList",
       props: contentListProps,
       children: safeChildren.length > 0 ? safeChildren : undefined,
@@ -211,6 +207,8 @@ const buildNodeTree = (
   }
 
   const component: ComponentNode = {
+    nodeId: id,
+    className: toStableNodeClassName(id),
     // resolveTypeName всегда возвращает строку, поэтому здесь просто используем её
     type: String(componentType),
     props: node.props ?? {},
@@ -268,6 +266,8 @@ export const craftContentToComponents = (
     }
     return [
       {
+        nodeId: "ROOT",
+        className: toStableNodeClassName("ROOT"),
         type: "Body",
         props: root.props ?? {},
         children: result,

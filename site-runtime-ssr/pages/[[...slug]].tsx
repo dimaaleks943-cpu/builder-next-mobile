@@ -35,6 +35,7 @@ import {
   normalizeItemPathPrefix,
   resolveTemplatePageForSlug,
 } from "@/lib/templateRoute"
+import { buildResponsiveCss } from "@/lib/responsiveCss"
 
 const EMPTY_CATEGORY_SCOPE: Record<string, string | null> = {}
 
@@ -354,6 +355,7 @@ export default function Page({
       {renderPage(components)}
     </main>
   )
+  const responsiveCss = buildResponsiveCss(components)
 
   const inner =
     templateContentData ? (
@@ -373,6 +375,13 @@ export default function Page({
         <title>{`Страница ${slug} — ${domain}`}</title>
         <meta property="og:title" content={`Страница ${slug} — ${domain}`} />
         <meta property="og:url" content={`https://${domain}${ogUrlSuffix}`} />
+        {responsiveCss ? (
+          <style
+            id="craft-responsive-css"
+            // eslint-disable-next-line react/no-danger
+            dangerouslySetInnerHTML={{ __html: responsiveCss }}
+          />
+        ) : null}
       </Head>
       <SiteCollectionsProvider
         domain={domain}

@@ -8,39 +8,30 @@ import { useSiteCollections } from "@/components/SiteCollectionsContext"
 import { useCollectionFilterScope } from "@/components/CollectionFilterScopeContext"
 import { useStorefrontPage } from "@/components/StorefrontPageContext"
 import {
-  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
-  resolveCraftVisualEffectsStyle,
   type CraftVisualEffectsProps,
 } from "@/lib/craftVisualEffects"
 
 /** Пропсы сериализованного блока; `filterScope` должен совпадать с ContentList на той же странице. */
 export type CategoryFilterProps = {
+  className?: string
+  "data-craft-node-id"?: string
   filterScope: string
   /** UUID корня дерева категорий — в API уходит `filter` с `category_id`. */
   contentCategoryRootId?: string
   variant?: "buttons" | "radio" | "list"
   direction?: "row" | "column"
   showAllLabel?: string
-  backgroundColor?: string
-  /** Зарезервировано под будущий UI; в рендере пока не используется */
-  backgroundClip?: string
 } & CraftVisualEffectsProps
 
 /** Навигация по категориям: пишет выбор в контекст: ContentList с тем же `filterScope` перезапрашивает items. */
 const CategoryFilterComponent = ({
+  className,
+  "data-craft-node-id": dataCraftNodeId,
   filterScope,
   contentCategoryRootId = "",
   variant = "buttons",
   direction = "row",
   showAllLabel = "Все",
-  backgroundColor = "#FFFFFF",
-  backgroundClip: _backgroundClip,
-  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
-  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
-  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
-  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
-  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
-  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
 }: CategoryFilterProps) => {
   const { domain } = useSiteCollections()
   const router = useRouter()
@@ -192,6 +183,8 @@ const CategoryFilterComponent = ({
 
   return (
     <nav
+      className={className}
+      data-craft-node-id={dataCraftNodeId}
       aria-label="Фильтр категорий"
       style={{
         display: "flex",
@@ -200,18 +193,7 @@ const CategoryFilterComponent = ({
         gap: direction === "row" ? 8 : 6,
         alignItems: flexDirection === "column" ? "stretch" : "center",
         marginBottom: 16,
-        backgroundColor,
         padding: 12,
-        borderRadius: 4,
-        boxSizing: "border-box",
-        ...resolveCraftVisualEffectsStyle({
-          mixBlendMode,
-          opacityPercent,
-          outlineStyleMode,
-          outlineWidth,
-          outlineOffset,
-          outlineColor,
-        }),
       }}
     >
       {loading ? (

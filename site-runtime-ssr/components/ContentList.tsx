@@ -1,6 +1,4 @@
 import React from "react"
-import { renderComponent } from "@/lib/renderer"
-import type { ComponentNode } from "@/lib/interface"
 import { fetchContentItems, getCollectionByKey } from "@/lib/collectionsApi"
 import { ContentDataProvider } from "@/components/ContentDataContext"
 import { ContentListProvider } from "@/components/ContentListContext"
@@ -8,14 +6,7 @@ import { useSiteCollections } from "@/components/SiteCollectionsContext"
 import { useCollectionFilterScope } from "@/components/CollectionFilterScopeContext"
 import { getCollectionItemsCacheKey } from "@/lib/collectionItemsCacheKey"
 import type { IContentItem } from "@/lib/contentTypes"
-import { withOpacity } from "@/lib/colorUtils"
-import {
-  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
-  resolveCraftVisualEffectsStyle,
-  type CraftMixBlendMode,
-  type CraftOutlineStyleMode,
-  type CraftVisualEffectsProps,
-} from "@/lib/craftVisualEffects"
+import type { CraftVisualEffectsProps } from "@/lib/craftVisualEffects"
 
 /**
  * Маркер «эффект ещё не сопоставлял категорию с предыдущим запуском».
@@ -23,59 +14,20 @@ import {
  */
 const CATEGORY_FETCH_INIT = Symbol("categoryFetchInit")
 
-type CellLayoutMode = "block" | "flex" | "grid" | "absolute"
-
 interface ContentListProps extends CraftVisualEffectsProps {
+  className?: string
+  "data-craft-node-id"?: string
   /** Должен совпадать с `filterScope` на блоке фильтра категорий, если используется. */
-  filterScope?: string;
-  selectedSource?: string;
-  itemsPerRow?: number;
-  cellLayout?: CellLayoutMode;
-  cellGridColumns?: number;
-  cellGridRows?: number;
-  cellGridAutoFlow?: "row" | "column" | null;
-  cellGap?: number | null;
-  cellFlexFlow?: "row" | "column" | "wrap" | null;
-  cellFlexJustifyContent?:
-    | "flex-start"
-    | "flex-end"
-    | "center"
-    | "space-between"
-    | "space-around"
-    | null
-  cellFlexAlignItems?:
-    | "flex-start"
-    | "flex-end"
-    | "center"
-    | "stretch"
-    | "baseline"
-    | null;
-  cellPlaceItemsY?: "start" | "center" | "end" | "stretch" | "baseline" | null;
-  cellPlaceItemsX?: "start" | "center" | "end" | "stretch" | "baseline" | null;
-
-  /** Границы корня списка (как в конструкторе / CraftJSON). */
-  borderRadius?: number;
-  borderTopWidth?: number;
-  borderRightWidth?: number;
-  borderBottomWidth?: number;
-  borderLeftWidth?: number;
-  borderColor?: string;
-  borderStyle?: "none" | "solid" | "dotted";
-  borderOpacity?: number;
-  /** Фон корня списка (как в конструкторе). */
-  backgroundColor?: string;
-  /** Фон ячейки из первой ContentListCell в конструкторе. */
-  cellBackgroundColor?: string | null;
-  /** Эффекты первой ячейки (шаблон) — на обёртке каждой ячейки в рантайме. */
-  cellMixBlendMode?: CraftMixBlendMode | null;
-  cellOpacityPercent?: number | null;
-  cellOutlineStyleMode?: CraftOutlineStyleMode | null;
-  cellOutlineWidth?: number | null;
-  cellOutlineOffset?: number | null;
-  cellOutlineColor?: string | null;
+  filterScope?: string
+  selectedSource?: string
+  itemsPerRow?: number
+  /**
+   * Класс обёртки ячейки (первая ContentListCell в Craft).
+   * Визуальные стили ячейки — в `#craft-responsive-css` из `cellStyle` на узле ContentList.
+   */
+  cellClassName?: string
   /** Зарезервировано под будущий UI; в рендере пока не используется */
-  backgroundClip?: string;
-  children?: ComponentNode[];
+ children?: React.ReactNode
 }
 
 /**
@@ -91,76 +43,16 @@ interface ContentListProps extends CraftVisualEffectsProps {
  * Пока идёт запрос при уже показанном списке — stale-while-revalidate: список не скрываем, показываем оверлей.
  */
 export const ContentList = ({
+  className,
+  "data-craft-node-id": dataCraftNodeId,
   filterScope,
   selectedSource = "",
   itemsPerRow: itemsPerRowProp,
-  cellLayout = "block",
-  cellGridColumns,
-  cellGridRows,
-  cellGridAutoFlow,
-  cellGap,
-  cellFlexFlow,
-  cellFlexJustifyContent,
-  cellFlexAlignItems,
-  cellPlaceItemsY,
-  cellPlaceItemsX,
-  backgroundColor = "#FFFFFF",
-  borderRadius = 4,
-  borderTopWidth = 0,
-  borderRightWidth = 0,
-  borderBottomWidth = 0,
-  borderLeftWidth = 0,
-  borderColor = "#CBD5E0",
-  borderStyle = "solid",
-  borderOpacity = 1,
-  cellBackgroundColor,
-  backgroundClip: _backgroundClip,
-  mixBlendMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
-  opacityPercent = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
-  outlineStyleMode = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
-  outlineWidth = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
-  outlineOffset = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
-  outlineColor = DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
-  cellMixBlendMode = null,
-  cellOpacityPercent = null,
-  cellOutlineStyleMode = null,
-  cellOutlineWidth = null,
-  cellOutlineOffset = null,
-  cellOutlineColor = null,
+  cellClassName,
   children: childrenProp,
 }: ContentListProps) => {
-  const listRootEffects = resolveCraftVisualEffectsStyle({
-    mixBlendMode,
-    opacityPercent,
-    outlineStyleMode,
-    outlineWidth,
-    outlineOffset,
-    outlineColor,
-  })
-
-  const hasCustomBorder =
-    borderTopWidth > 0 ||
-    borderRightWidth > 0 ||
-    borderBottomWidth > 0 ||
-    borderLeftWidth > 0
-
-  const effectiveListBorderColor = hasCustomBorder
-    ? withOpacity(borderColor ?? "#CBD5E0", borderOpacity ?? 1)
-    : "transparent"
-
-  const listRootBorderStyle: React.CSSProperties = {
-    borderRadius,
-    borderTopWidth: hasCustomBorder ? borderTopWidth : 0,
-    borderRightWidth: hasCustomBorder ? borderRightWidth : 0,
-    borderBottomWidth: hasCustomBorder ? borderBottomWidth : 0,
-    borderLeftWidth: hasCustomBorder ? borderLeftWidth : 0,
-    borderColor: effectiveListBorderColor,
-    borderStyle: hasCustomBorder ? (borderStyle || "solid") : "solid",
-    boxSizing: "border-box",
-  }
-
   const itemsPerRow: number = itemsPerRowProp ?? 1
-  const children: ComponentNode[] = childrenProp ?? []
+  const templateChildren = childrenProp
   const { domain, collectionItemsByKey, setItemsForKey } = useSiteCollections()
   const { selectedCategoryIdByScope } = useCollectionFilterScope()
   const scopeTrimmed = filterScope?.trim() ?? ""
@@ -300,14 +192,13 @@ export const ContentList = ({
   if (!selectedSource || blockingLoading) {
     return (
       <div
+        className={className}
+        data-craft-node-id={dataCraftNodeId}
         style={{
           width: "100%",
           display: "flex",
           flexDirection: "column",
           minHeight: 300,
-          backgroundColor,
-          ...listRootBorderStyle,
-          ...listRootEffects,
         }}
         aria-busy={blockingLoading ? true : undefined}
       />
@@ -317,20 +208,19 @@ export const ContentList = ({
   if (collectionItems.length === 0) {
     return (
       <div
+        className={className}
+        data-craft-node-id={dataCraftNodeId}
         style={{
           width: "100%",
           display: "flex",
           flexDirection: "column",
           minHeight: 300,
-          backgroundColor,
-          ...listRootBorderStyle,
-          ...listRootEffects,
         }}
       />
     )
   }
 
-  const rows: any[][] = []
+  const rows: IContentItem[][] = []
   for (let i = 0; i < collectionItems.length; i += itemsPerRow) {
     rows.push(collectionItems.slice(i, i + itemsPerRow))
   }
@@ -338,12 +228,11 @@ export const ContentList = ({
   return (
     <ContentListProvider filterScope={scopeTrimmed || undefined}>
     <div
+      className={className}
+      data-craft-node-id={dataCraftNodeId}
       style={{
         position: "relative",
         width: "100%",
-        backgroundColor,
-        ...listRootBorderStyle,
-        ...listRootEffects,
       }}
       aria-busy={filterLoading ? true : undefined}
     >
@@ -370,25 +259,9 @@ export const ContentList = ({
                   itemData={itemData}
                   collectionKey={selectedSource}
                   itemsPerRow={itemsPerRow}
-                  layout={cellLayout}
-                  gridColumns={cellGridColumns}
-                  gridRows={cellGridRows}
-                  gridAutoFlow={cellGridAutoFlow ?? undefined}
-                  gap={cellGap ?? undefined}
-                  flexFlow={cellFlexFlow ?? undefined}
-                  flexJustifyContent={cellFlexJustifyContent ?? undefined}
-                  flexAlignItems={cellFlexAlignItems ?? undefined}
-                  placeItemsY={cellPlaceItemsY ?? undefined}
-                  placeItemsX={cellPlaceItemsX ?? undefined}
-                  backgroundColor={cellBackgroundColor ?? undefined}
-                  cellMixBlendMode={cellMixBlendMode ?? undefined}
-                  cellOpacityPercent={cellOpacityPercent ?? undefined}
-                  cellOutlineStyleMode={cellOutlineStyleMode ?? undefined}
-                  cellOutlineWidth={cellOutlineWidth ?? undefined}
-                  cellOutlineOffset={cellOutlineOffset ?? undefined}
-                  cellOutlineColor={cellOutlineColor ?? undefined}
+                  cellClassName={cellClassName}
                 >
-                  {children}
+                  {templateChildren}
                 </ContentListItem>
               )
             })}
@@ -420,124 +293,34 @@ interface ContentListItemProps {
   itemData: IContentItem
   collectionKey: string | null
   itemsPerRow: number
-  layout?: "block" | "flex" | "grid" | "absolute"
-  gridColumns?: number
-  gridRows?: number
-  gridAutoFlow?: "row" | "column"
-  gap?: number
-  flexFlow?: "row" | "column" | "wrap"
-  flexJustifyContent?:
-    | "flex-start"
-    | "flex-end"
-    | "center"
-    | "space-between"
-    | "space-around"
-  flexAlignItems?:
-    | "flex-start"
-    | "flex-end"
-    | "center"
-    | "stretch"
-    | "baseline"
-  placeItemsY?: "start" | "center" | "end" | "stretch" | "baseline"
-  placeItemsX?: "start" | "center" | "end" | "stretch" | "baseline"
-  backgroundColor?: string
-  cellMixBlendMode?: CraftMixBlendMode
-  cellOpacityPercent?: number
-  cellOutlineStyleMode?: CraftOutlineStyleMode
-  cellOutlineWidth?: number
-  cellOutlineOffset?: number
-  cellOutlineColor?: string
-  children: ComponentNode[]
+  cellClassName?: string
+  children?: React.ReactNode
 }
 
 /**
  * Одна ячейка списка коллекции.
- * Применяет layout/gridColumns/gridRows из первой ячейки (ContentListCell) билдера.
+ * Визуал ячейки — из `cellClassName` + CSS из `cellStyle` (см. buildResponsiveCss).
  */
 const ContentListItem = ({
   itemData,
   collectionKey,
   itemsPerRow,
-  layout = "block",
-  gridColumns,
-  gridRows,
-  gridAutoFlow = "row",
-  gap,
-  flexFlow = "row",
-  flexJustifyContent,
-  flexAlignItems,
-  placeItemsY,
-  placeItemsX,
-  backgroundColor,
-  cellMixBlendMode,
-  cellOpacityPercent,
-  cellOutlineStyleMode,
-  cellOutlineWidth,
-  cellOutlineOffset,
-  cellOutlineColor,
+  cellClassName,
   children,
 }: ContentListItemProps) => {
-  const cellEffects = resolveCraftVisualEffectsStyle({
-    mixBlendMode: cellMixBlendMode,
-    opacityPercent: cellOpacityPercent,
-    outlineStyleMode: cellOutlineStyleMode,
-    outlineWidth: cellOutlineWidth,
-    outlineOffset: cellOutlineOffset,
-    outlineColor: cellOutlineColor,
-  })
-  const displayStyle =
-    layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block"
-
   return (
     <ContentDataProvider collectionKey={collectionKey} itemData={itemData}>
       <div
+        className={cellClassName}
         style={{
           flex: itemsPerRow === 1 ? "none" : 1,
-          minHeight: 48,
-          padding: "16px",
+          minWidth: 0,
           position: "relative",
-          display: displayStyle,
-          flexDirection:
-            layout === "flex"
-              ? flexFlow === "column"
-                ? "column"
-                : "row"
-              : undefined,
-          flexWrap:
-            layout === "flex" ? (flexFlow === "wrap" ? "wrap" : "nowrap") : undefined,
-          justifyContent: layout === "flex" ? flexJustifyContent : undefined,
-          alignItems:
-            layout === "flex" ? (flexAlignItems ?? "flex-start") : "flex-start",
-          gap:
-            (layout === "grid" || layout === "flex") &&
-            gap != null &&
-            gap >= 0
-              ? gap
-              : undefined,
-          gridTemplateColumns:
-            layout === "grid" && gridColumns && gridColumns > 0
-              ? `repeat(${gridColumns}, minmax(0, 1fr))`
-              : undefined,
-          gridTemplateRows:
-            layout === "grid" && gridRows && gridRows > 0
-              ? `repeat(${gridRows}, auto)`
-              : undefined,
-          gridAutoFlow: layout === "grid" ? gridAutoFlow : undefined,
-          placeItems:
-            layout === "grid" && placeItemsY && placeItemsX
-              ? `${placeItemsY} ${placeItemsX}`
-              : undefined,
           boxSizing: "border-box",
-          ...(backgroundColor ? { backgroundColor } : {}),
-          ...cellEffects,
         }}
       >
-        {children && children.length > 0 ? (
-          children.map((child, index) => (
-            <React.Fragment key={index}>
-              {renderComponent(child)}
-            </React.Fragment>
-          ))
+        {React.Children.count(children) > 0 ? (
+          children
         ) : (
           <div style={{ color: "#999", fontSize: 12 }}>No template</div>
         )}
