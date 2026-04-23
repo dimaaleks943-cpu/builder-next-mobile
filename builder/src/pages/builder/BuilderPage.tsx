@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Box } from "@mui/material"
 import { Editor, type SerializedNodes } from "@craftjs/core"
 import { useParams } from "react-router-dom"
@@ -31,6 +31,10 @@ import {
   useGetExtranetPageQuery,
 } from "../../store/extranetApi"
 import { MODE_TYPE, PreviewViewport } from "./builder.enum"
+import {
+  keyToPreviewViewport, PREVIEW_HOTKEY_KEYS_RN, PREVIEW_HOTKEY_KEYS_WEB,
+  suppressPreviewHotkey,
+} from "./utils/previewViewportHotkeys"
 import { decodeSerializedNodesStyleProps } from "../../utils/stylePropsCodec"
 import { CRAFT_DISPLAY_NAME } from "../../craft/craftDisplayNames.ts"
 import { normalizeItemPathPrefix } from "../../utils/normalizeItemPathPrefix.ts"
@@ -96,6 +100,10 @@ export const BuilderPage = () => {
   const [loaded, setLoaded] = useState(false)
   const [previewViewport, setPreviewViewport] =
     useState<PreviewViewport>(PreviewViewport.DESKTOP)
+  const previewViewportRef = useRef(previewViewport)
+  previewViewportRef.current = previewViewport
+  const modeRef = useRef(mode)
+  modeRef.current = mode
   const [templateItemPathPrefix, setTemplateItemPathPrefix] = useState("")
 
   const { data: pageResponse, isSuccess: pageLoadSuccess } =
@@ -155,6 +163,27 @@ export const BuilderPage = () => {
     },
     [],
   )
+  useEffect(() => {
+    const handleWindowKeyDown = (event: KeyboardEvent) => {
+      const keys =
+        modeRef.current === MODE_TYPE.RN
+          ? PREVIEW_HOTKEY_KEYS_RN
+          : PREVIEW_HOTKEY_KEYS_WEB
+      if (!keys.has(event.key)) return
+
+      if (suppressPreviewHotkey(event)) return
+      const next = keyToPreviewViewport(
+        event.key,
+        modeRef.current === MODE_TYPE.RN,
+      )
+      if (!next || next === previewViewportRef.current) return
+      setPreviewViewport(next)
+      event.preventDefault()
+      event.stopPropagation()
+    }
+    window.addEventListener("keydown", handleWindowKeyDown)
+    return () => window.removeEventListener("keydown", handleWindowKeyDown)
+  }, [])
 
   useEffect(() => {
     if (!typesData?.data?.length) {

@@ -233,7 +233,8 @@ export const BuilderCanvas = ({
               onPreviewViewportChange(PreviewViewport.DESKTOP)
             }}
             size="small"
-            title="Десктоп"
+            title="Десктоп (1)"
+            aria-label="Десктоп (1)"
             disableRipple
           >
             <MonitorIcon fill={previewViewport === PreviewViewport.DESKTOP ? COLORS.purple400 : COLORS.gray600}/>
@@ -246,7 +247,16 @@ export const BuilderCanvas = ({
               onPreviewViewportChange(PreviewViewport.TABLET_LANDSCAPE)
             }}
             size="small"
-            title="Горизонтальный планшет"
+            title={
+              isRn
+                ? "Горизонтальный планшет (1)"
+                : "Горизонтальный планшет (2)"
+            }
+            aria-label={
+              isRn
+                ? "Горизонтальный планшет (1)"
+                : "Горизонтальный планшет (2)"
+            }
             sx={{transform: "rotate(90deg)", padding: 0}}
           >
             <TabletIcon
@@ -260,7 +270,8 @@ export const BuilderCanvas = ({
               onPreviewViewportChange(PreviewViewport.TABLET)
             }}
             size="small"
-            title="Планшет"
+            title={isRn ? "Планшет (2)" : "Планшет (3)"}
+            aria-label={isRn ? "Планшет (2)" : "Планшет (3)"}
           >
             <TabletIcon fill={previewViewport === PreviewViewport.TABLET ? COLORS.purple400 : COLORS.gray600}/>
           </IconButton>
@@ -271,7 +282,16 @@ export const BuilderCanvas = ({
               onPreviewViewportChange(PreviewViewport.PHONE_LANDSCAPE)
             }}
             size="small"
-            title="Горизонтальный телефон"
+            title={
+              isRn
+                ? "Горизонтальный телефон (3)"
+                : "Горизонтальный телефон (4)"
+            }
+            aria-label={
+              isRn
+                ? "Горизонтальный телефон (3)"
+                : "Горизонтальный телефон (4)"
+            }
             disableRipple
             sx={{transform: "rotate(90deg)", padding: 0 }}
           >
@@ -284,7 +304,8 @@ export const BuilderCanvas = ({
               onPreviewViewportChange(PreviewViewport.PHONE)
             }}
             size="small"
-            title="Телефон"
+            title={isRn ? "Телефон (4)" : "Телефон (5)"}
+            aria-label={isRn ? "Телефон (4)" : "Телефон (5)"}
             disableRipple
           >
             <MobileIcon fill={previewViewport === PreviewViewport.PHONE ? COLORS.purple400 : COLORS.gray600}/>
