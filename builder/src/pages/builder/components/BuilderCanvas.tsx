@@ -2,21 +2,25 @@ import { useEffect, useRef } from "react"
 import { Box, IconButton } from "@mui/material"
 import { Frame, Element, useEditor, type SerializedNodes } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
-import { getPreviewMaxWidth, type PreviewViewport } from "../builder.enum"
+import { getPreviewMaxWidth, PreviewViewport } from "../builder.enum"
 import { CraftBody } from "../../../craft/Body.tsx"
 import { PageType, type IContentItem } from "../../../api/extranet"
 import { ContentListDataContext } from "../context/ContentListDataContext.tsx"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
 import { deleteCraftNode } from "../../../utils/craftDeleteNode.ts"
 import { UpdateIcon } from "../../../icons/UpdateIcon"
+import { MonitorIcon } from "../../../icons/MonitorIcon.tsx";
+import { TabletIcon } from "../../../icons/TabletIcon.tsx";
+import { MobileIcon } from "../../../icons/MobileIcon.tsx";
 
 interface BuilderCanvasProps {
-  initialContent: SerializedNodes | null
-  previewViewport: PreviewViewport
+  initialContent: SerializedNodes | null;
+  previewViewport: PreviewViewport;
   /** Метаданные страницы: для template + collection_type_id холст оборачивается в ContentListDataContext. */
-  pageType: PageType
-  collectionTypeId: string | null
-  templatePreviewItem: IContentItem | null
+  pageType: PageType;
+  collectionTypeId: string | null;
+  templatePreviewItem: IContentItem | null;
+  onPreviewViewportChange: (viewport: PreviewViewport) => void;
 }
 
 export const BuilderCanvas = ({
@@ -25,6 +29,7 @@ export const BuilderCanvas = ({
   pageType,
   collectionTypeId,
   templatePreviewItem,
+  onPreviewViewportChange,
 }: BuilderCanvasProps) => {
   const { actions, query } = useEditor()
   const { selectedId, canDeleteSelected } = useEditor((state, query) => {
@@ -115,9 +120,9 @@ export const BuilderCanvas = ({
   const templateContentListContext =
     pageType === PageType.TEMPLATE && collectionTypeId
       ? {
-          collectionKey: collectionTypeId,
-          itemData: templatePreviewItem,
-        }
+        collectionKey: collectionTypeId,
+        itemData: templatePreviewItem,
+      }
       : null
 
   const handleCanvasBackgroundClick = (
@@ -141,72 +146,143 @@ export const BuilderCanvas = ({
       {/* Панель действий над холстом (undo/redo + структура) */}
       <Box
         sx={{
+
+          display: "flex",
           maxHeight: 28,
           height: 28,
-          padding: "0 16px",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
           borderBottom: `1px solid ${COLORS.gray200}`,
           backgroundColor: COLORS.white,
+          justifyContent: "space-between",
         }}
       >
         <Box
           sx={{
+            padding: "0 16px",
             display: "flex",
             alignItems: "center",
-            gap: "4px",
+            gap: "8px",
           }}
-        >
-          <IconButton
-            onClick={handleUndo}
-            size="small"
-            sx={{ padding: "4px" }}
-            title="Отменить"
-          >
-            <Box sx={{ transform: "scaleX(-1)", display: "inline-flex", transformOrigin: "center" }}>
-              <UpdateIcon size={16} fill={COLORS.gray500}/>
-            </Box>
 
-          </IconButton>
-          <IconButton onClick={handleRedo} size="small" sx={{ padding: "4px" }}>
-            <UpdateIcon size={16} fill={COLORS.gray500}/>
-          </IconButton>
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            <IconButton
+              onClick={handleUndo}
+              size="small"
+              sx={{ padding: "4px" }}
+              title="Отменить"
+            >
+              <Box sx={{ transform: "scaleX(-1)", display: "inline-flex", transformOrigin: "center" }}>
+                <UpdateIcon size={16} fill={COLORS.gray500}/>
+              </Box>
+
+            </IconButton>
+            <IconButton onClick={handleRedo} size="small" sx={{ padding: "4px" }}>
+              <UpdateIcon size={16} fill={COLORS.gray500}/>
+            </IconButton>
+          </Box>
+
+          <Box
+            sx={{
+              width: "1px",
+              height: 20,
+              backgroundColor: COLORS.gray200,
+            }}
+          />
+
+          <Box
+            sx={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              overflow: "hidden",
+              whiteSpace: "nowrap",
+              textOverflow: "ellipsis",
+              fontSize: "12px",
+              color: COLORS.gray700,
+            }}
+          >
+            {breadcrumb.map((name, index) => (
+              <Box
+                key={`${name}-${index}`}
+                sx={{ display: "flex", alignItems: "center" }}
+              >
+                {index > 0 && (
+                  <Box sx={{ mx: "4px" }}>
+                    {">"}
+                  </Box>
+                )}
+                <Box>{name}</Box>
+              </Box>
+            ))}
+          </Box>
         </Box>
 
-        <Box
-          sx={{
-            width: "1px",
-            height: 20,
-            backgroundColor: COLORS.gray200,
-          }}
-        />
+        <Box sx={{ display: "flex", columnGap: "8px" }}>
+          <IconButton
+            onClick={(e) => {
+              e.stopPropagation()
+              onPreviewViewportChange(PreviewViewport.DESKTOP)
+            }}
+            size="small"
+            title="Десктоп"
+            disableRipple
+          >
+            <MonitorIcon fill={previewViewport === PreviewViewport.DESKTOP ? COLORS.purple400 : COLORS.gray600}/>
+          </IconButton>
 
-        <Box
-          sx={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center",
-            overflow: "hidden",
-            whiteSpace: "nowrap",
-            textOverflow: "ellipsis",
-            fontSize: "12px",
-            color: COLORS.gray700,
-          }}
-        >
-          {breadcrumb.map((name, index) => (
-            <Box
-              key={`${name}-${index}`}
-              sx={{ display: "flex", alignItems: "center" }}
-            >
-              {index > 0 && (
-                <Box sx={{ mx: "4px" }}>
-                  {">"}
-                </Box>
-              )}
-              <Box>{name}</Box>
-            </Box>
-          ))}
+          <IconButton
+            disableRipple
+            onClick={(e) => {
+              e.stopPropagation()
+              onPreviewViewportChange(PreviewViewport.TABLET_LANDSCAPE)
+            }}
+            size="small"
+            title="Горизонтальный планшет"
+          >
+            <TabletIcon fill={previewViewport === PreviewViewport.TABLET_LANDSCAPE ? COLORS.purple400 : COLORS.gray600}/>
+          </IconButton>
+
+          <IconButton
+            disableRipple
+            onClick={(e) => {
+              e.stopPropagation()
+              onPreviewViewportChange(PreviewViewport.TABLET)
+            }}
+            size="small"
+            title="Планшет"
+          >
+            <TabletIcon fill={previewViewport === PreviewViewport.TABLET ? COLORS.purple400 : COLORS.gray600}/>
+          </IconButton>
+
+          <IconButton
+            onClick={(e) => {
+              e.stopPropagation()
+              onPreviewViewportChange(PreviewViewport.PHONE_LANDSCAPE)
+            }}
+            size="small"
+            title="Горизонтальный телефон"
+            disableRipple
+          >
+            <MobileIcon fill={previewViewport === PreviewViewport.PHONE_LANDSCAPE ? COLORS.purple400 : COLORS.gray600}/>
+          </IconButton>
+
+          <IconButton
+            onClick={(e) => {
+              e.stopPropagation()
+              onPreviewViewportChange(PreviewViewport.PHONE)
+            }}
+            size="small"
+            title="Телефон"
+            disableRipple
+          >
+            <MobileIcon fill={previewViewport === PreviewViewport.PHONE ? COLORS.purple400 : COLORS.gray600}/>
+          </IconButton>
         </Box>
       </Box>
 
@@ -254,12 +330,12 @@ export const BuilderCanvas = ({
           {templateContentListContext ? (
             <ContentListDataContext.Provider value={templateContentListContext}>
               <Frame>
-                <Element is={CraftBody} canvas />
+                <Element is={CraftBody} canvas/>
               </Frame>
             </ContentListDataContext.Provider>
           ) : (
             <Frame>
-              <Element is={CraftBody} canvas />
+              <Element is={CraftBody} canvas/>
             </Frame>
           )}
         </Box>

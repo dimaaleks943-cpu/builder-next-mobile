@@ -8,14 +8,11 @@ import {
   useBuilderModeContext,
   type BuilderMode,
 } from "../context/BuilderModeContext"
-import { MODE_TYPE, type PreviewViewport } from "../builder.enum"
+import { MODE_TYPE } from "../builder.enum"
 import { encodeSerializedNodesStyleProps } from "../../../utils/stylePropsCodec"
 import { compactContentListCells } from "../../../utils/compactContentListCells"
 import { normalizeItemPathPrefix } from "../../../utils/normalizeItemPathPrefix.ts"
 import { computePageContentTypes } from "../../../utils/computePageContentTypes"
-import { MonitorIcon } from "../../../icons/MonitorIcon.tsx";
-import { TabletIcon } from "../../../icons/TabletIcon.tsx";
-import { MobileIcon } from "../../../icons/MobileIcon.tsx";
 import { PageType } from "../../../api/extranet";
 import { SUPPORTED_LOCALES, type Locale } from "../../../api/extranet"
 import {
@@ -38,13 +35,11 @@ interface BuilderHeaderProps {
    * Для `template` — редактируемый префикс из билдера (строка); для `static` — как с API или null.
    */
   itemPathPrefix?: string | null
-  previewViewport: PreviewViewport
-  onPreviewViewportChange: (viewport: PreviewViewport) => void
 }
 
 const MODES: { value: BuilderMode; label: string }[] = [
-  { value: MODE_TYPE.WEB, label: "WEB" },
-  { value: MODE_TYPE.RN, label: "APP" },
+  { value: MODE_TYPE.WEB, label: "Сайт" },
+  { value: MODE_TYPE.RN, label: "Приложение" },
 ]
 
 export const BuilderHeader = ({
@@ -56,8 +51,6 @@ export const BuilderHeader = ({
   pageType = PageType.STATIC,
   collectionTypeId = null,
   itemPathPrefix = null,
-  previewViewport,
-  onPreviewViewportChange,
 }: BuilderHeaderProps) => {
   const navigate = useNavigate()
   const { actions, query } = useEditor()
@@ -196,44 +189,6 @@ export const BuilderHeader = ({
         {"<="}
       </IconButton>
 
-      <Box sx={{ display: "flex", columnGap: "8px" }}>
-        <IconButton
-          onClick={(e) => {
-            e.stopPropagation()
-            onPreviewViewportChange("desktop")
-          }}
-          size="small"
-          title="Десктоп"
-          disableRipple
-        >
-          <MonitorIcon fill={previewViewport === "desktop" ? COLORS.purple400 : COLORS.gray600}/>
-        </IconButton>
-
-        <IconButton
-          disableRipple
-          onClick={(e) => {
-            e.stopPropagation()
-            onPreviewViewportChange("tablet")
-          }}
-          size="small"
-          title="Планшет"
-        >
-          <TabletIcon fill={previewViewport === "tablet" ? COLORS.purple400 : COLORS.gray600}/>
-        </IconButton>
-
-        <IconButton
-          onClick={(e) => {
-            e.stopPropagation()
-            onPreviewViewportChange("phone")
-          }}
-          size="small"
-          title="Телефон"
-          disableRipple
-        >
-          <MobileIcon fill={previewViewport === "phone" ? COLORS.purple400 : COLORS.gray600}/>
-        </IconButton>
-      </Box>
-
       <Box sx={{ display: "flex", alignItems: "center", columnGap: "12px" }}>
         {modeContext && (
           <>
@@ -262,12 +217,10 @@ export const BuilderHeader = ({
                     fontSize: "12px",
                     border: "none",
                     cursor: "pointer",
+                    fontWeight: 500,
                     backgroundColor:
                       modeContext.mode === value ? COLORS.purple100 : "transparent",
-                    color:
-                      modeContext.mode === value
-                        ? COLORS.purple400
-                        : COLORS.gray600,
+                    color: COLORS.purple400,
                     "&:hover": {
                       backgroundColor:
                         modeContext.mode === value
@@ -285,7 +238,6 @@ export const BuilderHeader = ({
               component="button"
               type="button"
               onClick={(e) => {
-                console.log("asd123123")
                 e.stopPropagation()
                 setLangMenuAnchorEl(e.currentTarget)
               }}

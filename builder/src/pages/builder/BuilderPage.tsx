@@ -30,7 +30,7 @@ import {
   useGetContentTypesQuery,
   useGetExtranetPageQuery,
 } from "../../store/extranetApi"
-import { MODE_TYPE, type PreviewViewport } from "./builder.enum"
+import { MODE_TYPE, PreviewViewport } from "./builder.enum"
 import { decodeSerializedNodesStyleProps } from "../../utils/stylePropsCodec"
 import { CRAFT_DISPLAY_NAME } from "../../craft/craftDisplayNames.ts"
 import { normalizeItemPathPrefix } from "../../utils/normalizeItemPathPrefix.ts"
@@ -94,7 +94,8 @@ export const BuilderPage = () => {
     createEmptyTranslations(),
   )
   const [loaded, setLoaded] = useState(false)
-  const [previewViewport, setPreviewViewport] = useState<PreviewViewport>("desktop")
+  const [previewViewport, setPreviewViewport] =
+    useState<PreviewViewport>(PreviewViewport.DESKTOP)
   const [templateItemPathPrefix, setTemplateItemPathPrefix] = useState("")
 
   const { data: pageResponse, isSuccess: pageLoadSuccess } =
@@ -299,8 +300,6 @@ export const BuilderPage = () => {
                     ? templateItemPathPrefix
                     : (pageMeta?.item_path_prefix ?? null)
                 }
-                previewViewport={previewViewport}
-                onPreviewViewportChange={setPreviewViewport}
               />
 
               <Box
@@ -318,6 +317,7 @@ export const BuilderPage = () => {
                   pageType={pageMeta?.type ?? PageType.STATIC}
                   collectionTypeId={pageMeta?.collection_type_id ?? null}
                   templatePreviewItem={templatePreviewItem}
+                  onPreviewViewportChange={setPreviewViewport}
                 />
                 <BuilderRightPanel
                   isTemplatePage={pageMeta?.type === PageType.TEMPLATE}

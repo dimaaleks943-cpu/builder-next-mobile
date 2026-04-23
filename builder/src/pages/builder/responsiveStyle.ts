@@ -1,29 +1,32 @@
-import type { PreviewViewport } from "./builder.enum"
+import { PreviewViewport } from "./builder.enum"
 import {
   FULL_TO_SHORT,
   type FullStylePropKey,
   type ShortStylePropKey,
 } from "../../utils/stylePropsShortMapV1"
 
-export type ResponsiveStyleBranch = "base" | "tablet" | "phone"
 
 export type ResponsiveStyleValue = Record<string, unknown>
 
 export type ResponsiveStyle = Partial<
-  Record<ResponsiveStyleBranch, ResponsiveStyleValue>
+  Record<PreviewViewport, ResponsiveStyleValue>
 >
-
+//TODO really need?
 export const getResponsiveStyleBranch = (
   viewport: PreviewViewport,
-): ResponsiveStyleBranch => {
+): PreviewViewport => {
   switch (viewport) {
-    case "tablet":
-      return "tablet"
-    case "phone":
-      return "phone"
-    case "desktop":
+    case PreviewViewport.PHONE:
+      return PreviewViewport.PHONE
+    case PreviewViewport.PHONE_LANDSCAPE:
+      return PreviewViewport.PHONE_LANDSCAPE
+    case PreviewViewport.TABLET:
+      return PreviewViewport.TABLET
+    case PreviewViewport.TABLET_LANDSCAPE:
+      return PreviewViewport.TABLET_LANDSCAPE
+    case PreviewViewport.DESKTOP:
     default:
-      return "base"
+      return PreviewViewport.DESKTOP
   }
 }
 
@@ -62,18 +65,28 @@ export const resolveResponsiveStyle = (
   style: ResponsiveStyle | undefined,
   viewport: PreviewViewport,
 ): Record<string, unknown> => {
-  const base = style?.base ?? {}
-  if (viewport === "desktop") {
-    return { ...base }
+  const desktop = style?.desktop ?? {}
+  if (viewport === PreviewViewport.DESKTOP) {
+    return { ...desktop }
+  }
+
+  const tabletLandscape = style?.tablet_landscape ?? {}
+  if (viewport === PreviewViewport.TABLET_LANDSCAPE) {
+    return { ...desktop, ...tabletLandscape }
   }
 
   const tablet = style?.tablet ?? {}
-  if (viewport === "tablet") {
-    return { ...base, ...tablet }
+  if (viewport === PreviewViewport.TABLET) {
+    return { ...desktop, ...tabletLandscape, ...tablet }
+  }
+  const phoneLandscape = style?.phone_landscape ?? {}
+  if (viewport === PreviewViewport.PHONE_LANDSCAPE) {
+    return { ...desktop, ...tabletLandscape, ...tablet, ...phoneLandscape }
   }
 
   const phone = style?.phone ?? {}
-  return { ...base, ...tablet, ...phone }
+
+  return { ...desktop,  ...tabletLandscape, ...tablet, ...phoneLandscape, ...phone }
 }
 
 export const getResponsiveStyleProp = (

@@ -5,11 +5,17 @@ import {
   type FullStylePropKey,
   type ShortStylePropKey,
 } from "./stylePropsShortMapV1"
+import { PreviewViewport } from "../pages/builder/builder.enum.ts";
 
 type StylePropsInput = Record<string, unknown> | null | undefined
-type StyleBranches = "base" | "tablet" | "phone"
 
-const RESPONSIVE_STYLE_BRANCHES: StyleBranches[] = ["base", "tablet", "phone"]
+const RESPONSIVE_STYLE_BRANCHES: PreviewViewport[] = [
+  PreviewViewport.DESKTOP,
+  PreviewViewport.TABLET_LANDSCAPE,
+  PreviewViewport.TABLET,
+  PreviewViewport.PHONE_LANDSCAPE,
+  PreviewViewport.PHONE,
+]
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === "object" && !Array.isArray(value)
@@ -57,8 +63,8 @@ export const encodeStyleProps = (
     }
   }
 
-  // Migration: if some style keys are still in flat props, move them into style.base.
-  const baseBranch = { ...(normalizedStyle.base ?? {}) }
+  // Migration: if some style keys are still in flat props, move them into style.desktop.
+  const baseBranch = { ...(normalizedStyle.desktop ?? {}) }
   for (const fullKey of STYLE_KEYS) {
     const shortKey = FULL_TO_SHORT[fullKey]
     const baseHasKey = Object.prototype.hasOwnProperty.call(baseBranch, fullKey)
@@ -75,7 +81,7 @@ export const encodeStyleProps = (
     delete encoded[shortKey]
   }
   if (Object.keys(baseBranch).length > 0) {
-    normalizedStyle.base = baseBranch
+    normalizedStyle.desktop = baseBranch
   }
 
   if (Object.keys(normalizedStyle).length === 0) {
@@ -110,7 +116,7 @@ export const decodeStyleProps = (
   }
 
   // Migration: old pages may keep style values in flat props.
-  const baseBranch = { ...(decodedStyle.base ?? {}) }
+  const baseBranch = { ...(decodedStyle.desktop ?? {}) }
   for (const fullKey of STYLE_KEYS) {
     const shortKey = FULL_TO_SHORT[fullKey]
     if (Object.prototype.hasOwnProperty.call(baseBranch, fullKey)) continue
@@ -123,7 +129,7 @@ export const decodeStyleProps = (
     }
   }
   if (Object.keys(baseBranch).length > 0) {
-    decodedStyle.base = baseBranch
+    decodedStyle.desktop = baseBranch
   }
 
   if (Object.keys(decodedStyle).length > 0) {
