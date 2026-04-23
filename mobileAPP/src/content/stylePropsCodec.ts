@@ -1,11 +1,24 @@
-import {
-  FULL_TO_SHORT,
-  SHORT_TO_FULL,
-  type FullStylePropKey,
-  type ShortStylePropKey,
-} from "./stylePropsShortMapV1";
+import { SHORT_TO_FULL, type ShortStylePropKey, } from "./stylePropsShortMapV1";
 
 type StylePropsInput = Record<string, unknown> | null | undefined;
+type StyleBranches = "base" | "tablet" | "phone";
+
+const RESPONSIVE_STYLE_BRANCHES: StyleBranches[] = ["base", "tablet", "phone"];
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === "object" && !Array.isArray(value);
+
+const decodeStyleBranch = (
+  shortStyleBranch: Record<string, unknown>,
+): Record<string, unknown> => {
+  const decoded: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(shortStyleBranch)) {
+    const fullKey = SHORT_TO_FULL[key as ShortStylePropKey] ?? key;
+    decoded[fullKey] = value;
+  }
+
+  return decoded;
+};
 
 type SerializedNodes = Record<
   string,
@@ -22,31 +35,25 @@ type SerializedNodes = Record<
   }
 >;
 
-export const encodeStyleProps = (
-  fullProps: StylePropsInput,
-): Record<string, unknown> => {
-  if (!fullProps) return {};
-
-  const encoded: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(fullProps)) {
-    const shortKey = FULL_TO_SHORT[key as FullStylePropKey] ?? key;
-    encoded[shortKey] = value;
-  }
-
-  return encoded;
-};
-
 export const decodeStyleProps = (
   shortProps: StylePropsInput,
 ): Record<string, unknown> => {
   if (!shortProps) return {};
 
-  const decoded: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(shortProps)) {
-    const fullKey = SHORT_TO_FULL[key as ShortStylePropKey] ?? key;
-    decoded[fullKey] = value;
+  const decoded = { ...shortProps };
+  const style = shortProps.style;
+  if (!isRecord(style)) {
+    return decoded;
   }
 
+  const decodedStyle: Record<string, unknown> = {};
+  for (const branch of RESPONSIVE_STYLE_BRANCHES) {
+    const branchValue = style[branch];
+    if (!isRecord(branchValue)) continue;
+    decodedStyle[branch] = decodeStyleBranch(branchValue);
+  }
+
+  decoded.style = decodedStyle;
   return decoded;
 };
 

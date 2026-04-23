@@ -130,19 +130,10 @@ const buildNodeTree = (
       type: String(child.type),
     }));
 
-    /** пропсы первой ячейки (layout, flex, placeItems) для рендера ячеек; grid не поддерживается в RN, приходит как flex.  */
-    const cellProps = cellNode.props ?? {};
+    /** Вложенный `style` шаблонной ячейки: layout/gap/flex и т.д. сливаются в `ContentList` по viewport (см. `resolveResponsiveStyle`). */
     const contentListProps = {
       ...(node.props ?? {}),
-      cellLayout: cellProps.layout ?? "block",
-      cellGap: cellProps.gap ?? null,
-      cellFlexFlow: cellProps.flexFlow ?? null,
-      cellFlexJustifyContent: cellProps.flexJustifyContent ?? null,
-      cellFlexAlignItems: cellProps.flexAlignItems ?? null,
-      cellPlaceItemsY: cellProps.placeItemsY ?? null,
-      cellPlaceItemsX: cellProps.placeItemsX ?? null,
-      cellBackgroundColor: cellProps.backgroundColor ?? null,
-      cellOpacityPercent: cellProps.opacityPercent ?? null,
+      cellTemplateStyle: (cellNode.props ?? {}).style,
     };
 
     return {

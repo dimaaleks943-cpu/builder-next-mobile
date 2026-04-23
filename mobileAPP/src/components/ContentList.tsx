@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
   Text as RNText,
   ActivityIndicator,
+  type ViewStyle,
 } from "react-native";
 import type { ComponentNode } from "../content/interface";
 import {
@@ -14,9 +15,11 @@ import type { IContentItem } from "../api/contentTypes";
 import { ContentDataProvider } from "../contexts/ContentDataContext";
 import { ContentListProvider } from "../contexts/ContentListContext";
 import { useCollectionFilterScope } from "../contexts/CollectionFilterScopeContext";
+import { useResponsiveViewport } from "../contexts/ResponsiveViewportContext";
 import { useSiteCollections } from "../contexts/SiteCollectionsContext";
 import { getCollectionItemsCacheKey } from "../lib/collectionItemsCacheKey";
 import { renderComponent } from "../content/renderer";
+import { resolveResponsiveStyle, type Viewport } from "../content/responsiveStyle";
 import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 import { withOpacityHex } from "../lib/withOpacityHex";
 
@@ -32,26 +35,8 @@ interface ContentListProps {
   filterScope?: string;
   selectedSource?: string;
   itemsPerRow?: number;
-  /** при "grid" с API считаем это как flex (row + wrap). временно  */
-  cellLayout?: CellLayoutMode | "grid";
-  cellGap?: number | null;
-  cellFlexFlow?: "row" | "column" | "wrap" | null;
-  cellFlexJustifyContent?:
-    | "flex-start"
-    | "flex-end"
-    | "center"
-    | "space-between"
-    | "space-around"
-    | null;
-  cellFlexAlignItems?:
-    | "flex-start"
-    | "flex-end"
-    | "center"
-    | "stretch"
-    | "baseline"
-    | null;
-  cellPlaceItemsY?: "start" | "center" | "end" | "stretch" | "baseline" | null;
-  cellPlaceItemsX?: "start" | "center" | "end" | "stretch" | "baseline" | null;
+  /** Вложенный responsive `style` шаблонной ячейки (из craft); layout/gap/flex читаются после `resolveResponsiveStyle`. */
+  cellTemplateStyle?: unknown;
   borderRadius?: number;
   borderTopWidth?: number;
   borderRightWidth?: number;
@@ -61,9 +46,7 @@ interface ContentListProps {
   borderStyle?: "none" | "solid" | "dotted";
   borderOpacity?: number;
   backgroundColor?: string;
-  cellBackgroundColor?: string | null;
   opacityPercent?: number;
-  cellOpacityPercent?: number | null;
   children?: ComponentNode[];
 }
 
@@ -75,13 +58,7 @@ export const ContentList = ({
   filterScope,
   selectedSource = "",
   itemsPerRow: itemsPerRowProp,
-  cellLayout = "block",
-  cellGap,
-  cellFlexFlow,
-  cellFlexJustifyContent,
-  cellFlexAlignItems,
-  cellPlaceItemsY,
-  cellPlaceItemsX,
+  cellTemplateStyle,
   backgroundColor = "#FFFFFF",
   borderRadius = 4,
   borderTopWidth = 0,
@@ -91,11 +68,80 @@ export const ContentList = ({
   borderColor = "#CBD5E0",
   borderStyle = "solid",
   borderOpacity = 1,
-  cellBackgroundColor,
   opacityPercent,
-  cellOpacityPercent = null,
   children: childrenProp,
 }: ContentListProps) => {
+  const { viewport } = useResponsiveViewport();
+  const mergedCellStyle = useMemo(
+    () => resolveResponsiveStyle(cellTemplateStyle, viewport),
+    [cellTemplateStyle, viewport],
+  );
+
+  const cellLayout =
+    (mergedCellStyle.layout as CellLayoutMode | "grid" | undefined) ?? "block";
+  const rawCellGap =
+    mergedCellStyle.gap == null
+      ? null
+      : typeof mergedCellStyle.gap === "number"
+        ? mergedCellStyle.gap
+        : Number(mergedCellStyle.gap);
+  const cellGap =
+    rawCellGap != null && Number.isFinite(rawCellGap) ? rawCellGap : null;
+  const cellFlexFlow =
+    mergedCellStyle.flexFlow == null
+      ? undefined
+      : (mergedCellStyle.flexFlow as "row" | "column" | "wrap");
+  const cellFlexJustifyContent =
+    mergedCellStyle.flexJustifyContent == null
+      ? undefined
+      : (mergedCellStyle.flexJustifyContent as
+          | "flex-start"
+          | "flex-end"
+          | "center"
+          | "space-between"
+          | "space-around");
+  const cellFlexAlignItems =
+    mergedCellStyle.flexAlignItems == null
+      ? undefined
+      : (mergedCellStyle.flexAlignItems as
+          | "flex-start"
+          | "flex-end"
+          | "center"
+          | "stretch"
+          | "baseline");
+  const cellPlaceItemsY =
+    mergedCellStyle.placeItemsY == null
+      ? undefined
+      : (mergedCellStyle.placeItemsY as
+          | "start"
+          | "center"
+          | "end"
+          | "stretch"
+          | "baseline");
+  const cellPlaceItemsX =
+    mergedCellStyle.placeItemsX == null
+      ? undefined
+      : (mergedCellStyle.placeItemsX as
+          | "start"
+          | "center"
+          | "end"
+          | "stretch"
+          | "baseline");
+  const cellBackgroundColor =
+    mergedCellStyle.backgroundColor == null
+      ? undefined
+      : String(mergedCellStyle.backgroundColor);
+  const rawCellOpacity =
+    mergedCellStyle.opacityPercent == null
+      ? null
+      : typeof mergedCellStyle.opacityPercent === "number"
+        ? mergedCellStyle.opacityPercent
+        : Number(mergedCellStyle.opacityPercent);
+  const cellOpacityPercent =
+    rawCellOpacity != null && Number.isFinite(rawCellOpacity)
+      ? rawCellOpacity
+      : undefined;
+
   const listRootOpacityStyle = resolveCraftVisualEffectsRnStyle({
     opacityPercent,
   });
@@ -112,14 +158,22 @@ export const ContentList = ({
     ? withOpacityHex(borderColor ?? "#CBD5E0", borderOpacity ?? 1)
     : "transparent";
 
-  const listRootBorderStyle = {
+  const listRootBorderStyle: ViewStyle = {
     borderRadius,
-    borderStyle: showBorder ? (borderStyle === "dotted" ? "dotted" as const : "solid" as const) : ("solid" as const),
+    borderStyle: showBorder
+      ? borderStyle === "dotted"
+        ? "dotted"
+        : "solid"
+      : "solid",
     borderColor: effectiveListBorderColor,
     borderTopWidth: showBorder ? borderTopWidth : 0,
     borderRightWidth: showBorder ? borderRightWidth : 0,
     borderBottomWidth: showBorder ? borderBottomWidth : 0,
     borderLeftWidth: showBorder ? borderLeftWidth : 0,
+  };
+
+  const listRootBackgroundStyle: ViewStyle = {
+    backgroundColor: backgroundColor ?? "#FFFFFF",
   };
 
   const itemsPerRow: number = itemsPerRowProp ?? 1;
@@ -264,7 +318,7 @@ export const ContentList = ({
       <View
         style={[
           styles.placeholder,
-          { backgroundColor },
+          listRootBackgroundStyle,
           listRootBorderStyle,
           listRootOpacityStyle,
         ]}
@@ -278,7 +332,7 @@ export const ContentList = ({
       <View
         style={[
           styles.placeholder,
-          { backgroundColor },
+          listRootBackgroundStyle,
           listRootBorderStyle,
           listRootOpacityStyle,
         ]}
@@ -297,7 +351,7 @@ export const ContentList = ({
       <View
         style={[
           styles.listOuter,
-          { backgroundColor },
+          listRootBackgroundStyle,
           listRootBorderStyle,
           listRootOpacityStyle,
         ]}
@@ -320,6 +374,7 @@ export const ContentList = ({
                     itemData={itemData}
                     collectionKey={selectedSource}
                     itemsPerRow={itemsPerRow}
+                    viewport={viewport}
                     layout={cellLayout}
                     gap={cellGap ?? undefined}
                     flexFlow={cellFlexFlow ?? undefined}
@@ -327,8 +382,8 @@ export const ContentList = ({
                     flexAlignItems={cellFlexAlignItems ?? undefined}
                     placeItemsY={cellPlaceItemsY ?? undefined}
                     placeItemsX={cellPlaceItemsX ?? undefined}
-                    backgroundColor={cellBackgroundColor ?? undefined}
-                    cellOpacityPercent={cellOpacityPercent ?? undefined}
+                    backgroundColor={cellBackgroundColor}
+                    cellOpacityPercent={cellOpacityPercent}
                   >
                     {children}
                   </ContentListItem>
@@ -357,6 +412,7 @@ interface ContentListItemProps {
   itemData: IContentItem;
   collectionKey: string | null;
   itemsPerRow: number;
+  viewport: Viewport;
   layout?: "block" | "flex" | "absolute" | "grid";
   gap?: number;
   flexFlow?: "row" | "column" | "wrap";
@@ -401,6 +457,7 @@ const ContentListItem = ({
   itemData,
   collectionKey,
   itemsPerRow,
+  viewport,
   layout = "block",
   gap,
   flexFlow = "row",
@@ -458,7 +515,7 @@ const ContentListItem = ({
         {hasTemplate
           ? children.map((child, index) => (
             <React.Fragment key={index}>
-              {renderComponent(child)}
+              {renderComponent(child, viewport)}
             </React.Fragment>
           ))
           : (

@@ -6,6 +6,11 @@
 import React from "react";
 import { View, Text as RNText } from "react-native";
 import type { ComponentNode } from "./interface";
+import { useResponsiveViewport } from "../contexts/ResponsiveViewportContext";
+import {
+  mergeNodePropsForViewport,
+  type Viewport,
+} from "./responsiveStyle";
 import { Body } from "../components/Body";
 import { Block } from "../components/Block";
 import { Text } from "../components/Text";
@@ -24,7 +29,10 @@ const componentMap = {
   ContentList,
 } as Record<string, React.ComponentType<any>>;
 
-export const renderComponent = (node: ComponentNode): React.ReactElement => {
+export const renderComponent = (
+  node: ComponentNode,
+  viewport: Viewport,
+): React.ReactElement => {
   const rawType: any = (node as any).type;
   let componentType: string;
 
@@ -47,8 +55,22 @@ export const renderComponent = (node: ComponentNode): React.ReactElement => {
    *  */
   if (componentType === "ContentList") {
     const templateChildren = (node as any).children as ComponentNode[] | undefined;
+    const mergedProps = mergeNodePropsForViewport(
+      (node as any).props ?? {},
+      viewport,
+    );
+    const { children: _omitChildrenFromProps, ...contentListProps } =
+      mergedProps as Record<string, unknown> & {
+        children?: unknown;
+      };
     return (
-      <ContentList {...(node as any).props} children={templateChildren}/>
+      <ContentList
+        {...(contentListProps as Omit<
+          React.ComponentProps<typeof ContentList>,
+          "children"
+        >)}
+        children={templateChildren}
+      />
     );
   }
 
@@ -56,7 +78,9 @@ export const renderComponent = (node: ComponentNode): React.ReactElement => {
 
   const children = childrenNodes
     ? childrenNodes.map((child, index) => (
-      <React.Fragment key={index}>{renderComponent(child)}</React.Fragment>
+      <React.Fragment key={index}>
+        {renderComponent(child, viewport)}
+      </React.Fragment>
     ))
     : undefined;
 
@@ -83,17 +107,33 @@ export const renderComponent = (node: ComponentNode): React.ReactElement => {
     );
   }
 
-  return <Component {...(node as any).props}>{children}</Component>;
-}
+  const mergedProps = mergeNodePropsForViewport(
+    (node as any).props ?? {},
+    viewport,
+  );
+  return <Component {...mergedProps}>{children}</Component>;
+};
 
-export const renderPage = (components: ComponentNode[]): React.ReactElement => {
+/**
+ * Renders decoded page nodes; must be mounted under `ResponsiveViewportProvider`.
+ */
+export const RenderPage = ({
+  components,
+}: {
+  components: ComponentNode[];
+}): React.ReactElement => {
+  const { viewport } = useResponsiveViewport();
   return (
     <>
       {components.map((component, index) => (
         <React.Fragment key={index}>
-          {renderComponent(component)}
+          {renderComponent(component, viewport)}
         </React.Fragment>
       ))}
     </>
   );
-}
+};
+
+export const renderPage = (components: ComponentNode[]): React.ReactElement => (
+  <RenderPage components={components}/>
+);
