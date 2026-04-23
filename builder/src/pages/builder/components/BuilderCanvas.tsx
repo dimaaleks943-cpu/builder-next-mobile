@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react"
 import { Box, IconButton } from "@mui/material"
 import { Frame, Element, useEditor, type SerializedNodes } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
-import { getPreviewMaxWidth, PreviewViewport } from "../builder.enum"
+import { getPreviewMaxWidth, MODE_TYPE, PreviewViewport } from "../builder.enum"
 import { CraftBody } from "../../../craft/Body.tsx"
 import { PageType, type IContentItem } from "../../../api/extranet"
 import { ContentListDataContext } from "../context/ContentListDataContext.tsx"
@@ -12,6 +12,7 @@ import { UpdateIcon } from "../../../icons/UpdateIcon"
 import { MonitorIcon } from "../../../icons/MonitorIcon.tsx";
 import { TabletIcon } from "../../../icons/TabletIcon.tsx";
 import { MobileIcon } from "../../../icons/MobileIcon.tsx";
+import { useBuilderModeContext } from "../context/BuilderModeContext.tsx";
 
 interface BuilderCanvasProps {
   initialContent: SerializedNodes | null;
@@ -32,6 +33,8 @@ export const BuilderCanvas = ({
   onPreviewViewportChange,
 }: BuilderCanvasProps) => {
   const { actions, query } = useEditor()
+  const modeContext = useBuilderModeContext()
+  const isRn = modeContext?.mode === MODE_TYPE.RN
   const { selectedId, canDeleteSelected } = useEditor((state, query) => {
     const [id] = Array.from(state.events.selected)
     if (!id) return { selectedId: null as string | null, canDeleteSelected: false }
@@ -224,7 +227,7 @@ export const BuilderCanvas = ({
         </Box>
 
         <Box sx={{ display: "flex", columnGap: "8px" }}>
-          <IconButton
+          {!isRn && <IconButton
             onClick={(e) => {
               e.stopPropagation()
               onPreviewViewportChange(PreviewViewport.DESKTOP)
@@ -234,7 +237,7 @@ export const BuilderCanvas = ({
             disableRipple
           >
             <MonitorIcon fill={previewViewport === PreviewViewport.DESKTOP ? COLORS.purple400 : COLORS.gray600}/>
-          </IconButton>
+          </IconButton>}
 
           <IconButton
             disableRipple
@@ -244,8 +247,10 @@ export const BuilderCanvas = ({
             }}
             size="small"
             title="Горизонтальный планшет"
+            sx={{transform: "rotate(90deg)", padding: 0}}
           >
-            <TabletIcon fill={previewViewport === PreviewViewport.TABLET_LANDSCAPE ? COLORS.purple400 : COLORS.gray600}/>
+            <TabletIcon
+              fill={previewViewport === PreviewViewport.TABLET_LANDSCAPE ? COLORS.purple400 : COLORS.gray600}/>
           </IconButton>
 
           <IconButton
@@ -268,6 +273,7 @@ export const BuilderCanvas = ({
             size="small"
             title="Горизонтальный телефон"
             disableRipple
+            sx={{transform: "rotate(90deg)", padding: 0 }}
           >
             <MobileIcon fill={previewViewport === PreviewViewport.PHONE_LANDSCAPE ? COLORS.purple400 : COLORS.gray600}/>
           </IconButton>

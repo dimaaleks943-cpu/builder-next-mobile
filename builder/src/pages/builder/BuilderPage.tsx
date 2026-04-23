@@ -300,6 +300,7 @@ export const BuilderPage = () => {
                     ? templateItemPathPrefix
                     : (pageMeta?.item_path_prefix ?? null)
                 }
+                onPreviewViewportChange={setPreviewViewport}
               />
 
               <Box

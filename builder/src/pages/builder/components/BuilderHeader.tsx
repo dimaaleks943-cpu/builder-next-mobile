@@ -4,17 +4,13 @@ import { useNavigate } from "react-router-dom"
 import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
 import { useUpdateExtranetPageMutation } from "../../../store/extranetApi"
-import {
-  useBuilderModeContext,
-  type BuilderMode,
-} from "../context/BuilderModeContext"
-import { MODE_TYPE } from "../builder.enum"
+import { type BuilderMode, useBuilderModeContext, } from "../context/BuilderModeContext"
+import { MODE_TYPE, PreviewViewport } from "../builder.enum"
 import { encodeSerializedNodesStyleProps } from "../../../utils/stylePropsCodec"
 import { compactContentListCells } from "../../../utils/compactContentListCells"
 import { normalizeItemPathPrefix } from "../../../utils/normalizeItemPathPrefix.ts"
 import { computePageContentTypes } from "../../../utils/computePageContentTypes"
-import { PageType } from "../../../api/extranet";
-import { SUPPORTED_LOCALES, type Locale } from "../../../api/extranet"
+import { type Locale, PageType, SUPPORTED_LOCALES } from "../../../api/extranet";
 import {
   collectUsedI18nKeys,
   pruneTranslationsByKeys,
@@ -23,18 +19,19 @@ import {
 } from "../../../utils/i18nTranslations.ts"
 
 interface BuilderHeaderProps {
-  pageId?: string
-  pageName?: string
-  pageSlug?: string
+  pageId?: string;
+  pageName?: string;
+  pageSlug?: string;
   /** С метаданных GET страницы — нужны для PUT. */
-  siteId?: number
-  directoryId?: string | null
-  pageType?: PageType
-  collectionTypeId?: string | null
+  siteId?: number;
+  directoryId?: string | null;
+  pageType?: PageType;
+  collectionTypeId?: string | null;
   /**
    * Для `template` — редактируемый префикс из билдера (строка); для `static` — как с API или null.
    */
-  itemPathPrefix?: string | null
+  itemPathPrefix?: string | null;
+  onPreviewViewportChange: (viewport: PreviewViewport) => void;
 }
 
 const MODES: { value: BuilderMode; label: string }[] = [
@@ -51,6 +48,7 @@ export const BuilderHeader = ({
   pageType = PageType.STATIC,
   collectionTypeId = null,
   itemPathPrefix = null,
+  onPreviewViewportChange,
 }: BuilderHeaderProps) => {
   const navigate = useNavigate()
   const { actions, query } = useEditor()
@@ -71,9 +69,11 @@ export const BuilderHeader = ({
     if (nextMode === MODE_TYPE.RN) {
       modeContext.setContentWeb(json)
       modeContext.setMode(MODE_TYPE.RN)
+      onPreviewViewportChange(PreviewViewport.TABLET_LANDSCAPE)
     } else {
       modeContext.setContentMobile(json)
       modeContext.setMode(MODE_TYPE.WEB)
+      onPreviewViewportChange(PreviewViewport.DESKTOP)
     }
   }
 
@@ -193,48 +193,6 @@ export const BuilderHeader = ({
         {modeContext && (
           <>
             <Box
-              sx={{
-                display: "flex",
-                border: `1px solid ${COLORS.gray200}`,
-                borderRadius: "4px",
-                overflow: "hidden",
-              }}
-            >
-              {MODES.map(({ value, label }) => (
-                <Box
-                  key={value}
-                  component="button"
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleModeChange(value)
-                  }}
-                  sx={{
-                    paddingTop: "4px",
-                    paddingRight: "10px",
-                    paddingBottom: "4px",
-                    paddingLeft: "10px",
-                    fontSize: "12px",
-                    border: "none",
-                    cursor: "pointer",
-                    fontWeight: 500,
-                    backgroundColor:
-                      modeContext.mode === value ? COLORS.purple100 : "transparent",
-                    color: COLORS.purple400,
-                    "&:hover": {
-                      backgroundColor:
-                        modeContext.mode === value
-                          ? COLORS.purple100
-                          : COLORS.gray100,
-                    },
-                  }}
-                >
-                  {label}
-                </Box>
-              ))}
-            </Box>
-
-            <Box
               component="button"
               type="button"
               onClick={(e) => {
@@ -313,18 +271,62 @@ export const BuilderHeader = ({
                 </MenuItem>
               ))}
             </Menu>
+
+            <Box
+              sx={{
+                display: "flex",
+                border: `1px solid ${COLORS.gray200}`,
+                borderRadius: "4px",
+                overflow: "hidden",
+              }}
+            >
+              {MODES.map(({ value, label }) => (
+                <Box
+                  key={value}
+                  component="button"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleModeChange(value)
+                  }}
+                  sx={{
+                    paddingTop: "4px",
+                    paddingRight: "10px",
+                    paddingBottom: "4px",
+                    paddingLeft: "10px",
+                    fontSize: "12px",
+                    border: "none",
+                    cursor: "pointer",
+                    fontWeight: 500,
+                    backgroundColor:
+                      modeContext.mode === value ? COLORS.purple100 : "transparent",
+                    color: COLORS.purple400,
+                    "&:hover": {
+                      backgroundColor:
+                        modeContext.mode === value
+                          ? COLORS.purple100
+                          : COLORS.gray100,
+                    },
+                  }}
+                >
+                  {label}
+                </Box>
+              ))}
+            </Box>
+
           </>
         )}
-        <Button
-          variant="outlined"
-          size="small"
-          onClick={handleSave}
-          disabled={isSaving}
-        >
-          Сохранить
-        </Button>
+
       </Box>
 
+      <Button
+        variant="outlined"
+        size="small"
+        onClick={handleSave}
+        disabled={isSaving}
+      >
+        Сохранить
+      </Button>
     </Box>
   )
 }
