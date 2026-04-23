@@ -25,6 +25,17 @@
     - рекурсивно рендерит детей,
     - создаёт элемент через `React.createElement`.
 
+### 1.1. Адаптивные стили и брейкпоинты (`buildResponsiveCss`)
+
+Стили узлов с **responsive**-пропом `style` попадают на витрину как инжектируемый CSS: `buildResponsiveCss` в `lib/responsiveCss.ts`, порядок веток — `BRANCHES` (как в билдере / codec). Базовый слой без `media` соответствует ветке **`desktop`** в JSON и применяется при ширине viewport **> 1279px**; далее накладываются вложенные `@media (max-width: …)`:
+
+- `1279px` — ветка `tablet_landscape`;
+- `1023px` — `tablet`;
+- `767px` — `phone_landscape`;
+- `567px` — `phone`.
+
+Так SSR остаётся на одном контракте с превью билдера и `builder/src/utils/stylePropsCodec.ts`. Полная таблица ветка ↔ px ↔ `media` — **`builder/DEV_NOTES.md` §3.1**. Маппинг окна на ветку в нативном приложении (без `desktop`) — **`mobileAPP/DEV_NOTES.md` §4**.
+
 ---
 
 ### 2. ContentDataContext / useContentData
@@ -301,7 +312,7 @@
 | Обёртки контекста | `SiteCollectionsProvider` + опционально `ContentDataProvider` вокруг `<main>` | `SiteCollectionsProvider` + `ContentDataProvider` вокруг нативного `ScrollView` в `App.tsx` |
 | Переход по ссылке | обычный `<a href={resolvedHref}>` | `navigation.navigate("Page", { slug: resolvedHref })` при пути с `/` |
 
-Отличия продукта: на RN страница без нативного контента уходит в **WebView** по полному URL; на SSR при отсутствии записи — **404**. Детали и контракт `SitePage` для мобилки — `mobileAPP/DEV_NOTES.md`, §4.
+Отличия продукта: на RN страница без нативного контента уходит в **WebView** по полному URL; на SSR при отсутствии записи — **404**. Детали и контракт `SitePage` для мобилки — `mobileAPP/DEV_NOTES.md`, §5.
 
 ---
 
@@ -390,6 +401,7 @@
   - field-resolution в `Text`/`Image` работает через `item.fields[]` и `field.id`.
 - Если меняется SSR prefetch/client fallback в `pages/[[...slug]].tsx` или API-адаптеры,
   обновляем этот раздел и `site-runtime-ssr/README.md`, чтобы не было расхождений.
-- Любые изменения **template-маршрута** (`templateRoute`, выбор страницы по slug, загрузка записи, `templateContentData`, `LinkText` template-href) синхронизируем с **§7.2–7.3**, `builder/DEV_NOTES.md` и `mobileAPP/DEV_NOTES.md` §4.
+- Любые изменения **template-маршрута** (`templateRoute`, выбор страницы по slug, загрузка записи, `templateContentData`, `LinkText` template-href) синхронизируем с **§7.2–7.3**, `builder/DEV_NOTES.md` и `mobileAPP/DEV_NOTES.md` §5.
+- При изменении **брейкпоинтов responsive CSS** (`lib/responsiveCss.ts`, `BRANCHES`, строки `max-width`) — обновляем **§1.1**, `builder/DEV_NOTES.md` §3.1 и `mobileAPP/DEV_NOTES.md` §4.
 
 

@@ -38,7 +38,23 @@
 
 ---
 
-### 4. Template-страницы, резолвинг `slug` и внутренние ссылки
+### 4. Адаптивные стили / viewport
+
+Нативный рендер мержит вложенный объект `props.style` по **четырём** веткам (ветки **`desktop` в RN нет**): порядок каскада задаётся константой `VIEWPORT_CASCADE` в `src/content/responsiveStyle.ts`:
+
+`tablet_landscape` → `tablet` → `phone_landscape` → `phone`.
+
+Максимальная «широкая» ветка по контракту с билдером совпадает с **`PREVIEW_WIDTH_TABLET_LANDSCAPE` (1279)** в `builder/src/pages/builder/builder.enum.ts` (в приложении нет отдельного режима ширины 1440 / `desktop`).
+
+**Маппинг размеров окна на ветку:** `viewportFromDimensions(width, height)` в том же файле — учитываются **короткая сторона** экрана (телефон vs планшет по форм‑фактору) и **ландшафт** (`width > height` → суффикс `_landscape`). Узлы дерева обычно проходят через `mergeNodePropsForViewport` / `resolveResponsiveStyle`.
+
+**Порог телефон / планшет:** в билдере узкая превью‑ширина задана как `PREVIEW_WIDTH_PHONE = 567`, а в приложении константа `PHONE_FORM_FACTOR_MAX_SHORT_SIDE = 568` (комментарий в коде: «short side above this → tablet»). На границе **567–568 px** теоретически возможно расхождение классификации «телефон / планшет» между превью конструктора и реальным устройством; при выравнивании констант в коде обновить этот абзац и **`builder/DEV_NOTES.md` §3.1**.
+
+Сводная таблица ветка ↔ px ↔ SSR `media` — **`builder/DEV_NOTES.md` §3.1**; генерация CSS на витрине — **`site-runtime-ssr/DEV_NOTES.md` §1.1**.
+
+---
+
+### 5. Template-страницы, резолвинг `slug` и внутренние ссылки
 
 Поведение выровнено с `site-runtime-ssr/pages/[[...slug]].tsx`, `lib/templateRoute.ts` и `components/LinkText.tsx`. Подробный пошаговый разбор маппинга URL на SSR и таблица parity с RN — **`site-runtime-ssr/DEV_NOTES.md` §7.2–7.3**. Метаданные страницы и настройки `LinkText` в конструкторе — **`builder/DEV_NOTES.md`** (§1: `LinkText` и блок «Страница типа template»).
 
@@ -76,12 +92,13 @@
 
 ---
 
-### 5. Update protocol для DEV_NOTES (обязательный)
+### 6. Update protocol для DEV_NOTES (обязательный)
 
 - Любые изменения flow/контрактов в мобилке фиксируем в этом файле в рамках той же задачи.
 - При изменениях, затрагивающих совместимость, обязательно синхронизируем описание с:
   - `builder/DEV_NOTES.md`,
   - `site-runtime-ssr/DEV_NOTES.md`.
+- При изменении **адаптивных порогов или каскада** (`src/content/responsiveStyle.ts`) — обновляем **§4**, `builder/DEV_NOTES.md` §3.1 и `site-runtime-ssr/DEV_NOTES.md` §1.1.
 - Термины и API-формулировки держим едиными во всей документации:
   - `selectedSource = content_type_id`,
   - items endpoint = `content/items` с filter по `content_type_id`.

@@ -67,7 +67,7 @@
 - **Ссылка на детальную страницу записи через template**:
   - `collectionItemLinkTarget === "template"` и непустой `collectionItemTemplatePageId` (id страницы из API со `type: "template"` и тем же `collection_type_id`, что у списка).
   - Настройки в UI: `src/pages/builder/settingsCraftComponents/LinkTextSettingsFields.tsx` — список допустимых template-страниц фильтруется по `content_type_id` текущего `ContentList`; при отсутствии шаблона возможно создание страницы с `type: "template"` и префиксом из `normalizeItemPathPrefix`.
-  - В рантайме (SSR / `mobileAPP`) итоговый путь строится как **префикс записи** (`item_path_prefix ?? slug` выбранной страницы, нормализация `normalizeItemPathPrefix`) **+** закодированный сегмент **`item.id`** текущей записи — см. `site-runtime-ssr/DEV_NOTES.md` §7.2 и `mobileAPP/DEV_NOTES.md` §4.
+  - В рантайме (SSR / `mobileAPP`) итоговый путь строится как **префикс записи** (`item_path_prefix ?? slug` выбранной страницы, нормализация `normalizeItemPathPrefix`) **+** закодированный сегмент **`item.id`** текущей записи — см. `site-runtime-ssr/DEV_NOTES.md` §7.2 и `mobileAPP/DEV_NOTES.md` §5.
 - В рентайме:
   - `site-runtime-ssr/components/LinkText.tsx` — подставляет `resolvedHref` в `<a>`.
 - Для мобилки:
@@ -219,6 +219,10 @@
    - **Общий пул компонентов**, но ограничения и дефолты зависят от режима:
      - **Block:** в режиме RN при добавлении из AddMenu по умолчанию создаётся с `layout="grid"` (для RN удобнее флекс/сетка); в режиме Web — `layout="block"`.
      - **LayoutAccordion (вкладка «Стили»):** в режиме RN отображается только работа с **флексом** (одна кнопка «Флекс»), без выбора «Блок» / «Сетка» / «Абс. позиция» и без полей Columns/Rows.
+   - **Превью и адаптивные стили** (см. также **§3.1**):
+     - В **Web** в тулбаре превью доступны все пять веток, включая `desktop`; максимальная ширина холста для десктопа — **1440** (`PREVIEW_WIDTH_DESKTOP` в `src/pages/builder/builder.enum.ts`, функция `getPreviewMaxWidth`).
+     - В **RN** кнопка «десктоп» **не показывается** (`BuilderCanvas.tsx`: превью `DESKTOP` только при `!isRn`); верхняя ветка по ширине — **`tablet_landscape` (1279)**; при переключении хедера на «Мобилка» превью **принудительно** ставится в `TABLET_LANDSCAPE` (`BuilderHeader.tsx`, `handleModeChange`).
+     - В JSON `content_mobile` по-прежнему может встречаться ключ `style.desktop` (старые данные, ручной JSON). В RN‑режиме редактора эта ветка **не выбирается превью** и не редактируется через UI десктопа; **источник правды для «широкого» мобильного экрана** — ветка **`tablet_landscape`**. Отдельной миграции JSON в репозитории нет — это ограничение редактора и контракт с рантаймом RN (см. `mobileAPP/DEV_NOTES.md` §4).
    - Имена компонентов и структура JSON единые; мобильное приложение по этому же JSON рендерит экран нативно (см. п. 5).
 
 5. **Мобильное приложение: два источника контента**  
@@ -226,6 +230,26 @@
    - **Контент из конструктора для RN** (`content_mobile`) — рендерится **нативно** (по JSON в RN‑компоненты).
    - **Контент из веб‑конструктора** (`content`) — показывается через **WebView** (загрузка URL веб‑сайта).
    Бэкенд в будущем реализует различие источников, и по **флагу** (в ответе API или в метаданных страницы) приложение будет понимать, какой контент отдавать — и выбирать режим отображения: нативный рендер по `content_mobile` или WebView по веб‑странице.
+
+### 3.1. Адаптив: ветки `props.style` и брейкпоинты (единый контракт)
+
+Визуальные стили компонентов на холсте и в сохранённом JSON хранятся как **объект по веткам viewport** (ключи совпадают с `PreviewViewport` в `src/pages/builder/builder.enum.ts`). Числа ниже — **ширина искусственного превью** в веб‑билдере (`getPreviewMaxWidth`) и одновременно **верхняя граница `max-width`** в медиазапросах SSR (`site-runtime-ssr/lib/responsiveCss.ts`). Каскад **от широкого к узкому** должен оставаться согласован между билдером, SSR и мобильным рантаймом.
+
+| Ветка JSON (`props.style.<ветка>`) | Ширина превью в билдере (`getPreviewMaxWidth`) | SSR (`responsiveCss.ts`) |
+| --- | ---: | --- |
+| `desktop` | 1440 | базовые стили (без `media`; viewport **шире** 1279px) |
+| `tablet_landscape` | 1279 | `@media (max-width: 1279px)` |
+| `tablet` | 1023 | `@media (max-width: 1023px)` |
+| `phone_landscape` | 767 | `@media (max-width: 767px)` |
+| `phone` | 567 | `@media (max-width: 567px)` |
+
+**Source of truth в коде**
+
+- Константы и enum превью: `builder/src/pages/builder/builder.enum.ts` (`PREVIEW_WIDTH_*`, `getPreviewMaxWidth`, `PreviewViewport`).
+- Резолв стилей на холсте билдера: `builder/src/pages/builder/responsiveStyle.ts`, контекст превью — `PreviewViewportContext`.
+- Кодирование веток в сериализованном JSON: `builder/src/utils/stylePropsCodec.ts` (порядок веток совпадает с SSR `BRANCHES`).
+- SSR: `site-runtime-ssr/lib/responsiveCss.ts` (`buildResponsiveCss`, `BRANCHES`, строки `max-width`).
+- RN‑приложение (без ветки `desktop`, маппинг окна на ветку): `mobileAPP/src/content/responsiveStyle.ts` — **`mobileAPP/DEV_NOTES.md` §4**.
 
 ---
 
@@ -500,7 +524,8 @@ Source of truth для сокращений зафиксирован в `src/uti
   - `seed` в редакторе;
   - `sync` структуры и props между ячейками;
   - `delete` с fallback через serialized subtree при сбое Craft `actions.delete`.
-- При изменении **template-страниц** (`type`, `collection_type_id`, `item_path_prefix`, сохранение в `BuilderHeader`), **LinkText** в режиме `collectionItemPage` + template или логики в `LinkTextSettingsFields` — обновляем §1 (template + LinkText) и синхронизируем `site-runtime-ssr/DEV_NOTES.md` §7.2–7.3 и `mobileAPP/DEV_NOTES.md` §4.
+- При изменении **template-страниц** (`type`, `collection_type_id`, `item_path_prefix`, сохранение в `BuilderHeader`), **LinkText** в режиме `collectionItemPage` + template или логики в `LinkTextSettingsFields` — обновляем §1 (template + LinkText) и синхронизируем `site-runtime-ssr/DEV_NOTES.md` §7.2–7.3 и `mobileAPP/DEV_NOTES.md` §5.
+- При изменении **брейкпоинтов адаптива** (`PREVIEW_WIDTH_*`, медиазапросы в `responsiveCss.ts`, каскад/пороги в `mobileAPP/src/content/responsiveStyle.ts`) — синхронно обновляем **§3.1**, `site-runtime-ssr/DEV_NOTES.md` §1.1 и `mobileAPP/DEV_NOTES.md` §4.
 - При изменении **локализации** (`translate` / `translate_mobile`, `i18nKey`, `BuilderModeContext`, `craftLocalizedText`, `i18nTranslations`, сохранение/merge в `BuilderPage` / `BuilderHeader`) — обновляем **§8** и краткий блок в `builder/README.md`; при появлении резолва на SSR/mobile — синхронизируем их `DEV_NOTES`.
 - Терминология в описаниях и комментариях всегда единая:
   - `selectedSource` = `content_type_id` (UUID),
