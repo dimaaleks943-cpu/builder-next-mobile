@@ -185,7 +185,7 @@ export const ContentList = ({
     ? selectedCategoryIdByScope[scopeTrimmed] ?? null
     : null;
 
-  const cacheKey = getCollectionItemsCacheKey(filterScope, selectedSource);
+  const cacheKey = getCollectionItemsCacheKey(filterScope, selectedSource as string);
   const fromSsr = collectionItemsByKey[cacheKey];
   const [fallbackItems, setFallbackItems] = useState<IContentItem[] | null>(
     null,
@@ -317,7 +317,6 @@ export const ContentList = ({
     return (
       <View
         style={[
-          styles.placeholder,
           listRootBackgroundStyle,
           listRootBorderStyle,
           listRootOpacityStyle,
@@ -331,7 +330,6 @@ export const ContentList = ({
     return (
       <View
         style={[
-          styles.placeholder,
           listRootBackgroundStyle,
           listRootBorderStyle,
           listRootOpacityStyle,
@@ -350,19 +348,17 @@ export const ContentList = ({
     <ContentListProvider filterScope={scopeTrimmed || undefined}>
       <View
         style={[
-          styles.listOuter,
           listRootBackgroundStyle,
           listRootBorderStyle,
           listRootOpacityStyle,
         ]}
         accessibilityState={filterLoading ? { busy: true } : undefined}
       >
-        <View style={styles.root}>
+        <View>
           {rows.map((row, rowIndex) => (
             <View
               key={rowIndex}
               style={[
-                styles.row,
                 { flexDirection: itemsPerRow === 1 ? "column" : "row" },
               ]}
             >
@@ -394,13 +390,12 @@ export const ContentList = ({
         </View>
         {showFilterOverlay ? (
           <View
-            style={styles.filterOverlay}
             pointerEvents="auto"
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
           >
             <ActivityIndicator size="small" color="#666666"/>
-            <RNText style={styles.overlayHint}>Обновление…</RNText>
+            <RNText>Обновление…</RNText>
           </View>
         ) : null}
       </View>
@@ -499,7 +494,6 @@ const ContentListItem = ({
     <ContentDataProvider collectionKey={collectionKey} itemData={itemData}>
       <View
         style={[
-          styles.item,
           {
             flex: itemsPerRow === 1 ? 0 : 1,
             flexDirection,
@@ -528,35 +522,3 @@ const ContentListItem = ({
   );
 };
 
-const styles = StyleSheet.create({
-  listOuter: {
-    position: "relative",
-    width: "100%",
-  },
-  filterOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(255, 255, 255, 0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  overlayHint: {
-    marginTop: 8,
-    fontSize: 14,
-    color: "#666666",
-  },
-  root: {
-    width: "100%",
-    flexDirection: "column",
-  },
-  row: {
-    width: "100%",
-  },
-  item: {
-    minHeight: 48,
-    padding: 16,
-  },
-  placeholder: {
-    width: "100%",
-    minHeight: 300,
-  },
-});

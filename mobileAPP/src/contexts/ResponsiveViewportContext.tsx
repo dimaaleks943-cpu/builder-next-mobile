@@ -1,9 +1,6 @@
 import React, { useMemo } from "react";
 import { useWindowDimensions } from "react-native";
-import {
-  viewportFromWidth,
-  type Viewport,
-} from "../content/responsiveStyle";
+import { viewportFromDimensions, type Viewport } from "../content/responsiveStyle";
 
 export type ResponsiveViewportContextValue = {
   width: number;
@@ -14,7 +11,7 @@ export type ResponsiveViewportContextValue = {
 const defaultValue: ResponsiveViewportContextValue = {
   width: 0,
   height: 0,
-  viewport: "desktop",
+  viewport: "phone",
 };
 
 const ResponsiveViewportContext =
@@ -26,7 +23,10 @@ export const ResponsiveViewportProvider = ({
   children: React.ReactNode;
 }) => {
   const { width, height } = useWindowDimensions();
-  const viewport = useMemo(() => viewportFromWidth(width), [width]);
+  const viewport = useMemo(
+    () => viewportFromDimensions(width, height),
+    [width, height],
+  );
   const value = useMemo(
     () => ({ width, height, viewport }),
     [width, height, viewport],

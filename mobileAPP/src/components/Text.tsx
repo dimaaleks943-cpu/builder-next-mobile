@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Text as RNText, StyleSheet, type TextStyle } from "react-native";
+import { Text as RNText, type TextStyle, StyleProp } from "react-native";
 import { useContentData } from "../contexts/ContentDataContext";
 import {
   findContentItemField,
@@ -77,7 +77,7 @@ export const Text = ({
     textDecorationParts.push("line-through");
   }
 
-  const style = {
+  const style: StyleProp<TextStyle> = {
     fontSize,
     fontWeight,
     textAlign,
@@ -100,13 +100,7 @@ export const Text = ({
     ...resolveCraftVisualEffectsRnStyle({ opacityPercent }),
   } as TextStyle;
 
-  return <RNText style={[styles.base, style]}>{displayText}</RNText>;
+  return <RNText style={style}>{displayText}</RNText>;
 };
 
-const styles = StyleSheet.create({
-  base: {
-    fontSize: 14,
-    color: "#333333",
-  },
-});
 

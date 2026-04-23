@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import {
   Linking,
   Pressable,
-  StyleSheet,
   Text as RNText,
   type StyleProp,
   type TextStyle,
@@ -183,7 +182,7 @@ export const LinkText = ({
     textDecorationParts.push("underline");
   }
 
-  const style = {
+  const style: StyleProp<TextStyle> = {
     fontSize,
     fontWeight,
     textAlign,
@@ -207,16 +206,10 @@ export const LinkText = ({
 
   return (
     <Pressable onPress={handlePress}>
-      <RNText style={[styles.base, style] as StyleProp<TextStyle>}>
+      <RNText style={style}>
         {displayText}
       </RNText>
     </Pressable>
   );
 };
 
-const styles = StyleSheet.create({
-  base: {
-    fontSize: 14,
-    textDecorationLine: "underline",
-  },
-});

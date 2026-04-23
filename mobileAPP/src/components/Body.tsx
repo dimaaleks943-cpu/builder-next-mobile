@@ -29,7 +29,6 @@ export const Body = ({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    padding: 16,
   },
 });
 

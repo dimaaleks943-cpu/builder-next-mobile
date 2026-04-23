@@ -1,13 +1,17 @@
-import type { ViewStyle } from "react-native";
+import type { ImageStyle, ViewStyle } from "react-native";
 
 export type CraftVisualEffectsSerializedProps = {
   opacityPercent?: number;
 };
 
+type CraftOpacityStyle = {
+  opacity?: NonNullable<ViewStyle["opacity"] | ImageStyle["opacity"]>;
+};
+
 /** в RN используем только opacity (0–1) из opacityPercent */
 export function resolveCraftVisualEffectsRnStyle(
   input: CraftVisualEffectsSerializedProps,
-): Pick<ViewStyle, "opacity"> {
+): CraftOpacityStyle {
   if (typeof input.opacityPercent !== "number" || Number.isNaN(input.opacityPercent)) {
     return {};
   }

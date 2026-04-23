@@ -3,7 +3,7 @@ import {
   StyleSheet,
   View,
   type ImageStyle,
-  type ViewStyle,
+  type ViewStyle, StyleProp,
 } from "react-native";
 import { useContentData } from "../contexts/ContentDataContext";
 import { findContentItemField } from "../content/contentFieldValue";
@@ -88,43 +88,39 @@ export const Image = ({
     ? withOpacityHex(borderColor ?? "#CBD5E0", borderOpacity ?? 1)
     : "transparent";
 
-  const frameStyle: ViewStyle | undefined = showBorder
+  const frameStyle: StyleProp<ViewStyle> = showBorder
     ? {
-        borderRadius,
-        borderStyle: borderStyle === "dotted" ? "dotted" : "solid",
-        borderColor: effectiveBorderColor,
-        borderTopWidth,
-        borderRightWidth,
-        borderBottomWidth,
-        borderLeftWidth,
-        overflow: "hidden",
-      }
+      borderRadius,
+      borderStyle: borderStyle === "dotted" ? "dotted" : "solid",
+      borderColor: effectiveBorderColor,
+      borderTopWidth,
+      borderRightWidth,
+      borderBottomWidth,
+      borderLeftWidth,
+      overflow: "hidden",
+    }
     : undefined;
 
-  const imageStyle: ImageStyle = {
+  const imageStyle: React.ComponentProps<typeof RNImage>["style"] = {
     width: width ?? "100%",
     height: height ?? undefined,
     minHeight: height ?? 140,
     borderRadius: showBorder ? 0 : borderRadius,
-    resizeMode: "cover",
     backgroundColor,
     ...resolveCraftVisualEffectsRnStyle({ opacityPercent }),
   };
 
+
   return (
-    <View style={[styles.wrapper, frameStyle]}>
+    <View style={frameStyle}>
       <RNImage
         source={{ uri: effectiveSrc }}
         accessibilityLabel={alt}
+        resizeMode="cover"
         style={imageStyle}
       />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  wrapper: {
-    marginVertical: 8,
-  },
-});
 
