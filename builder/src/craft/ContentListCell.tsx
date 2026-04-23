@@ -12,37 +12,18 @@ import type {
 } from "../builder.enum"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import {
+  type CraftMixBlendMode,
   DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
   resolveCraftVisualEffectsStyle,
-  type CraftVisualEffectsProps,
 } from "./craftVisualEffects.ts"
 import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
+import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 
 export type ContentListCellProps = {
   children?: ReactNode
-  width?: string | number
-  height?: string | number
-  minWidth?: number
-  minHeight?: number
-  maxWidth?: string | number
-  maxHeight?: string | number
-  overflow?: "auto" | "hidden" | "visible" | "scroll"
-  layout?: BlockLayoutMode
-  gridColumns?: number
-  gridRows?: number
-  gridAutoFlow?: GridAutoFlow
-  gap?: number
-  flexFlow?: FlexFlowOption
-  flexJustifyContent?: FlexJustifyContent
-  flexAlignItems?: FlexAlignItems
-  placeItemsY?: PlaceItemsValue
-  placeItemsX?: PlaceItemsValue
-  backgroundColor?: string
-  /** Зарезервировано под будущий UI; в рендере пока не используется */
-  backgroundClip?: string
   style?: ResponsiveStyle
-} & CraftVisualEffectsProps
+}
 
 /**
  * Одна ячейка списка коллекции. Canvas: в неё можно перетащить элементы (Text и т.д.).
@@ -54,32 +35,37 @@ export type ContentListCellProps = {
 export const CraftContentListCell = (props: ContentListCellProps) => {
   const viewport = usePreviewViewport()
   const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
-  const width = (responsiveStyle.width as string | number | undefined) ?? props.width
-  const height = (responsiveStyle.height as string | number | undefined) ?? props.height
-  const minWidth = (responsiveStyle.minWidth as number | undefined) ?? props.minWidth
-  const minHeight = (responsiveStyle.minHeight as number | undefined) ?? props.minHeight
-  const maxWidth = (responsiveStyle.maxWidth as string | number | undefined) ?? props.maxWidth
-  const maxHeight = (responsiveStyle.maxHeight as string | number | undefined) ?? props.maxHeight
-  const overflow = (responsiveStyle.overflow as ContentListCellProps["overflow"] | undefined) ?? props.overflow
-  const layout = (responsiveStyle.layout as BlockLayoutMode | undefined) ?? props.layout ?? "block"
-  const gridColumns = (responsiveStyle.gridColumns as number | undefined) ?? props.gridColumns
-  const gridRows = (responsiveStyle.gridRows as number | undefined) ?? props.gridRows
-  const gridAutoFlow = (responsiveStyle.gridAutoFlow as GridAutoFlow | undefined) ?? props.gridAutoFlow ?? "row"
-  const gap = (responsiveStyle.gap as number | undefined) ?? props.gap
-  const flexFlow = (responsiveStyle.flexFlow as FlexFlowOption | undefined) ?? props.flexFlow ?? "row"
-  const flexJustifyContent =
-    (responsiveStyle.flexJustifyContent as FlexJustifyContent | undefined) ?? props.flexJustifyContent
-  const flexAlignItems =
-    (responsiveStyle.flexAlignItems as FlexAlignItems | undefined) ?? props.flexAlignItems
-  const placeItemsY = (responsiveStyle.placeItemsY as PlaceItemsValue | undefined) ?? props.placeItemsY
-  const placeItemsX = (responsiveStyle.placeItemsX as PlaceItemsValue | undefined) ?? props.placeItemsX
-  const backgroundColor = (responsiveStyle.backgroundColor as string | undefined) ?? props.backgroundColor
-  const mixBlendMode = (responsiveStyle.mixBlendMode as string | undefined) ?? props.mixBlendMode ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode
-  const opacityPercent = (responsiveStyle.opacityPercent as number | undefined) ?? props.opacityPercent ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent
-  const outlineStyleMode = (responsiveStyle.outlineStyleMode as any) ?? props.outlineStyleMode ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode
-  const outlineWidth = (responsiveStyle.outlineWidth as number | undefined) ?? props.outlineWidth ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth
-  const outlineOffset = (responsiveStyle.outlineOffset as number | undefined) ?? props.outlineOffset ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset
-  const outlineColor = (responsiveStyle.outlineColor as string | undefined) ?? props.outlineColor ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor
+  const width = responsiveStyle.width as string | number | undefined
+  const height = responsiveStyle.height as string | number | undefined
+  const minWidth = responsiveStyle.minWidth as number | undefined
+  const minHeight = responsiveStyle.minHeight as number | undefined
+  const maxWidth = responsiveStyle.maxWidth as string | number | undefined
+  const maxHeight = responsiveStyle.maxHeight as string | number | undefined
+  const overflow = responsiveStyle.overflow as "auto" | "hidden" | "visible" | "scroll" | undefined
+  const layout = (responsiveStyle.layout as BlockLayoutMode | undefined) ?? "block"
+  const gridColumns = responsiveStyle.gridColumns as number | undefined
+  const gridRows = responsiveStyle.gridRows as number | undefined
+  const gridAutoFlow = (responsiveStyle.gridAutoFlow as GridAutoFlow | undefined) ?? "row"
+  const gap = responsiveStyle.gap as number | undefined
+  const flexFlow = (responsiveStyle.flexFlow as FlexFlowOption | undefined) ?? "row"
+  const flexJustifyContent = responsiveStyle.flexJustifyContent as FlexJustifyContent | undefined
+  const flexAlignItems = responsiveStyle.flexAlignItems as FlexAlignItems | undefined
+  const placeItemsY = responsiveStyle.placeItemsY as PlaceItemsValue | undefined
+  const placeItemsX = responsiveStyle.placeItemsX as PlaceItemsValue | undefined
+  const backgroundColor = responsiveStyle.backgroundColor as string | undefined
+  const mixBlendMode =
+    (responsiveStyle.mixBlendMode as CraftMixBlendMode | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode
+  const opacityPercent =
+    (responsiveStyle.opacityPercent as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent
+  const outlineStyleMode =
+    (responsiveStyle.outlineStyleMode as (typeof DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS)["outlineStyleMode"]) ??
+    DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode
+  const outlineWidth =
+    (responsiveStyle.outlineWidth as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth
+  const outlineOffset =
+    (responsiveStyle.outlineOffset as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset
+  const outlineColor =
+    (responsiveStyle.outlineColor as string | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor
   const {
     connectors: { connect, drag },
     selected,
@@ -163,26 +149,14 @@ export const CraftContentListCell = (props: ContentListCellProps) => {
 ;(CraftContentListCell as any).craft = {
   displayName: CRAFT_DISPLAY_NAME.ContentListCell,
   props: {
-    layout: "block" as BlockLayoutMode,
-    width: undefined,
-    height: undefined,
-    minWidth: undefined,
-    minHeight: undefined,
-    maxWidth: undefined,
-    maxHeight: undefined,
-    overflow: undefined,
-    gridColumns: undefined,
-    gridRows: undefined,
-    gridAutoFlow: "row" as const,
-    gap: undefined,
-    flexFlow: "row" as const,
-    flexJustifyContent: undefined,
-    flexAlignItems: undefined,
-    placeItemsY: undefined,
-    placeItemsX: undefined,
-    backgroundColor: undefined,
-    backgroundClip: undefined,
-    ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+    style: {
+      [PreviewViewport.DESKTOP]: {
+        layout: "block" as BlockLayoutMode,
+        gridAutoFlow: "row" as const,
+        flexFlow: "row" as const,
+        ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+      },
+    },
   },
   rules: {
     canMoveIn: () => true,

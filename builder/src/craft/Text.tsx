@@ -10,11 +10,12 @@ import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 import { TextSettingsFields } from "../pages/builder/settingsCraftComponents"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import {
+  type CraftMixBlendMode,
   DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
   resolveCraftVisualEffectsStyle,
-  type CraftVisualEffectsProps,
 } from "./craftVisualEffects.ts"
 import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
+import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 import { useBuilderModeContext } from "../pages/builder/context/BuilderModeContext.tsx"
 import {
@@ -24,40 +25,10 @@ import {
 
 export type TextAlign = "left" | "center" | "right"
 
-export interface TextProps extends CraftVisualEffectsProps {
+export interface TextProps {
   text?: string
   i18nKey?: string | null
   collectionField?: string | null
-  fontSize?: number
-  fontWeight?: "normal" | "bold"
-  textAlign?: TextAlign
-  color?: string
-  fontFamily?: string
-  lineHeight?: number
-  textTransform?: "none" | "uppercase" | "lowercase" | "capitalize"
-  strokeColor?: string
-  strokeWidth?: number
-  isItalic?: boolean
-  isUnderline?: boolean
-  isStrikethrough?: boolean
-  marginTop?: number
-  marginRight?: number
-  marginBottom?: number
-  marginLeft?: number
-  paddingTop?: number
-  paddingRight?: number
-  paddingBottom?: number
-  paddingLeft?: number
-  backgroundColor?: string
-  width?: string | number
-  height?: string | number
-  minWidth?: number
-  minHeight?: number
-  maxWidth?: string | number
-  maxHeight?: string | number
-  overflow?: "auto" | "hidden" | "visible" | "scroll"
-  /** Зарезервировано под будущий UI; в рендере пока не используется */
-  backgroundClip?: string
   style?: ResponsiveStyle
 }
 
@@ -67,44 +38,49 @@ export const CraftText = (props: TextProps) => {
   const text = props.text ?? "Текст"
   const i18nKey = props.i18nKey ?? null
   const collectionField = props.collectionField ?? null
-  const fontSize = (responsiveStyle.fontSize as number | undefined) ?? props.fontSize ?? 14
-  const fontWeight = (responsiveStyle.fontWeight as "normal" | "bold" | undefined) ?? props.fontWeight ?? "normal"
-  const textAlign = (responsiveStyle.textAlign as TextAlign | undefined) ?? props.textAlign ?? "left"
-  const color = (responsiveStyle.color as string | undefined) ?? props.color ?? COLORS.gray800
-  const fontFamily = (responsiveStyle.fontFamily as string | undefined) ?? props.fontFamily
-  const lineHeight = (responsiveStyle.lineHeight as number | undefined) ?? props.lineHeight ?? 20
+  const fontSize = (responsiveStyle.fontSize as number | undefined) ?? 14
+  const fontWeight = (responsiveStyle.fontWeight as "normal" | "bold" | undefined) ?? "normal"
+  const textAlign = (responsiveStyle.textAlign as TextAlign | undefined) ?? "left"
+  const color = (responsiveStyle.color as string | undefined) ?? COLORS.gray800
+  const fontFamily = responsiveStyle.fontFamily as string | undefined
+  const lineHeight = (responsiveStyle.lineHeight as number | undefined) ?? 20
   const textTransform =
     (responsiveStyle.textTransform as "none" | "uppercase" | "lowercase" | "capitalize" | undefined) ??
-    props.textTransform ??
     "none"
-  const strokeColor = (responsiveStyle.strokeColor as string | undefined) ?? props.strokeColor
-  const strokeWidth = (responsiveStyle.strokeWidth as number | undefined) ?? props.strokeWidth ?? 0
-  const isItalic = (responsiveStyle.isItalic as boolean | undefined) ?? props.isItalic ?? false
-  const isUnderline = (responsiveStyle.isUnderline as boolean | undefined) ?? props.isUnderline ?? false
-  const isStrikethrough =
-    (responsiveStyle.isStrikethrough as boolean | undefined) ?? props.isStrikethrough ?? false
-  const marginTop = (responsiveStyle.marginTop as number | undefined) ?? props.marginTop ?? 0
-  const marginRight = (responsiveStyle.marginRight as number | undefined) ?? props.marginRight ?? 0
-  const marginBottom = (responsiveStyle.marginBottom as number | undefined) ?? props.marginBottom ?? 0
-  const marginLeft = (responsiveStyle.marginLeft as number | undefined) ?? props.marginLeft ?? 0
-  const paddingTop = (responsiveStyle.paddingTop as number | undefined) ?? props.paddingTop ?? 0
-  const paddingRight = (responsiveStyle.paddingRight as number | undefined) ?? props.paddingRight ?? 0
-  const paddingBottom = (responsiveStyle.paddingBottom as number | undefined) ?? props.paddingBottom ?? 0
-  const paddingLeft = (responsiveStyle.paddingLeft as number | undefined) ?? props.paddingLeft ?? 0
-  const backgroundColor = (responsiveStyle.backgroundColor as string | undefined) ?? props.backgroundColor
-  const width = (responsiveStyle.width as string | number | undefined) ?? props.width
-  const height = (responsiveStyle.height as string | number | undefined) ?? props.height
-  const minWidth = (responsiveStyle.minWidth as number | undefined) ?? props.minWidth
-  const minHeight = (responsiveStyle.minHeight as number | undefined) ?? props.minHeight
-  const maxWidth = (responsiveStyle.maxWidth as string | number | undefined) ?? props.maxWidth
-  const maxHeight = (responsiveStyle.maxHeight as string | number | undefined) ?? props.maxHeight
-  const overflow = (responsiveStyle.overflow as TextProps["overflow"] | undefined) ?? props.overflow
-  const mixBlendMode = (responsiveStyle.mixBlendMode as string | undefined) ?? props.mixBlendMode ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode
-  const opacityPercent = (responsiveStyle.opacityPercent as number | undefined) ?? props.opacityPercent ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent
-  const outlineStyleMode = (responsiveStyle.outlineStyleMode as any) ?? props.outlineStyleMode ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode
-  const outlineWidth = (responsiveStyle.outlineWidth as number | undefined) ?? props.outlineWidth ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth
-  const outlineOffset = (responsiveStyle.outlineOffset as number | undefined) ?? props.outlineOffset ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset
-  const outlineColor = (responsiveStyle.outlineColor as string | undefined) ?? props.outlineColor ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor
+  const strokeColor = responsiveStyle.strokeColor as string | undefined
+  const strokeWidth = (responsiveStyle.strokeWidth as number | undefined) ?? 0
+  const isItalic = (responsiveStyle.isItalic as boolean | undefined) ?? false
+  const isUnderline = (responsiveStyle.isUnderline as boolean | undefined) ?? false
+  const isStrikethrough = (responsiveStyle.isStrikethrough as boolean | undefined) ?? false
+  const marginTop = (responsiveStyle.marginTop as number | undefined) ?? 0
+  const marginRight = (responsiveStyle.marginRight as number | undefined) ?? 0
+  const marginBottom = (responsiveStyle.marginBottom as number | undefined) ?? 0
+  const marginLeft = (responsiveStyle.marginLeft as number | undefined) ?? 0
+  const paddingTop = (responsiveStyle.paddingTop as number | undefined) ?? 0
+  const paddingRight = (responsiveStyle.paddingRight as number | undefined) ?? 0
+  const paddingBottom = (responsiveStyle.paddingBottom as number | undefined) ?? 0
+  const paddingLeft = (responsiveStyle.paddingLeft as number | undefined) ?? 0
+  const backgroundColor = responsiveStyle.backgroundColor as string | undefined
+  const width = responsiveStyle.width as string | number | undefined
+  const height = responsiveStyle.height as string | number | undefined
+  const minWidth = responsiveStyle.minWidth as number | undefined
+  const minHeight = responsiveStyle.minHeight as number | undefined
+  const maxWidth = responsiveStyle.maxWidth as string | number | undefined
+  const maxHeight = responsiveStyle.maxHeight as string | number | undefined
+  const overflow = responsiveStyle.overflow as "auto" | "hidden" | "visible" | "scroll" | undefined
+  const mixBlendMode =
+    (responsiveStyle.mixBlendMode as CraftMixBlendMode | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode
+  const opacityPercent =
+    (responsiveStyle.opacityPercent as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent
+  const outlineStyleMode =
+    (responsiveStyle.outlineStyleMode as (typeof DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS)["outlineStyleMode"]) ??
+    DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode
+  const outlineWidth =
+    (responsiveStyle.outlineWidth as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth
+  const outlineOffset =
+    (responsiveStyle.outlineOffset as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset
+  const outlineColor =
+    (responsiveStyle.outlineColor as string | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(text)
   const [isTextModalOpen, setIsTextModalOpen] = useState(false)
@@ -344,36 +320,29 @@ export const CraftText = (props: TextProps) => {
     text: "Текст",
     i18nKey: null,
     collectionField: null,
-    fontSize: 14,
-    fontWeight: "normal" as const,
-    textAlign: "left" as const,
-    color: COLORS.gray700,
-    fontFamily: undefined,
-    lineHeight: 20,
-    textTransform: "none" as const,
-    strokeColor: undefined,
-    strokeWidth: 0,
-    isItalic: false,
-    isUnderline: false,
-    isStrikethrough: false,
-    marginTop: 0,
-    marginRight: 0,
-    marginBottom: 0,
-    marginLeft: 0,
-    paddingTop: 0,
-    paddingRight: 0,
-    paddingBottom: 0,
-    paddingLeft: 0,
-    backgroundColor: undefined,
-    width: undefined,
-    height: undefined,
-    minWidth: undefined,
-    minHeight: undefined,
-    maxWidth: undefined,
-    maxHeight: undefined,
-    overflow: undefined,
-    backgroundClip: undefined,
-    ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+    style: {
+      [PreviewViewport.DESKTOP]: {
+        fontSize: 14,
+        fontWeight: "normal" as const,
+        textAlign: "left" as const,
+        color: COLORS.gray700,
+        lineHeight: 20,
+        textTransform: "none" as const,
+        strokeWidth: 0,
+        isItalic: false,
+        isUnderline: false,
+        isStrikethrough: false,
+        marginTop: 0,
+        marginRight: 0,
+        marginBottom: 0,
+        marginLeft: 0,
+        paddingTop: 0,
+        paddingRight: 0,
+        paddingBottom: 0,
+        paddingLeft: 0,
+        ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+      },
+    },
   },
 }
 

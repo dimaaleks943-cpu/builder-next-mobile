@@ -21,42 +21,28 @@ import {
 } from "./contentListEditorUtils"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import {
+  type CraftMixBlendMode,
   DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
   resolveCraftVisualEffectsStyle,
-  type CraftVisualEffectsProps,
 } from "./craftVisualEffects.ts"
 import { getCollectionItemsCacheKey } from "../utils/collectionItemsCacheKey"
 import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
-import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
+import { PreviewViewport } from "../pages/builder/builder.enum.ts"
+import {
+  resolveResponsiveStyle,
+  setResponsiveStyleProp,
+  type ResponsiveStyle,
+} from "../pages/builder/responsiveStyle.ts"
 
 export type ContentListProps = {
-  width?: string | number
-  height?: string | number
-  minWidth?: number
-  minHeight?: number
-  maxWidth?: string | number
-  maxHeight?: string | number
-  overflow?: "auto" | "hidden" | "visible" | "scroll"
-  borderRadius?: number
-  borderTopWidth?: number
-  borderRightWidth?: number
-  borderBottomWidth?: number
-  borderLeftWidth?: number
-  borderColor?: string
-  borderStyle?: "none" | "solid" | "dotted"
-  borderOpacity?: number
   selectedSource?: string
-  itemsPerRow?: number
   /**
    * Строка группы с блоком «Фильтр категорий». Задаёт составной ключ кэша `scope::content_type_id`
    * и включает передачу `categoryIds` в запрос элементов при смене категории в контексте.
    */
   filterScope?: string
-  backgroundColor?: string
-  /** Зарезервировано под будущий UI; в рендере пока не используется */
-  backgroundClip?: string
   style?: ResponsiveStyle
-} & CraftVisualEffectsProps
+}
 
 /**
  * Список контента (коллекция) с шаблоном ячеек и синхронизацией.
@@ -94,14 +80,14 @@ export const CraftContentList = ({}: ContentListProps) => {
   const viewport = usePreviewViewport()
   const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
 
-  const borderTopWidth = (responsiveStyle.borderTopWidth as number | undefined) ?? props.borderTopWidth ?? 0
-  const borderRightWidth = (responsiveStyle.borderRightWidth as number | undefined) ?? props.borderRightWidth ?? 0
-  const borderBottomWidth = (responsiveStyle.borderBottomWidth as number | undefined) ?? props.borderBottomWidth ?? 0
-  const borderLeftWidth = (responsiveStyle.borderLeftWidth as number | undefined) ?? props.borderLeftWidth ?? 0
-  const borderColor = (responsiveStyle.borderColor as string | undefined) ?? props.borderColor ?? COLORS.gray400
-  const borderStyle = (responsiveStyle.borderStyle as "none" | "solid" | "dotted" | undefined) ?? props.borderStyle ?? "solid"
-  const borderOpacity = (responsiveStyle.borderOpacity as number | undefined) ?? props.borderOpacity ?? 1
-  const borderRadius = (responsiveStyle.borderRadius as number | undefined) ?? props.borderRadius ?? 4
+  const borderTopWidth = (responsiveStyle.borderTopWidth as number | undefined) ?? 0
+  const borderRightWidth = (responsiveStyle.borderRightWidth as number | undefined) ?? 0
+  const borderBottomWidth = (responsiveStyle.borderBottomWidth as number | undefined) ?? 0
+  const borderLeftWidth = (responsiveStyle.borderLeftWidth as number | undefined) ?? 0
+  const borderColor = (responsiveStyle.borderColor as string | undefined) ?? COLORS.gray400
+  const borderStyle = (responsiveStyle.borderStyle as "none" | "solid" | "dotted" | undefined) ?? "solid"
+  const borderOpacity = (responsiveStyle.borderOpacity as number | undefined) ?? 1
+  const borderRadius = (responsiveStyle.borderRadius as number | undefined) ?? 4
 
   const hasCustomBorder =
     borderTopWidth > 0 ||
@@ -136,7 +122,7 @@ export const CraftContentList = ({}: ContentListProps) => {
   // Текущий выбранный source и layout берём из props узла Craft.js,
   // чтобы настройки сохранялись в JSON и восстанавливались при загрузке
   const selectedSource = props.selectedSource ?? ""
-  const itemsPerRow = (responsiveStyle.itemsPerRow as number | undefined) ?? props.itemsPerRow ?? 1
+  const itemsPerRow = (responsiveStyle.itemsPerRow as number | undefined) ?? 1
   const filterScope = props.filterScope
   const scopeTrimmed = filterScope?.trim() ?? ""
   // Категория для этого списка: берётся из того же scope, что у CategoryFilter на странице.
@@ -507,17 +493,17 @@ export const CraftContentList = ({}: ContentListProps) => {
         connect(drag(ref))
       }}
       style={{
-        width: (responsiveStyle.width as string | number | undefined) ?? props.width ?? "100%",
-        height: (responsiveStyle.height as string | number | undefined) ?? props.height,
-        minWidth: (responsiveStyle.minWidth as number | undefined) ?? props.minWidth,
-        minHeight: (responsiveStyle.minHeight as number | undefined) ?? props.minHeight,
-        maxWidth: (responsiveStyle.maxWidth as string | number | undefined) ?? props.maxWidth,
-        maxHeight: (responsiveStyle.maxHeight as string | number | undefined) ?? props.maxHeight,
+        width: (responsiveStyle.width as string | number | undefined) ?? "100%",
+        height: responsiveStyle.height as string | number | undefined,
+        minWidth: responsiveStyle.minWidth as number | undefined,
+        minHeight: responsiveStyle.minHeight as number | undefined,
+        maxWidth: responsiveStyle.maxWidth as string | number | undefined,
+        maxHeight: responsiveStyle.maxHeight as string | number | undefined,
         display: "flex",
         flexDirection: "column",
         backgroundColor: selected
           ? COLORS.lightPurple
-          : ((responsiveStyle.backgroundColor as string | undefined) ?? props.backgroundColor ?? COLORS.white),
+          : ((responsiveStyle.backgroundColor as string | undefined) ?? COLORS.white),
         borderStyle: selected ? "solid" : hasCustomBorder ? (borderStyle || "solid") : "solid",
         borderColor: selected
           ? COLORS.purple400
@@ -530,34 +516,27 @@ export const CraftContentList = ({}: ContentListProps) => {
         borderLeftWidth: selected ? 2 : hasCustomBorder ? borderLeftWidth : defaultEditorChrome ? 1 : 0,
         borderRadius,
         overflow:
-          (responsiveStyle.overflow as ContentListProps["overflow"] | undefined) ??
-          props.overflow ??
+          (responsiveStyle.overflow as "auto" | "hidden" | "visible" | "scroll" | undefined) ??
           "visible",
         position: "relative",
         ...resolveCraftVisualEffectsStyle({
           mixBlendMode:
-            (responsiveStyle.mixBlendMode as string | undefined) ??
-            props.mixBlendMode ??
+            (responsiveStyle.mixBlendMode as CraftMixBlendMode | undefined) ??
             DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
           opacityPercent:
             (responsiveStyle.opacityPercent as number | undefined) ??
-            props.opacityPercent ??
             DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
           outlineStyleMode:
-            (responsiveStyle.outlineStyleMode as any) ??
-            props.outlineStyleMode ??
+            (responsiveStyle.outlineStyleMode as (typeof DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS)["outlineStyleMode"]) ??
             DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
           outlineWidth:
             (responsiveStyle.outlineWidth as number | undefined) ??
-            props.outlineWidth ??
             DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
           outlineOffset:
             (responsiveStyle.outlineOffset as number | undefined) ??
-            props.outlineOffset ??
             DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
           outlineColor:
             (responsiveStyle.outlineColor as string | undefined) ??
-            props.outlineColor ??
             DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
         }),
       }}
@@ -745,7 +724,12 @@ export const CraftContentList = ({}: ContentListProps) => {
               actions.setProp(contentListId, (nodeProps: ContentListProps) => {
                 nodeProps.selectedSource = value
                 if (!value) {
-                  nodeProps.itemsPerRow = 1 // сбрасываем layout при отключении коллекции
+                  setResponsiveStyleProp(
+                    nodeProps as unknown as Record<string, unknown>,
+                    "itemsPerRow",
+                    1,
+                    viewport,
+                  )
                 }
               })
             })
@@ -834,7 +818,12 @@ export const CraftContentList = ({}: ContentListProps) => {
                   type="button"
                   onClick={() => {
                     actions.setProp(contentListId, (nodeProps: ContentListProps) => {
-                      nodeProps.itemsPerRow = count
+                      setResponsiveStyleProp(
+                        nodeProps as unknown as Record<string, unknown>,
+                        "itemsPerRow",
+                        count,
+                        viewport,
+                      )
                     })
                   }}
                   style={{
@@ -898,26 +887,21 @@ export const CraftContentList = ({}: ContentListProps) => {
   displayName: CRAFT_DISPLAY_NAME.ContentList,
   props: {
     selectedSource: "",
-    width: undefined,
-    height: undefined,
-    minWidth: undefined,
-    minHeight: undefined,
-    maxWidth: undefined,
-    maxHeight: undefined,
-    overflow: undefined,
-    borderRadius: 4,
-    borderTopWidth: 0,
-    borderRightWidth: 0,
-    borderBottomWidth: 0,
-    borderLeftWidth: 0,
-    borderColor: COLORS.gray400,
-    borderStyle: "solid" as const,
-    borderOpacity: 1,
-    itemsPerRow: 1,
     filterScope: "",
-    backgroundColor: undefined,
-    backgroundClip: undefined,
-    ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+    style: {
+      [PreviewViewport.DESKTOP]: {
+        borderRadius: 4,
+        borderTopWidth: 0,
+        borderRightWidth: 0,
+        borderBottomWidth: 0,
+        borderLeftWidth: 0,
+        borderColor: COLORS.gray400,
+        borderStyle: "solid" as const,
+        borderOpacity: 1,
+        itemsPerRow: 1,
+        ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+      },
+    },
   },
   rules: {
     canMoveIn: (nodes: { data: { type: { resolvedName?: string } } }[]) =>

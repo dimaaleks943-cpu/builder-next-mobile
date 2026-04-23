@@ -9,11 +9,12 @@ import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
 import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import {
+  type CraftMixBlendMode,
   DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
   resolveCraftVisualEffectsStyle,
-  type CraftVisualEffectsProps,
 } from "./craftVisualEffects.ts"
 import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
+import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 
 /**
@@ -21,13 +22,6 @@ import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/r
  * по строке `filterScope`; у {@link CraftContentList} в том же scope подставляются `categoryIds` в запрос items.
  */
 type CategoryFilterProps = {
-  width?: string | number
-  height?: string | number
-  minWidth?: number
-  minHeight?: number
-  maxWidth?: string | number
-  maxHeight?: string | number
-  overflow?: "auto" | "hidden" | "visible" | "scroll"
   /** Идентификатор группы фильтра на странице; должен совпадать с `filterScope` у ContentList. */
   filterScope: string
   /** UUID корня дерева категорий в extranet — по нему грузится список кнопок/радио. */
@@ -36,11 +30,8 @@ type CategoryFilterProps = {
   direction?: "row" | "column"
   /** Подпись пункта «все категории» (`categoryId === null` в контексте). */
   showAllLabel?: string
-  backgroundColor?: string
-  /** Зарезервировано под будущий UI; в рендере пока не используется */
-  backgroundClip?: string
   style?: ResponsiveStyle
-} & CraftVisualEffectsProps
+}
 
 /**
  * Редакторский блок фильтра: загрузка категорий через RTK Query и запись выбора в `CollectionFilterScope`.
@@ -201,52 +192,43 @@ export const CraftCategoryFilter = () => {
         connect(drag(ref))
       }}
       style={{
-        width: (responsiveStyle.width as string | number | undefined) ?? props.width ?? "100%",
-        height: (responsiveStyle.height as string | number | undefined) ?? props.height,
-        minWidth: (responsiveStyle.minWidth as number | undefined) ?? props.minWidth,
-        minHeight: (responsiveStyle.minHeight as number | undefined) ?? props.minHeight ?? 48,
-        maxWidth: (responsiveStyle.maxWidth as string | number | undefined) ?? props.maxWidth,
-        maxHeight: (responsiveStyle.maxHeight as string | number | undefined) ?? props.maxHeight,
+        width: (responsiveStyle.width as string | number | undefined) ?? "100%",
+        height: responsiveStyle.height as string | number | undefined,
+        minWidth: responsiveStyle.minWidth as number | undefined,
+        minHeight: (responsiveStyle.minHeight as number | undefined) ?? 48,
+        maxWidth: responsiveStyle.maxWidth as string | number | undefined,
+        maxHeight: responsiveStyle.maxHeight as string | number | undefined,
         display: "flex",
         flexDirection: "column",
         backgroundColor: selected
           ? COLORS.lightPurple
-          : ((responsiveStyle.backgroundColor as string | undefined) ??
-            props.backgroundColor ??
-            COLORS.white),
+          : ((responsiveStyle.backgroundColor as string | undefined) ?? COLORS.white),
         border: selected
           ? `2px solid ${COLORS.purple400}`
           : `1px solid ${COLORS.gray300}`,
         borderRadius: 4,
         overflow:
-          (responsiveStyle.overflow as CategoryFilterProps["overflow"] | undefined) ??
-          props.overflow ??
+          (responsiveStyle.overflow as "auto" | "hidden" | "visible" | "scroll" | undefined) ??
           "visible",
         position: "relative",
         ...resolveCraftVisualEffectsStyle({
           mixBlendMode:
-            (responsiveStyle.mixBlendMode as string | undefined) ??
-            props.mixBlendMode ??
+            (responsiveStyle.mixBlendMode as CraftMixBlendMode | undefined) ??
             DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
           opacityPercent:
             (responsiveStyle.opacityPercent as number | undefined) ??
-            props.opacityPercent ??
             DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
           outlineStyleMode:
-            (responsiveStyle.outlineStyleMode as any) ??
-            props.outlineStyleMode ??
+            (responsiveStyle.outlineStyleMode as (typeof DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS)["outlineStyleMode"]) ??
             DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
           outlineWidth:
             (responsiveStyle.outlineWidth as number | undefined) ??
-            props.outlineWidth ??
             DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
           outlineOffset:
             (responsiveStyle.outlineOffset as number | undefined) ??
-            props.outlineOffset ??
             DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
           outlineColor:
             (responsiveStyle.outlineColor as string | undefined) ??
-            props.outlineColor ??
             DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
         }),
       }}
@@ -533,19 +515,16 @@ export const CraftCategoryFilter = () => {
   displayName: CRAFT_DISPLAY_NAME.CategoryFilter,
   props: {
     filterScope: "",
-    width: undefined,
-    height: undefined,
-    minWidth: undefined,
-    minHeight: undefined,
-    maxWidth: undefined,
-    maxHeight: undefined,
-    overflow: undefined,
     contentCategoryRootId: "",
     variant: "buttons" as const,
     direction: "row" as const,
     showAllLabel: "Все",
-    backgroundColor: undefined,
-    backgroundClip: undefined,
-    ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+    style: {
+      [PreviewViewport.DESKTOP]: {
+        width: "100%",
+        minHeight: 48,
+        ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
+      },
+    },
   },
 }

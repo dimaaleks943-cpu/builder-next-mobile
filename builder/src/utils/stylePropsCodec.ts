@@ -5,7 +5,7 @@ import {
   type FullStylePropKey,
   type ShortStylePropKey,
 } from "./stylePropsShortMapV1"
-import { PreviewViewport } from "../pages/builder/builder.enum.ts";
+import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 
 type StylePropsInput = Record<string, unknown> | null | undefined
 
@@ -21,6 +21,14 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === "object" && !Array.isArray(value)
 
 const STYLE_KEYS = Object.keys(FULL_TO_SHORT) as FullStylePropKey[]
+
+const stripStylePropKeysFromRoot = (props: Record<string, unknown>): void => {
+  for (const fullKey of STYLE_KEYS) {
+    const shortKey = FULL_TO_SHORT[fullKey]
+    delete props[fullKey]
+    if (shortKey) delete props[shortKey as string]
+  }
+}
 
 const encodeStyleBranch = (
   fullStyleBranch: Record<string, unknown>,
@@ -52,7 +60,9 @@ export const encodeStyleProps = (
   if (!fullProps) return {}
 
   const encoded = { ...fullProps }
-  const style = fullProps.style
+  stripStylePropKeysFromRoot(encoded)
+
+  const style = encoded.style
   const currentStyle = isRecord(style) ? (style as Record<string, unknown>) : {}
   const normalizedStyle: Record<string, Record<string, unknown>> = {}
 
@@ -61,27 +71,6 @@ export const encodeStyleProps = (
     if (isRecord(branchValue)) {
       normalizedStyle[branch] = { ...branchValue }
     }
-  }
-
-  // Migration: if some style keys are still in flat props, move them into style.desktop.
-  const baseBranch = { ...(normalizedStyle.desktop ?? {}) }
-  for (const fullKey of STYLE_KEYS) {
-    const shortKey = FULL_TO_SHORT[fullKey]
-    const baseHasKey = Object.prototype.hasOwnProperty.call(baseBranch, fullKey)
-    const flatFullValue = fullProps[fullKey]
-    const flatShortValue = fullProps[shortKey]
-    if (!baseHasKey) {
-      if (flatFullValue !== undefined) {
-        baseBranch[fullKey] = flatFullValue
-      } else if (flatShortValue !== undefined) {
-        baseBranch[fullKey] = flatShortValue
-      }
-    }
-    delete encoded[fullKey]
-    delete encoded[shortKey]
-  }
-  if (Object.keys(baseBranch).length > 0) {
-    normalizedStyle.desktop = baseBranch
   }
 
   if (Object.keys(normalizedStyle).length === 0) {
@@ -115,28 +104,14 @@ export const decodeStyleProps = (
     decodedStyle[branch] = decodeStyleBranch(branchValue)
   }
 
-  // Migration: old pages may keep style values in flat props.
-  const baseBranch = { ...(decodedStyle.desktop ?? {}) }
-  for (const fullKey of STYLE_KEYS) {
-    const shortKey = FULL_TO_SHORT[fullKey]
-    if (Object.prototype.hasOwnProperty.call(baseBranch, fullKey)) continue
-    const flatFullValue = shortProps[fullKey]
-    const flatShortValue = shortProps[shortKey]
-    if (flatFullValue !== undefined) {
-      baseBranch[fullKey] = flatFullValue
-    } else if (flatShortValue !== undefined) {
-      baseBranch[fullKey] = flatShortValue
-    }
-  }
-  if (Object.keys(baseBranch).length > 0) {
-    decodedStyle.desktop = baseBranch
-  }
-
   if (Object.keys(decodedStyle).length > 0) {
     decoded.style = decodedStyle
   } else {
     delete decoded.style
   }
+
+  stripStylePropKeysFromRoot(decoded)
+
   return decoded
 }
 
@@ -167,4 +142,3 @@ export const decodeSerializedNodesStyleProps = (
 
   return Object.fromEntries(decodedEntries) as SerializedNodes
 }
-

@@ -9,6 +9,12 @@ import { useCollectionsContext } from "../context/CollectionsContext.tsx";
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts";
 import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts";
 import { SettingsAccordion } from "./components/SettingsAccordion/SettingsAccordion.tsx";
+import { usePreviewViewport } from "../context/PreviewViewportContext.tsx";
+import {
+  resolveResponsiveStyle,
+  setResponsiveStyleProp,
+  type ResponsiveStyle,
+} from "../responsiveStyle.ts";
 
 interface SelectedImageProps {
   src?: string;
@@ -30,6 +36,7 @@ interface ImageSettingsFieldsProps {
 
 export const ImageSettingsFields = ({ asAccordion }: ImageSettingsFieldsProps) => {
   const { actions } = useEditor();
+  const viewport = usePreviewViewport();
   const { selectedId, selectedProps, parentCollectionKey } = useEditor(
     (state, query): EditorSelection => {
       const [id] = Array.from(state.events.selected);
@@ -58,9 +65,21 @@ export const ImageSettingsFields = ({ asAccordion }: ImageSettingsFieldsProps) =
         }
       }
 
+      const raw = node?.data.props as Record<string, unknown> | undefined;
+      const resolved = resolveResponsiveStyle(raw?.style as ResponsiveStyle | undefined, viewport);
+      const width = resolved.width as number | undefined;
+      const height = resolved.height as number | undefined;
+
       return {
         selectedId: id ?? null,
-        selectedProps: (node?.data.props as SelectedImageProps) ?? null,
+        selectedProps: raw
+          ? {
+              src: raw.src as string | undefined,
+              width,
+              height,
+              collectionField: (raw.collectionField as string | null | undefined) ?? null,
+            }
+          : null,
         parentCollectionKey: foundCollectionKey,
       };
     },
@@ -164,12 +183,17 @@ export const ImageSettingsFields = ({ asAccordion }: ImageSettingsFieldsProps) =
   const handleWidthModeChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const mode = event.target.value as "auto" | "px";
     setWidthMode(mode);
-    actions.setProp(selectedId, (props: any) => {
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
       if (mode === "auto") {
-        props.width = undefined;
+        setResponsiveStyleProp(props, "width", undefined, viewport);
       } else {
         const parsed = parseInt(widthValue || "0", 10);
-        props.width = Number.isNaN(parsed) ? undefined : parsed;
+        setResponsiveStyleProp(
+          props,
+          "width",
+          Number.isNaN(parsed) ? undefined : parsed,
+          viewport,
+        );
       }
     });
   };
@@ -178,20 +202,30 @@ export const ImageSettingsFields = ({ asAccordion }: ImageSettingsFieldsProps) =
     const value = event.target.value;
     setWidthValue(value);
     const parsed = parseInt(value, 10);
-    actions.setProp(selectedId, (props: any) => {
-      props.width = Number.isNaN(parsed) ? undefined : parsed;
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      setResponsiveStyleProp(
+        props,
+        "width",
+        Number.isNaN(parsed) ? undefined : parsed,
+        viewport,
+      );
     });
   };
 
   const handleHeightModeChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const mode = event.target.value as "auto" | "px";
     setHeightMode(mode);
-    actions.setProp(selectedId, (props: any) => {
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
       if (mode === "auto") {
-        props.height = undefined;
+        setResponsiveStyleProp(props, "height", undefined, viewport);
       } else {
         const parsed = parseInt(heightValue || "0", 10);
-        props.height = Number.isNaN(parsed) ? undefined : parsed;
+        setResponsiveStyleProp(
+          props,
+          "height",
+          Number.isNaN(parsed) ? undefined : parsed,
+          viewport,
+        );
       }
     });
   };
@@ -200,8 +234,13 @@ export const ImageSettingsFields = ({ asAccordion }: ImageSettingsFieldsProps) =
     const value = event.target.value;
     setHeightValue(value);
     const parsed = parseInt(value, 10);
-    actions.setProp(selectedId, (props: any) => {
-      props.height = Number.isNaN(parsed) ? undefined : parsed;
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      setResponsiveStyleProp(
+        props,
+        "height",
+        Number.isNaN(parsed) ? undefined : parsed,
+        viewport,
+      );
     });
   };
 
