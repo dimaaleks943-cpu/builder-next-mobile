@@ -166,7 +166,8 @@ const buildNodeTree = (
       type: String(child.type),
     }))
 
-    // Полный responsive style первой ячейки (ContentListCell) — единый контракт props.style.base/tablet/phone.
+    // Полный responsive style шаблонной ячейки (ContentListCell): только ветки `props.style`
+    // (`desktop`, `tablet_landscape`, … — см. BRANCHES в responsiveCss), без плоских стилевых ключей на корне.
     const normalizedCell = decodeStyleProps(
       (cellNode.props ?? {}) as Record<string, unknown>,
     )

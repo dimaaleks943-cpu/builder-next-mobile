@@ -9,6 +9,7 @@
 export const FULL_TO_SHORT = {
   // layout
   layout: "ly",
+  itemsPerRow: "ipr",
   fullSize: "fs",
   gridColumns: "gcl",
   gridRows: "grw",

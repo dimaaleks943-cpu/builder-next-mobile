@@ -4,14 +4,12 @@ import {
   type FullStylePropKey,
   type ShortStylePropKey,
 } from "./stylePropsShortMapV1"
-import { BRANCHES } from "@/lib/responsiveCss";
+import { BRANCHES } from "@/lib/responsiveCss"
 
 type StylePropsInput = Record<string, unknown> | null | undefined
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === "object" && !Array.isArray(value)
-
-const STYLE_KEYS = Object.keys(FULL_TO_SHORT) as FullStylePropKey[]
 
 const decodeStyleBranch = (
   shortStyleBranch: Record<string, unknown>,
@@ -56,28 +54,12 @@ export const decodeStyleProps = (
     decodedStyle[branch] = decodeStyleBranch(branchValue)
   }
 
-  // Migration: support pages where style keys were still stored as flat props.
-  const baseBranch = { ...(decodedStyle.base ?? {}) }
-  for (const fullKey of STYLE_KEYS) {
-    const shortKey = FULL_TO_SHORT[fullKey]
-    if (Object.prototype.hasOwnProperty.call(baseBranch, fullKey)) continue
-    const flatFullValue = shortProps[fullKey]
-    const flatShortValue = shortProps[shortKey]
-    if (flatFullValue !== undefined) {
-      baseBranch[fullKey] = flatFullValue
-    } else if (flatShortValue !== undefined) {
-      baseBranch[fullKey] = flatShortValue
-    }
-  }
-  if (Object.keys(baseBranch).length > 0) {
-    decodedStyle.base = baseBranch
-  }
-
   if (Object.keys(decodedStyle).length > 0) {
     decoded.style = decodedStyle
   } else {
     delete decoded.style
   }
+
   return decoded
 }
 
