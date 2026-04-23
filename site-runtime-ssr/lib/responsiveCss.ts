@@ -1,12 +1,27 @@
 import type { ComponentNode } from "./interface"
 
-type ResponsiveBranch = "base" | "tablet" | "phone"
+export enum ResponsiveBranch {
+  DESKTOP = "desktop",
+  TABLET_LANDSCAPE = "tablet_landscape",
+  TABLET = "tablet",
+  PHONE_LANDSCAPE = "phone_landscape",
+  PHONE = "phone",
+}
+
 type StyleRecord = Record<string, unknown>
 type ResponsiveStyle = Partial<Record<ResponsiveBranch, StyleRecord>>
 
-const BRANCHES: ResponsiveBranch[] = ["base", "tablet", "phone"]
-const TABLET_MEDIA = "@media (max-width: 991px)"
-const PHONE_MEDIA = "@media (max-width: 470px)"
+export const BRANCHES: ResponsiveBranch[] = [
+  ResponsiveBranch.DESKTOP,
+  ResponsiveBranch.TABLET_LANDSCAPE,
+  ResponsiveBranch.TABLET,
+  ResponsiveBranch.PHONE_LANDSCAPE,
+  ResponsiveBranch.PHONE,
+]
+const TABLET_LANDSCAPE_MEDIA = "@media (max-width: 1279px)"
+const TABLET_MEDIA = "@media (max-width: 1023px)"
+const PHONE_LANDSCAPE_MEDIA = "@media (max-width: 767px)"
+const PHONE_MEDIA = "@media (max-width: 567px)"
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === "object" && !Array.isArray(value)
@@ -195,7 +210,9 @@ const pushRulesForResponsiveStyle = (
   selector: string,
   style: ResponsiveStyle | null | undefined,
   baseRules: string[],
+  tabletLandscapeRules: string[],
   tabletRules: string[],
+  phoneLandscapeRules: string[],
   phoneRules: string[],
 ) => {
   if (!style) return
@@ -206,9 +223,23 @@ const pushRulesForResponsiveStyle = (
     const rule = toCssRule(selector, styleBranchToCssDeclarations(branchStyle))
     if (!rule) continue
 
-    if (branch === "base") baseRules.push(rule)
-    if (branch === "tablet") tabletRules.push(rule)
-    if (branch === "phone") phoneRules.push(rule)
+    switch (branch) {
+      case ResponsiveBranch.DESKTOP:
+        baseRules.push(rule)
+        break
+      case ResponsiveBranch.TABLET_LANDSCAPE:
+        tabletLandscapeRules.push(rule)
+        break
+      case ResponsiveBranch.TABLET:
+        tabletRules.push(rule)
+        break
+      case ResponsiveBranch.PHONE_LANDSCAPE:
+        phoneLandscapeRules.push(rule)
+        break
+      case ResponsiveBranch.PHONE:
+        phoneRules.push(rule)
+        break
+    }
   }
 }
 
@@ -217,7 +248,9 @@ export const buildResponsiveCss = (nodes: ComponentNode[]): string => {
 
   const allNodes = collectNodes(nodes)
   const baseRules: string[] = []
+  const tabletLandscapeRules: string[] = []
   const tabletRules: string[] = []
+  const phoneLandscapeRules: string[] = []
   const phoneRules: string[] = []
 
   for (const node of allNodes) {
@@ -230,7 +263,9 @@ export const buildResponsiveCss = (nodes: ComponentNode[]): string => {
         `.${node.className}`,
         style,
         baseRules,
+        tabletLandscapeRules,
         tabletRules,
+        phoneLandscapeRules,
         phoneRules,
       )
     }
@@ -246,7 +281,9 @@ export const buildResponsiveCss = (nodes: ComponentNode[]): string => {
           `.${cellClass.trim()}`,
           cellStyle,
           baseRules,
+          tabletLandscapeRules,
           tabletRules,
+          phoneLandscapeRules,
           phoneRules,
         )
       }
@@ -255,7 +292,9 @@ export const buildResponsiveCss = (nodes: ComponentNode[]): string => {
 
   const cssParts: string[] = []
   if (baseRules.length > 0) cssParts.push(baseRules.join(""))
+  if (tabletLandscapeRules.length > 0) cssParts.push(`${TABLET_LANDSCAPE_MEDIA}{${tabletLandscapeRules.join("")}}`)
   if (tabletRules.length > 0) cssParts.push(`${TABLET_MEDIA}{${tabletRules.join("")}}`)
+  if (phoneLandscapeRules.length > 0) cssParts.push(`${PHONE_LANDSCAPE_MEDIA}{${phoneLandscapeRules.join("")}}`)
   if (phoneRules.length > 0) cssParts.push(`${PHONE_MEDIA}{${phoneRules.join("")}}`)
 
   return cssParts.join("")

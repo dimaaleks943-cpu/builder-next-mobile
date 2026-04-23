@@ -26,6 +26,7 @@ import { ContentDataProvider } from "./src/contexts/ContentDataContext"
 import { CollectionFilterScopeProvider } from "./src/contexts/CollectionFilterScopeContext"
 import { StorefrontPageProvider } from "./src/contexts/StorefrontPageContext"
 import { SiteCollectionsProvider } from "./src/contexts/SiteCollectionsContext"
+import { ResponsiveViewportProvider } from "./src/contexts/ResponsiveViewportContext"
 import { craftContentToComponents } from "./src/content/craftContentToComponents"
 import { renderPage } from "./src/content/renderer"
 
@@ -190,24 +191,26 @@ const PageScreen = ({ route }: PageScreenProps) => {
         ) : null}
 
         {!loading && useNativeRender ? (
-          <SiteCollectionsProvider
-            key={`${SITE_DOMAIN}:${slug}`}
-            domain={SITE_DOMAIN}
-            sitePages={sitePages}
-            collectionItemsByKey={collectionItemsByKey}
-          >
-            <CollectionFilterScopeProvider
-              initialSelectedCategoryIdByScope={initialCategoryIdByScope}
-              initialSelectedCategorySlugByScope={initialCategorySlugByScope}
+          <ResponsiveViewportProvider>
+            <SiteCollectionsProvider
+              key={`${SITE_DOMAIN}:${slug}`}
+              domain={SITE_DOMAIN}
+              sitePages={sitePages}
+              collectionItemsByKey={collectionItemsByKey}
             >
-              <StorefrontPageProvider
-                pageBaseSlug={pageBaseSlug}
-                categorySlugTrailFromUrl={categorySlugTrailFromUrl}
+              <CollectionFilterScopeProvider
+                initialSelectedCategoryIdByScope={initialCategoryIdByScope}
+                initialSelectedCategorySlugByScope={initialCategorySlugByScope}
               >
-                {nativeTree}
-              </StorefrontPageProvider>
-            </CollectionFilterScopeProvider>
-          </SiteCollectionsProvider>
+                <StorefrontPageProvider
+                  pageBaseSlug={pageBaseSlug}
+                  categorySlugTrailFromUrl={categorySlugTrailFromUrl}
+                >
+                  {nativeTree}
+                </StorefrontPageProvider>
+              </CollectionFilterScopeProvider>
+            </SiteCollectionsProvider>
+          </ResponsiveViewportProvider>
         ) : null}
 
         {!loading && !useNativeRender ? (

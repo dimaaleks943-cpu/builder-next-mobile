@@ -4,11 +4,9 @@ import {
   type FullStylePropKey,
   type ShortStylePropKey,
 } from "./stylePropsShortMapV1"
+import { BRANCHES } from "@/lib/responsiveCss";
 
 type StylePropsInput = Record<string, unknown> | null | undefined
-type StyleBranches = "base" | "tablet" | "phone"
-
-const RESPONSIVE_STYLE_BRANCHES: StyleBranches[] = ["base", "tablet", "phone"]
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === "object" && !Array.isArray(value)
@@ -52,7 +50,7 @@ export const decodeStyleProps = (
   const style = shortProps.style
   const styleRecord = isRecord(style) ? style : {}
   const decodedStyle: Record<string, Record<string, unknown>> = {}
-  for (const branch of RESPONSIVE_STYLE_BRANCHES) {
+  for (const branch of BRANCHES) {
     const branchValue = styleRecord[branch]
     if (!isRecord(branchValue)) continue
     decodedStyle[branch] = decodeStyleBranch(branchValue)
