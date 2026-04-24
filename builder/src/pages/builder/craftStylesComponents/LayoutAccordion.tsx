@@ -248,7 +248,7 @@ export const LayoutAccordion = () => {
               <CraftSettingsInput
                 label="Gap"
                 type="number"
-                value={getResponsiveStyleProp(selectedProps, "gap", viewport) ?? ""}
+                value={getResponsiveStyleProp(selectedProps, "gap", viewport) as number | undefined ?? ""}
                 onChange={handleGapChange}
               />
             </Box>
@@ -267,13 +267,13 @@ export const LayoutAccordion = () => {
                 <CraftSettingsInput
                   label="Columns"
                   type="number"
-                  value={getResponsiveStyleProp(selectedProps, "gridColumns", viewport) ?? ""}
+                  value={getResponsiveStyleProp(selectedProps, "gridColumns", viewport) as number | undefined ?? ""}
                   onChange={handleGridColumnsChange}
                 />
                 <CraftSettingsInput
                   label="Rows"
                   type="number"
-                  value={getResponsiveStyleProp(selectedProps, "gridRows", viewport) ?? ""}
+                  value={getResponsiveStyleProp(selectedProps, "gridRows", viewport) as number | undefined ?? ""}
                   onChange={handleGridRowsChange}
                 />
               </Box>
@@ -298,7 +298,7 @@ export const LayoutAccordion = () => {
               <CraftSettingsInput
                 label="Gap"
                 type="number"
-                value={getResponsiveStyleProp(selectedProps, "gap", viewport) ?? ""}
+                value={getResponsiveStyleProp(selectedProps, "gap", viewport) as number | undefined ?? ""}
                 onChange={handleGapChange}
               />
             </Box>

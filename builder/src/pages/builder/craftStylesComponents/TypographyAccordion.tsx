@@ -214,7 +214,7 @@ export const TypographyAccordion = () => {
             <CraftSettingsInput
               label="Size"
               type="number"
-              value={getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "fontSize", viewport) ?? ""}
+              value={getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "fontSize", viewport) as number | undefined ?? ""}
               onChange={handleFontSizeChange}
               customStyles={{ columnGap: "36px" }}
             />
@@ -222,7 +222,7 @@ export const TypographyAccordion = () => {
             <CraftSettingsInput
               label="Height"
               type="number"
-              value={getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "lineHeight", viewport) ?? ""}
+              value={getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "lineHeight", viewport) as number | undefined ?? ""}
               onChange={handleLineHeightChange}
               customStyles={{ columnGap: "34px" }}
             />

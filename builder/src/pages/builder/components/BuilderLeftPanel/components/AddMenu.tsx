@@ -41,11 +41,7 @@ export const useCategories = (): Category[] => {
         items: [
           {
             name: "Div-блок",
-            component: isRn ? (
-              <CraftBlock layout="flex" />
-            ) : (
-              <CraftBlock />
-            ),
+            component: <CraftBlock />
           },
         ],
       },
