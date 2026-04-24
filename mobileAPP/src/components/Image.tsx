@@ -30,7 +30,7 @@ export const Image = ({
   const { viewport } = useResponsiveViewport();
   const rs = resolveResponsiveStyle(style, viewport);
   const contentData = useContentData();
-
+  //TODO need refactor
   const width = rs.width as number | undefined;
   const height = rs.height as number | undefined;
   const borderRadius = pickResolvedNumber(rs, "borderRadius", 8);

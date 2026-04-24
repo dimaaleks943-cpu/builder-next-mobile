@@ -55,29 +55,13 @@ export const LinkText = ({
   const { filterScope } = useContentListContext();
   const { selectedCategorySlugByScope } = useCollectionFilterScope();
   const { categorySlugTrailFromUrl } = useStorefrontPage();
-
-  const fontSize = pickResolvedNumber(rs, "fontSize", 14);
-  const fontWeight = (rs.fontWeight as "normal" | "bold" | undefined) ?? "normal";
-  const textAlign = (rs.textAlign as "left" | "center" | "right" | undefined) ?? "left";
-  const color =
-    rs.color != null && rs.color !== "" ? String(rs.color) : "#00C78D";
-  const fontFamily = rs.fontFamily as string | undefined;
-  const lineHeight = pickResolvedNumber(rs, "lineHeight", 20);
   const textTransform =
     (rs.textTransform as "none" | "uppercase" | "lowercase" | "capitalize" | undefined) ??
     "none";
   const isItalic = Boolean(rs.isItalic);
   const isUnderline = Boolean(rs.isUnderline);
   const isStrikethrough = Boolean(rs.isStrikethrough);
-  const marginTop = pickResolvedNumber(rs, "marginTop", 0);
-  const marginRight = pickResolvedNumber(rs, "marginRight", 0);
-  const marginBottom = pickResolvedNumber(rs, "marginBottom", 0);
-  const marginLeft = pickResolvedNumber(rs, "marginLeft", 0);
-  const paddingTop = pickResolvedNumber(rs, "paddingTop", 0);
-  const paddingRight = pickResolvedNumber(rs, "paddingRight", 0);
-  const paddingBottom = pickResolvedNumber(rs, "paddingBottom", 0);
-  const paddingLeft = pickResolvedNumber(rs, "paddingLeft", 0);
-  const backgroundColor = rs.backgroundColor as string | undefined;
+
   const rawOpacity = rs.opacityPercent;
   const opacityPercent =
     typeof rawOpacity === "number" && Number.isFinite(rawOpacity)
@@ -187,24 +171,10 @@ export const LinkText = ({
       : {};
 
   const linkTextStyle: StyleProp<TextStyle> = {
-    fontSize,
-    fontWeight,
-    textAlign,
-    color,
-    fontFamily,
-    lineHeight,
-    textTransform,
+    ...rs,
     fontStyle: isItalic ? "italic" : "normal",
     textDecorationLine: textDecorationParts.join(" "),
-    marginTop,
-    marginRight,
-    marginBottom,
-    marginLeft,
-    paddingTop,
-    paddingRight,
-    paddingBottom,
-    paddingLeft,
-    ...(backgroundColor ? { backgroundColor } : {}),
+    textTransform,
     ...opacityEffects,
   } as TextStyle;
 
