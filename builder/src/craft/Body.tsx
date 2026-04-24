@@ -24,15 +24,6 @@ export const CraftBody = (props: BodyProps) => {
   const viewport = usePreviewViewport()
   const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
   const layout = (responsiveStyle.layout as BodyLayoutMode | undefined) ?? "block"
-  const marginTop = (responsiveStyle.marginTop as number | undefined) ?? 0
-  const marginRight = (responsiveStyle.marginRight as number | undefined) ?? 0
-  const marginBottom = (responsiveStyle.marginBottom as number | undefined) ?? 0
-  const marginLeft = (responsiveStyle.marginLeft as number | undefined) ?? 0
-  const paddingTop = (responsiveStyle.paddingTop as number | undefined) ?? 0
-  const paddingRight = (responsiveStyle.paddingRight as number | undefined) ?? 0
-  const paddingBottom = (responsiveStyle.paddingBottom as number | undefined) ?? 0
-  const paddingLeft = (responsiveStyle.paddingLeft as number | undefined) ?? 0
-  const borderRadius = (responsiveStyle.borderRadius as number | undefined) ?? 0
   const borderTopWidth = (responsiveStyle.borderTopWidth as number | undefined) ?? 0
   const borderRightWidth = (responsiveStyle.borderRightWidth as number | undefined) ?? 0
   const borderBottomWidth = (responsiveStyle.borderBottomWidth as number | undefined) ?? 0
@@ -40,7 +31,6 @@ export const CraftBody = (props: BodyProps) => {
   const borderColor = (responsiveStyle.borderColor as string | undefined) ?? COLORS.gray400
   const borderStyle = (responsiveStyle.borderStyle as "none" | "solid" | "dashed" | undefined) ?? "solid"
   const borderOpacity = (responsiveStyle.borderOpacity as number | undefined) ?? 1
-  const backgroundColor = responsiveStyle.backgroundColor as string | undefined
   const mixBlendMode = (responsiveStyle.mixBlendMode as CraftMixBlendMode | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode
   const opacityPercent = (responsiveStyle.opacityPercent as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent
   const outlineStyleMode =
@@ -73,27 +63,18 @@ export const CraftBody = (props: BodyProps) => {
         connect(drag(ref))
       }}
       style={{
+        ...responsiveStyle,
         width: "100%",
         minHeight: 80,
-        display:
-          layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block",
-        position: layout === "absolute" ? "absolute" : "relative",
-        marginTop,
-        marginRight,
-        marginBottom,
-        marginLeft,
-        paddingTop,
-        paddingRight,
-        paddingBottom,
-        paddingLeft,
-        borderRadius,
+        //TODO изменить после layuotBLock
+        display: layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block",
+        position: "relative",
         borderStyle: selected ? "solid" : hasCustomBorder ? (borderStyle || "solid") : "solid",
         borderColor: selected ? COLORS.purple400 : effectiveBorderColor,
         borderTopWidth: selected ? 2 : hasCustomBorder ? borderTopWidth : 0,
         borderRightWidth: selected ? 2 : hasCustomBorder ? borderRightWidth : 0,
         borderBottomWidth: selected ? 2 : hasCustomBorder ? borderBottomWidth : 0,
         borderLeftWidth: selected ? 2 : hasCustomBorder ? borderLeftWidth : 0,
-        backgroundColor: backgroundColor ?? COLORS.white,
         boxSizing: "border-box",
         ...resolveCraftVisualEffectsStyle({
           mixBlendMode,

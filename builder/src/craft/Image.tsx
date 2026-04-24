@@ -31,6 +31,7 @@ export const CraftImage = (props: CraftImageProps) => {
   const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
   const src = props.src
   const alt = props.alt ?? "Изображение"
+  //TODO реафктор стилей после подключения работы с коллекцией
   const width = responsiveStyle.width as string | number | undefined
   const height = responsiveStyle.height as string | number | undefined
   const minWidth = responsiveStyle.minWidth as number | undefined

@@ -44,36 +44,12 @@ export const CraftLinkText = (props: LinkTextProps) => {
   const collectionField = props.collectionField ?? null
   const href = props.href ?? "http://www.google.com"
   const openInNewTab = props.openInNewTab ?? false
-  const fontSize = (responsiveStyle.fontSize as number | undefined) ?? 14
-  const fontWeight = (responsiveStyle.fontWeight as "normal" | "bold" | undefined) ?? "normal"
-  const textAlign = (responsiveStyle.textAlign as TextAlign | undefined) ?? "left"
-  const color = (responsiveStyle.color as string | undefined) ?? COLORS.green300
-  const fontFamily = responsiveStyle.fontFamily as string | undefined
   const lineHeight = (responsiveStyle.lineHeight as number | undefined) ?? 20
-  const textTransform =
-    (responsiveStyle.textTransform as "none" | "uppercase" | "lowercase" | "capitalize" | undefined) ??
-    "none"
   const strokeColor = responsiveStyle.strokeColor as string | undefined
   const strokeWidth = (responsiveStyle.strokeWidth as number | undefined) ?? 0
   const isItalic = (responsiveStyle.isItalic as boolean | undefined) ?? false
   const isUnderline = (responsiveStyle.isUnderline as boolean | undefined) ?? false
   const isStrikethrough = (responsiveStyle.isStrikethrough as boolean | undefined) ?? false
-  const marginTop = (responsiveStyle.marginTop as number | undefined) ?? 0
-  const marginRight = (responsiveStyle.marginRight as number | undefined) ?? 0
-  const marginBottom = (responsiveStyle.marginBottom as number | undefined) ?? 0
-  const marginLeft = (responsiveStyle.marginLeft as number | undefined) ?? 0
-  const paddingTop = (responsiveStyle.paddingTop as number | undefined) ?? 0
-  const paddingRight = (responsiveStyle.paddingRight as number | undefined) ?? 0
-  const paddingBottom = (responsiveStyle.paddingBottom as number | undefined) ?? 0
-  const paddingLeft = (responsiveStyle.paddingLeft as number | undefined) ?? 0
-  const backgroundColor = responsiveStyle.backgroundColor as string | undefined
-  const width = responsiveStyle.width as string | number | undefined
-  const height = responsiveStyle.height as string | number | undefined
-  const minWidth = responsiveStyle.minWidth as number | undefined
-  const minHeight = responsiveStyle.minHeight as number | undefined
-  const maxWidth = responsiveStyle.maxWidth as string | number | undefined
-  const maxHeight = responsiveStyle.maxHeight as string | number | undefined
-  const overflow = responsiveStyle.overflow as "auto" | "hidden" | "visible" | "scroll" | undefined
   const mixBlendMode =
     (responsiveStyle.mixBlendMode as CraftMixBlendMode | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode
   const opacityPercent =
@@ -206,46 +182,23 @@ export const CraftLinkText = (props: LinkTextProps) => {
   }
 
   const style: CSSProperties = {
+    ...responsiveStyle,
     display: "inline-block",
-    fontSize,
-    fontWeight,
-    textAlign,
-    color,
-    fontFamily,
+    //TODO сохранять значение в px сразу
     lineHeight: typeof lineHeight === "number" ? `${lineHeight}px` : undefined,
-    textTransform,
+    //TODO переписать на прямую привязку к fontStyle
     fontStyle: isItalic ? "italic" : "normal",
     textDecoration: [
-      "underline",
-      isStrikethrough ? "line-through" : "",
       isUnderline ? "underline" : "",
+      isStrikethrough ? "line-through" : "",
     ]
       .filter(Boolean)
-      .join(" "),
+      .join(" ") || "none",
     WebkitTextStrokeWidth: strokeWidth ? strokeWidth : undefined,
     WebkitTextStrokeColor: strokeColor,
-    marginTop,
-    marginRight,
-    marginBottom,
-    marginLeft,
-    paddingTop,
-    paddingRight,
-    paddingBottom,
-    paddingLeft,
-    borderRadius: 2,
+
+    //TODO переписать на прямую привязку к fontStyle
     border: selected ? `2px solid ${COLORS.purple400}` : "1px solid transparent",
-    boxSizing: "border-box",
-    width,
-    height,
-    minWidth: minWidth ?? 20,
-    minHeight,
-    maxWidth,
-    maxHeight,
-    overflow,
-    outline: "none",
-    cursor: collectionField ? "default" : isEditing ? "text" : selected ? "move" : "pointer",
-    userSelect: collectionField ? "none" : isEditing ? "text" : "none",
-    ...(backgroundColor ? { backgroundColor } : {}),
   }
 
   return (
