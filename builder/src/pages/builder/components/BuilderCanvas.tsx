@@ -1,8 +1,14 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Box, IconButton } from "@mui/material"
 import { Frame, Element, useEditor, type SerializedNodes } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
-import { getPreviewMaxWidth, MODE_TYPE, PreviewViewport } from "../builder.enum"
+import {
+  getPreviewMaxWidth,
+  MODE_TYPE, PREVIEW_WIDTH_PHONE, PREVIEW_WIDTH_PHONE_LANDSCAPE,
+  PREVIEW_WIDTH_TABLET,
+  PREVIEW_WIDTH_TABLET_LANDSCAPE,
+  PreviewViewport
+} from "../builder.enum"
 import { CraftBody } from "../../../craft/Body.tsx"
 import { PageType, type IContentItem } from "../../../api/extranet"
 import { ContentListDataContext } from "../context/ContentListDataContext.tsx"
@@ -13,6 +19,10 @@ import { MonitorIcon } from "../../../icons/MonitorIcon.tsx";
 import { TabletIcon } from "../../../icons/TabletIcon.tsx";
 import { MobileIcon } from "../../../icons/MobileIcon.tsx";
 import { useBuilderModeContext } from "../context/BuilderModeContext.tsx";
+
+const MIN_PREVIEW_WIDTH = 320
+const MAX_WEB_PREVIEW_WIDTH = 3840
+const MAX_RN_PREVIEW_WIDTH = PREVIEW_WIDTH_TABLET_LANDSCAPE
 
 interface BuilderCanvasProps {
   initialContent: SerializedNodes | null;
@@ -35,6 +45,10 @@ export const BuilderCanvas = ({
   const { actions, query } = useEditor()
   const modeContext = useBuilderModeContext()
   const isRn = modeContext?.mode === MODE_TYPE.RN
+  const [customPreviewWidth, setCustomPreviewWidth] = useState<number | null>(null)
+  const [widthInput, setWidthInput] = useState<string>(() => String(getPreviewMaxWidth(previewViewport)))
+  const [isWidthInputFocused, setIsWidthInputFocused] = useState(false)
+  const isApplyingCustomWidthRef = useRef(false)
   const { selectedId, canDeleteSelected } = useEditor((state, query) => {
     const [id] = Array.from(state.events.selected)
     if (!id) return { selectedId: null as string | null, canDeleteSelected: false }
@@ -75,12 +89,63 @@ export const BuilderCanvas = ({
   })
 
   const canvasRef = useRef<HTMLDivElement>(null)
+  const appliedPreviewWidth = customPreviewWidth ?? getPreviewMaxWidth(previewViewport)
+
+  const mapWidthToViewport = (width: number): PreviewViewport => {
+    if (width <= PREVIEW_WIDTH_PHONE) return PreviewViewport.PHONE
+    if (width <= PREVIEW_WIDTH_PHONE_LANDSCAPE) return PreviewViewport.PHONE_LANDSCAPE
+    if (width <= PREVIEW_WIDTH_TABLET) return PreviewViewport.TABLET
+    if (width <= PREVIEW_WIDTH_TABLET_LANDSCAPE) return PreviewViewport.TABLET_LANDSCAPE
+    return isRn ? PreviewViewport.TABLET_LANDSCAPE : PreviewViewport.DESKTOP
+  }
+
+  const syncInputWithViewport = (viewport: PreviewViewport) => {
+    setCustomPreviewWidth(null)
+    setWidthInput(String(getPreviewMaxWidth(viewport)))
+  }
+
+  const handlePresetViewportChange = (viewport: PreviewViewport) => {
+    syncInputWithViewport(viewport)
+    onPreviewViewportChange(viewport)
+  }
+
+  const commitWidthInput = () => {
+    if (!/^\d+$/.test(widthInput)) {
+      setWidthInput(String(appliedPreviewWidth))
+      return
+    }
+
+    const parsedWidth = Number(widthInput)
+    const maxWidth = isRn ? MAX_RN_PREVIEW_WIDTH : MAX_WEB_PREVIEW_WIDTH
+    const isValidRange = Number.isInteger(parsedWidth) && parsedWidth >= MIN_PREVIEW_WIDTH && parsedWidth <= maxWidth
+
+    if (!isValidRange) {
+      setWidthInput(String(appliedPreviewWidth))
+      return
+    }
+
+    setCustomPreviewWidth(parsedWidth)
+    setWidthInput(String(parsedWidth))
+    isApplyingCustomWidthRef.current = true
+    onPreviewViewportChange(mapWidthToViewport(parsedWidth))
+  }
 
   useEffect(() => {
     if (selectedId && canvasRef.current) {
       canvasRef.current.focus()
     }
   }, [selectedId])
+
+  useEffect(() => {
+    if (isApplyingCustomWidthRef.current) {
+      isApplyingCustomWidthRef.current = false
+      return
+    }
+
+    if (!isWidthInputFocused) {
+      syncInputWithViewport(previewViewport)
+    }
+  }, [previewViewport, isWidthInputFocused])
 
   // Если пришёл initialContent из API — десериализуем его в дерево Craft.
   useEffect(() => {
@@ -149,23 +214,21 @@ export const BuilderCanvas = ({
       {/* Панель действий над холстом (undo/redo + структура) */}
       <Box
         sx={{
-
           display: "flex",
           maxHeight: 28,
           height: 28,
           borderBottom: `1px solid ${COLORS.gray200}`,
           backgroundColor: COLORS.white,
           justifyContent: "space-between",
+          padding: "2px 16px",
         }}
       >
         <Box
           sx={{
-            padding: "0 16px",
             display: "flex",
             alignItems: "center",
             gap: "8px",
           }}
-
         >
           <Box
             sx={{
@@ -225,94 +288,166 @@ export const BuilderCanvas = ({
             ))}
           </Box>
         </Box>
+        <Box sx={{display: "flex", columnGap: "12px"}}>
+          <Box sx={{
+            padding: "0 4px",
+            display: "flex",
+            alignItems: "center",
+            backgroundColor: COLORS.gray100,
+            borderRadius: "4px",
+          }}>
+            <Box
+              component="input"
+              value={widthInput}
+              onFocus={() => setIsWidthInputFocused(true)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                const digitsOnly = event.target.value.replace(/\D/g, "")
+                setWidthInput(digitsOnly)
+              }}
+              onBlur={() => {
+                setIsWidthInputFocused(false)
+                commitWidthInput()
+              }}
+              onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
+                event.stopPropagation()
+                if (event.key === "Enter") {
+                  event.preventDefault()
+                  commitWidthInput()
+                  event.currentTarget.blur()
+                }
+              }}
+              inputMode="numeric"
+              aria-label="Ширина превью в пикселях"
+              sx={{
+                width: 36,
+                height: 22,
+                border: "none",
+                fontSize: "12px",
+                color: COLORS.gray700,
+                outline: "none",
+                backgroundColor: COLORS.gray100,
 
-        <Box sx={{ display: "flex", columnGap: "8px" }}>
-          {!isRn && <IconButton
-            onClick={(e) => {
-              e.stopPropagation()
-              onPreviewViewportChange(PreviewViewport.DESKTOP)
-            }}
-            size="small"
-            title="Десктоп (1)"
-            aria-label="Десктоп (1)"
-            disableRipple
-          >
-            <MonitorIcon fill={previewViewport === PreviewViewport.DESKTOP ? COLORS.purple400 : COLORS.gray600}/>
-          </IconButton>}
+                "&:focus": {
+                  borderColor: COLORS.purple400,
+                },
+              }}
+            />
+            <Box sx={{ fontSize: "12px", lineHeight: "14px", color: COLORS.gray600 }}>px</Box>
+          </Box>
 
-          <IconButton
-            disableRipple
-            onClick={(e) => {
-              e.stopPropagation()
-              onPreviewViewportChange(PreviewViewport.TABLET_LANDSCAPE)
-            }}
-            size="small"
-            title={
-              isRn
-                ? "Горизонтальный планшет (1)"
-                : "Горизонтальный планшет (2)"
-            }
-            aria-label={
-              isRn
-                ? "Горизонтальный планшет (1)"
-                : "Горизонтальный планшет (2)"
-            }
-            sx={{transform: "rotate(90deg)", padding: 0}}
-          >
-            <TabletIcon
-              fill={previewViewport === PreviewViewport.TABLET_LANDSCAPE ? COLORS.purple400 : COLORS.gray600}/>
-          </IconButton>
+          <Box sx={{ display: "flex", columnGap: "4px", alignItems: "center" }}>
+            {!isRn && <IconButton
+              onClick={(e) => {
+                e.stopPropagation()
+                handlePresetViewportChange(PreviewViewport.DESKTOP)
+              }}
+              size="small"
+              title="Десктоп (1)"
+              aria-label="Десктоп (1)"
+              disableRipple
+              sx={{
+                borderRadius: "2px",
+                padding: "2px",
+                backgroundColor: previewViewport === PreviewViewport.DESKTOP ? COLORS.purple100 : "transparent",
+              }}
+            >
+              <MonitorIcon fill={previewViewport === PreviewViewport.DESKTOP ? COLORS.purple400 : COLORS.gray600}/>
+            </IconButton>}
 
-          <IconButton
-            disableRipple
-            onClick={(e) => {
-              e.stopPropagation()
-              onPreviewViewportChange(PreviewViewport.TABLET)
-            }}
-            size="small"
-            title={isRn ? "Планшет (2)" : "Планшет (3)"}
-            aria-label={isRn ? "Планшет (2)" : "Планшет (3)"}
-          >
-            <TabletIcon fill={previewViewport === PreviewViewport.TABLET ? COLORS.purple400 : COLORS.gray600}/>
-          </IconButton>
+            <IconButton
+              disableRipple
+              onClick={(e) => {
+                e.stopPropagation()
+                handlePresetViewportChange(PreviewViewport.TABLET_LANDSCAPE)
+              }}
+              size="small"
+              title={
+                isRn
+                  ? "Горизонтальный планшет (1)"
+                  : "Горизонтальный планшет (2)"
+              }
+              aria-label={
+                isRn
+                  ? "Горизонтальный планшет (1)"
+                  : "Горизонтальный планшет (2)"
+              }
+              sx={{
+                transform: "rotate(270deg)",
+                borderRadius: "2px",
+                padding: "2px",
+                backgroundColor: previewViewport === PreviewViewport.TABLET_LANDSCAPE ? COLORS.purple100 : "transparent",
+              }}
+            >
+              <TabletIcon
+                fill={previewViewport === PreviewViewport.TABLET_LANDSCAPE ? COLORS.purple400 : COLORS.gray600}/>
+            </IconButton>
 
-          <IconButton
-            onClick={(e) => {
-              e.stopPropagation()
-              onPreviewViewportChange(PreviewViewport.PHONE_LANDSCAPE)
-            }}
-            size="small"
-            title={
-              isRn
-                ? "Горизонтальный телефон (3)"
-                : "Горизонтальный телефон (4)"
-            }
-            aria-label={
-              isRn
-                ? "Горизонтальный телефон (3)"
-                : "Горизонтальный телефон (4)"
-            }
-            disableRipple
-            sx={{transform: "rotate(90deg)", padding: 0 }}
-          >
-            <MobileIcon fill={previewViewport === PreviewViewport.PHONE_LANDSCAPE ? COLORS.purple400 : COLORS.gray600}/>
-          </IconButton>
+            <IconButton
+              disableRipple
+              onClick={(e) => {
+                e.stopPropagation()
+                handlePresetViewportChange(PreviewViewport.TABLET)
+              }}
+              size="small"
+              title={isRn ? "Планшет (2)" : "Планшет (3)"}
+              aria-label={isRn ? "Планшет (2)" : "Планшет (3)"}
+              sx={{
+                borderRadius: "2px",
+                padding: 0,
+                backgroundColor: previewViewport === PreviewViewport.TABLET ? COLORS.purple100 : "transparent",
+              }}
 
-          <IconButton
-            onClick={(e) => {
-              e.stopPropagation()
-              onPreviewViewportChange(PreviewViewport.PHONE)
-            }}
-            size="small"
-            title={isRn ? "Телефон (4)" : "Телефон (5)"}
-            aria-label={isRn ? "Телефон (4)" : "Телефон (5)"}
-            disableRipple
-          >
-            <MobileIcon fill={previewViewport === PreviewViewport.PHONE ? COLORS.purple400 : COLORS.gray600}/>
-          </IconButton>
+            >
+              <TabletIcon fill={previewViewport === PreviewViewport.TABLET ? COLORS.purple400 : COLORS.gray600}/>
+            </IconButton>
+
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation()
+                handlePresetViewportChange(PreviewViewport.PHONE_LANDSCAPE)
+              }}
+              size="small"
+              title={
+                isRn
+                  ? "Горизонтальный телефон (3)"
+                  : "Горизонтальный телефон (4)"
+              }
+              aria-label={
+                isRn
+                  ? "Горизонтальный телефон (3)"
+                  : "Горизонтальный телефон (4)"
+              }
+              disableRipple
+              sx={{
+                borderRadius: "2px",
+                padding: "2px",
+                backgroundColor: previewViewport === PreviewViewport.PHONE_LANDSCAPE ? COLORS.purple100 : "transparent",
+                transform: "rotate(270deg)",
+              }}
+            >
+              <MobileIcon fill={previewViewport === PreviewViewport.PHONE_LANDSCAPE ? COLORS.purple400 : COLORS.gray600}/>
+            </IconButton>
+
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation()
+                handlePresetViewportChange(PreviewViewport.PHONE)
+              }}
+              size="small"
+              title={isRn ? "Телефон (4)" : "Телефон (5)"}
+              aria-label={isRn ? "Телефон (4)" : "Телефон (5)"}
+              disableRipple
+              sx={{
+                borderRadius: "2px",
+                padding: "2px",
+                backgroundColor: previewViewport === PreviewViewport.PHONE ? COLORS.purple100 : "transparent",
+              }}
+            >
+              <MobileIcon fill={previewViewport === PreviewViewport.PHONE ? COLORS.purple400 : COLORS.gray600}/>
+            </IconButton>
+          </Box>
         </Box>
       </Box>
-
       {/* Сам холст, подключённый к Craft.js */}
       <Box
         ref={canvasRef}
@@ -347,7 +482,7 @@ export const BuilderCanvas = ({
         <Box
           sx={{
             width: "100%",
-            maxWidth: getPreviewMaxWidth(previewViewport),
+            maxWidth: appliedPreviewWidth,
             marginLeft: "auto",
             marginRight: "auto",
             backgroundColor: COLORS.white,
