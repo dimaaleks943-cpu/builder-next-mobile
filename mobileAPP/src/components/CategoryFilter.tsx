@@ -13,30 +13,48 @@ import { useCollectionFilterScope } from "../contexts/CollectionFilterScopeConte
 import { useStorefrontPage } from "../contexts/StorefrontPageContext";
 import { useSiteCollections } from "../contexts/SiteCollectionsContext";
 import { buildStorefrontCategoryUrl } from "../lib/catalogPathResolve";
+import { useResponsiveViewport } from "../contexts/ResponsiveViewportContext";
+import { resolveResponsiveStyle } from "../content/responsiveStyle";
 import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 
 /** Настройки блока с сервера; `filterScope` связывает фильтр с ContentList. */
 export type CategoryFilterProps = {
+  style?: any;
   filterScope: string;
   /** UUID корня дерева категорий — в API уходит `filter` с `category_id`. */
   contentCategoryRootId?: string;
   variant?: "buttons" | "radio" | "list";
   direction?: "row" | "column";
   showAllLabel?: string;
-  backgroundColor?: string;
-  opacityPercent?: number;
 };
 
 /** Рендер кнопок/радио категорий и запись выбора в `CollectionFilterScope` для связанных списков. */
 export const CategoryFilter = ({
+  style,
   filterScope,
   contentCategoryRootId = "",
   variant = "buttons",
   direction = "row",
   showAllLabel = "Все",
-  backgroundColor = "#FFFFFF",
-  opacityPercent,
 }: CategoryFilterProps) => {
+  const { viewport } = useResponsiveViewport();
+  const rs = resolveResponsiveStyle(style, viewport);
+  const backgroundColor =
+    rs.backgroundColor != null && rs.backgroundColor !== ""
+      ? String(rs.backgroundColor)
+      : "#FFFFFF";
+  const rawOpacity = rs.opacityPercent;
+  const opacityPercent =
+    typeof rawOpacity === "number" && Number.isFinite(rawOpacity)
+      ? rawOpacity
+      : typeof rawOpacity === "string" && rawOpacity.trim() !== ""
+        ? Number(rawOpacity)
+        : undefined;
+  const opacityEffects =
+    opacityPercent !== undefined && Number.isFinite(opacityPercent)
+      ? resolveCraftVisualEffectsRnStyle({ opacityPercent })
+      : {};
+
   const navigation = useNavigation<any>();
   const { domain } = useSiteCollections();
   const { pageBaseSlug } = useStorefrontPage();
@@ -119,7 +137,7 @@ export const CategoryFilter = ({
         styles.nav,
         row ? styles.navRow : styles.navCol,
         { backgroundColor },
-        resolveCraftVisualEffectsRnStyle({ opacityPercent }),
+        opacityEffects,
       ]}
       accessibilityRole="none"
     >

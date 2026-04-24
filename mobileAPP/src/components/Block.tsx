@@ -1,5 +1,10 @@
 import type { ReactNode } from "react";
 import { View, StyleSheet, type DimensionValue } from "react-native";
+import { useResponsiveViewport } from "../contexts/ResponsiveViewportContext";
+import {
+  pickResolvedNumber,
+  resolveResponsiveStyle,
+} from "../content/responsiveStyle";
 import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 import { withOpacityHex } from "../lib/withOpacityHex";
 
@@ -20,71 +25,63 @@ type FlexAlignItems =
   | "baseline";
 
 interface BlockProps {
+  style?: any;
   children?: ReactNode;
-  fullSize?: boolean;
-  /** Dip, `%`, or `auto` only (sanitized); web-only units from JSON are ignored. */
-  width?: string | number;
-  height?: string | number;
-  minHeight?: string | number;
-  layout?: BlockLayoutMode | "grid"; //TODo врменно
-  flexFlow?: FlexFlowOption;
-  flexJustifyContent?: FlexJustifyContent;
-  flexAlignItems?: FlexAlignItems;
-  gap?: number;
-  // margins
-  marginTop?: number;
-  marginRight?: number;
-  marginBottom?: number;
-  marginLeft?: number;
-  // paddings
-  paddingTop?: number;
-  paddingRight?: number;
-  paddingBottom?: number;
-  paddingLeft?: number;
-  // borders
-  borderRadius?: number;
-  borderTopWidth?: number;
-  borderRightWidth?: number;
-  borderBottomWidth?: number;
-  borderLeftWidth?: number;
-  borderColor?: string;
-  borderStyle?: "none" | "solid" | "dotted";
-  borderOpacity?: number; // 0–1
-  backgroundColor?: string;
-  /** 0–100; на RN маппится только в нативный `opacity`. */
-  opacityPercent?: number;
 }
 
-export const Block = ({
-  children,
-  fullSize,
-  width,
-  height,
-  minHeight,
-  layout = "block",
-  flexFlow = "row",
-  flexJustifyContent,
-  flexAlignItems,
-  gap,
-  marginTop = 0,
-  marginRight = 0,
-  marginBottom = 0,
-  marginLeft = 0,
-  paddingTop = 0,
-  paddingRight = 0,
-  paddingBottom = 0,
-  paddingLeft = 0,
-  borderRadius = 0,
-  borderTopWidth = 0,
-  borderRightWidth = 0,
-  borderBottomWidth = 0,
-  borderLeftWidth = 0,
-  borderColor = "#CBD5E0",
-  borderStyle = "solid",
-  borderOpacity = 1,
-  backgroundColor = "#FFFFFF",
-  opacityPercent,
-}: BlockProps) => {
+export const Block = ({ children, style }: BlockProps) => {
+  const { viewport } = useResponsiveViewport();
+  const rs = resolveResponsiveStyle(style, viewport);
+
+  const fullSize = Boolean(rs.fullSize);
+  const width = rs.width as string | number | undefined;
+  const height = rs.height as string | number | undefined;
+  const minHeight = rs.minHeight as string | number | undefined;
+  const layout = (rs.layout as BlockLayoutMode | "grid" | undefined) ?? "block";
+  const flexFlow = (rs.flexFlow as FlexFlowOption | undefined) ?? "row";
+  const flexJustifyContent = rs.flexJustifyContent as
+    | FlexJustifyContent
+    | undefined;
+  const flexAlignItems = rs.flexAlignItems as FlexAlignItems | undefined;
+  const gapRaw = rs.gap;
+  const gap =
+    gapRaw == null
+      ? undefined
+      : typeof gapRaw === "number" && Number.isFinite(gapRaw)
+        ? gapRaw
+        : Number(gapRaw);
+
+  const marginTop = pickResolvedNumber(rs, "marginTop", 0);
+  const marginRight = pickResolvedNumber(rs, "marginRight", 0);
+  const marginBottom = pickResolvedNumber(rs, "marginBottom", 0);
+  const marginLeft = pickResolvedNumber(rs, "marginLeft", 0);
+  const paddingTop = pickResolvedNumber(rs, "paddingTop", 0);
+  const paddingRight = pickResolvedNumber(rs, "paddingRight", 0);
+  const paddingBottom = pickResolvedNumber(rs, "paddingBottom", 0);
+  const paddingLeft = pickResolvedNumber(rs, "paddingLeft", 0);
+  const borderRadius = pickResolvedNumber(rs, "borderRadius", 0);
+  const borderTopWidth = pickResolvedNumber(rs, "borderTopWidth", 0);
+  const borderRightWidth = pickResolvedNumber(rs, "borderRightWidth", 0);
+  const borderBottomWidth = pickResolvedNumber(rs, "borderBottomWidth", 0);
+  const borderLeftWidth = pickResolvedNumber(rs, "borderLeftWidth", 0);
+  const borderColor =
+    rs.borderColor != null && rs.borderColor !== ""
+      ? String(rs.borderColor)
+      : "#CBD5E0";
+  const borderStyle = (rs.borderStyle as "none" | "solid" | "dotted" | undefined) ?? "solid";
+  const borderOpacity = pickResolvedNumber(rs, "borderOpacity", 1);
+  const backgroundColor =
+    rs.backgroundColor != null && rs.backgroundColor !== ""
+      ? String(rs.backgroundColor)
+      : "#FFFFFF";
+  const rawOpacity = rs.opacityPercent;
+  const opacityPercent =
+    typeof rawOpacity === "number" && Number.isFinite(rawOpacity)
+      ? rawOpacity
+      : typeof rawOpacity === "string" && rawOpacity.trim() !== ""
+        ? Number(rawOpacity)
+        : undefined;
+
   const hasCustomBorder =
     borderTopWidth > 0 ||
     borderRightWidth > 0 ||
@@ -126,6 +123,11 @@ export const Block = ({
 
   const gapStyle = isFlex && gap != null && gap >= 0 ? { gap } : {};
 
+  const opacityEffects =
+    opacityPercent !== undefined && Number.isFinite(opacityPercent)
+      ? resolveCraftVisualEffectsRnStyle({ opacityPercent })
+      : {};
+
   return (
     <View
       style={[
@@ -159,7 +161,7 @@ export const Block = ({
           borderBottomWidth: showBorder ? borderBottomWidth : 0,
           borderLeftWidth: showBorder ? borderLeftWidth : 0,
           backgroundColor,
-          ...resolveCraftVisualEffectsRnStyle({ opacityPercent }),
+          ...opacityEffects,
         },
       ]}
     >
@@ -171,4 +173,3 @@ export const Block = ({
 const styles = StyleSheet.create({
   block: {},
 });
-

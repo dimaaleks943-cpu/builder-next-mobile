@@ -1,52 +1,60 @@
 import {
   Image as RNImage,
-  StyleSheet,
   View,
-  type ImageStyle,
   type ViewStyle, StyleProp,
 } from "react-native";
 import { useContentData } from "../contexts/ContentDataContext";
+import { useResponsiveViewport } from "../contexts/ResponsiveViewportContext";
+import {
+  pickResolvedNumber,
+  resolveResponsiveStyle,
+} from "../content/responsiveStyle";
 import { findContentItemField } from "../content/contentFieldValue";
 import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 import { withOpacityHex } from "../lib/withOpacityHex";
 
 interface ImageProps {
+  style?: unknown;
   src?: string;
   alt?: string;
-  width?: number;
-  height?: number;
-  borderRadius?: number;
-  borderTopWidth?: number;
-  borderRightWidth?: number;
-  borderBottomWidth?: number;
-  borderLeftWidth?: number;
-  borderColor?: string;
-  borderStyle?: "none" | "solid" | "dotted";
-  borderOpacity?: number;
   /** todo кол-во полей для коллекций пока не поддерживаем в мобилке */
   collectionField?: string | null;
-  backgroundColor?: string;
-  opacityPercent?: number;
 }
 
 export const Image = ({
   src,
   alt = "Изображение",
-  width,
-  height,
-  borderRadius = 8,
-  borderTopWidth = 0,
-  borderRightWidth = 0,
-  borderBottomWidth = 0,
-  borderLeftWidth = 0,
-  borderColor = "#CBD5E0",
-  borderStyle = "solid",
-  borderOpacity = 1,
   collectionField = null,
-  backgroundColor = "#F9F9F9",
-  opacityPercent,
+  style,
 }: ImageProps) => {
+  const { viewport } = useResponsiveViewport();
+  const rs = resolveResponsiveStyle(style, viewport);
   const contentData = useContentData();
+
+  const width = rs.width as number | undefined;
+  const height = rs.height as number | undefined;
+  const borderRadius = pickResolvedNumber(rs, "borderRadius", 8);
+  const borderTopWidth = pickResolvedNumber(rs, "borderTopWidth", 0);
+  const borderRightWidth = pickResolvedNumber(rs, "borderRightWidth", 0);
+  const borderBottomWidth = pickResolvedNumber(rs, "borderBottomWidth", 0);
+  const borderLeftWidth = pickResolvedNumber(rs, "borderLeftWidth", 0);
+  const borderColor =
+    rs.borderColor != null && rs.borderColor !== ""
+      ? String(rs.borderColor)
+      : "#CBD5E0";
+  const borderStyle = (rs.borderStyle as "none" | "solid" | "dotted" | undefined) ?? "solid";
+  const borderOpacity = pickResolvedNumber(rs, "borderOpacity", 1);
+  const backgroundColor =
+    rs.backgroundColor != null && rs.backgroundColor !== ""
+      ? String(rs.backgroundColor)
+      : "#F9F9F9";
+  const rawOpacity = rs.opacityPercent;
+  const opacityPercent =
+    typeof rawOpacity === "number" && Number.isFinite(rawOpacity)
+      ? rawOpacity
+      : typeof rawOpacity === "string" && rawOpacity.trim() !== ""
+        ? Number(rawOpacity)
+        : undefined;
 
   let effectiveSrc: string | null = null;
 
@@ -101,13 +109,18 @@ export const Image = ({
     }
     : undefined;
 
+  const opacityEffects =
+    opacityPercent !== undefined && Number.isFinite(opacityPercent)
+      ? resolveCraftVisualEffectsRnStyle({ opacityPercent })
+      : {};
+
   const imageStyle: React.ComponentProps<typeof RNImage>["style"] = {
     width: width ?? "100%",
     height: height ?? undefined,
     minHeight: height ?? 140,
     borderRadius: showBorder ? 0 : borderRadius,
     backgroundColor,
-    ...resolveCraftVisualEffectsRnStyle({ opacityPercent }),
+    ...opacityEffects,
   };
 
 
@@ -122,5 +135,3 @@ export const Image = ({
     </View>
   );
 };
-
-

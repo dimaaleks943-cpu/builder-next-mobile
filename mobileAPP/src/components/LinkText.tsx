@@ -13,6 +13,11 @@ import { useContentListContext } from "../contexts/ContentListContext";
 import { useCollectionFilterScope } from "../contexts/CollectionFilterScopeContext";
 import { useStorefrontPage } from "../contexts/StorefrontPageContext";
 import { useSiteCollections } from "../contexts/SiteCollectionsContext";
+import { useResponsiveViewport } from "../contexts/ResponsiveViewportContext";
+import {
+  pickResolvedNumber,
+  resolveResponsiveStyle,
+} from "../content/responsiveStyle";
 import { buildStorefrontTemplateHref } from "../lib/catalogPathResolve";
 import { normalizeItemPathPrefix } from "../lib/templateRoute";
 import {
@@ -22,6 +27,7 @@ import {
 import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 
 interface LinkTextProps {
+  style?: unknown;
   text?: string;
   collectionField?: string | null;
   href?: string;
@@ -29,26 +35,6 @@ interface LinkTextProps {
   collectionItemLinkTarget?: "none" | "template";
   collectionItemTemplatePageId?: string | null;
   openInNewTab?: boolean;
-  fontSize?: number;
-  fontWeight?: "normal" | "bold";
-  textAlign?: "left" | "center" | "right";
-  color?: string;
-  fontFamily?: string;
-  lineHeight?: number;
-  textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
-  isItalic?: boolean;
-  isUnderline?: boolean;
-  isStrikethrough?: boolean;
-  marginTop?: number;
-  marginRight?: number;
-  marginBottom?: number;
-  marginLeft?: number;
-  paddingTop?: number;
-  paddingRight?: number;
-  paddingBottom?: number;
-  paddingLeft?: number;
-  backgroundColor?: string;
-  opacityPercent?: number;
 }
 
 export const LinkText = ({
@@ -58,34 +44,47 @@ export const LinkText = ({
   linkMode = "url",
   collectionItemLinkTarget = "none",
   collectionItemTemplatePageId = null,
-  openInNewTab, // не используется в RN, оставлен для совместимости с типом конструктора
-  fontSize = 14,
-  fontWeight = "normal",
-  textAlign = "left",
-  color = "#00C78D",
-  fontFamily,
-  lineHeight = 20,
-  textTransform = "none",
-  isItalic = false,
-  isUnderline = false,
-  isStrikethrough = false,
-  marginTop = 0,
-  marginRight = 0,
-  marginBottom = 0,
-  marginLeft = 0,
-  paddingTop = 0,
-  paddingRight = 0,
-  paddingBottom = 0,
-  paddingLeft = 0,
-  backgroundColor,
-  opacityPercent,
+  openInNewTab: _openInNewTab, // не используется в RN, оставлен для совместимости с типом конструктора
+  style,
 }: LinkTextProps) => {
+  const { viewport } = useResponsiveViewport();
+  const rs = resolveResponsiveStyle(style, viewport);
   const navigation = useNavigation<any>();
   const contentData = useContentData();
   const { sitePages } = useSiteCollections();
   const { filterScope } = useContentListContext();
   const { selectedCategorySlugByScope } = useCollectionFilterScope();
   const { categorySlugTrailFromUrl } = useStorefrontPage();
+
+  const fontSize = pickResolvedNumber(rs, "fontSize", 14);
+  const fontWeight = (rs.fontWeight as "normal" | "bold" | undefined) ?? "normal";
+  const textAlign = (rs.textAlign as "left" | "center" | "right" | undefined) ?? "left";
+  const color =
+    rs.color != null && rs.color !== "" ? String(rs.color) : "#00C78D";
+  const fontFamily = rs.fontFamily as string | undefined;
+  const lineHeight = pickResolvedNumber(rs, "lineHeight", 20);
+  const textTransform =
+    (rs.textTransform as "none" | "uppercase" | "lowercase" | "capitalize" | undefined) ??
+    "none";
+  const isItalic = Boolean(rs.isItalic);
+  const isUnderline = Boolean(rs.isUnderline);
+  const isStrikethrough = Boolean(rs.isStrikethrough);
+  const marginTop = pickResolvedNumber(rs, "marginTop", 0);
+  const marginRight = pickResolvedNumber(rs, "marginRight", 0);
+  const marginBottom = pickResolvedNumber(rs, "marginBottom", 0);
+  const marginLeft = pickResolvedNumber(rs, "marginLeft", 0);
+  const paddingTop = pickResolvedNumber(rs, "paddingTop", 0);
+  const paddingRight = pickResolvedNumber(rs, "paddingRight", 0);
+  const paddingBottom = pickResolvedNumber(rs, "paddingBottom", 0);
+  const paddingLeft = pickResolvedNumber(rs, "paddingLeft", 0);
+  const backgroundColor = rs.backgroundColor as string | undefined;
+  const rawOpacity = rs.opacityPercent;
+  const opacityPercent =
+    typeof rawOpacity === "number" && Number.isFinite(rawOpacity)
+      ? rawOpacity
+      : typeof rawOpacity === "string" && rawOpacity.trim() !== ""
+        ? Number(rawOpacity)
+        : undefined;
 
   const displayText = useMemo(() => {
     if (collectionField && contentData?.itemData) {
@@ -182,7 +181,12 @@ export const LinkText = ({
     textDecorationParts.push("underline");
   }
 
-  const style: StyleProp<TextStyle> = {
+  const opacityEffects =
+    opacityPercent !== undefined && Number.isFinite(opacityPercent)
+      ? resolveCraftVisualEffectsRnStyle({ opacityPercent })
+      : {};
+
+  const linkTextStyle: StyleProp<TextStyle> = {
     fontSize,
     fontWeight,
     textAlign,
@@ -201,15 +205,14 @@ export const LinkText = ({
     paddingBottom,
     paddingLeft,
     ...(backgroundColor ? { backgroundColor } : {}),
-    ...resolveCraftVisualEffectsRnStyle({ opacityPercent }),
+    ...opacityEffects,
   } as TextStyle;
 
   return (
     <Pressable onPress={handlePress}>
-      <RNText style={style}>
+      <RNText style={linkTextStyle}>
         {displayText}
       </RNText>
     </Pressable>
   );
 };
-

@@ -19,7 +19,11 @@ import { useResponsiveViewport } from "../contexts/ResponsiveViewportContext";
 import { useSiteCollections } from "../contexts/SiteCollectionsContext";
 import { getCollectionItemsCacheKey } from "../lib/collectionItemsCacheKey";
 import { renderComponent } from "../content/renderer";
-import { resolveResponsiveStyle, type Viewport } from "../content/responsiveStyle";
+import {
+  pickResolvedNumber,
+  resolveResponsiveStyle,
+  type Viewport,
+} from "../content/responsiveStyle";
 import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 import { withOpacityHex } from "../lib/withOpacityHex";
 
@@ -34,19 +38,10 @@ interface ContentListProps {
    */
   filterScope?: string;
   selectedSource?: string;
-  itemsPerRow?: number;
+  /** Responsive стили корня списка (ветки `desktop` / `tablet` / …), включая `itemsPerRow`, рамки, фон. */
+  style?: unknown;
   /** Вложенный responsive `style` шаблонной ячейки (из craft); layout/gap/flex читаются после `resolveResponsiveStyle`. */
   cellTemplateStyle?: unknown;
-  borderRadius?: number;
-  borderTopWidth?: number;
-  borderRightWidth?: number;
-  borderBottomWidth?: number;
-  borderLeftWidth?: number;
-  borderColor?: string;
-  borderStyle?: "none" | "solid" | "dotted";
-  borderOpacity?: number;
-  backgroundColor?: string;
-  opacityPercent?: number;
   children?: ComponentNode[];
 }
 
@@ -57,21 +52,15 @@ interface ContentListProps {
 export const ContentList = ({
   filterScope,
   selectedSource = "",
-  itemsPerRow: itemsPerRowProp,
+  style,
   cellTemplateStyle,
-  backgroundColor = "#FFFFFF",
-  borderRadius = 4,
-  borderTopWidth = 0,
-  borderRightWidth = 0,
-  borderBottomWidth = 0,
-  borderLeftWidth = 0,
-  borderColor = "#CBD5E0",
-  borderStyle = "solid",
-  borderOpacity = 1,
-  opacityPercent,
   children: childrenProp,
 }: ContentListProps) => {
   const { viewport } = useResponsiveViewport();
+  const listRs = useMemo(
+    () => resolveResponsiveStyle(style, viewport),
+    [style, viewport],
+  );
   const mergedCellStyle = useMemo(
     () => resolveResponsiveStyle(cellTemplateStyle, viewport),
     [cellTemplateStyle, viewport],
@@ -142,9 +131,34 @@ export const ContentList = ({
       ? rawCellOpacity
       : undefined;
 
-  const listRootOpacityStyle = resolveCraftVisualEffectsRnStyle({
-    opacityPercent,
-  });
+  const borderRadius = pickResolvedNumber(listRs, "borderRadius", 4);
+  const borderTopWidth = pickResolvedNumber(listRs, "borderTopWidth", 0);
+  const borderRightWidth = pickResolvedNumber(listRs, "borderRightWidth", 0);
+  const borderBottomWidth = pickResolvedNumber(listRs, "borderBottomWidth", 0);
+  const borderLeftWidth = pickResolvedNumber(listRs, "borderLeftWidth", 0);
+  const borderColor =
+    listRs.borderColor != null && listRs.borderColor !== ""
+      ? String(listRs.borderColor)
+      : "#CBD5E0";
+  const borderStyle =
+    (listRs.borderStyle as "none" | "solid" | "dotted" | undefined) ?? "solid";
+  const borderOpacity = pickResolvedNumber(listRs, "borderOpacity", 1);
+  const backgroundColor =
+    listRs.backgroundColor != null && listRs.backgroundColor !== ""
+      ? String(listRs.backgroundColor)
+      : "#FFFFFF";
+  const rawListOpacity = listRs.opacityPercent;
+  const listOpacityPercent =
+    typeof rawListOpacity === "number" && Number.isFinite(rawListOpacity)
+      ? rawListOpacity
+      : typeof rawListOpacity === "string" && rawListOpacity.trim() !== ""
+        ? Number(rawListOpacity)
+        : undefined;
+
+  const listRootOpacityStyle =
+    listOpacityPercent !== undefined && Number.isFinite(listOpacityPercent)
+      ? resolveCraftVisualEffectsRnStyle({ opacityPercent: listOpacityPercent })
+      : {};
 
   const hasCustomBorder =
     borderTopWidth > 0 ||
@@ -176,7 +190,7 @@ export const ContentList = ({
     backgroundColor: backgroundColor ?? "#FFFFFF",
   };
 
-  const itemsPerRow: number = itemsPerRowProp ?? 1;
+  const itemsPerRow: number = pickResolvedNumber(listRs, "itemsPerRow", 1);
   const children: ComponentNode[] = childrenProp ?? [];
   const { domain, collectionItemsByKey, setItemsForKey } = useSiteCollections();
   const { selectedCategoryIdByScope } = useCollectionFilterScope();

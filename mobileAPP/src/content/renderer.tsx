@@ -7,10 +7,7 @@ import React from "react";
 import { View, Text as RNText } from "react-native";
 import type { ComponentNode } from "./interface";
 import { useResponsiveViewport } from "../contexts/ResponsiveViewportContext";
-import {
-  mergeNodePropsForViewport,
-  type Viewport,
-} from "./responsiveStyle";
+import type { Viewport } from "./responsiveStyle";
 import { Body } from "../components/Body";
 import { Block } from "../components/Block";
 import { Text } from "../components/Text";
@@ -55,14 +52,10 @@ export const renderComponent = (
    *  */
   if (componentType === "ContentList") {
     const templateChildren = (node as any).children as ComponentNode[] | undefined;
-    const mergedProps = mergeNodePropsForViewport(
-      (node as any).props ?? {},
-      viewport,
-    );
-    const { children: _omitChildrenFromProps, ...contentListProps } =
-      mergedProps as Record<string, unknown> & {
-        children?: unknown;
-      };
+    const rawProps = ((node as any).props ?? {}) as Record<string, unknown> & {
+      children?: unknown;
+    };
+    const { children: _omitChildrenFromProps, ...contentListProps } = rawProps;
     return (
       <ContentList
         {...(contentListProps as Omit<
@@ -107,11 +100,8 @@ export const renderComponent = (
     );
   }
 
-  const mergedProps = mergeNodePropsForViewport(
-    (node as any).props ?? {},
-    viewport,
-  );
-  return <Component {...mergedProps}>{children}</Component>;
+  const nodeProps = ((node as any).props ?? {}) as Record<string, unknown>;
+  return <Component {...nodeProps}>{children}</Component>;
 };
 
 /**

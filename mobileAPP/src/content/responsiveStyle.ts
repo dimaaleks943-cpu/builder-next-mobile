@@ -11,7 +11,19 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === "object" && !Array.isArray(value);
 
 /**
- * Cascade order: wider breakpoint branches first; later branches override (constructor contract).
+ * Serialized `props.style` branch names (same order as builder / SSR `BRANCHES`).
+ * `desktop` is always merged first; narrower breakpoints override.
+ */
+export const RESPONSIVE_STYLE_BRANCHES = [
+  "desktop",
+  "tablet_landscape",
+  "tablet",
+  "phone_landscape",
+  "phone",
+] as const;
+
+/**
+ * Viewport branches used when mapping window size to a branch (no separate `desktop` viewport on device).
  */
 export const VIEWPORT_CASCADE: Viewport[] = [
   "tablet_landscape",
@@ -28,8 +40,9 @@ const viewportCascadeDepth: Record<Viewport, number> = {
 };
 
 /**
- * Maps window dimensions to one of four responsive branches (no desktop/base).
+ * Maps window dimensions to one of four responsive branches.
  * Uses the shorter side to separate phone vs tablet form factor and orientation for *_landscape.
+ * Styles from the `desktop` branch are always merged in {@link resolveResponsiveStyle} first.
  */
 export const viewportFromDimensions = (
   width: number,
@@ -45,6 +58,10 @@ export const viewportFromDimensions = (
   return isLandscape ? "phone_landscape" : "phone";
 };
 
+/**
+ * Merges `desktop`, then each branch in {@link VIEWPORT_CASCADE} up to and including `viewport`
+ * (same cascade as builder `resolveResponsiveStyle` for non-desktop viewports).
+ */
 export const resolveResponsiveStyle = (
   style: unknown,
   viewport: Viewport,
@@ -52,8 +69,10 @@ export const resolveResponsiveStyle = (
   if (!isPlainObject(style)) return {};
 
   const merged: Record<string, unknown> = {};
-  const depth = viewportCascadeDepth[viewport];
+  const desktop = style.desktop;
+  if (isPlainObject(desktop)) Object.assign(merged, desktop);
 
+  const depth = viewportCascadeDepth[viewport];
   for (let i = 0; i <= depth; i++) {
     const branch = VIEWPORT_CASCADE[i];
     const branchStyle = style[branch];
@@ -63,14 +82,15 @@ export const resolveResponsiveStyle = (
   return merged;
 };
 
-/**
- * Strips `props.style` and spreads merged flat style keys onto the returned props object.
- */
-export const mergeNodePropsForViewport = (
-  nodeProps: Record<string, any>,
-  viewport: Viewport,
-): Record<string, unknown> => {
-  const { style, ...rest } = nodeProps;
-  const resolved = resolveResponsiveStyle(style, viewport);
-  return { ...rest, ...resolved };
+/** Read a finite number from a merged responsive-style record (Craft JSON → RN). */
+export const pickResolvedNumber = (
+  rs: Record<string, unknown>,
+  key: string,
+  fallback: number,
+): number => {
+  const v = rs[key];
+  if (v === undefined || v === null) return fallback;
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
 };

@@ -1,5 +1,8 @@
-import { SHORT_TO_FULL, type ShortStylePropKey, } from "./stylePropsShortMapV1";
-import { VIEWPORT_CASCADE } from "./responsiveStyle";
+import {
+  SHORT_TO_FULL,
+  type ShortStylePropKey,
+} from "./stylePropsShortMapV1";
+import { RESPONSIVE_STYLE_BRANCHES } from "./responsiveStyle";
 
 type StylePropsInput = Record<string, unknown> | null | undefined;
 
@@ -40,18 +43,21 @@ export const decodeStyleProps = (
 
   const decoded = { ...shortProps };
   const style = shortProps.style;
-  if (!isRecord(style)) {
-    return decoded;
-  }
+  const styleRecord = isRecord(style) ? style : {};
+  const decodedStyle: Record<string, Record<string, unknown>> = {};
 
-  const decodedStyle: Record<string, unknown> = {};
-  for (const branch of VIEWPORT_CASCADE) {
-    const branchValue = style[branch];
+  for (const branch of RESPONSIVE_STYLE_BRANCHES) {
+    const branchValue = styleRecord[branch];
     if (!isRecord(branchValue)) continue;
     decodedStyle[branch] = decodeStyleBranch(branchValue);
   }
 
-  decoded.style = decodedStyle;
+  if (Object.keys(decodedStyle).length > 0) {
+    decoded.style = decodedStyle;
+  } else {
+    delete decoded.style;
+  }
+
   return decoded;
 };
 
