@@ -1,5 +1,5 @@
-import { Box, Button, IconButton, Menu, MenuItem } from "@mui/material"
-import { useState } from "react"
+import { Box, IconButton, Menu, MenuItem } from "@mui/material"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
@@ -10,13 +10,21 @@ import { encodeSerializedNodesStyleProps } from "../../../utils/stylePropsCodec"
 import { compactContentListCells } from "../../../utils/compactContentListCells"
 import { normalizeItemPathPrefix } from "../../../utils/normalizeItemPathPrefix.ts"
 import { computePageContentTypes } from "../../../utils/computePageContentTypes"
-import { type Locale, PageType, SUPPORTED_LOCALES } from "../../../api/extranet";
+import {
+  type Locale,
+  PageType,
+  PAGE_MODES,
+  PAGE_VISIBILITY,
+  SUPPORTED_LOCALES,
+} from "../../../api/extranet"
 import {
   collectUsedI18nKeys,
   pruneTranslationsByKeys,
   saveStoredTranslations,
   toLocaleLabel,
 } from "../../../utils/i18nTranslations.ts"
+import { DoneIcon } from "../../../icons/DoneIcon.tsx"
+import { ChevronDownIcon } from "../../../icons/ChevronDownIcon.tsx";
 
 interface BuilderHeaderProps {
   pageId?: string;
@@ -31,6 +39,8 @@ interface BuilderHeaderProps {
    * Для `template` — редактируемый префикс из билдера (строка); для `static` — как с API или null.
    */
   itemPathPrefix?: string | null;
+  initialPageMode?: PAGE_MODES;
+  initialPageVisibility?: PAGE_VISIBILITY;
   onPreviewViewportChange: (viewport: PreviewViewport) => void;
 }
 
@@ -38,6 +48,33 @@ const MODES: { value: BuilderMode; label: string }[] = [
   { value: MODE_TYPE.WEB, label: "Сайт" },
   { value: MODE_TYPE.RN, label: "Приложение" },
 ]
+
+const DEVELOPMENT_MODES: { value: PAGE_MODES; label: string }[] = [
+  { value: PAGE_MODES.COMMON, label: "Общий" },
+  { value: PAGE_MODES.PLATFORM, label: "По платформам" },
+]
+
+const VISIBILITY_OPTIONS: { value: PAGE_VISIBILITY; label: string }[] = [
+  { value: PAGE_VISIBILITY.ACTIVE, label: "Активная" },
+  { value: PAGE_VISIBILITY.NO_INDEX, label: "Закрыта от индексации" },
+  { value: PAGE_VISIBILITY.RESTRICTED, label: "Для просмотра только сотрудниками" },
+]
+
+const baseSelectButtonSx = {
+  display: "flex",
+  alignItems: "center",
+  gap: "4px",
+  padding: "4px 8px",
+  border: "none",
+  borderRadius: "4px",
+  backgroundColor: "#F9F9F9",
+  cursor: "pointer",
+  height: "20px",
+  boxSizing: "border-box",
+  "&:hover": {
+    backgroundColor: "#F1F1F5",
+  },
+} as const
 
 export const BuilderHeader = ({
   pageId,
@@ -48,6 +85,8 @@ export const BuilderHeader = ({
   pageType = PageType.STATIC,
   collectionTypeId = null,
   itemPathPrefix = null,
+  initialPageMode = PAGE_MODES.PLATFORM,
+  initialPageVisibility = PAGE_VISIBILITY.ACTIVE,
   onPreviewViewportChange,
 }: BuilderHeaderProps) => {
   const navigate = useNavigate()
@@ -56,6 +95,20 @@ export const BuilderHeader = ({
   const [updateExtranetPage, { isLoading: isSaving }] =
     useUpdateExtranetPageMutation()
   const [langMenuAnchorEl, setLangMenuAnchorEl] = useState<null | HTMLElement>(null)
+  const [devModeMenuAnchorEl, setDevModeMenuAnchorEl] = useState<null | HTMLElement>(null)
+  const [visibilityMenuAnchorEl, setVisibilityMenuAnchorEl] =
+    useState<null | HTMLElement>(null)
+  const [pageMode, setPageMode] = useState<PAGE_MODES>(initialPageMode)
+  const [pageVisibility, setPageVisibility] =
+    useState<PAGE_VISIBILITY>(initialPageVisibility)
+
+  useEffect(() => {
+    setPageMode(initialPageMode)
+  }, [initialPageMode])
+
+  useEffect(() => {
+    setPageVisibility(initialPageVisibility)
+  }, [initialPageVisibility])
 
   const handleClick = () => {
     actions.clearEvents()
@@ -144,6 +197,8 @@ export const BuilderHeader = ({
       translate_mobile: prunedTranslateMobile,
       sort: 0,
       site_id: siteId,
+      mode: pageMode,
+      visibility: pageVisibility,
     }
 
     try {
@@ -165,6 +220,10 @@ export const BuilderHeader = ({
   }
 
   const isLangMenuOpen = Boolean(langMenuAnchorEl)
+  const isDevModeMenuOpen = Boolean(devModeMenuAnchorEl)
+  const isVisibilityMenuOpen = Boolean(visibilityMenuAnchorEl)
+  const selectedVisibilityLabel =
+    VISIBILITY_OPTIONS.find(({ value }) => value === pageVisibility)?.label ?? "Активная"
 
   return (
     <Box
@@ -185,11 +244,100 @@ export const BuilderHeader = ({
       onClick={handleClick}
     >
 
-      <IconButton onClick={() => navigate(-1)} sx={{ padding: 0 }}>
-        {"<="}
-      </IconButton>
+      <Box display="flex" columnGap="24px" alignItems="center">
+        <IconButton onClick={() => navigate(-1)} sx={{ padding: 0 }}>
+          {"<="}
+        </IconButton>
 
-      <Box sx={{ display: "flex", alignItems: "center", columnGap: "12px" }}>
+        <Box
+          component="button"
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            setDevModeMenuAnchorEl(e.currentTarget)
+          }}
+          sx={{
+            ...baseSelectButtonSx,
+            justifyContent: "flex-end",
+          }}
+        >
+          <Box
+            component="span"
+            sx={{
+              fontSize: "10px",
+              lineHeight: "14px",
+              letterSpacing: "0.015em",
+              color: "#1B1D21",
+              flex: 1,
+              textAlign: "left",
+            }}
+          >
+            {pageMode === PAGE_MODES.PLATFORM ? "По платформам" : "Общий"}
+          </Box>
+          <Box
+            component="span"
+            sx={{ display: "inline-flex", width: "12px", height: "12px" }}
+            aria-hidden
+          >
+            <ChevronDownIcon size={12} fill={COLORS.gray700}/>
+          </Box>
+        </Box>
+        <Menu
+          anchorEl={devModeMenuAnchorEl}
+          open={isDevModeMenuOpen}
+          onClose={() => setDevModeMenuAnchorEl(null)}
+          onClick={(e) => e.stopPropagation()}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+          transformOrigin={{ vertical: "top", horizontal: "left" }}
+          sx={{ zIndex: 12000 }}
+          slotProps={{
+            paper: {
+              sx: {
+                width: "228px",
+                borderRadius: "4px",
+                boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
+                mt: "4px",
+              },
+            },
+          }}
+        >
+          <Box sx={{ padding: "8px", borderBottom: "1px solid #DFDAEB" }}>
+            <Box sx={{ fontSize: "12px", fontWeight: 500, lineHeight: "14px", color: "#1B1D21" }}>
+              Режим разработки
+            </Box>
+          </Box>
+          <Box sx={{ padding: "8px", display: "flex", flexDirection: "column", gap: "4px" }}>
+            {DEVELOPMENT_MODES.map(({ value, label }) => (
+              <MenuItem
+                key={value}
+                onClick={() => {
+                  setPageMode(value)
+                  setDevModeMenuAnchorEl(null)
+                  if (value === PAGE_MODES.COMMON && modeContext?.mode === MODE_TYPE.RN) {
+                    handleModeChange(MODE_TYPE.WEB)
+                  }
+                }}
+                sx={{
+                  minHeight: "16px",
+                  padding: "2px 0",
+                  fontSize: "10px",
+                  lineHeight: "14px",
+                  letterSpacing: "0.015em",
+                  display: "flex",
+                  gap: "4px",
+                }}
+              >
+                <Box sx={{ width: "12px", height: "12px", display: "inline-flex" }}>
+                  {pageMode === value ? <DoneIcon size={12} fill="#00C78D" /> : null}
+                </Box>
+                <Box component="span">{value === PAGE_MODES.PLATFORM ? "По платформам" : label}</Box>
+              </MenuItem>
+            ))}
+          </Box>
+        </Menu>
+      </Box>
+
+      <Box sx={{ display: "flex", alignItems: "center", columnGap: "24px" }}>
         {modeContext && (
           <>
             <Box
@@ -215,8 +363,19 @@ export const BuilderHeader = ({
             >
               <Box
                 component="span"
-                sx={{ display: "inline-flex", width: "16px", height: "16px" }}
-                aria-hidden
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "2px 4px",
+                  border: "none",
+                  borderRadius: "4px",
+                  backgroundColor: "transparent",
+                  cursor: "pointer",
+                  "&:hover": {
+                    backgroundColor: COLORS.gray100,
+                  },
+                }}
               >
                 <svg viewBox="0 0 16 16" width="16" height="16" fill="none">
                   <circle cx="8" cy="8" r="6" stroke="#1B1D21" strokeWidth="1"/>
@@ -224,7 +383,7 @@ export const BuilderHeader = ({
                   <path d="M8 2C6.2 3.8 5.2 6 5.2 8C5.2 10 6.2 12.2 8 14" stroke="#1B1D21" strokeWidth="1"/>
                   <path d="M8 2C9.8 3.8 10.8 6 10.8 8C10.8 10 9.8 12.2 8 14" stroke="#1B1D21" strokeWidth="1"/>
                 </svg>
-              </Box>
+
               <Box
                 component="span"
                 sx={{
@@ -238,16 +397,8 @@ export const BuilderHeader = ({
               >
                 {toLocaleLabel(modeContext.activeLocale)}
               </Box>
-              <Box
-                component="span"
-                sx={{ display: "inline-flex", width: "12px", height: "12px" }}
-                aria-hidden
-              >
-                <svg viewBox="0 0 12 12" width="12" height="12" fill="none">
-                  <path d="M3 4.5L6 7.5L9 4.5" stroke="#727280" strokeWidth="1.2" strokeLinecap="round"
-                        strokeLinejoin="round"/>
-                </svg>
-              </Box>
+              <ChevronDownIcon size={12} fill={COLORS.gray700}/>
+            </Box>
             </Box>
             <Menu
               anchorEl={langMenuAnchorEl}
@@ -272,6 +423,7 @@ export const BuilderHeader = ({
               ))}
             </Menu>
 
+            {pageMode !== PAGE_MODES.COMMON && (
             <Box
               sx={{
                 display: "flex",
@@ -313,20 +465,107 @@ export const BuilderHeader = ({
                 </Box>
               ))}
             </Box>
+            )}
 
           </>
         )}
 
       </Box>
 
-      <Button
-        variant="outlined"
-        size="small"
+    <Box sx={{display: "flex", columnGap: "24px"}}>
+      <IconButton
         onClick={handleSave}
         disabled={isSaving}
+        sx={{
+          width: "20px",
+          height: "20px",
+          color: "#00C78D",
+          padding: 0,
+        }}
       >
-        Сохранить
-      </Button>
+        <DoneIcon size={20} fill="#00C78D" />
+      </IconButton>
+
+      <Box
+        component="button"
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          setVisibilityMenuAnchorEl(e.currentTarget)
+        }}
+        sx={baseSelectButtonSx}
+      >
+        <Box
+          component="span"
+          sx={{ fontSize: "10px", lineHeight: "14px", letterSpacing: "0.015em", color: "#1B1D21" }}
+        >
+          {selectedVisibilityLabel}
+        </Box>
+        <Box
+          component="span"
+          sx={{ display: "inline-flex", width: "12px", height: "12px" }}
+          aria-hidden
+        >
+          <ChevronDownIcon size={12} fill={COLORS.gray700}/>
+        </Box>
+      </Box>
+      <Menu
+        anchorEl={visibilityMenuAnchorEl}
+        open={isVisibilityMenuOpen}
+        onClose={() => setVisibilityMenuAnchorEl(null)}
+        onClick={(e) => e.stopPropagation()}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        sx={{ zIndex: 12000 }}
+        slotProps={{
+          paper: {
+            sx: {
+              width: "228px",
+              borderRadius: "4px",
+              boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
+              mt: "4px",
+            },
+          },
+        }}
+      >
+        <Box sx={{ padding: "8px", borderBottom: "1px solid #DFDAEB" }}>
+          <Box sx={{ fontSize: "12px", fontWeight: 500, lineHeight: "14px", color: "#1B1D21" }}>
+            Выберите тип публикации
+          </Box>
+        </Box>
+        <Box sx={{ padding: "8px", display: "flex", flexDirection: "column", gap: "4px" }}>
+          {VISIBILITY_OPTIONS.map(({ value }) => (
+            <MenuItem
+              key={value}
+              onClick={() => {
+                setPageVisibility(value)
+                setVisibilityMenuAnchorEl(null)
+              }}
+              sx={{
+                minHeight: "16px",
+                padding: "2px 0",
+                fontSize: "10px",
+                lineHeight: "14px",
+                letterSpacing: "0.015em",
+                display: "flex",
+                gap: "4px",
+              }}
+            >
+              <Box sx={{ width: "12px", height: "12px", display: "inline-flex" }}>
+                {pageVisibility === value ? <DoneIcon size={12} fill="#00C78D" /> : null}
+              </Box>
+              <Box component="span">
+                {value === PAGE_VISIBILITY.ACTIVE
+                  ? "Активна"
+                  : value === PAGE_VISIBILITY.NO_INDEX
+                    ? "Закрыта от индексации"
+                    : "Для просмотра только сотрудниками"}
+              </Box>
+            </MenuItem>
+          ))}
+        </Box>
+      </Menu>
+    </Box>
     </Box>
   )
 }

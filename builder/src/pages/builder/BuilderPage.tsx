@@ -324,6 +324,8 @@ export const BuilderPage = () => {
                 directoryId={pageMeta?.directory_id ?? null}
                 pageType={pageMeta?.type ?? PageType.STATIC}
                 collectionTypeId={pageMeta?.collection_type_id ?? null}
+                initialPageMode={pageMeta?.mode}
+                initialPageVisibility={pageMeta?.visibility}
                 itemPathPrefix={
                   pageMeta?.type === PageType.TEMPLATE
                     ? templateItemPathPrefix

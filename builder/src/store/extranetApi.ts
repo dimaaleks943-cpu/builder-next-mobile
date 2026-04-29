@@ -11,6 +11,8 @@ import {
   type PaginatedResponse,
   type ExtranetPage,
   type PageType,
+  type PAGE_MODES,
+  type PAGE_VISIBILITY,
 } from "../api/extranet"
 
 const baseQuery = fetchBaseQuery({
@@ -56,6 +58,8 @@ export type UpdateExtranetPageBody = {
   translate_mobile: TranslationsByLocale
   sort: number
   site_id: number
+  mode: PAGE_MODES
+  visibility: PAGE_VISIBILITY
 }
 
 export const extranetApi = createApi({
