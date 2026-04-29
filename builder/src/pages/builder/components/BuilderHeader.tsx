@@ -295,11 +295,11 @@ export const BuilderHeader = ({
               sx: {
                 width: "228px",
                 borderRadius: "4px",
-                boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
                 mt: "4px",
               },
             },
           }}
+          MenuListProps={{ disablePadding: true }}
         >
           <Box sx={{ padding: "8px", borderBottom: "1px solid #DFDAEB" }}>
             <Box sx={{ fontSize: "12px", fontWeight: 500, lineHeight: "14px", color: "#1B1D21" }}>
@@ -522,11 +522,11 @@ export const BuilderHeader = ({
             sx: {
               width: "228px",
               borderRadius: "4px",
-              boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
               mt: "4px",
             },
           },
         }}
+        MenuListProps={{ disablePadding: true }}
       >
         <Box sx={{ padding: "8px", borderBottom: "1px solid #DFDAEB" }}>
           <Box sx={{ fontSize: "12px", fontWeight: 500, lineHeight: "14px", color: "#1B1D21" }}>
