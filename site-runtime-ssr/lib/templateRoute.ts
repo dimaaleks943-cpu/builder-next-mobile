@@ -78,6 +78,7 @@ export function resolveTemplatePageForSlug(
   const candidates = pages.filter(
     (p) =>
       isTemplateSitePage(p) &&
+      p.version === null &&
       Boolean(p.collection_type_id?.trim()),
   )
   const scored = candidates

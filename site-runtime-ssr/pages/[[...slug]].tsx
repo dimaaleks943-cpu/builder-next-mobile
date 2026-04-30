@@ -1,8 +1,16 @@
 import type { GetServerSideProps, GetServerSidePropsResult } from "next"
 import Head from "next/head"
+import type { ParsedUrlQuery } from "querystring"
 import { renderPage } from "@/lib/renderer"
 import type { ComponentNode } from "@/lib/interface"
-import { getSitePages, normalizeSiteDomain, type SitePage } from "@/lib/sitePages"
+import {
+  findOriginalByCode,
+  findVersionByCode,
+  getSitePages,
+  normalizeSiteDomain,
+  PAGE_TYPES,
+  type SitePage,
+} from "@/lib/sitePages"
 import { craftContentToComponents } from "@/lib/craftContentToComponents"
 import { fetchContentItemBySlug, fetchContentItems } from "@/lib/collectionsApi"
 import { fetchContentCategoryBySlug } from "@/lib/categoriesApi"
@@ -32,7 +40,6 @@ import { PageLocaleProvider } from "@/components/PageLocaleContext"
 import {
   getItemContentTypeId,
   isStaticSitePage,
-  isSystemComponentSitePage,
   isSystemPageSitePage,
   isTemplateSitePage,
   normalizeItemPathPrefix,
@@ -51,6 +58,8 @@ interface PageProps {
   components: ComponentNode[]
   collectionItemsByTypeId: Record<string, IContentItem[]>
   sitePages: SitePage[]
+  headerComponents: ComponentNode[]
+  footerComponents: ComponentNode[]
   /** Данные записи для template-страницы (поля Text/Image вне ContentList). */
   templateContentData: {
     collectionKey: string
@@ -74,23 +83,88 @@ function findContentPage(
   slugPath: string,
 ): SitePage | undefined {
   return (
-    pages.find((p) => p.slug === slugPath && isContentSitePage(p)) ||
+    pages.find(
+      (p) =>
+        p.slug === slugPath && isContentSitePage(p) && p.version === null,
+    ) ||
     (slugPath === "/"
-      ? pages.find((p) => p.slug === "/" && isContentSitePage(p))
+      ? pages.find(
+          (p) => p.slug === "/" && isContentSitePage(p) && p.version === null,
+        )
       : undefined)
   )
 }
 
-function findSystemComponentByCode(
+function findPreviewPageByOriginalCode(
   pages: SitePage[],
-  code: "header" | "footer",
-): SitePage | undefined {
-  return pages.find(
-    (p) =>
-      isSystemComponentSitePage(p) &&
-      p.version === null &&
-      p.code?.trim().toLowerCase() === code,
+  query: ParsedUrlQuery,
+  originalPage: SitePage,
+): SitePage {
+  const code = originalPage.code
+  if (!code) {
+    return originalPage
+  }
+
+  const requestedVersion = readQueryString(query[code])
+  if (!requestedVersion) {
+    return originalPage
+  }
+
+  return (
+    findVersionByCode(
+      pages,
+      originalPage.type,
+      code,
+      requestedVersion,
+    ) ?? originalPage
   )
+}
+
+function resolveSystemLayoutComponents(
+  pages: SitePage[],
+  query: ParsedUrlQuery,
+): { headerComponents: ComponentNode[]; footerComponents: ComponentNode[] } {
+  const pickByCode = (code: "header" | "footer"): SitePage | undefined => {
+    const requestedVersion = readQueryString(query[code])
+    return (
+      (requestedVersion
+        ? findVersionByCode(
+            pages,
+            PAGE_TYPES.SYSTEM_COMPONENT,
+            code,
+            requestedVersion,
+          )
+        : undefined) ??
+      findOriginalByCode(pages, PAGE_TYPES.SYSTEM_COMPONENT, code)
+    )
+  }
+
+  const headerPage = pickByCode("header")
+  const footerPage = pickByCode("footer")
+
+  return {
+    headerComponents: headerPage
+      ? craftContentToComponents(headerPage.content)
+      : [],
+    footerComponents: footerPage
+      ? craftContentToComponents(footerPage.content)
+      : [],
+  }
+}
+
+function readQueryString(value: string | string[] | undefined): string | null {
+  if (typeof value === "string") {
+    const trimmed = value.trim()
+    return trimmed.length > 0 ? trimmed : null
+  }
+  if (Array.isArray(value) && value.length > 0) {
+    const first = value[0]
+    if (typeof first === "string") {
+      const trimmed = first.trim()
+      return trimmed.length > 0 ? trimmed : null
+    }
+  }
+  return null
 }
 
 async function prefetchContentListPairs(
@@ -144,6 +218,7 @@ async function prefetchContentListPairs(
 export const getServerSideProps: GetServerSideProps<PageProps> = async (
   context,
 ): Promise<GetServerSidePropsResult<PageProps>> => {
+  const query: ParsedUrlQuery = context.query
   const hostHeader = "marketflow.store" // context.req.headers.host ?? "" //
   const domain = normalizeSiteDomain(hostHeader)
 
@@ -152,7 +227,9 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
   }
 
   const rawSlug =
-    (context.params?.slug as string[] | undefined)?.join("/") ?? ""
+    (context.params?.slug as string[] | undefined)?.join("/") ??
+    readQueryString(query.slug) ??
+    ""
   const slugPath =
     rawSlug.length === 0 ? "/" : rawSlug.startsWith("/") ? rawSlug : `/${rawSlug}`
 
@@ -164,28 +241,42 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
     return { notFound: true }
   }
 
+  const { headerComponents, footerComponents } = resolveSystemLayoutComponents(
+    pages,
+    query,
+  )
+
   const { baseSlug, tailSlug } = splitBaseSlugAndTail(slugPathWithoutLocale)
 
   if (tailSlug === null) {
-    const page = findContentPage(pages, slugPathWithoutLocale)
-    if (!page?.content) {
+    const routingPage = findContentPage(pages, slugPathWithoutLocale)
+    if (!routingPage?.content) {
       return { notFound: true }
     }
 
-    const components = craftContentToComponents(page.content)
+    const renderPageCandidate = findPreviewPageByOriginalCode(
+      pages,
+      query,
+      routingPage,
+    )
+    if (!renderPageCandidate.content) {
+      return { notFound: true }
+    }
+
+    const components = craftContentToComponents(renderPageCandidate.content)
     if (components.length === 0) {
       return { notFound: true }
     }
 
-    const pageBaseSlug = normalizeItemPathPrefix(page.slug)
+    const pageBaseSlug = normalizeItemPathPrefix(routingPage.slug)
     //TODO временно получаем переводы из хардкода, в дальнейшем переводы прихоядт вместе со страницей
-    const pageTranslate = getHardcodedTranslationsForPage(page.id)
+    const pageTranslate = getHardcodedTranslationsForPage(renderPageCandidate.id)
 
     const {
       collectionItemsByTypeId,
       initialSelectedCategoryIdByScope,
       initialSelectedCategorySlugByScope,
-    } = await prefetchContentListPairs(domain, page.content)
+    } = await prefetchContentListPairs(domain, renderPageCandidate.content)
 
     return {
       props: {
@@ -196,6 +287,8 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
         components,
         collectionItemsByTypeId,
         sitePages: pages,
+        headerComponents,
+        footerComponents,
         templateContentData: null,
         initialSelectedCategoryIdByScope,
         initialSelectedCategorySlugByScope,
@@ -213,9 +306,9 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       return { notFound: true }
     }
 
-    const page = resolved.page
-    const typeId = page.collection_type_id?.trim()
-    if (!typeId || !isTemplateSitePage(page)) {
+    const routingPage = resolved.page
+    const typeId = routingPage.collection_type_id?.trim()
+    if (!typeId || !isTemplateSitePage(routingPage)) {
       return { notFound: true }
     }
 
@@ -227,11 +320,16 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       return { notFound: true }
     }
 
-    if (!page.content) {
+    const renderPageCandidate = findPreviewPageByOriginalCode(
+      pages,
+      query,
+      routingPage,
+    )
+    if (!renderPageCandidate.content) {
       return { notFound: true }
     }
 
-    const components = craftContentToComponents(page.content)
+    const components = craftContentToComponents(renderPageCandidate.content)
     if (components.length === 0) {
       return { notFound: true }
     }
@@ -241,7 +339,9 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       itemData: item,
     }
 
-    const pairs = extractContentListPrefetchPairsFromCraftContent(page.content)
+    const pairs = extractContentListPrefetchPairsFromCraftContent(
+      renderPageCandidate.content,
+    )
     const collectionItemsByTypeId: Record<string, IContentItem[]> = {}
     const typeIdLower = typeId.toLowerCase()
 
@@ -275,7 +375,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
     )
 
     const pageBaseSlug = normalizeItemPathPrefix(
-      page.item_path_prefix ?? page.slug,
+      routingPage.item_path_prefix ?? routingPage.slug,
     )
     const categorySlugTrailFromUrl = categoryTrailBetweenPrefixAndItemSlug(
       pageBaseSlug,
@@ -283,7 +383,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       tailSlug,
     )
     //TODO временно получаем переводы из хардкода, в дальнейшем переводы прихоядт вместе со страницей
-    const pageTranslate = getHardcodedTranslationsForPage(page.id)
+    const pageTranslate = getHardcodedTranslationsForPage(renderPageCandidate.id)
 
     return {
       props: {
@@ -294,6 +394,8 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
         components,
         collectionItemsByTypeId,
         sitePages: pages,
+        headerComponents,
+        footerComponents,
         templateContentData,
         initialSelectedCategoryIdByScope: EMPTY_CATEGORY_SCOPE,
         initialSelectedCategorySlugByScope: EMPTY_CATEGORY_SCOPE,
@@ -308,12 +410,21 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
     return { notFound: true }
   }
 
-  const page = findContentPage(pages, baseSlug)
-  if (!page?.content) {
+  const routingPage = findContentPage(pages, baseSlug)
+  if (!routingPage?.content) {
     return { notFound: true }
   }
 
-  const components = craftContentToComponents(page.content)
+  const renderPageCandidate = findPreviewPageByOriginalCode(
+    pages,
+    query,
+    routingPage,
+  )
+  if (!renderPageCandidate.content) {
+    return { notFound: true }
+  }
+
+  const components = craftContentToComponents(renderPageCandidate.content)
   if (components.length === 0) {
     return { notFound: true }
   }
@@ -325,13 +436,13 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
     collectionItemsByTypeId,
     initialSelectedCategoryIdByScope,
     initialSelectedCategorySlugByScope,
-  } = await prefetchContentListPairs(domain, page.content, {
+  } = await prefetchContentListPairs(domain, renderPageCandidate.content, {
     id: category.id,
     slug: categorySlugForState,
   })
 
-  const pageBaseSlug = normalizeItemPathPrefix(page.slug)
-  const pageTranslate = getHardcodedTranslationsForPage(page.id)
+  const pageBaseSlug = normalizeItemPathPrefix(routingPage.slug)
+  const pageTranslate = getHardcodedTranslationsForPage(renderPageCandidate.id)
 
   return {
     props: {
@@ -342,6 +453,8 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       components,
       collectionItemsByTypeId,
       sitePages: pages,
+      headerComponents,
+      footerComponents,
       templateContentData: null,
       initialSelectedCategoryIdByScope,
       initialSelectedCategorySlugByScope,
@@ -359,6 +472,8 @@ export default function Page({
   components,
   collectionItemsByTypeId,
   sitePages,
+  headerComponents,
+  footerComponents,
   templateContentData,
   initialSelectedCategoryIdByScope,
   initialSelectedCategorySlugByScope,
@@ -368,15 +483,8 @@ export default function Page({
   const publicPath = prefixPublicPath(slug, locale)
   const ogUrlSuffix = publicPath === "/" ? "" : publicPath
 
-  const headerComponents = craftContentToComponents(
-    findSystemComponentByCode(sitePages, "header")?.content ?? "",
-  )
-  const footerComponents = craftContentToComponents(
-    findSystemComponentByCode(sitePages, "footer")?.content ?? "",
-  )
-
   const main = (
-    <main style={{ minHeight: "100vh" }}>
+    <main>
       {renderPage(components)}
     </main>
   )

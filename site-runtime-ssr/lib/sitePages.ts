@@ -68,3 +68,26 @@ export const getSitePages = async (
   }
 }
 
+export function findOriginalByCode(
+  pages: SitePage[],
+  type: PAGE_TYPES,
+  code: string,
+): SitePage | undefined {
+  return pages.find(
+    (page) =>
+      page.type === type && page.code === code && page.version === null,
+  )
+}
+
+export function findVersionByCode(
+  pages: SitePage[],
+  type: PAGE_TYPES,
+  code: string,
+  version: string,
+): SitePage | undefined {
+  return pages.find(
+    (page) =>
+      page.type === type && page.code === code && page.version === version,
+  )
+}
+
