@@ -1,5 +1,6 @@
 import type { IContentItem } from "@/lib/contentTypes"
 import type { SitePage } from "@/lib/sitePages"
+import { PAGE_TYPES } from "@/lib/sitePages"
 
 /** Согласовано с builder `normalizeItemPathPrefix`: префикс URL записей коллекции на template-странице. */
 export function normalizeItemPathPrefix(
@@ -52,7 +53,19 @@ function pageSortKey(page: SitePage): number {
 }
 
 export function isTemplateSitePage(page: SitePage): boolean {
-  return page.type === "template"
+  return page.type === PAGE_TYPES.TEMPLATE
+}
+
+export function isStaticSitePage(page: SitePage): boolean {
+  return page.type === PAGE_TYPES.STATIC
+}
+
+export function isSystemPageSitePage(page: SitePage): boolean {
+  return page.type === PAGE_TYPES.SYSTEM_PAGE
+}
+
+export function isSystemComponentSitePage(page: SitePage): boolean {
+  return page.type === PAGE_TYPES.SYSTEM_COMPONENT
 }
 
 /**

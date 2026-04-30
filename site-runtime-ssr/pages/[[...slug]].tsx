@@ -31,6 +31,9 @@ import { StorefrontPageProvider } from "@/components/StorefrontPageContext"
 import { PageLocaleProvider } from "@/components/PageLocaleContext"
 import {
   getItemContentTypeId,
+  isStaticSitePage,
+  isSystemComponentSitePage,
+  isSystemPageSitePage,
   isTemplateSitePage,
   normalizeItemPathPrefix,
   resolveTemplatePageForSlug,
@@ -62,16 +65,31 @@ interface PageProps {
   categorySlugTrailFromUrl: string | null
 }
 
-function findStaticPage(
+function isContentSitePage(page: SitePage): boolean {
+  return isStaticSitePage(page) || isSystemPageSitePage(page)
+}
+
+function findContentPage(
   pages: SitePage[],
   slugPath: string,
 ): SitePage | undefined {
-  const isStatic = (p: SitePage) => !isTemplateSitePage(p)
   return (
-    pages.find((p) => p.slug === slugPath && isStatic(p)) ||
+    pages.find((p) => p.slug === slugPath && isContentSitePage(p)) ||
     (slugPath === "/"
-      ? pages.find((p) => p.slug === "/" && isStatic(p))
+      ? pages.find((p) => p.slug === "/" && isContentSitePage(p))
       : undefined)
+  )
+}
+
+function findSystemComponentByCode(
+  pages: SitePage[],
+  code: "header" | "footer",
+): SitePage | undefined {
+  return pages.find(
+    (p) =>
+      isSystemComponentSitePage(p) &&
+      p.version === null &&
+      p.code?.trim().toLowerCase() === code,
   )
 }
 
@@ -149,7 +167,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
   const { baseSlug, tailSlug } = splitBaseSlugAndTail(slugPathWithoutLocale)
 
   if (tailSlug === null) {
-    const page = findStaticPage(pages, slugPathWithoutLocale)
+    const page = findContentPage(pages, slugPathWithoutLocale)
     if (!page?.content) {
       return { notFound: true }
     }
@@ -290,7 +308,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
     return { notFound: true }
   }
 
-  const page = findStaticPage(pages, baseSlug)
+  const page = findContentPage(pages, baseSlug)
   if (!page?.content) {
     return { notFound: true }
   }
@@ -350,12 +368,23 @@ export default function Page({
   const publicPath = prefixPublicPath(slug, locale)
   const ogUrlSuffix = publicPath === "/" ? "" : publicPath
 
+  const headerComponents = craftContentToComponents(
+    findSystemComponentByCode(sitePages, "header")?.content ?? "",
+  )
+  const footerComponents = craftContentToComponents(
+    findSystemComponentByCode(sitePages, "footer")?.content ?? "",
+  )
+
   const main = (
     <main style={{ minHeight: "100vh" }}>
       {renderPage(components)}
     </main>
   )
-  const responsiveCss = buildResponsiveCss(components)
+  const responsiveCss = buildResponsiveCss([
+    ...headerComponents,
+    ...components,
+    ...footerComponents,
+  ])
 
   const inner =
     templateContentData ? (
@@ -401,7 +430,9 @@ export default function Page({
               locale={locale}
               translate={pageTranslate.translate}
             >
+              {renderPage(headerComponents)}
               {inner}
+              {renderPage(footerComponents)}
             </PageLocaleProvider>
           </StorefrontPageProvider>
         </CollectionFilterScopeProvider>

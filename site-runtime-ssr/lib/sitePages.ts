@@ -1,10 +1,25 @@
+export enum PAGE_VISIBILITY {
+  ACTIVE = "active",
+  NOINDEX = "noindex",
+  RESTRICTED = "restricted",
+}
+
+export enum PAGE_TYPES {
+  STATIC = "static",
+  TEMPLATE = "template",
+  SYSTEM_COMPONENT = "system_component",
+  SYSTEM_PAGE = "system_page",
+}
+
 export interface SitePage {
   id: string
   name: string
   slug: string
   content: string
-  /** Публичный GET /pages может не отдавать — тогда считаем страницу статической. */
-  type?: "static" | "template"
+  type: PAGE_TYPES
+  version: string | null
+  code: string | null
+  visibility: PAGE_VISIBILITY
   collection_type_id?: string | null
   item_path_prefix?: string | null
   /**
