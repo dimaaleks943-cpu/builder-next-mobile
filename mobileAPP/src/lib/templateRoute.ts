@@ -1,5 +1,5 @@
 import type { IContentItem } from "../api/contentTypes";
-import type { SitePage } from "../api/sitePagesApi";
+import { PAGE_TYPES, type SitePage } from "../api/sitePagesApi";
 import { getContentFieldDisplayValue } from "../content/contentFieldValue";
 
 /** Согласовано с builder `normalizeItemPathPrefix`: префикс URL записей коллекции на template-странице. */
@@ -99,7 +99,7 @@ function pageSortKey(page: SitePage): number {
 }
 
 export function isTemplateSitePage(page: SitePage): boolean {
-  return page.type === "template";
+  return page.type === PAGE_TYPES.TEMPLATE;
 }
 
 /**
@@ -125,6 +125,7 @@ export function resolveTemplatePageForSlug(
   const candidates = pages.filter(
     (p) =>
       isTemplateSitePage(p) &&
+      (p.version ?? null) === null &&
       Boolean(p.collection_type_id?.trim()),
   );
 

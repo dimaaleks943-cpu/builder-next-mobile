@@ -57,7 +57,7 @@ export const CategoryFilter = ({
 
   const navigation = useNavigation<any>();
   const { domain } = useSiteCollections();
-  const { pageBaseSlug } = useStorefrontPage();
+  const { pageBaseSlug, previewParams } = useStorefrontPage();
   const { selectedCategoryIdByScope, setCategoryForScope } =
     useCollectionFilterScope();
   const scope = filterScope.trim();
@@ -100,9 +100,10 @@ export const CategoryFilter = ({
       setCategoryForScope(scope, null);
       navigation.navigate("Page", {
         slug: pageBaseSlug && pageBaseSlug !== "/" ? pageBaseSlug : "/",
+        previewParams,
       });
     }
-  }, [scope, setCategoryForScope, navigation, pageBaseSlug]);
+  }, [scope, setCategoryForScope, navigation, pageBaseSlug, previewParams]);
 
   /** Выбор категории: state + навигация на slug-URL как на SSR. */
   const onSelectCategory = useCallback(
@@ -113,10 +114,11 @@ export const CategoryFilter = ({
       if (s) {
         navigation.navigate("Page", {
           slug: buildStorefrontCategoryUrl(pageBaseSlug, s),
+          previewParams,
         });
       }
     },
-    [scope, setCategoryForScope, navigation, pageBaseSlug],
+    [scope, setCategoryForScope, navigation, pageBaseSlug, previewParams],
   );
 
   if (!scope) {

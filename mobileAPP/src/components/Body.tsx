@@ -43,6 +43,5 @@ export const Body = ({ children, style }: BodyProps) => {
 
 const styles = StyleSheet.create({
   root: {
-    flex: 1,
   },
 });

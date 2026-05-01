@@ -1,13 +1,17 @@
 import React from "react";
 
+import type { PreviewParams } from "../lib/previewQuery";
+
 export type StorefrontPageContextValue = {
   pageBaseSlug: string;
   categorySlugTrailFromUrl: string | null;
+  previewParams: PreviewParams;
 };
 
 const defaultValue: StorefrontPageContextValue = {
   pageBaseSlug: "/",
   categorySlugTrailFromUrl: null,
+  previewParams: {},
 };
 
 const StorefrontPageContext =
@@ -17,14 +21,16 @@ export const StorefrontPageProvider = ({
   children,
   pageBaseSlug,
   categorySlugTrailFromUrl,
+  previewParams,
 }: {
   children: React.ReactNode;
   pageBaseSlug: string;
   categorySlugTrailFromUrl: string | null;
+  previewParams: PreviewParams;
 }) => {
   const value = React.useMemo(
-    () => ({ pageBaseSlug, categorySlugTrailFromUrl }),
-    [pageBaseSlug, categorySlugTrailFromUrl],
+    () => ({ pageBaseSlug, categorySlugTrailFromUrl, previewParams }),
+    [pageBaseSlug, categorySlugTrailFromUrl, previewParams],
   );
   return (
     <StorefrontPageContext.Provider value={value}>

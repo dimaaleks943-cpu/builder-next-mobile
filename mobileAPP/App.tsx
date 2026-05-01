@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { StatusBar } from "expo-status-bar"
 import {
   ActivityIndicator,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,16 +13,28 @@ import {
   SafeAreaView,
 } from "react-native-safe-area-context"
 import { WebView } from "react-native-webview"
-import { NavigationContainer } from "@react-navigation/native"
+import {
+  NavigationContainer,
+  createNavigationContainerRef,
+} from "@react-navigation/native"
 import {
   createNativeStackNavigator,
   type NativeStackScreenProps,
 } from "@react-navigation/native-stack"
 import type { IContentItem } from "./src/api/contentTypes"
 import { SITE_DOMAIN, WEB_VIEW_BASE_URL } from "./src/api/config"
-import { fetchSitePages, type SitePage } from "./src/api/sitePagesApi"
+import {
+  fetchSitePages,
+  resolveSystemLayoutComponents,
+  type SitePage,
+} from "./src/api/sitePagesApi"
 import { resolveStorefrontRoute } from "./src/api/resolveStorefrontRoute"
 import { isTemplateSitePage } from "./src/lib/templateRoute"
+import {
+  appendPreviewQueryToUrl,
+  parsePreviewParams,
+  type PreviewParams,
+} from "./src/lib/previewQuery"
 import { ContentDataProvider } from "./src/contexts/ContentDataContext"
 import { CollectionFilterScopeProvider } from "./src/contexts/CollectionFilterScopeContext"
 import { StorefrontPageProvider } from "./src/contexts/StorefrontPageContext"
@@ -31,10 +44,12 @@ import { craftContentToComponents } from "./src/content/craftContentToComponents
 import { renderPage } from "./src/content/renderer"
 
 type RootStackParamList = {
-  Page: { slug: string }
+  Page: { slug: string; previewParams?: PreviewParams }
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
+const navigationRef = createNavigationContainerRef<RootStackParamList>()
+const EMPTY_PREVIEW_PARAMS: PreviewParams = {}
 
 type PageScreenProps = NativeStackScreenProps<RootStackParamList, "Page">
 
@@ -43,6 +58,14 @@ type PageScreenProps = NativeStackScreenProps<RootStackParamList, "Page">
  */
 const PageScreen = ({ route }: PageScreenProps) => {
   const slug = route.params?.slug ?? "/"
+  const previewKey = useMemo(
+    () => JSON.stringify(route.params?.previewParams ?? EMPTY_PREVIEW_PARAMS),
+    [route.params?.previewParams],
+  )
+  const previewParams = useMemo<PreviewParams>(() => {
+    const parsed = JSON.parse(previewKey) as PreviewParams
+    return Object.keys(parsed).length === 0 ? EMPTY_PREVIEW_PARAMS : parsed
+  }, [previewKey])
   const [page, setPage] = useState<SitePage | null>(null)
   const [sitePages, setSitePages] = useState<SitePage[]>([])
   const [collectionItemsByKey, setCollectionItemsByKey] = useState<
@@ -65,8 +88,8 @@ const PageScreen = ({ route }: PageScreenProps) => {
   const uri = useMemo(() => {
     const base = WEB_VIEW_BASE_URL.replace(/\/$/, "")
     const path = slug === "/" ? "" : slug.startsWith("/") ? slug : `/${slug}`
-    return `${base}${path || "/"}`
-  }, [slug])
+    return appendPreviewQueryToUrl(`${base}${path || "/"}`, previewParams)
+  }, [slug, previewKey])
 
   useEffect(() => {
     setLoading(true)
@@ -93,7 +116,12 @@ const PageScreen = ({ route }: PageScreenProps) => {
         return
       }
 
-      const resolved = await resolveStorefrontRoute(SITE_DOMAIN, pages, slug)
+      const resolved = await resolveStorefrontRoute(
+        SITE_DOMAIN,
+        pages,
+        slug,
+        previewParams,
+      )
       if (cancelled) return
 
       if (!resolved) {
@@ -127,7 +155,7 @@ const PageScreen = ({ route }: PageScreenProps) => {
     return () => {
       cancelled = true
     }
-  }, [slug])
+  }, [slug, previewKey])
 
   const templateNeedsItem =
     page != null &&
@@ -140,16 +168,38 @@ const PageScreen = ({ route }: PageScreenProps) => {
     page?.is_mobile_content === true &&
     page?.content != null &&
     templateItemResolved
-  let nativeComponents: ReturnType<typeof craftContentToComponents> = []
-  if (showNativeContent && page?.content) {
+
+  const buildNativeComponents = (
+    pageForRender: SitePage | null,
+  ): ReturnType<typeof craftContentToComponents> => {
+    if (!pageForRender?.content) return []
     try {
-      nativeComponents = craftContentToComponents(page.content)
+      return craftContentToComponents(pageForRender.content)
     } catch {
-      nativeComponents = []
+      return []
     }
   }
+
+  const contentComponents = showNativeContent ? buildNativeComponents(page) : []
+  const systemLayout = useMemo(
+    () => resolveSystemLayoutComponents(sitePages, previewParams),
+    [sitePages, previewKey],
+  )
+  const headerComponents =
+    showNativeContent && systemLayout.header
+      ? buildNativeComponents(systemLayout.header)
+      : []
+  const footerComponents =
+    showNativeContent && systemLayout.footer
+      ? buildNativeComponents(systemLayout.footer)
+      : []
+  const nativeLayoutComponents = useMemo(
+    () => [...headerComponents, ...contentComponents, ...footerComponents],
+    [headerComponents, contentComponents, footerComponents],
+  )
+
   const useNativeRender = Boolean(
-    showNativeContent && nativeComponents.length > 0,
+    showNativeContent && contentComponents.length > 0,
   )
 
   const templateTypeId = page?.collection_type_id?.trim() ?? ""
@@ -166,7 +216,7 @@ const PageScreen = ({ route }: PageScreenProps) => {
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
         >
-          {renderPage(nativeComponents)}
+          {renderPage(nativeLayoutComponents)}
         </ScrollView>
       </ContentDataProvider>
     ) : (
@@ -174,7 +224,7 @@ const PageScreen = ({ route }: PageScreenProps) => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
       >
-        {renderPage(nativeComponents)}
+        {renderPage(nativeLayoutComponents)}
       </ScrollView>
     )
 
@@ -205,6 +255,7 @@ const PageScreen = ({ route }: PageScreenProps) => {
                 <StorefrontPageProvider
                   pageBaseSlug={pageBaseSlug}
                   categorySlugTrailFromUrl={categorySlugTrailFromUrl}
+                  previewParams={previewParams}
                 >
                   {nativeTree}
                 </StorefrontPageProvider>
@@ -240,9 +291,40 @@ const PageScreen = ({ route }: PageScreenProps) => {
 }
 
 export default function App() {
+  useEffect(() => {
+    let isMounted = true
+
+    const applyDeepLink = (incomingUrl: string | null) => {
+      const parsed = parseDeepLinkNavigationTarget(incomingUrl)
+      if (!parsed) return
+
+      if (navigationRef.isReady()) {
+        navigationRef.navigate("Page", parsed)
+      }
+    }
+
+    Linking.getInitialURL()
+      .then((url) => {
+        if (!isMounted) return
+        applyDeepLink(url)
+      })
+      .catch(() => {
+        // Ignore malformed initial URLs and keep default route.
+      })
+
+    const subscription = Linking.addEventListener("url", ({ url }) => {
+      applyDeepLink(url)
+    })
+
+    return () => {
+      isMounted = false
+      subscription.remove()
+    }
+  }, [])
+
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen
             name="Page"
@@ -253,6 +335,49 @@ export default function App() {
       </NavigationContainer>
     </SafeAreaProvider>
   )
+}
+
+function parseDeepLinkNavigationTarget(
+  incomingUrl: string | null,
+): RootStackParamList["Page"] | null {
+  if (!incomingUrl) return null
+
+  const trimmed = incomingUrl.trim()
+  if (!trimmed) return null
+
+  const previewParams = parsePreviewParams(trimmed)
+
+  try {
+    const parsedUrl = new URL(trimmed)
+    const hostPart = parsedUrl.host?.trim()
+    const pathname = parsedUrl.pathname?.trim() ?? ""
+    let slugRaw = ""
+
+    if (parsedUrl.protocol.toLowerCase() === "cesio:") {
+      if (pathname && pathname !== "/") {
+        slugRaw = pathname
+      } else if (hostPart) {
+        slugRaw = `/${hostPart}`
+      } else {
+        slugRaw = "/"
+      }
+    } else {
+      slugRaw = pathname || "/"
+    }
+
+    const slug = normalizeIncomingSlug(slugRaw)
+    return { slug, previewParams }
+  } catch {
+    const [rawPath] = trimmed.split("?", 1)
+    const slug = normalizeIncomingSlug(rawPath)
+    return { slug, previewParams }
+  }
+}
+
+function normalizeIncomingSlug(rawSlug: string): string {
+  const s = rawSlug.trim()
+  if (!s || s === "/") return "/"
+  return s.startsWith("/") ? s : `/${s}`
 }
 
 const styles = StyleSheet.create({

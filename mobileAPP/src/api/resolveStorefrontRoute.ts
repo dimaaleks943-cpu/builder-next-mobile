@@ -6,7 +6,13 @@ import type { IContentItem } from "./contentTypes";
 import { fetchContentCategoryBySlug } from "./categoriesApi";
 import { fetchContentItemBySlug, fetchContentItems } from "./collectionsApi";
 import { prefetchContentListPairs } from "./prefetchContentList";
-import { normalizeSiteSlugPath, type SitePage } from "./sitePagesApi";
+import {
+  findPreviewPageByOriginalCode,
+  normalizeSiteSlugPath,
+  PAGE_TYPES,
+  type SitePage,
+} from "./sitePagesApi";
+import type { PreviewParams } from "../lib/previewQuery";
 import {
   categoryTrailBetweenPrefixAndItemSlug,
   splitBaseSlugAndTail,
@@ -26,17 +32,23 @@ function findStaticPage(
   pages: SitePage[],
   slugPath: string,
 ): SitePage | undefined {
-  const isStatic = (p: SitePage) => !isTemplateSitePage(p);
+  const isContentPage = (p: SitePage) =>
+    !isTemplateSitePage(p) &&
+    ((p.type ?? PAGE_TYPES.STATIC) === PAGE_TYPES.STATIC ||
+      p.type === PAGE_TYPES.SYSTEM_PAGE) &&
+    (p.version ?? null) === null;
   return (
-    pages.find((p) => p.slug === slugPath && isStatic(p)) ||
+    pages.find((p) => p.slug === slugPath && isContentPage(p)) ||
     (slugPath === "/"
-      ? pages.find((p) => p.slug === "/" && isStatic(p))
+      ? pages.find((p) => p.slug === "/" && isContentPage(p))
       : undefined)
   );
 }
 
 export type StorefrontRouteResolved = {
   slugPath: string;
+  routingPage: SitePage;
+  renderPage: SitePage;
   page: SitePage;
   sitePages: SitePage[];
   collectionItemsByKey: Record<string, IContentItem[]>;
@@ -54,6 +66,7 @@ export async function resolveStorefrontRoute(
   domain: string,
   pages: SitePage[],
   slugPathInput: string,
+  previewParams: PreviewParams = {},
 ): Promise<StorefrontRouteResolved | null> {
   const slugPath = normalizeSiteSlugPath(
     slugPathInput.length === 0 ? "/" : slugPathInput,
@@ -62,20 +75,28 @@ export async function resolveStorefrontRoute(
   const { baseSlug, tailSlug } = splitBaseSlugAndTail(slugPath);
 
   if (tailSlug === null) {
-    const page = findStaticPage(pages, slugPath);
-    if (!page?.content) return null;
+    const routingPage = findStaticPage(pages, slugPath);
+    if (!routingPage?.content) return null;
+    const renderPage = findPreviewPageByOriginalCode(
+      pages,
+      previewParams,
+      routingPage,
+    );
+    if (!renderPage.content) return null;
 
-    const pageBaseSlug = normalizeItemPathPrefix(page.slug);
+    const pageBaseSlug = normalizeItemPathPrefix(routingPage.slug);
 
     const {
       collectionItemsByTypeId,
       initialSelectedCategoryIdByScope,
       initialSelectedCategorySlugByScope,
-    } = await prefetchContentListPairs(domain, page.content);
+    } = await prefetchContentListPairs(domain, renderPage.content);
 
     return {
       slugPath,
-      page,
+      routingPage,
+      renderPage,
+      page: renderPage,
       sitePages: pages,
       collectionItemsByKey: collectionItemsByTypeId,
       templateContentData: null,
@@ -92,9 +113,9 @@ export async function resolveStorefrontRoute(
     const resolved = resolveTemplatePageForSlug(pages, slugPath);
     if (!resolved) return null;
 
-    const page = resolved.page;
-    const typeId = page.collection_type_id?.trim();
-    if (!typeId || !isTemplateSitePage(page)) return null;
+    const routingPage = resolved.page;
+    const typeId = routingPage.collection_type_id?.trim();
+    if (!typeId || !isTemplateSitePage(routingPage)) return null;
 
     const itemTypeId = getItemContentTypeId(item)?.trim();
     if (
@@ -104,14 +125,19 @@ export async function resolveStorefrontRoute(
       return null;
     }
 
-    if (!page.content) return null;
+    const renderPage = findPreviewPageByOriginalCode(
+      pages,
+      previewParams,
+      routingPage,
+    );
+    if (!renderPage.content) return null;
 
     const templateContentData = {
       collectionKey: typeId,
       itemData: item,
     };
 
-    const pairs = extractContentListPrefetchPairsFromCraftContent(page.content);
+    const pairs = extractContentListPrefetchPairsFromCraftContent(renderPage.content);
     const collectionItemsByTypeId: Record<string, IContentItem[]> = {};
     const typeIdLower = typeId.toLowerCase();
 
@@ -145,7 +171,7 @@ export async function resolveStorefrontRoute(
     );
 
     const pageBaseSlug = normalizeItemPathPrefix(
-      page.item_path_prefix ?? page.slug,
+      routingPage.item_path_prefix ?? routingPage.slug,
     );
     const categorySlugTrailFromUrl = categoryTrailBetweenPrefixAndItemSlug(
       pageBaseSlug,
@@ -155,7 +181,9 @@ export async function resolveStorefrontRoute(
 
     return {
       slugPath,
-      page,
+      routingPage,
+      renderPage,
+      page: renderPage,
       sitePages: pages,
       collectionItemsByKey: collectionItemsByTypeId,
       templateContentData,
@@ -169,8 +197,14 @@ export async function resolveStorefrontRoute(
   const category = await fetchContentCategoryBySlug(domain, tailSlug);
   if (!category) return null;
 
-  const page = findStaticPage(pages, baseSlug);
-  if (!page?.content) return null;
+  const routingPage = findStaticPage(pages, baseSlug);
+  if (!routingPage?.content) return null;
+  const renderPage = findPreviewPageByOriginalCode(
+    pages,
+    previewParams,
+    routingPage,
+  );
+  if (!renderPage.content) return null;
 
   const categorySlugForState =
     category.slug?.trim() || tailSlug.trim() || null;
@@ -179,16 +213,18 @@ export async function resolveStorefrontRoute(
     collectionItemsByTypeId,
     initialSelectedCategoryIdByScope,
     initialSelectedCategorySlugByScope,
-  } = await prefetchContentListPairs(domain, page.content, {
+  } = await prefetchContentListPairs(domain, renderPage.content, {
     id: category.id,
     slug: categorySlugForState,
   });
 
-  const pageBaseSlug = normalizeItemPathPrefix(page.slug);
+  const pageBaseSlug = normalizeItemPathPrefix(routingPage.slug);
 
   return {
     slugPath,
-    page,
+    routingPage,
+    renderPage,
+    page: renderPage,
     sitePages: pages,
     collectionItemsByKey: collectionItemsByTypeId,
     templateContentData: null,

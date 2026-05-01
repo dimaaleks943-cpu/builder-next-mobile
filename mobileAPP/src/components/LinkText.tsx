@@ -54,7 +54,7 @@ export const LinkText = ({
   const { sitePages } = useSiteCollections();
   const { filterScope } = useContentListContext();
   const { selectedCategorySlugByScope } = useCollectionFilterScope();
-  const { categorySlugTrailFromUrl } = useStorefrontPage();
+  const { categorySlugTrailFromUrl, previewParams } = useStorefrontPage();
   const textTransform =
     (rs.textTransform as "none" | "uppercase" | "lowercase" | "capitalize" | undefined) ??
     "none";
@@ -148,7 +148,7 @@ export const LinkText = ({
     if (!target || target === "#") return;
 
     if (target.startsWith("/")) {
-      navigation.navigate("Page", { slug: target });
+      navigation.navigate("Page", { slug: target, previewParams });
       return;
     }
 
