@@ -93,9 +93,11 @@ const styleBranchToCssDeclarations = (style: StyleRecord): Record<string, string
   } else if (layout === "block") {
     set("display", "block")
   }
-  if (layout === "absolute") {
-    set("position", "absolute")
-  }
+
+  // -- PositioningAccordion   --///
+  if (typeof style.position === "string") set("position", style.position)
+  if (typeof style.float === "string") set("float", style.float)
+  if (typeof style.clear === "string") set("clear", style.clear)
 
   set("width", style.fullSize === true ? "100%" : toCssLength(style.width))
   set("height", style.fullSize === true ? "100%" : toCssLength(style.height))
