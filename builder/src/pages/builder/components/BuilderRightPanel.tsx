@@ -5,6 +5,7 @@ import { COLORS } from "../../../theme/colors"
 import emptySelectionImg from "../assets/dontSelectedElement.png"
 import {
   LayoutAccordion,
+  PositioningAccordion,
   SizeAccordion,
   SpacingAccordion,
   BordersAccordion,
@@ -138,6 +139,7 @@ export const BuilderRightPanel = ({
                 }}
               >
                 <LayoutAccordion />
+                <PositioningAccordion />
                 {selectedType !== CRAFT_DISPLAY_NAME.Body && <SizeAccordion />}
 
                 <SpacingAccordion/>

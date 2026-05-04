@@ -91,11 +91,7 @@ export const CraftBlock = (props: BlockProps) => {
         borderBottomWidth: selected ? 2 : hasCustomBorder ? borderBottomWidth : 0,
         borderLeftWidth: selected ? 2 : hasCustomBorder ? borderLeftWidth : 0,
 
-        //position: layout === "absolute" ? "absolute" : "relative", //TODO обновить послео изменения layuotBLock
-
-        /** display и position — разные CSS‑свойства, но в LayoutAccordion задаём одним блоком «Расположение».
-         * Сейчас: layout="absolute" → position:absolute, display:block; остальные → display напрямую.
-         * TODO: продумать, как лучше разделить или оформить настройки display vs position. */
+        /** display и layout из «Расположение»; CSS position/float/clear — из «Позиционирование» (responsiveStyle). */
         display: layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block",
         alignItems: layout === "flex" ? flexAlignItems : undefined,
         justifyContent: layout === "flex" ? flexJustifyContent : undefined,

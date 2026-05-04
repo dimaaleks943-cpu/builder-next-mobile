@@ -7,6 +7,11 @@
  * - новые style-props добавляются только через этот маппинг.
  */
 export const FULL_TO_SHORT = {
+  //-- PositioningAccordion --//
+  position: "ps",
+  float: "flt",
+  clear: "clr",
+
   // layout
   layout: "ly",
   /** Элементов в строке сетки списка (ContentList). */

@@ -1,4 +1,5 @@
 export { LayoutAccordion } from "./LayoutAccordion.tsx";
+export { PositioningAccordion } from "./PositioningAccordion.tsx";
 export { SizeAccordion } from "./SizeAccordion.tsx";
 export { SpacingAccordion } from "./SpacingAccordion.tsx";
 export { BordersAccordion } from "./BordersAccordion.tsx";
