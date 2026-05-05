@@ -24,6 +24,8 @@ import {
 } from "../../responsiveStyle.ts"
 import { INSET_OPTIONS } from "./positioningAccordion.const.tsx"
 import { InsetControl, type InsetSide } from "./components/InsetControl.tsx"
+import { RelativeToControl } from "./components/RelativeToControl.tsx"
+import { CraftSettingsValueWithUnit } from "../../components/craftSettingsControls/CraftSettingsValueWithUnit.tsx"
 
 const POSITION_OPTIONS = [
   { id: "static", value: "Static" },
@@ -134,16 +136,36 @@ const uiClear = (raw: unknown): ClearValue => {
 
 export const PositioningAccordion = () => {
   const viewport = usePreviewViewport()
-  const { actions, selectedId, selectedProps } = useEditor((state) => {
-    const [id] = Array.from(state.events.selected)
-    const node = id ? state.nodes[id] : null
-    const displayName = node ? resolveNodeDisplayName(node) : null
-    return {
-      selectedId: id ?? null,
-      selectedProps: node?.data.props ?? null,
-      isBlock: displayName === CRAFT_DISPLAY_NAME.Block,
-    }
-  })
+  const { actions, selectedId, selectedProps, nearestRelativeParentId, nearestRelativeParentName } =
+    useEditor((state, query) => {
+      const [id] = Array.from(state.events.selected)
+      const node = id ? state.nodes[id] : null
+      const displayName = node ? resolveNodeDisplayName(node) : null
+      const findNearestRelativeParent = (startId: string | null) => {
+        if (!startId) return { id: null as string | null, name: null as string | null }
+        let currentId: string | null = startId
+        // start from parent, not the node itself
+        const startNode = query.node(startId).get()
+        currentId = (startNode?.data.parent as string | null) ?? null
+        while (currentId && currentId !== "ROOT") {
+          const n = query.node(currentId).get()
+          const pos = getResponsiveStyleProp(n?.data?.props ?? null, "position", viewport)
+          if (pos === "relative") {
+            return { id: currentId, name: resolveNodeDisplayName(state.nodes[currentId]) }
+          }
+          currentId = (n?.data.parent as string | null) ?? null
+        }
+        return { id: null, name: null }
+      }
+      const nearest = findNearestRelativeParent(id ?? null)
+      return {
+        selectedId: id ?? null,
+        selectedProps: node?.data.props ?? null,
+        isBlock: displayName === CRAFT_DISPLAY_NAME.Block,
+        nearestRelativeParentId: nearest.id,
+        nearestRelativeParentName: nearest.name,
+      }
+    })
 
   const [floatClearOpen, setFloatClearOpen] = useState(false)
 
@@ -157,6 +179,7 @@ export const PositioningAccordion = () => {
     getResponsiveStyleProp(selectedProps, "clear", viewport),
   )
   const insetValue = getResponsiveStyleProp(selectedProps, "inset", viewport)
+  const zIndexValue = getResponsiveStyleProp(selectedProps, "zIndex", viewport)
   const isInsetAvailable = position !== "static"
   const insetSides = useMemo(() => expandInsetToSides(insetValue), [insetValue])
   const activeInsetId = INSET_VALUE_TO_ID[normalizeInsetValue(insetValue)] ?? ""
@@ -231,6 +254,12 @@ export const PositioningAccordion = () => {
     handleInsetSideCommit(side, "auto")
   }
 
+  const handleZIndexCommit = (next: string | number | undefined) => {
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      setResponsiveStyleProp(props, "zIndex", next, viewport)
+    })
+  }
+
   useEffect(() => {
     if (!isInsetAvailable && insetValue !== undefined) {
       actions.setProp(selectedId, (props: Record<string, unknown>) => {
@@ -274,16 +303,53 @@ export const PositioningAccordion = () => {
           />
 
           {isInsetAvailable ? (
-            <InsetControl
-              insetSideOrder={INSET_SIDE_ORDER}
-              activeInsetId={activeInsetId}
-              insetSides={insetSides}
-              formatInsetSideValue={formatInsetSideValue}
-              onInsetSelect={handleInsetSelect}
-              onInsetSideCommit={handleInsetSideCommit}
-              onInsetPresetClick={handleInsetPresetClick}
-              onInsetReset={handleInsetReset}
-            />
+            <>
+              <InsetControl
+                insetSideOrder={INSET_SIDE_ORDER}
+                activeInsetId={activeInsetId}
+                insetSides={insetSides}
+                formatInsetSideValue={formatInsetSideValue}
+                onInsetSelect={handleInsetSelect}
+                onInsetSideCommit={handleInsetSideCommit}
+                onInsetPresetClick={handleInsetPresetClick}
+                onInsetReset={handleInsetReset}
+              />
+
+              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 76px", gap: "6px", alignSelf: "end" }}>
+                <RelativeToControl
+                  label="Relative to"
+                  value={nearestRelativeParentName ?? "—"}
+                  onClick={
+                    nearestRelativeParentId
+                      ? () => actions.selectNode(nearestRelativeParentId)
+                      : undefined
+                  }
+                />
+
+                <Box sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  rowGap: "2px",
+                  alignItems: "center"
+                }}>
+
+                  <CraftSettingsValueWithUnit
+                    label="z-Index"
+                    value={zIndexValue}
+                    onCommit={handleZIndexCommit}
+                    withoutLabel
+                    unitless
+                    inputWidth="100%"
+                    placeholder="Auto"
+                    customWidth="76px"
+                  />
+
+                  <Typography sx={{ fontSize: "8px", lineHeight: "10px", color: COLORS.gray700 }}>
+                    z-Index
+                  </Typography>
+                </Box>
+              </Box>
+            </>
           ) : null}
 
           <Box

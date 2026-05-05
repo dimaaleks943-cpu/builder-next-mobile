@@ -80,6 +80,8 @@ interface Props {
   inputWidth?: string;
   withoutLabel?: boolean;
   disableUnitPopperPortal?: boolean;
+  unitless?: boolean;
+  customWidth?: string;
 }
 
 export const CraftSettingsValueWithUnit = ({
@@ -93,6 +95,8 @@ export const CraftSettingsValueWithUnit = ({
   inputWidth,
   withoutLabel = false,
   disableUnitPopperPortal = false,
+  unitless = false,
+  customWidth = "42px",
 }: Props) => {
   const resolvedAllowed = allowedUnits ?? CRAFT_SIZE_MENU_UNITS_WEB
   const unitOptions = useMemo(
@@ -123,6 +127,7 @@ export const CraftSettingsValueWithUnit = ({
       setAnchorEl(null)
     }
     document.addEventListener("mousedown", onDocMouseDown, true)
+
     return () => document.removeEventListener("mousedown", onDocMouseDown, true)
   }, [anchorEl])
 
@@ -139,6 +144,24 @@ export const CraftSettingsValueWithUnit = ({
   }
 
   const commitFromInput = () => {
+    if (unitless) {
+      const t = inputText.trim()
+      if (t === "") {
+        onCommit(undefined)
+        return
+      }
+      if (/^auto$/i.test(t)) {
+        onCommit("auto")
+        return
+      }
+      if (/^-?(?:\d+\.?\d*|\.\d+)$/.test(t)) {
+        const n = Number(t)
+        onCommit(Number.isFinite(n) ? n : undefined)
+        return
+      }
+      onCommit(t)
+      return
+    }
     const parsed = parseInputWithUnit(inputText, menuSelection)
     commitParsed(parsed)
   }
@@ -177,6 +200,9 @@ export const CraftSettingsValueWithUnit = ({
   const handlePickUnit = (token: CraftSizeMenuToken) => {
     cancelBlurCommit()
     setAnchorEl(null)
+
+    if (unitless) return
+
     if (token === "auto") {
       setMenuSelection("auto")
       setInputText("")
@@ -257,72 +283,72 @@ export const CraftSettingsValueWithUnit = ({
             fontSize: "12px",
             lineHeight: "14px",
             color: "inherit",
-            width: "42px",
+            width: customWidth,
           }}
         />
-        <Box
-          component="button"
-          type="button"
-          disabled={disabled}
-          onMouseDown={(e) => {
-            e.preventDefault()
-            cancelBlurCommit()
-          }}
-          onClick={(e) => {
-            const el = e.currentTarget
-            setAnchorEl((prev) => (prev === el ? null : el))
-          }}
-          sx={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            border: "none",
-            margin: 0,
-            padding: 0,
-            fontFamily: "inherit",
-            fontSize: "10px",
-            lineHeight: "14px",
-            fontWeight: 600,
-            letterSpacing: "0.04em",
-            color: COLORS.gray700,
-            backgroundColor: "transparent",
-            cursor: disabled ? "default" : "pointer",
-            "&:hover": disabled
-              ? undefined
-              : { color: COLORS.purple400 },
-            "&:disabled": { opacity: 0.5 },
-          }}
-        >
-          {chipLabel}
-        </Box>
+        {!unitless ? (
+          <Box
+            component="button"
+            type="button"
+            disabled={disabled}
+            onMouseDown={(e) => {
+              e.preventDefault()
+              cancelBlurCommit()
+            }}
+            onClick={(e) => {
+              const el = e.currentTarget
+              setAnchorEl((prev) => (prev === el ? null : el))
+            }}
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "none",
+              margin: 0,
+              padding: 0,
+              fontFamily: "inherit",
+              fontSize: "10px",
+              lineHeight: "14px",
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+              color: COLORS.gray700,
+              backgroundColor: "transparent",
+              cursor: disabled ? "default" : "pointer",
+              "&:hover": disabled ? undefined : { color: COLORS.purple400 },
+              "&:disabled": { opacity: 0.5 },
+            }}
+          >
+            {chipLabel}
+          </Box>
+        ) : null}
       </Box>
 
-      <Popper
-        open={Boolean(anchorEl)}
-        anchorEl={anchorEl}
-        placement="bottom-end"
-        modifiers={[{ name: "offset", options: { offset: [0, 4] } }]}
-        disablePortal={disableUnitPopperPortal}
-        style={{ zIndex: 4000 }}
-      >
-        <Paper ref={menuPaperRef} elevation={3} sx={{ minWidth: 72 }}>
-          <MenuList dense>
-            {unitOptions.map((token) => (
-              <MenuItem
-                key={token}
-                selected={
-                  menuSelection !== "custom" && menuSelection === token
-                }
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => handlePickUnit(token)}
-                sx={{ fontSize: "12px", lineHeight: "14px",}}
-              >
-                {unitTokenLabel(token)}
-              </MenuItem>
-            ))}
-          </MenuList>
-        </Paper>
-      </Popper>
+      {!unitless ? (
+        <Popper
+          open={Boolean(anchorEl)}
+          anchorEl={anchorEl}
+          placement="bottom-end"
+          modifiers={[{ name: "offset", options: { offset: [0, 4] } }]}
+          disablePortal={disableUnitPopperPortal}
+          style={{ zIndex: 4000 }}
+        >
+          <Paper ref={menuPaperRef} elevation={3} sx={{ minWidth: 72 }}>
+            <MenuList dense>
+              {unitOptions.map((token) => (
+                <MenuItem
+                  key={token}
+                  selected={menuSelection !== "custom" && menuSelection === token}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handlePickUnit(token)}
+                  sx={{ fontSize: "12px", lineHeight: "14px" }}
+                >
+                  {unitTokenLabel(token)}
+                </MenuItem>
+              ))}
+            </MenuList>
+          </Paper>
+        </Popper>
+      ) : null}
     </Box>
   )
 }
