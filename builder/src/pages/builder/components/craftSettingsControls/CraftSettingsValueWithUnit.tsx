@@ -78,6 +78,8 @@ interface Props {
   placeholder?: string;
   mode?: FormatSizePropMode;
   inputWidth?: string;
+  withoutLabel?: boolean;
+  disableUnitPopperPortal?: boolean;
 }
 
 export const CraftSettingsValueWithUnit = ({
@@ -89,6 +91,8 @@ export const CraftSettingsValueWithUnit = ({
   placeholder = "Auto",
   mode = "web",
   inputWidth,
+  withoutLabel = false,
+  disableUnitPopperPortal = false,
 }: Props) => {
   const resolvedAllowed = allowedUnits ?? CRAFT_SIZE_MENU_UNITS_WEB
   const unitOptions = useMemo(
@@ -207,17 +211,18 @@ export const CraftSettingsValueWithUnit = ({
           lineHeight: "14px",
           color: COLORS.gray700,
           flex: 1,
+          display: withoutLabel ? "none" : "block",
         }}
       >
         {label}
       </Typography>
       <Box
         sx={{
-          width: inputWidth,
-          maxWidth: inputWidth,
+          width: inputWidth ?? (withoutLabel ? "100%" : undefined),
+          maxWidth: inputWidth ?? (withoutLabel ? "100%" : undefined),
           display: "flex",
           justifyContent: "space-between",
-          flex: 4,
+          flex: withoutLabel ? 1 : 4,
           minWidth: 0,
           alignItems: "center",
           boxSizing: "border-box",
@@ -275,7 +280,7 @@ export const CraftSettingsValueWithUnit = ({
             margin: 0,
             padding: 0,
             fontFamily: "inherit",
-            fontSize: "11px",
+            fontSize: "10px",
             lineHeight: "14px",
             fontWeight: 600,
             letterSpacing: "0.04em",
@@ -297,6 +302,7 @@ export const CraftSettingsValueWithUnit = ({
         anchorEl={anchorEl}
         placement="bottom-end"
         modifiers={[{ name: "offset", options: { offset: [0, 4] } }]}
+        disablePortal={disableUnitPopperPortal}
         style={{ zIndex: 4000 }}
       >
         <Paper ref={menuPaperRef} elevation={3} sx={{ minWidth: 72 }}>
