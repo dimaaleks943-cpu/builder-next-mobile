@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from "react"
+import { useEffect, useState, type ChangeEvent } from "react"
 import {
   Accordion,
   AccordionDetails,
@@ -7,21 +7,22 @@ import {
   Typography,
 } from "@mui/material"
 import { useEditor } from "@craftjs/core"
-import { COLORS } from "../../../theme/colors.ts"
-import { CloseIcon } from "../../../icons/CloseIcon.tsx"
-import { PositionLeftIcon } from "../../../icons/PositionLeftIcon.tsx"
-import { ClearLeftIcon } from "../../../icons/ClearLeftIcon.tsx"
-import { ClearIcon } from "../../../icons/ClearIcon.tsx"
-import { ChevronDownIcon } from "../../../icons/ChevronDownIcon.tsx"
-import { CraftSettingsSelect } from "../components/craftSettingsControls/CraftSettingsSelect.tsx"
-import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
-import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts"
-import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
-import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
+import { COLORS } from "../../../../theme/colors.ts"
+import { CloseIcon } from "../../../../icons/CloseIcon.tsx"
+import { PositionLeftIcon } from "../../../../icons/PositionLeftIcon.tsx"
+import { ClearLeftIcon } from "../../../../icons/ClearLeftIcon.tsx"
+import { ClearIcon } from "../../../../icons/ClearIcon.tsx"
+import { ChevronDownIcon } from "../../../../icons/ChevronDownIcon.tsx"
+import { CraftSettingsSelect } from "../../components/craftSettingsControls/CraftSettingsSelect.tsx"
+import { CraftSettingsButtonGroup } from "../../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
+import { CRAFT_DISPLAY_NAME } from "../../../../craft/craftDisplayNames.ts"
+import { resolveNodeDisplayName } from "../../../../utils/resolveNodeDisplayName.ts"
+import { usePreviewViewport } from "../../context/PreviewViewportContext.tsx"
 import {
   getResponsiveStyleProp,
   setResponsiveStyleProp,
-} from "../responsiveStyle.ts"
+} from "../../responsiveStyle.ts"
+import { INSET_OPTIONS } from "./positioningAccordion.const.tsx";
 
 const POSITION_OPTIONS = [
   { id: "static", value: "Static" },
@@ -37,7 +38,10 @@ type ClearValue = "none" | "left" | "right" | "both"
 
 const POSITION_IDS = new Set<string>(POSITION_OPTIONS.map((o) => o.id))
 
-const iconFill = COLORS.purple400
+const INSET_VALUE_TO_ID = INSET_OPTIONS.reduce<Record<string, string>>((acc, option) => {
+  acc[option.value] = option.id
+  return acc
+}, {})
 
 const uiPosition = (raw: unknown): PositionValue => {
   if (typeof raw === "string" && POSITION_IDS.has(raw)) return raw as PositionValue
@@ -78,6 +82,10 @@ export const PositioningAccordion = () => {
   const clearValue = uiClear(
     getResponsiveStyleProp(selectedProps, "clear", viewport),
   )
+  const insetValue = getResponsiveStyleProp(selectedProps, "inset", viewport)
+  const isInsetAvailable = position === "absolute" || position === "fixed"
+  const activeInsetId =
+    typeof insetValue === "string" ? (INSET_VALUE_TO_ID[insetValue] ?? "") : ""
 
   const handlePositionChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const v = e.target.value as PositionValue
@@ -88,6 +96,9 @@ export const PositioningAccordion = () => {
         v === "static" ? undefined : v,
         viewport,
       )
+      if (v !== "absolute" && v !== "fixed") {
+        setResponsiveStyleProp(props, "inset", undefined, viewport)
+      }
     })
   }
 
@@ -114,6 +125,24 @@ export const PositioningAccordion = () => {
       )
     })
   }
+
+  const handleInsetSelect = (id: string) => {
+    const option = INSET_OPTIONS.find((item) => item.id === id)
+    if (!option) {
+      return
+    }
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      setResponsiveStyleProp(props, "inset", option.value, viewport)
+    })
+  }
+
+  useEffect(() => {
+    if (!isInsetAvailable && insetValue !== undefined) {
+      actions.setProp(selectedId, (props: Record<string, unknown>) => {
+        setResponsiveStyleProp(props, "inset", undefined, viewport)
+      })
+    }
+  }, [actions, insetValue, isInsetAvailable, selectedId, viewport])
 
   return (
     <Accordion defaultExpanded disableGutters>
@@ -149,6 +178,45 @@ export const PositioningAccordion = () => {
             options={[...POSITION_OPTIONS]}
           />
 
+          {isInsetAvailable ? (
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "repeat(9, 1fr)",
+                gap: "4px",
+                overflow: "hidden",
+                alignSelf: "flex-end",
+              }}
+            >
+              {INSET_OPTIONS.map((option) => {
+                const isActive = option.id === activeInsetId
+                return (
+                  <Box
+                    key={option.id}
+                    component="button"
+                    type="button"
+                    onClick={() => handleInsetSelect(option.id)}
+                    sx={{
+                      padding: 0,
+                      maxWidth: "14px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "none",
+                      cursor: "pointer",
+                      backgroundColor: isActive ? COLORS.purple100 : COLORS.white,
+                      "&:hover": {
+                        backgroundColor: COLORS.white,
+                      },
+                    }}
+                  >
+                    {option.icon}
+                  </Box>
+                )
+              })}
+            </Box>
+          ) : null}
+
           <Box
             component="button"
             type="button"
@@ -174,7 +242,7 @@ export const PositioningAccordion = () => {
                 transition: "transform 0.15s ease",
               }}
             >
-              <ChevronDownIcon size={12} fill={COLORS.gray700} />
+              <ChevronDownIcon size={12} fill={COLORS.gray700}/>
             </Box>
             <Typography
               sx={{
@@ -201,11 +269,11 @@ export const PositioningAccordion = () => {
                 options={[
                   {
                     id: "none",
-                    content: <CloseIcon size={16} fill={iconFill} />,
+                    content: <CloseIcon size={16} fill={COLORS.purple400}/>,
                   },
                   {
                     id: "left",
-                    content: <PositionLeftIcon width={24} height={16} fill={iconFill} />,
+                    content: <PositionLeftIcon width={24} height={16} fill={COLORS.purple400}/>,
                   },
                   {
                     id: "right",
@@ -218,7 +286,7 @@ export const PositioningAccordion = () => {
                           transform: "scaleX(-1)",
                         }}
                       >
-                        <PositionLeftIcon width={24} height={16} fill={iconFill} />
+                        <PositionLeftIcon width={24} height={16} fill={COLORS.purple400}/>
                       </Box>
                     ),
                   },
@@ -232,11 +300,11 @@ export const PositioningAccordion = () => {
                 options={[
                   {
                     id: "none",
-                    content: <CloseIcon size={16} fill={iconFill} />,
+                    content: <CloseIcon size={16} fill={COLORS.purple400}/>,
                   },
                   {
                     id: "left",
-                    content: <ClearLeftIcon size={16} fill={iconFill} />,
+                    content: <ClearLeftIcon size={16} fill={COLORS.purple400}/>,
                   },
                   {
                     id: "right",
@@ -249,13 +317,13 @@ export const PositioningAccordion = () => {
                           transform: "scaleX(-1)",
                         }}
                       >
-                        <ClearLeftIcon size={16} fill={iconFill} />
+                        <ClearLeftIcon size={16} fill={COLORS.purple400}/>
                       </Box>
                     ),
                   },
                   {
                     id: "both",
-                    content: <ClearIcon size={16} fill={iconFill} />,
+                    content: <ClearIcon size={16} fill={COLORS.purple400}/>,
                   },
                 ]}
                 onChange={handleClearChange}
