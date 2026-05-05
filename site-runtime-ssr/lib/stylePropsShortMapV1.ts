@@ -11,7 +11,9 @@ export const FULL_TO_SHORT = {
   position: "ps",
   float: "flt",
   clear: "clr",
-  
+  zIndex: "zi",
+  inset: "ins",
+
   // layout
   layout: "ly",
   itemsPerRow: "ipr",

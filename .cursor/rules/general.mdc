@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+- All functions in TypeScript and JavaScript must be written using arrow function syntax
+- Prefer concise arrow functions where possible

@@ -94,7 +94,10 @@ const styleBranchToCssDeclarations = (style: StyleRecord): Record<string, string
     set("display", "block")
   }
 
-  // -- PositioningAccordion   --///
+  // -- PositioningAccordion --//
+  const zIndexValue = asNumber(style.zIndex ?? style["z-index"])
+  if (zIndexValue !== undefined) set("z-index", String(zIndexValue))
+  if (typeof style.inset === "string") set("inset", style.inset)
   if (typeof style.position === "string") set("position", style.position)
   if (typeof style.float === "string") set("float", style.float)
   if (typeof style.clear === "string") set("clear", style.clear)
