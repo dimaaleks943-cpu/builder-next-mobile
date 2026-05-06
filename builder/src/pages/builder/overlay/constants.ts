@@ -2,7 +2,8 @@ import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts"
 import { COLORS } from "../../../theme/colors"
 
 export const OVERLAY_OUTLINE_BORDER = `2px solid ${COLORS.purple400}`
-export const OVERLAY_BADGE_OFFSET_Y = 24
+/** Отступ модалки настроек под биркой (viewport), см. {@link computeInlineModalAnchorNearBadge}. */
+export const OVERLAY_INLINE_MODAL_BELOW_BADGE_GAP = 6
 export const OVERLAY_BADGE_GAP_Y = 6
 
 /** Ключи resolver (`Editor resolver`), когда в state есть `type.resolvedName`. */
