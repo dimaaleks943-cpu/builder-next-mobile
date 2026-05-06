@@ -1,18 +1,21 @@
-import { useNode, useEditor } from "@craftjs/core"
-import { useEffect, useRef, useState, startTransition } from "react"
+import { useEditor, useNode } from "@craftjs/core"
+import { useCallback, useEffect, useRef, useState, startTransition } from "react"
 import { useLazyGetContentCategoriesQuery } from "../store/extranetApi"
 import type { ContentCategory } from "../api/extranet"
 import { COLORS } from "../theme/colors"
-import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import { useCollectionFilterScope } from "../pages/builder/context/CollectionFilterScopeContext.tsx"
-import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
-import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import {
   type CraftMixBlendMode,
   DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
   resolveCraftVisualEffectsStyle,
 } from "./craftVisualEffects.ts"
+import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
+import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
+import {
+  useReactToInlineSettingsOpenRequest,
+  type InlineSettingsViewportAnchor,
+} from "../pages/builder/context/CraftInlineSettingsBridgeContext.tsx"
 import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
@@ -37,24 +40,21 @@ type CategoryFilterProps = {
  * Редакторский блок фильтра: загрузка категорий через RTK Query и запись выбора в `CollectionFilterScope`.
  */
 export const CraftCategoryFilter = () => {
+  const rootRef = useRef<HTMLDivElement | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
-  const badgeRef = useRef<HTMLDivElement | null>(null)
-  const rootRef = useRef<HTMLDivElement | null>(null)
+  const rightPanelContext = useRightPanelContext()
+  const { actions } = useEditor()
 
   const {
     connectors: { connect, drag },
-    selected,
-    id: nodeId,
     props,
+    id: nodeId,
   } = useNode((node) => ({
-    selected: node.events.selected,
-    id: node.id,
     props: node.data.props as CategoryFilterProps,
+    id: node.id,
   }))
 
-  const { actions } = useEditor()
-  const rightPanelContext = useRightPanelContext()
   const { selectedCategoryIdByScope, setCategoryForScope } =
     useCollectionFilterScope()
   const [fetchCategories, { data: categoriesResponse, isFetching }] =
@@ -73,6 +73,29 @@ export const CraftCategoryFilter = () => {
   // `null` означает «Все категории»; иначе UUID выбранной категории для этого scope.
   const selectedId = scope ? selectedCategoryIdByScope[scope] ?? null : null
 
+  const openInlineSettingsModal = useCallback(
+    (viewportAnchor: InlineSettingsViewportAnchor | null) => {
+      if (viewportAnchor) {
+        setModalPosition({
+          top: viewportAnchor.top,
+          left: viewportAnchor.left,
+        })
+      } else if (rootRef.current) {
+        const rect = rootRef.current.getBoundingClientRect()
+        setModalPosition({ top: rect.bottom + 6, left: rect.left })
+      }
+      setIsSettingsOpen(true)
+    },
+    [],
+  )
+
+  useReactToInlineSettingsOpenRequest(nodeId, openInlineSettingsModal)
+
+  const handleShowAllSettings = () => {
+    rightPanelContext?.setTabIndex(1)
+    setIsSettingsOpen(false)
+  }
+
   // Список опций фильтра: дочерние категории от указанного корня (content category id).
   useEffect(() => {
     const id = contentCategoryRootId.trim()
@@ -81,23 +104,6 @@ export const CraftCategoryFilter = () => {
   }, [contentCategoryRootId, fetchCategories])
 
   const categories: ContentCategory[] = categoriesResponse?.data ?? []
-
-  const openSettings = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (badgeRef.current) {
-      const rect = badgeRef.current.getBoundingClientRect()
-      setModalPosition({
-        top: rect.bottom + 6,
-        left: rect.left,
-      })
-    }
-    setIsSettingsOpen(true)
-  }
-
-  const handleShowAllSettings = () => {
-    rightPanelContext?.setTabIndex(1)
-    setIsSettingsOpen(false)
-  }
 
   const flexDirection = direction === "column" ? "column" : "row"
   const isList = variant === "list"
@@ -185,6 +191,7 @@ export const CraftCategoryFilter = () => {
   const rootMissing = !contentCategoryRootId.trim()
 
   return (
+    <>
     <div
       ref={(ref) => {
         rootRef.current = ref
@@ -200,12 +207,8 @@ export const CraftCategoryFilter = () => {
         maxHeight: responsiveStyle.maxHeight as string | number | undefined,
         display: "flex",
         flexDirection: "column",
-        backgroundColor: selected
-          ? COLORS.lightPurple
-          : ((responsiveStyle.backgroundColor as string | undefined) ?? COLORS.white),
-        border: selected
-          ? `2px solid ${COLORS.purple400}`
-          : `1px solid ${COLORS.gray300}`,
+        backgroundColor: (responsiveStyle.backgroundColor as string | undefined) ?? COLORS.white,
+        border: `1px solid ${COLORS.gray300}`,
         borderRadius: 4,
         overflow:
           (responsiveStyle.overflow as "auto" | "hidden" | "visible" | "scroll" | undefined) ??
@@ -233,17 +236,6 @@ export const CraftCategoryFilter = () => {
         }),
       }}
     >
-      {selected && (
-        <InlineSettingsBadge
-          ref={badgeRef}
-          icon={<span>CF</span>}
-          label="Фильтр категорий"
-          anchorElement={rootRef.current}
-          usePortal
-          onSettingsClick={openSettings}
-        />
-      )}
-
       <div
         style={{
           padding: 12,
@@ -315,199 +307,199 @@ export const CraftCategoryFilter = () => {
           </>
         )}
       </div>
-
-      <InlineSettingsModal
-        open={isSettingsOpen}
-        title="Настройки фильтра категорий"
-        top={modalPosition.top}
-        left={modalPosition.left}
-        onClose={() => setIsSettingsOpen(false)}
-        onShowAllSettings={handleShowAllSettings}
-      >
-        <label
-          style={{
-            display: "block",
-            marginBottom: 4,
-            fontSize: 12,
-            color: COLORS.gray700,
-          }}
-        >
-          Scope (строка, как у ContentList)
-        </label>
-        <input
-          type="text"
-          placeholder="например, catalog"
-          style={{
-            width: "100%",
-            padding: "6px 8px",
-            fontSize: 13,
-            borderRadius: 4,
-            border: `1px solid ${COLORS.gray300}`,
-            marginBottom: 12,
-            boxSizing: "border-box",
-          }}
-          value={filterScope}
-          onChange={(e) => {
-            const value = e.target.value
-            startTransition(() => {
-              actions.setProp(nodeId, (nodeProps: CategoryFilterProps) => {
-                nodeProps.filterScope = value
-              })
-            })
-          }}
-        />
-
-        <label
-          style={{
-            display: "block",
-            marginBottom: 4,
-            fontSize: 12,
-            color: COLORS.gray700,
-          }}
-        >
-          ID корня категорий (content category)
-        </label>
-        <input
-          type="text"
-          placeholder="UUID"
-          style={{
-            width: "100%",
-            padding: "6px 8px",
-            fontSize: 13,
-            borderRadius: 4,
-            border: `1px solid ${COLORS.gray300}`,
-            marginBottom: 12,
-            boxSizing: "border-box",
-          }}
-          value={contentCategoryRootId}
-          onChange={(e) => {
-            const value = e.target.value
-            startTransition(() => {
-              actions.setProp(nodeId, (nodeProps: CategoryFilterProps) => {
-                nodeProps.contentCategoryRootId = value
-              })
-            })
-          }}
-        />
-
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: COLORS.gray800,
-            marginBottom: 8,
-          }}
-        >
-          Вид
-        </div>
-        <div
-          style={{
-            display: "flex",
-            gap: 4,
-            marginBottom: 12,
-            flexWrap: "wrap",
-          }}
-        >
-          {(
-            [
-              ["buttons", "Кнопки"],
-              ["radio", "Радио"],
-              ["list", "Список"],
-            ] as const
-          ).map(([v, label]) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => {
-                actions.setProp(nodeId, (nodeProps: CategoryFilterProps) => {
-                  nodeProps.variant = v
-                })
-              }}
-              style={{
-                padding: "6px 10px",
-                borderRadius: 4,
-                border: `1px solid ${COLORS.gray300}`,
-                background: variant === v ? COLORS.lightPurple : COLORS.white,
-                cursor: "pointer",
-                fontSize: 12,
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: COLORS.gray800,
-            marginBottom: 8,
-          }}
-        >
-          Направление
-        </div>
-        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          {(
-            [
-              ["row", "Строка"],
-              ["column", "Колонка"],
-            ] as const
-          ).map(([d, label]) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => {
-                actions.setProp(nodeId, (nodeProps: CategoryFilterProps) => {
-                  nodeProps.direction = d
-                })
-              }}
-              style={{
-                padding: "6px 12px",
-                borderRadius: 4,
-                border: `1px solid ${COLORS.gray300}`,
-                background: direction === d ? COLORS.lightPurple : COLORS.white,
-                cursor: "pointer",
-                fontSize: 12,
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <label
-          style={{
-            display: "block",
-            marginBottom: 4,
-            fontSize: 12,
-            color: COLORS.gray700,
-          }}
-        >
-          Подпись «Все»
-        </label>
-        <input
-          type="text"
-          style={{
-            width: "100%",
-            padding: "6px 8px",
-            fontSize: 13,
-            borderRadius: 4,
-            border: `1px solid ${COLORS.gray300}`,
-            boxSizing: "border-box",
-          }}
-          value={showAllLabel}
-          onChange={(e) => {
-            const value = e.target.value
-            startTransition(() => {
-              actions.setProp(nodeId, (nodeProps: CategoryFilterProps) => {
-                nodeProps.showAllLabel = value
-              })
-            })
-          }}
-        />
-      </InlineSettingsModal>
     </div>
+    <InlineSettingsModal
+      open={isSettingsOpen}
+      title="Настройки фильтра категорий"
+      top={modalPosition.top}
+      left={modalPosition.left}
+      onClose={() => setIsSettingsOpen(false)}
+      onShowAllSettings={handleShowAllSettings}
+    >
+      <label
+        style={{
+          display: "block",
+          marginBottom: 4,
+          fontSize: 12,
+          color: COLORS.gray700,
+        }}
+      >
+        Scope (строка, как у ContentList)
+      </label>
+      <input
+        type="text"
+        placeholder="например, catalog"
+        style={{
+          width: "100%",
+          padding: "6px 8px",
+          fontSize: 13,
+          borderRadius: 4,
+          border: `1px solid ${COLORS.gray300}`,
+          marginBottom: 12,
+          boxSizing: "border-box",
+        }}
+        value={filterScope}
+        onChange={(e) => {
+          const value = e.target.value
+          startTransition(() => {
+            actions.setProp(nodeId, (nodeProps: CategoryFilterProps) => {
+              nodeProps.filterScope = value
+            })
+          })
+        }}
+      />
+
+      <label
+        style={{
+          display: "block",
+          marginBottom: 4,
+          fontSize: 12,
+          color: COLORS.gray700,
+        }}
+      >
+        ID корня категорий (content category)
+      </label>
+      <input
+        type="text"
+        placeholder="UUID"
+        style={{
+          width: "100%",
+          padding: "6px 8px",
+          fontSize: 13,
+          borderRadius: 4,
+          border: `1px solid ${COLORS.gray300}`,
+          marginBottom: 12,
+          boxSizing: "border-box",
+        }}
+        value={contentCategoryRootId}
+        onChange={(e) => {
+          const value = e.target.value
+          startTransition(() => {
+            actions.setProp(nodeId, (nodeProps: CategoryFilterProps) => {
+              nodeProps.contentCategoryRootId = value
+            })
+          })
+        }}
+      />
+
+      <div
+        style={{
+          fontSize: 12,
+          fontWeight: 600,
+          color: COLORS.gray800,
+          marginBottom: 8,
+        }}
+      >
+        Вид
+      </div>
+      <div
+        style={{
+          display: "flex",
+          gap: 4,
+          marginBottom: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        {(
+          [
+            ["buttons", "Кнопки"],
+            ["radio", "Радио"],
+            ["list", "Список"],
+          ] as const
+        ).map(([v, label]) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => {
+              actions.setProp(nodeId, (nodeProps: CategoryFilterProps) => {
+                nodeProps.variant = v
+              })
+            }}
+            style={{
+              padding: "6px 10px",
+              borderRadius: 4,
+              border: `1px solid ${COLORS.gray300}`,
+              background: variant === v ? COLORS.lightPurple : COLORS.white,
+              cursor: "pointer",
+              fontSize: 12,
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div
+        style={{
+          fontSize: 12,
+          fontWeight: 600,
+          color: COLORS.gray800,
+          marginBottom: 8,
+        }}
+      >
+        Направление
+      </div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        {(
+          [
+            ["row", "Строка"],
+            ["column", "Колонка"],
+          ] as const
+        ).map(([d, label]) => (
+          <button
+            key={d}
+            type="button"
+            onClick={() => {
+              actions.setProp(nodeId, (nodeProps: CategoryFilterProps) => {
+                nodeProps.direction = d
+              })
+            }}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 4,
+              border: `1px solid ${COLORS.gray300}`,
+              background: direction === d ? COLORS.lightPurple : COLORS.white,
+              cursor: "pointer",
+              fontSize: 12,
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <label
+        style={{
+          display: "block",
+          marginBottom: 4,
+          fontSize: 12,
+          color: COLORS.gray700,
+        }}
+      >
+        Подпись «Все»
+      </label>
+      <input
+        type="text"
+        style={{
+          width: "100%",
+          padding: "6px 8px",
+          fontSize: 13,
+          borderRadius: 4,
+          border: `1px solid ${COLORS.gray300}`,
+          boxSizing: "border-box",
+        }}
+        value={showAllLabel}
+        onChange={(e) => {
+          const value = e.target.value
+          startTransition(() => {
+            actions.setProp(nodeId, (nodeProps: CategoryFilterProps) => {
+              nodeProps.showAllLabel = value
+            })
+          })
+        }}
+      />
+    </InlineSettingsModal>
+    </>
   )
 };
 

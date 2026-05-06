@@ -1,9 +1,7 @@
 import { useNode } from "@craftjs/core"
-import { useRef } from "react"
 import type { ReactNode } from "react"
 import { COLORS } from "../theme/colors"
 import { withOpacity } from "../utils/colorUtils"
-import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 import type {
   BlockLayoutMode,
   FlexAlignItems,
@@ -54,12 +52,9 @@ export const CraftBlock = (props: BlockProps) => {
     (responsiveStyle.outlineOffset as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset
   const outlineColor =
     (responsiveStyle.outlineColor as string | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor
-  const blockRef = useRef<HTMLDivElement | null>(null)
   const {
     connectors: { connect, drag },
-    selected,
   } = useNode((node) => ({
-    selected: node.events.selected,
     id: node.id,
   }))
 
@@ -76,7 +71,6 @@ export const CraftBlock = (props: BlockProps) => {
   return (
     <div
       ref={(ref) => {
-        blockRef.current = ref
         if (!ref) return
         connect(drag(ref))
       }}
@@ -84,12 +78,11 @@ export const CraftBlock = (props: BlockProps) => {
         ...responsiveStyle,
         minHeight: fullSize ? undefined : (minHeight ?? 80),//TODO дефолтное значение что бы видеть блок при установки
 
-        /** подсветка блок TODO вынести как отдельную обвертку */
-        borderColor: selected ? COLORS.purple400 : effectiveBorderColor,
-        borderTopWidth: selected ? 2 : hasCustomBorder ? borderTopWidth : 0,
-        borderRightWidth: selected ? 2 : hasCustomBorder ? borderRightWidth : 0,
-        borderBottomWidth: selected ? 2 : hasCustomBorder ? borderBottomWidth : 0,
-        borderLeftWidth: selected ? 2 : hasCustomBorder ? borderLeftWidth : 0,
+        borderColor: effectiveBorderColor,
+        borderTopWidth: hasCustomBorder ? borderTopWidth : 0,
+        borderRightWidth: hasCustomBorder ? borderRightWidth : 0,
+        borderBottomWidth: hasCustomBorder ? borderBottomWidth : 0,
+        borderLeftWidth: hasCustomBorder ? borderLeftWidth : 0,
 
         /** display и layout из «Расположение»; CSS position/float/clear — из «Позиционирование» (responsiveStyle). */
         display: layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block",
@@ -110,15 +103,6 @@ export const CraftBlock = (props: BlockProps) => {
         }),
       }}
     >
-      {selected && (
-        <InlineSettingsBadge
-          label="Div блок"
-          icon={<span style={{ fontSize: 11 }}>B</span>}
-          showSettingsButton={false}
-          anchorElement={blockRef.current}
-          usePortal
-        />
-      )}
       {props.children}
     </div>
   )

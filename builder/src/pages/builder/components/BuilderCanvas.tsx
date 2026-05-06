@@ -19,6 +19,7 @@ import { MonitorIcon } from "../../../icons/MonitorIcon.tsx";
 import { TabletIcon } from "../../../icons/TabletIcon.tsx";
 import { MobileIcon } from "../../../icons/MobileIcon.tsx";
 import { useBuilderModeContext } from "../context/BuilderModeContext.tsx";
+import { OverlayManager } from "../overlay/OverlayManager/OverlayManager.tsx";
 
 const MIN_PREVIEW_WIDTH = 320
 const MAX_WEB_PREVIEW_WIDTH = 3840
@@ -89,6 +90,7 @@ export const BuilderCanvas = ({
   })
 
   const canvasRef = useRef<HTMLDivElement>(null)
+  const overlayRootRef = useRef<HTMLDivElement | null>(null)
   const appliedPreviewWidth = customPreviewWidth ?? getPreviewMaxWidth(previewViewport)
 
   const mapWidthToViewport = (width: number): PreviewViewport => {
@@ -503,13 +505,22 @@ export const BuilderCanvas = ({
         </Box>
         <Box
           id="builder-badge-overlay-root"
+          ref={(ref: HTMLDivElement | null) => {
+            overlayRootRef.current = ref
+          }}
           sx={{
             position: "absolute",
             inset: 0,
             pointerEvents: "none",
             zIndex: 20,
           }}
-        />
+        >
+          <OverlayManager
+            previewViewport={previewViewport}
+            overlayRootElement={overlayRootRef.current}
+            canvasElement={canvasRef.current}
+          />
+        </Box>
       </Box>
     </Box>
   )

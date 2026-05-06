@@ -1,13 +1,16 @@
-import { useCallback, useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState, useCallback } from "react"
 import { useNode } from "@craftjs/core"
 import type { CSSProperties } from "react"
+import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
+import { ImageSettingsFields } from "../pages/builder/settingsCraftComponents/ImageSettingsFields.tsx"
+import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
+import {
+  useReactToInlineSettingsOpenRequest,
+  type InlineSettingsViewportAnchor,
+} from "../pages/builder/context/CraftInlineSettingsBridgeContext.tsx"
 import { COLORS } from "../theme/colors"
 import { withOpacity } from "../utils/colorUtils"
-import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
-import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
-import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
-import { ImageSettingsFields } from "../pages/builder/settingsCraftComponents"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import {
   type CraftMixBlendMode,
@@ -63,20 +66,42 @@ export const CraftImage = (props: CraftImageProps) => {
     (responsiveStyle.outlineOffset as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset
   const outlineColor =
     (responsiveStyle.outlineColor as string | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor
+
   const {
     connectors: { connect, drag },
-    selected,
+    id: imageNodeId,
   } = useNode((node) => ({
-    selected: node.events.selected,
     id: node.id,
   }))
-  const contentListData = useContentListData()
-  const rightPanelContext = useRightPanelContext()
 
+  const contentListData = useContentListData()
+  const imageWrapperRef = useRef<HTMLDivElement | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
-  const badgeRef = useRef<HTMLDivElement | null>(null)
-  const imageWrapperRef = useRef<HTMLDivElement | null>(null)
+  const rightPanelContext = useRightPanelContext()
+
+  const openImageInlineSettings = useCallback(
+    (viewportAnchor: InlineSettingsViewportAnchor | null) => {
+      if (viewportAnchor) {
+        setModalPosition({
+          top: viewportAnchor.top,
+          left: viewportAnchor.left,
+        })
+      } else if (imageWrapperRef.current) {
+        const rect = imageWrapperRef.current.getBoundingClientRect()
+        setModalPosition({ top: rect.bottom + 6, left: rect.left })
+      }
+      setIsSettingsOpen(true)
+    },
+    [],
+  )
+
+  useReactToInlineSettingsOpenRequest(imageNodeId, openImageInlineSettings)
+
+  const handleShowAllSettings = () => {
+    rightPanelContext?.setTabIndex(1)
+    setIsSettingsOpen(false)
+  }
 
   const effectiveSrc = useMemo(() => {
     // Если есть выбранное поле коллекции и данные элемента — берём URL из коллекции.
@@ -96,11 +121,6 @@ export const CraftImage = (props: CraftImageProps) => {
     // Плейсхолдер по умолчанию.
     return "https://cdn-icons-png.flaticon.com/128/17807/17807769.png"
   }, [collectionField, contentListData?.itemData, src])
-
-  const handleShowAllSettings = () => {
-    rightPanelContext?.setTabIndex(1)
-    setIsSettingsOpen(false)
-  }
 
   const hasCustomBorder =
     borderTopWidth > 0 ||
@@ -124,12 +144,12 @@ export const CraftImage = (props: CraftImageProps) => {
     objectFit: "cover",
     borderRadius,
     boxSizing: "border-box",
-    borderStyle: selected ? "solid" : hasCustomBorder ? (borderStyle || "solid") : "solid",
-    borderColor: selected ? COLORS.purple400 : effectiveBorderColor,
-    borderTopWidth: selected ? 2 : hasCustomBorder ? borderTopWidth : 0,
-    borderRightWidth: selected ? 2 : hasCustomBorder ? borderRightWidth : 0,
-    borderBottomWidth: selected ? 2 : hasCustomBorder ? borderBottomWidth : 0,
-    borderLeftWidth: selected ? 2 : hasCustomBorder ? borderLeftWidth : 0,
+    borderStyle: hasCustomBorder ? (borderStyle || "solid") : "solid",
+    borderColor: effectiveBorderColor,
+    borderTopWidth: hasCustomBorder ? borderTopWidth : 0,
+    borderRightWidth: hasCustomBorder ? borderRightWidth : 0,
+    borderBottomWidth: hasCustomBorder ? borderBottomWidth : 0,
+    borderLeftWidth: hasCustomBorder ? borderLeftWidth : 0,
     backgroundColor: backgroundColor ?? COLORS.gray100,
     ...resolveCraftVisualEffectsStyle({
       mixBlendMode,
@@ -141,28 +161,6 @@ export const CraftImage = (props: CraftImageProps) => {
     }),
   }
 
-  const openSettings = useCallback(
-    (event?: React.MouseEvent | React.PointerEvent) => {
-      if (event && "stopPropagation" in event) {
-        event.stopPropagation()
-        event.preventDefault()
-      }
-      if (badgeRef.current) {
-        const rect = badgeRef.current.getBoundingClientRect()
-        setModalPosition({
-          top: rect.bottom + 6,
-          left: rect.left,
-        })
-      }
-      setIsSettingsOpen(true)
-    },
-    [],
-  )
-
-  // Локальной логики настроек (URL/режим/размеры) здесь больше нет —
-  // всё вынесено в общий компонент ImageSettingsFields, который
-  // используется как в модалке, так и в правой панели.
-
   return (
     <>
       <div
@@ -173,24 +171,10 @@ export const CraftImage = (props: CraftImageProps) => {
         }}
         style={{ position: "relative" }}
       >
-        {/* Бирка Image — показывается всегда при выделении компонента */}
-        {selected && (
-          <InlineSettingsBadge
-            ref={badgeRef}
-            icon={<span style={{ fontSize: 11 }}>🖼</span>}
-            label="Изображение"
-            anchorElement={imageWrapperRef.current}
-            usePortal
-            onSettingsClick={() => openSettings()}
-          />
-        )}
-
-        {/* Пустышка изображения: пока без настроек, только базовый placeholder */}
         <img src={effectiveSrc} alt={alt} style={style}/>
       </div>
-
       <InlineSettingsModal
-        open={selected && isSettingsOpen}
+        open={isSettingsOpen}
         title="Настройки изображения"
         top={modalPosition.top}
         left={modalPosition.left}

@@ -1,13 +1,15 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react"
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useEditor, useNode } from "@craftjs/core"
 import type { CSSProperties } from "react"
-import { COLORS } from "../theme/colors"
-import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
-import { useInsideContentListCell } from "../pages/builder/context/ContentListCellContext.tsx"
-import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
 import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
-import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
-import { TextSettingsFields } from "../pages/builder/settingsCraftComponents"
+import { TextSettingsFields } from "../pages/builder/settingsCraftComponents/TextSettingsFields.tsx"
+import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
+import {
+  useReactToInlineSettingsOpenRequest,
+  type InlineSettingsViewportAnchor,
+} from "../pages/builder/context/CraftInlineSettingsBridgeContext.tsx"
+import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
+import { COLORS } from "../theme/colors"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import {
   type CraftMixBlendMode,
@@ -57,12 +59,11 @@ export const CraftText = (props: TextProps) => {
     (responsiveStyle.outlineColor as string | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(text)
+  const spanRef = useRef<HTMLSpanElement | null>(null)
+  const outerWrapperRef = useRef<HTMLSpanElement | null>(null)
   const [isTextModalOpen, setIsTextModalOpen] = useState(false)
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
-  const spanRef = useRef<HTMLSpanElement | null>(null)
-
-  // DOM-элемент бирки Text (используем для позиционирования модалки)
-  const badgeRef = useRef<HTMLDivElement | null>(null)
+  const rightPanelContext = useRightPanelContext()
 
   const {
     connectors: { connect, drag },
@@ -74,10 +75,31 @@ export const CraftText = (props: TextProps) => {
   }))
 
   const { actions } = useEditor()
-  const rightPanelContext = useRightPanelContext()
-  const isInsideContentList = useInsideContentListCell()
   const contentListData = useContentListData()
   const modeContext = useBuilderModeContext()
+
+  const openTextInlineSettings = useCallback(
+    (viewportAnchor: InlineSettingsViewportAnchor | null) => {
+      if (viewportAnchor) {
+        setModalPosition({
+          top: viewportAnchor.top,
+          left: viewportAnchor.left,
+        })
+      } else if (outerWrapperRef.current) {
+        const rect = outerWrapperRef.current.getBoundingClientRect()
+        setModalPosition({ top: rect.bottom + 6, left: rect.left })
+      }
+      setIsTextModalOpen(true)
+    },
+    [],
+  )
+
+  useReactToInlineSettingsOpenRequest(id, openTextInlineSettings)
+
+  const handleShowAllSettings = () => {
+    rightPanelContext?.setTabIndex(1)
+    setIsTextModalOpen(false)
+  }
 
   const displayText = useMemo(
     () =>
@@ -103,30 +125,6 @@ export const CraftText = (props: TextProps) => {
     }
   }, [displayText, isEditing])
 
-
-  const openTextModal = useCallback((e?: React.MouseEvent | React.PointerEvent | Event) => {
-    if (e && "stopPropagation" in e) {
-      e.stopPropagation()
-      e.preventDefault()
-    }
-    if (badgeRef.current) {
-      const rect = badgeRef.current.getBoundingClientRect()
-      setModalPosition({
-        top: rect.bottom + 4,
-        left: rect.left,
-      })
-    }
-    // Предотвращаем выделение родительской ячейки
-    if (id) {
-      actions.selectNode(id)
-    }
-    setIsTextModalOpen(true)
-  }, [id, actions])
-
-  const handleShowAllSettings = () => {
-    rightPanelContext?.setTabIndex(1)
-    setIsTextModalOpen(false)
-  }
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLSpanElement>) => {
     e.stopPropagation()
@@ -193,8 +191,7 @@ export const CraftText = (props: TextProps) => {
     WebkitTextStrokeWidth: strokeWidth ? strokeWidth : undefined,
     WebkitTextStrokeColor: strokeColor,
 
-    //TODO переписать на прямую привязку к fontStyle
-    border: selected ? `2px solid ${COLORS.purple400}` : "1px solid transparent",
+    border: "1px solid transparent",
   }
 
   const outerWrapperStyle: CSSProperties = {
@@ -207,28 +204,11 @@ export const CraftText = (props: TextProps) => {
       outlineOffset,
       outlineColor,
     }),
-    ...(selected ? { position: "relative" as const, zIndex: 1 } : {}),
   }
-
-  const showSettingsButton = isInsideContentList && selected
 
   return (
     <>
-      <span style={outerWrapperStyle}>
-        {selected && (
-          <InlineSettingsBadge
-            ref={badgeRef}
-            icon={<span style={{ fontSize: 11 }}>T</span>}
-            label="Текст"
-            maxWidth={120}
-            showSettingsButton={showSettingsButton}
-            anchorElement={spanRef.current}
-            usePortal
-            onSettingsClick={
-              showSettingsButton ? () => openTextModal() : undefined
-            }
-          />
-        )}
+      <span ref={outerWrapperRef} style={outerWrapperStyle}>
         <span
           ref={(ref) => {
             spanRef.current = ref
@@ -250,18 +230,16 @@ export const CraftText = (props: TextProps) => {
           {displayText}
         </span>
       </span>
-      {showSettingsButton && isTextModalOpen && (
-        <InlineSettingsModal
-          open={showSettingsButton && isTextModalOpen}
-          title="Настройки текста"
-          top={modalPosition.top}
-          left={modalPosition.left}
-          onClose={() => setIsTextModalOpen(false)}
-          onShowAllSettings={handleShowAllSettings}
-        >
-          <TextSettingsFields/>
-        </InlineSettingsModal>
-      )}
+      <InlineSettingsModal
+        open={isTextModalOpen}
+        title="Настройки текста"
+        top={modalPosition.top}
+        left={modalPosition.left}
+        onClose={() => setIsTextModalOpen(false)}
+        onShowAllSettings={handleShowAllSettings}
+      >
+        <TextSettingsFields />
+      </InlineSettingsModal>
     </>
   )
 };

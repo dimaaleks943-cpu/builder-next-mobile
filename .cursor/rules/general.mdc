@@ -3,3 +3,6 @@ alwaysApply: true
 ---
 - All functions in TypeScript and JavaScript must be written using arrow function syntax
 - Prefer concise arrow functions where possible
+- When creating a React component with props, props must be typed using an interface
+- If the props interface is not imported or reused elsewhere, it should be named `Props`
+- When specifying any color, it must be taken from the global COLORS variable

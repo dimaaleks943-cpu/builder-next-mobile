@@ -1,12 +1,15 @@
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useEditor, useNode } from "@craftjs/core"
 import type { CSSProperties } from "react"
-import { COLORS } from "../theme/colors"
-import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
 import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
+import { LinkTextSettingsFields } from "../pages/builder/settingsCraftComponents/LinkTextSettingsFields.tsx"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
+import {
+  useReactToInlineSettingsOpenRequest,
+  type InlineSettingsViewportAnchor,
+} from "../pages/builder/context/CraftInlineSettingsBridgeContext.tsx"
+import { COLORS } from "../theme/colors"
 import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
-import { LinkTextSettingsFields } from "../pages/builder/settingsCraftComponents"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import {
   type CraftMixBlendMode,
@@ -21,8 +24,6 @@ import {
   commitCraftTextDraft,
   getCraftTextDisplayText,
 } from "../utils/craftLocalizedText.ts"
-
-export type TextAlign = "left" | "center" | "right"
 
 export interface LinkTextProps {
   text?: string
@@ -66,10 +67,10 @@ export const CraftLinkText = (props: LinkTextProps) => {
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(text)
   const spanRef = useRef<HTMLSpanElement | null>(null)
-  const linkRef = useRef<HTMLAnchorElement | null>(null)
-  const badgeRef = useRef<HTMLDivElement | null>(null)
+  const anchorRef = useRef<HTMLAnchorElement | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
+  const rightPanelContext = useRightPanelContext()
 
   const {
     connectors: { connect, drag },
@@ -81,9 +82,31 @@ export const CraftLinkText = (props: LinkTextProps) => {
   }))
 
   const { actions } = useEditor()
-  const rightPanelContext = useRightPanelContext()
   const contentListData = useContentListData()
   const modeContext = useBuilderModeContext()
+
+  const openLinkInlineSettings = useCallback(
+    (viewportAnchor: InlineSettingsViewportAnchor | null) => {
+      if (viewportAnchor) {
+        setModalPosition({
+          top: viewportAnchor.top,
+          left: viewportAnchor.left,
+        })
+      } else if (anchorRef.current) {
+        const rect = anchorRef.current.getBoundingClientRect()
+        setModalPosition({ top: rect.bottom + 6, left: rect.left })
+      }
+      setIsSettingsOpen(true)
+    },
+    [],
+  )
+
+  useReactToInlineSettingsOpenRequest(id, openLinkInlineSettings)
+
+  const handleShowAllSettings = () => {
+    rightPanelContext?.setTabIndex(1)
+    setIsSettingsOpen(false)
+  }
 
   const displayText = useMemo(
     () =>
@@ -158,29 +181,6 @@ export const CraftLinkText = (props: LinkTextProps) => {
     }
   }
 
-  const openSettingsModal = (event?: React.MouseEvent | React.PointerEvent) => {
-    if (event && "stopPropagation" in event) {
-      event.stopPropagation()
-      event.preventDefault()
-    }
-    if (badgeRef.current) {
-      const rect = badgeRef.current.getBoundingClientRect()
-      setModalPosition({
-        top: rect.bottom + 4,
-        left: rect.left,
-      })
-    }
-    if (id) {
-      actions.selectNode(id)
-    }
-    setIsSettingsOpen(true)
-  }
-
-  const handleShowAllSettings = () => {
-    rightPanelContext?.setTabIndex(1)
-    setIsSettingsOpen(false)
-  }
-
   const style: CSSProperties = {
     ...responsiveStyle,
     display: "inline-block",
@@ -197,77 +197,66 @@ export const CraftLinkText = (props: LinkTextProps) => {
     WebkitTextStrokeWidth: strokeWidth ? strokeWidth : undefined,
     WebkitTextStrokeColor: strokeColor,
 
-    //TODO переписать на прямую привязку к fontStyle
-    border: selected ? `2px solid ${COLORS.purple400}` : "1px solid transparent",
+    border: "1px solid transparent",
   }
 
   return (
     <>
-      <a
-        ref={linkRef}
-        href={href}
-        target={openInNewTab ? "_blank" : "_self"}
-        rel={openInNewTab ? "noopener noreferrer" : undefined}
-        onClick={handleLinkClick}
-        style={{
-          textDecoration: "none",
-          color: "inherit",
-          position: "relative",
-          display: "inline-block",
-          maxWidth: "max-content",
-          ...resolveCraftVisualEffectsStyle({
-            mixBlendMode,
-            opacityPercent,
-            outlineStyleMode,
-            outlineWidth,
-            outlineOffset,
-            outlineColor,
-          }),
+    <a
+      ref={(ref) => {
+        anchorRef.current = ref
+      }}
+      href={href}
+      target={openInNewTab ? "_blank" : "_self"}
+      rel={openInNewTab ? "noopener noreferrer" : undefined}
+      onClick={handleLinkClick}
+      style={{
+        textDecoration: "none",
+        color: "inherit",
+        position: "relative",
+        display: "inline-block",
+        maxWidth: "max-content",
+        ...resolveCraftVisualEffectsStyle({
+          mixBlendMode,
+          opacityPercent,
+          outlineStyleMode,
+          outlineWidth,
+          outlineOffset,
+          outlineColor,
+        }),
+      }}
+    >
+      <span
+        ref={(ref) => {
+          spanRef.current = ref
+          if (!ref) return
+          if (isEditing && !collectionField) {
+            connect(ref)
+          } else {
+            connect(drag(ref))
+          }
         }}
+        contentEditable={isEditing && !collectionField}
+        suppressContentEditableWarning
+        onDoubleClick={handleDoubleClick}
+        onInput={handleInput}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        style={style}
       >
-        {selected && (
-          <InlineSettingsBadge
-            ref={badgeRef}
-            icon={<span style={{ fontSize: 11 }}>🔗</span>}
-            label="Текст-ссылка"
-            maxWidth={140}
-            showSettingsButton
-            anchorElement={linkRef.current}
-            usePortal
-            onSettingsClick={openSettingsModal}
-          />
-        )}
-        <span
-          ref={(ref) => {
-            spanRef.current = ref
-            if (!ref) return
-            if (isEditing && !collectionField) {
-              connect(ref)
-            } else {
-              connect(drag(ref))
-            }
-          }}
-          contentEditable={isEditing && !collectionField}
-          suppressContentEditableWarning
-          onDoubleClick={handleDoubleClick}
-          onInput={handleInput}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          style={style}
-        >
-          {displayText}
-        </span>
-      </a>
-      <InlineSettingsModal
-        open={selected && isSettingsOpen}
-        title="Настройки ссылки"
-        top={modalPosition.top}
-        left={modalPosition.left}
-        onClose={() => setIsSettingsOpen(false)}
-        onShowAllSettings={handleShowAllSettings}
-      >
-        <LinkTextSettingsFields/>
-      </InlineSettingsModal>
+        {displayText}
+      </span>
+    </a>
+    <InlineSettingsModal
+      open={isSettingsOpen}
+      title="Настройки ссылки"
+      top={modalPosition.top}
+      left={modalPosition.left}
+      onClose={() => setIsSettingsOpen(false)}
+      onShowAllSettings={handleShowAllSettings}
+    >
+      <LinkTextSettingsFields />
+    </InlineSettingsModal>
     </>
   )
 };

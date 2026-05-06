@@ -1,6 +1,9 @@
 import { useEffect, useRef } from "react"
 import type { ReactNode } from "react"
+import { createPortal } from "react-dom"
 import { COLORS } from "../theme/colors.ts"
+import { Box, Button, IconButton, Typography } from "@mui/material";
+import { CloseIcon } from "../icons/CloseIcon.tsx";
 
 export interface InlineSettingsModalProps {
   open: boolean;
@@ -67,11 +70,12 @@ export const InlineSettingsModal = ({
     }
   }, [open, onClose])
 
-  if (!open) {
+  if (!open || typeof document === "undefined") {
     return null
   }
 
-  return (
+  /** Портал в body: иначе `position:fixed` цепляется к предку с transform (Craft/Frame) и координаты ломаются. */
+  return createPortal(
     <div
       ref={modalRef}
       style={{
@@ -84,77 +88,42 @@ export const InlineSettingsModal = ({
         minWidth: 260,
         maxWidth: 320,
         boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-        fontSize: 13,
-        zIndex: 1000,
+        fontSize: "14px",
+        lineHeight: "20px",
+        zIndex: 16000,
       }}
       onClick={(event) => {
         // Не даём клику внутри модалки всплывать до Craft/других обработчиков
         event.stopPropagation()
       }}
     >
-      {/* Шапка с заголовком и крестиком */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 10,
-        }}
-      >
-        <div
-          style={{
-            fontWeight: 600,
-          }}
-        >
-          {title}
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            border: "none",
-            background: "transparent",
-            cursor: "pointer",
-            fontSize: 12,
-          }}
-        >
-          ✕
-        </button>
-      </div>
+      <Box style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <Typography style={{ fontWeight: 500, fontSize: "12px", lineHeight: "14px" }}>{title}</Typography>
+        <IconButton onClick={onClose} sx={{ padding: 0 }}>
+          <CloseIcon size={10} fill={COLORS.black}/>
+        </IconButton>
+      </Box>
 
       {/* Контент модалки (у каждого компонента свой) */}
       <div>{children}</div>
 
       {/* Кнопка "Показать все настройки" (опциональная) */}
       {onShowAllSettings && (
-        <div
-          style={{
-            marginTop: 10,
-            display: "flex",
-            justifyContent: "flex-end",
-          }}
-        >
-          <button
-            type="button"
-            style={{
-              padding: "6px 12px",
-              borderRadius: 4,
-              border: "none",
-              backgroundColor: COLORS.purple400,
-              color: COLORS.white,
-              fontSize: 12,
-              cursor: "pointer",
-            }}
+        <Box style={{ marginTop: 10, display: "flex" }}>
+          <Button
             onClick={(event) => {
               event.stopPropagation()
               onShowAllSettings()
             }}
+            sx={{ fontSize: "10px", lineHeight: "14px", fontWeight: 400, width: "100%", color: COLORS.black }}
+            color="secondary"
+            variant="outlined"
           >
             Показать все настройки
-          </button>
-        </div>
+          </Button>
+        </Box>
       )}
-    </div>
+    </div>,
+    document.body,
   )
 }
-

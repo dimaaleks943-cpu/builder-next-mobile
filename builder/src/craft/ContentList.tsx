@@ -1,5 +1,5 @@
 import { useNode, useEditor, Element } from "@craftjs/core"
-import { useState, useEffect, useRef, startTransition } from "react"
+import { useState, useEffect, useRef, startTransition, useCallback } from "react"
 import { useLazyGetContentItemsQuery } from "../store/extranetApi"
 import { COLORS } from "../theme/colors"
 import { withOpacity } from "../utils/colorUtils"
@@ -9,7 +9,10 @@ import { useCollectionFilterScope } from "../pages/builder/context/CollectionFil
 import { CraftContentListCell } from "./ContentListCell"
 import { ContentListDataContext } from "../pages/builder/context/ContentListDataContext.tsx"
 import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
-import { InlineSettingsBadge } from "../components/InlineSettingsBadge.tsx"
+import {
+  useReactToInlineSettingsOpenRequest,
+  type InlineSettingsViewportAnchor,
+} from "../pages/builder/context/CraftInlineSettingsBridgeContext.tsx"
 import {
   buildAllCellsSignature,
   buildSubtreeTypePropsFingerprint,
@@ -53,7 +56,6 @@ export type ContentListProps = {
 export const CraftContentList = ({}: ContentListProps) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
-  const badgeRef = useRef<HTMLDivElement | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const syncInProgressRef = useRef(false)
   const prevSignaturePartsRef = useRef<string[]>([])
@@ -102,17 +104,29 @@ export const CraftContentList = ({}: ContentListProps) => {
   /** Как раньше: лёгкая серая обводка в редакторе, пока нет своих границ из панели «Границы». */
   const defaultEditorChrome = !selected && !hasCustomBorder
 
+  const openInlineSettingsModal = useCallback(
+    (viewportAnchor?: InlineSettingsViewportAnchor | null) => {
+      const anchor = viewportAnchor ?? null
+      if (anchor) {
+        setModalPosition({ top: anchor.top, left: anchor.left })
+      } else if (rootRef.current) {
+        const rect = rootRef.current.getBoundingClientRect()
+        setModalPosition({
+          top: rect.bottom + 6,
+          left: rect.left,
+        })
+      }
+      setIsSettingsOpen(true)
+    },
+    [],
+  )
+
   const openSettings = (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (badgeRef.current) {
-      const rect = badgeRef.current.getBoundingClientRect()
-      setModalPosition({
-        top: rect.bottom + 6,
-        left: rect.left,
-      })
-    }
-    setIsSettingsOpen(true)
+    openInlineSettingsModal()
   }
+
+  useReactToInlineSettingsOpenRequest(contentListId, openInlineSettingsModal)
 
   const handleShowAllSettings = () => {
     rightPanelContext?.setTabIndex(1) // вкладка "Настройки"
@@ -501,19 +515,13 @@ export const CraftContentList = ({}: ContentListProps) => {
         maxHeight: responsiveStyle.maxHeight as string | number | undefined,
         display: "flex",
         flexDirection: "column",
-        backgroundColor: selected
-          ? COLORS.lightPurple
-          : ((responsiveStyle.backgroundColor as string | undefined) ?? COLORS.white),
-        borderStyle: selected ? "solid" : hasCustomBorder ? (borderStyle || "solid") : "solid",
-        borderColor: selected
-          ? COLORS.purple400
-          : hasCustomBorder
-            ? effectiveBorderColor
-            : COLORS.gray300,
-        borderTopWidth: selected ? 2 : hasCustomBorder ? borderTopWidth : defaultEditorChrome ? 1 : 0,
-        borderRightWidth: selected ? 2 : hasCustomBorder ? borderRightWidth : defaultEditorChrome ? 1 : 0,
-        borderBottomWidth: selected ? 2 : hasCustomBorder ? borderBottomWidth : defaultEditorChrome ? 1 : 0,
-        borderLeftWidth: selected ? 2 : hasCustomBorder ? borderLeftWidth : defaultEditorChrome ? 1 : 0,
+        backgroundColor: (responsiveStyle.backgroundColor as string | undefined) ?? COLORS.white,
+        borderStyle: hasCustomBorder ? (borderStyle || "solid") : "solid",
+        borderColor: hasCustomBorder ? effectiveBorderColor : COLORS.gray300,
+        borderTopWidth: hasCustomBorder ? borderTopWidth : defaultEditorChrome ? 1 : 0,
+        borderRightWidth: hasCustomBorder ? borderRightWidth : defaultEditorChrome ? 1 : 0,
+        borderBottomWidth: hasCustomBorder ? borderBottomWidth : defaultEditorChrome ? 1 : 0,
+        borderLeftWidth: hasCustomBorder ? borderLeftWidth : defaultEditorChrome ? 1 : 0,
         borderRadius,
         overflow:
           (responsiveStyle.overflow as "auto" | "hidden" | "visible" | "scroll" | undefined) ??
@@ -541,17 +549,6 @@ export const CraftContentList = ({}: ContentListProps) => {
         }),
       }}
     >
-      {selected && (
-        <InlineSettingsBadge
-          ref={badgeRef}
-          icon={<span>CL</span>}
-          label="Список-контента"
-          anchorElement={rootRef.current}
-          usePortal
-          onSettingsClick={openSettings}
-        />
-      )}
-
       {/* Основная область: либо 3 плейсхолдера, либо реальные элементы коллекции */}
       <div
         style={{
