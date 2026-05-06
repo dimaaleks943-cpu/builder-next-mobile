@@ -4,6 +4,7 @@ import {
   AccordionDetails,
   AccordionSummary,
   Box,
+  IconButton,
   Typography,
 } from "@mui/material"
 import { useEditor } from "@craftjs/core"
@@ -22,8 +23,16 @@ import {
   getResponsiveStyleProp,
   setResponsiveStyleProp,
 } from "../responsiveStyle.ts"
+import { BorderIcon } from "../../../icons/BorderIcon.tsx"
+import { BorderDashIcon } from "../../../icons/BorderDashIcon.tsx"
+import { BorderDashCornIcon } from "../../../icons/BorderDashCornIcon.tsx"
 
 const BORDER_RADIUS_MAX_PX = 100
+
+enum BORDER_RADIUS_MODE {
+  CORNERS = "corners",
+  UNIFORM = "uniform"
+}
 
 const borderRadiusToPercent = (px: number) => {
   const n = Number.isFinite(px) ? px : 0
@@ -34,6 +43,61 @@ const percentToBorderRadius = (percent: number) => {
   const c = Math.min(100, Math.max(0, Number.isFinite(percent) ? percent : 0))
   return Math.round((c / 100) * BORDER_RADIUS_MAX_PX)
 }
+
+const parsePxToken = (token: string) => {
+  const t = token.trim()
+  const m = /^([\d.]+)px$/i.exec(t) ?? /^([\d.]+)$/.exec(t)
+  return m ? Math.max(0, Math.round(Number(m[1]))) : 0
+}
+
+const expandBorderRadiusToCorners = (raw: unknown): [number, number, number, number] => {
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    const v = Math.max(0, raw)
+    return [v, v, v, v]
+  }
+  if (typeof raw !== "string") {
+    return [0, 0, 0, 0]
+  }
+  const parts = raw
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(parsePxToken)
+  if (parts.length === 0) {
+    return [0, 0, 0, 0]
+  }
+  if (parts.length === 1) {
+    const v = parts[0]
+    return [v, v, v, v]
+  }
+  if (parts.length === 2) {
+    return [parts[0], parts[1], parts[0], parts[1]]
+  }
+  if (parts.length === 3) {
+    return [parts[0], parts[1], parts[2], parts[1]]
+  }
+  return [parts[0], parts[1], parts[2], parts[3]]
+}
+
+const isCornersRadiusStored = (raw: unknown) => {
+  if (typeof raw !== "string") {
+    return false
+  }
+  const parts = raw.trim().split(/\s+/).filter(Boolean)
+  return parts.length >= 2
+}
+
+const formatCornersRadiusShorthand = (c: [number, number, number, number]) =>
+  `${c[0]}px ${c[1]}px ${c[2]}px ${c[3]}px`
+
+const cornersToUniformPx = (c: [number, number, number, number]) =>
+  c.every((x) => x === c[0]) ? c[0] : Math.round((c[0] + c[1] + c[2] + c[3]) / 4)
+
+/** Угол иконки по индексу в shorthand: 0 TL, 1 TR, 2 BR, 3 BL */
+const cssCornerIconRotateDeg = [270, 360, 90, 180] as const
+
+/** Порядок ячеек сетки 2×2: TL, TR, BL, BR → индексы в border-radius shorthand */
+const radiusCornerGridCssIndices = [0, 1, 3, 2] as const
 
 type BorderStyleUi = "none" | "solid" | "dotted"
 
@@ -65,16 +129,45 @@ export const BordersAccordion = () => {
     return null
   }
 
-  const handleRadiusPercentChange = (value: number) => {
+  const rawBorderRadius = getResponsiveStyleProp(selectedProps, "borderRadius", viewport)
+  const radiusUiMode: BORDER_RADIUS_MODE = isCornersRadiusStored(rawBorderRadius) ? BORDER_RADIUS_MODE.CORNERS : BORDER_RADIUS_MODE.UNIFORM
+  const cornersPx = expandBorderRadiusToCorners(rawBorderRadius)
+  const radiusPercent = borderRadiusToPercent(cornersPx[0])
+
+  const handleRadiusModeUniform = () => {
+    actions.setProp(selectedId, (props: any) => {
+      const raw = getResponsiveStyleProp(props, "borderRadius", viewport)
+      const c = expandBorderRadiusToCorners(raw)
+      const px = cornersToUniformPx(c)
+      setResponsiveStyleProp(props, "borderRadius", px, viewport)
+    })
+  }
+
+  const handleRadiusModeCorners = () => {
+    actions.setProp(selectedId, (props: any) => {
+      const raw = getResponsiveStyleProp(props, "borderRadius", viewport)
+      const c = expandBorderRadiusToCorners(raw)
+      setResponsiveStyleProp(props, "borderRadius", formatCornersRadiusShorthand(c), viewport)
+    })
+  }
+
+  const handleUniformPercentChange = (value: number) => {
     const px = percentToBorderRadius(value)
     actions.setProp(selectedId, (props: any) => {
       setResponsiveStyleProp(props, "borderRadius", px, viewport)
     })
   }
 
-  const radiusPercent = borderRadiusToPercent(
-    (getResponsiveStyleProp(selectedProps, "borderRadius", viewport) as number | undefined) ?? 0,
-  )
+  const handleCornerPxChange = (cornerIndex: 0 | 1 | 2 | 3, nextPx: number) => {
+    const safe = Math.max(0, Math.round(Number.isFinite(nextPx) ? nextPx : 0))
+    actions.setProp(selectedId, (props: any) => {
+      const raw = getResponsiveStyleProp(props, "borderRadius", viewport)
+      const c = expandBorderRadiusToCorners(raw)
+      const nextCorners: [number, number, number, number] = [...c]
+      nextCorners[cornerIndex] = safe
+      setResponsiveStyleProp(props, "borderRadius", formatCornersRadiusShorthand(nextCorners), viewport)
+    })
+  }
 
   const styleGroupValue = borderStyleForButtonGroup(
     getResponsiveStyleProp(selectedProps, "borderStyle", viewport) as string | undefined,
@@ -110,11 +203,163 @@ export const BordersAccordion = () => {
             gap: "6px",
           }}
         >
-          <CraftSettingsPercentSliderRow
-            label="Radius"
-            value={radiusPercent}
-            onChange={handleRadiusPercentChange}
-          />
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "6px",
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+          >
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "48px auto 1fr",
+                columnGap: "8px",
+                width: "100%",
+                boxSizing: "border-box",
+                alignItems: radiusUiMode === BORDER_RADIUS_MODE.CORNERS ? "start" : "center",
+              }}
+            >
+              <Typography sx={{ fontSize: "10px", lineHeight: "14px", color: COLORS.gray700 }}>
+                Radius
+              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexShrink: 0,
+                  padding: "1px",
+                }}
+              >
+                <IconButton
+                  aria-label="Единый радиус"
+                  onClick={handleRadiusModeUniform}
+                  disableRipple
+                  sx={{
+                    width: 16,
+                    height: 16,
+                    padding: 0,
+                    border: "none",
+                    cursor: "pointer",
+                    borderRadius: "2px",
+                    backgroundColor: radiusUiMode === BORDER_RADIUS_MODE.UNIFORM ? COLORS.purple100 : COLORS.white,
+                  }}
+                >
+                  <BorderIcon
+                    size={16}
+                    fill={radiusUiMode === BORDER_RADIUS_MODE.UNIFORM ? COLORS.purple400 : COLORS.gray700}
+                  />
+                </IconButton>
+                <IconButton
+                  disableRipple
+                  aria-label="Радиус по углам"
+                  onClick={handleRadiusModeCorners}
+                  sx={{
+                    width: 16,
+                    height: 16,
+                    padding: 0,
+                    border: "none",
+                    cursor: "pointer",
+                    borderRadius: "2px",
+                    backgroundColor: radiusUiMode === BORDER_RADIUS_MODE.CORNERS ? COLORS.purple100 : COLORS.white,
+                  }}
+                >
+                  <BorderDashIcon
+                    size={16}
+                    fill={radiusUiMode === BORDER_RADIUS_MODE.CORNERS ? COLORS.purple400 : COLORS.gray700}
+                  />
+                </IconButton>
+              </Box>
+              {radiusUiMode === BORDER_RADIUS_MODE.UNIFORM && (
+                <CraftSettingsPercentSliderRow
+                  label="Radius"
+                  hideLabel
+                  value={radiusPercent}
+                  onChange={handleUniformPercentChange}
+                />
+              )}
+              {radiusUiMode === BORDER_RADIUS_MODE.CORNERS && (
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "75px 75px",
+                    gap: "6px",
+                    minWidth: 0,
+                    width: "100%",
+                  }}
+                >
+                  {radiusCornerGridCssIndices.map((cssCornerIndex) => (
+                    <Box
+                      key={cssCornerIndex}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        boxSizing: "border-box",
+                        padding: "4px 6px",
+                        borderRadius: "4px",
+                        border: `1px solid ${COLORS.purple100}`,
+                        backgroundColor: COLORS.white,
+                        gap: "4px",
+                        minWidth: 0,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          flexShrink: 0,
+                          width: 16,
+                          height: 16,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          transform: `rotate(${cssCornerIconRotateDeg[cssCornerIndex]}deg)`,
+                        }}
+                      >
+                        <BorderDashCornIcon size={14} fill={COLORS.gray700}/>
+                      </Box>
+                      <Box
+                        component="input"
+                        type="number"
+                        value={cornersPx[cssCornerIndex]}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                          const next = Number(event.target.value)
+                          handleCornerPxChange(cssCornerIndex, Number.isNaN(next) ? 0 : next)
+                        }}
+                        sx={{
+                          flex: 1,
+                          minWidth: 0,
+                          width: 0,
+                          border: "none",
+                          outline: "none",
+                          padding: 0,
+                          fontSize: "12px",
+                          lineHeight: "14px",
+                          color: COLORS.black,
+                          textAlign: "right",
+
+                          "&::-webkit-outer-spin-button, &::-webkit-inner-spin-button": {
+                            WebkitAppearance: "none",
+                            margin: 0,
+                          },
+                        }}
+                      />
+                      <Typography
+                        component="span"
+                        sx={{
+                          fontSize: "12px",
+                          lineHeight: "14px",
+                          color: COLORS.gray700,
+                          flexShrink: 0,
+                        }}
+                      >
+                        px
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </Box>
+          </Box>
 
           <Box>
             <Typography

@@ -124,8 +124,7 @@ export const CraftContentListCell = (props: ContentListCellProps) => {
         backgroundColor: selected
           ? "rgba(108, 93, 211, 0.08)"
           : (backgroundColor ?? "transparent"),
-        border: selected ? `1px dashed ${COLORS.purple400}` : "none",
-        borderRadius: 4,
+        border: selected ? `1px dashed ${COLORS.purple400}` : "none", //TODO поправить при исправление компонента
         // alignItems в конце объекта, чтобы не перезаписаться другими стилями при мерже/каскаде.
         alignItems:
           layout === "flex" ? (flexAlignItems ?? "flex-start") : "flex-start",

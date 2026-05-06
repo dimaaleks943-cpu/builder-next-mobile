@@ -1,7 +1,5 @@
 import { useNode } from "@craftjs/core"
 import type { ReactNode } from "react"
-import { COLORS } from "../theme/colors"
-import { withOpacity } from "../utils/colorUtils"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
 import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
@@ -24,13 +22,6 @@ export const CraftBody = (props: BodyProps) => {
   const viewport = usePreviewViewport()
   const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
   const layout = (responsiveStyle.layout as BodyLayoutMode | undefined) ?? "block"
-  const borderTopWidth = (responsiveStyle.borderTopWidth as number | undefined) ?? 0
-  const borderRightWidth = (responsiveStyle.borderRightWidth as number | undefined) ?? 0
-  const borderBottomWidth = (responsiveStyle.borderBottomWidth as number | undefined) ?? 0
-  const borderLeftWidth = (responsiveStyle.borderLeftWidth as number | undefined) ?? 0
-  const borderColor = (responsiveStyle.borderColor as string | undefined) ?? COLORS.gray400
-  const borderStyle = (responsiveStyle.borderStyle as "none" | "solid" | "dashed" | undefined) ?? "solid"
-  const borderOpacity = (responsiveStyle.borderOpacity as number | undefined) ?? 1
   const mixBlendMode = (responsiveStyle.mixBlendMode as CraftMixBlendMode | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode
   const opacityPercent = (responsiveStyle.opacityPercent as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent
   const outlineStyleMode =
@@ -40,21 +31,10 @@ export const CraftBody = (props: BodyProps) => {
   const outlineOffset = (responsiveStyle.outlineOffset as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset
   const outlineColor = (responsiveStyle.outlineColor as string | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor
   const {
-    connectors: { connect, drag },
-    selected,
+    connectors: { connect, drag }
   } = useNode((node) => ({
     selected: node.events.selected,
   }))
-
-  const hasCustomBorder =
-    borderTopWidth > 0 ||
-    borderRightWidth > 0 ||
-    borderBottomWidth > 0 ||
-    borderLeftWidth > 0
-
-  const effectiveBorderColor = hasCustomBorder
-    ? withOpacity(borderColor, borderOpacity)
-    : "transparent"
 
   return (
     <div
@@ -69,12 +49,6 @@ export const CraftBody = (props: BodyProps) => {
         //TODO изменить после layuotBLock
         display: layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block",
         position: "relative",
-        borderStyle: selected ? "solid" : hasCustomBorder ? (borderStyle || "solid") : "solid",
-        borderColor: selected ? COLORS.purple400 : effectiveBorderColor,
-        borderTopWidth: selected ? 2 : hasCustomBorder ? borderTopWidth : 0,
-        borderRightWidth: selected ? 2 : hasCustomBorder ? borderRightWidth : 0,
-        borderBottomWidth: selected ? 2 : hasCustomBorder ? borderBottomWidth : 0,
-        borderLeftWidth: selected ? 2 : hasCustomBorder ? borderLeftWidth : 0,
         boxSizing: "border-box",
         ...resolveCraftVisualEffectsStyle({
           mixBlendMode,
@@ -105,14 +79,6 @@ export const CraftBody = (props: BodyProps) => {
         paddingRight: 0,
         paddingBottom: 0,
         paddingLeft: 0,
-        borderRadius: 0,
-        borderTopWidth: 0,
-        borderRightWidth: 0,
-        borderBottomWidth: 0,
-        borderLeftWidth: 0,
-        borderColor: COLORS.gray400,
-        borderStyle: "solid" as const,
-        borderOpacity: 1,
         ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
       },
     },

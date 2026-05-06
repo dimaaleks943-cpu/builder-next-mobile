@@ -190,8 +190,6 @@ export const CraftText = (props: TextProps) => {
       .join(" ") || "none",
     WebkitTextStrokeWidth: strokeWidth ? strokeWidth : undefined,
     WebkitTextStrokeColor: strokeColor,
-
-    border: "1px solid transparent",
   }
 
   const outerWrapperStyle: CSSProperties = {

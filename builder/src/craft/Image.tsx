@@ -9,7 +9,6 @@ import {
   type InlineSettingsViewportAnchor,
 } from "../pages/builder/context/CraftInlineSettingsBridgeContext.tsx"
 import { COLORS } from "../theme/colors"
-import { withOpacity } from "../utils/colorUtils"
 import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import {
@@ -42,15 +41,6 @@ export const CraftImage = (props: CraftImageProps) => {
   const maxWidth = responsiveStyle.maxWidth as string | number | undefined
   const maxHeight = responsiveStyle.maxHeight as string | number | undefined
   const overflow = responsiveStyle.overflow as "auto" | "hidden" | "visible" | "scroll" | undefined
-  const borderRadius = (responsiveStyle.borderRadius as number | undefined) ?? 0
-  const borderTopWidth = (responsiveStyle.borderTopWidth as number | undefined) ?? 0
-  const borderRightWidth = (responsiveStyle.borderRightWidth as number | undefined) ?? 0
-  const borderBottomWidth = (responsiveStyle.borderBottomWidth as number | undefined) ?? 0
-  const borderLeftWidth = (responsiveStyle.borderLeftWidth as number | undefined) ?? 0
-  const borderColor = (responsiveStyle.borderColor as string | undefined) ?? COLORS.gray400
-  const borderStyle =
-    (responsiveStyle.borderStyle as "none" | "solid" | "dotted" | "dashed" | undefined) ?? "solid"
-  const borderOpacity = (responsiveStyle.borderOpacity as number | undefined) ?? 1
   const collectionField = props.collectionField ?? null
   const backgroundColor = responsiveStyle.backgroundColor as string | undefined
   const mixBlendMode =
@@ -122,17 +112,8 @@ export const CraftImage = (props: CraftImageProps) => {
     return "https://cdn-icons-png.flaticon.com/128/17807/17807769.png"
   }, [collectionField, contentListData?.itemData, src])
 
-  const hasCustomBorder =
-    borderTopWidth > 0 ||
-    borderRightWidth > 0 ||
-    borderBottomWidth > 0 ||
-    borderLeftWidth > 0
-
-  const effectiveBorderColor = hasCustomBorder
-    ? withOpacity(borderColor, borderOpacity)
-    : "transparent"
-
   const style: CSSProperties = {
+    ...(responsiveStyle as CSSProperties),
     display: "block",
     width: width ?? "100%",
     height: height ?? "auto",
@@ -142,14 +123,7 @@ export const CraftImage = (props: CraftImageProps) => {
     maxHeight,
     overflow,
     objectFit: "cover",
-    borderRadius,
     boxSizing: "border-box",
-    borderStyle: hasCustomBorder ? (borderStyle || "solid") : "solid",
-    borderColor: effectiveBorderColor,
-    borderTopWidth: hasCustomBorder ? borderTopWidth : 0,
-    borderRightWidth: hasCustomBorder ? borderRightWidth : 0,
-    borderBottomWidth: hasCustomBorder ? borderBottomWidth : 0,
-    borderLeftWidth: hasCustomBorder ? borderLeftWidth : 0,
     backgroundColor: backgroundColor ?? COLORS.gray100,
     ...resolveCraftVisualEffectsStyle({
       mixBlendMode,
@@ -195,14 +169,6 @@ export const CraftImage = (props: CraftImageProps) => {
     collectionField: null,
     style: {
       [PreviewViewport.DESKTOP]: {
-        borderRadius: 8,
-        borderTopWidth: 0,
-        borderRightWidth: 0,
-        borderBottomWidth: 0,
-        borderLeftWidth: 0,
-        borderColor: COLORS.gray400,
-        borderStyle: "solid" as const,
-        borderOpacity: 1,
         ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
       },
     },

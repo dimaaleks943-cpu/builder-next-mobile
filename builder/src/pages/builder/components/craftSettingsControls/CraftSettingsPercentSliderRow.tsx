@@ -7,11 +7,13 @@ const clampPercent = (n: number) =>
 
 type Props = {
   label: string
+  /** Скрыть подпись слева (например, если label вынесен в сетку рядом с переключателем режимов). */
+  hideLabel?: boolean
   value: number
   onChange: (value: number) => void
 }
 
-export const CraftSettingsPercentSliderRow = ({ label, value, onChange }: Props) => {
+export const CraftSettingsPercentSliderRow = ({ label, hideLabel = false, value, onChange }: Props) => {
   const safe = clampPercent(value)
 
   const handleSliderChange = (_: Event, v: number | number[]) => {
@@ -34,17 +36,19 @@ export const CraftSettingsPercentSliderRow = ({ label, value, onChange }: Props)
         boxSizing: "border-box",
       }}
     >
-      <Typography
-        sx={{
-          minWidth: "48px",
-          fontSize: "10px",
-          lineHeight: "14px",
-          color: COLORS.gray700,
-          flexShrink: 0,
-        }}
-      >
-        {label}
-      </Typography>
+      {!hideLabel && (
+        <Typography
+          sx={{
+            minWidth: "48px",
+            fontSize: "10px",
+            lineHeight: "14px",
+            color: COLORS.gray700,
+            flexShrink: 0,
+          }}
+        >
+          {label}
+        </Typography>
+      )}
       <Slider
         size="small"
         value={safe}

@@ -1,8 +1,8 @@
 import { useNode, useEditor, Element } from "@craftjs/core"
 import { useState, useEffect, useRef, startTransition, useCallback } from "react"
+import type { CSSProperties } from "react"
 import { useLazyGetContentItemsQuery } from "../store/extranetApi"
 import { COLORS } from "../theme/colors"
-import { withOpacity } from "../utils/colorUtils"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import { useCollectionsContext } from "../pages/builder/context/CollectionsContext.tsx"
 import { useCollectionFilterScope } from "../pages/builder/context/CollectionFilterScopeContext.tsx"
@@ -64,7 +64,6 @@ export const CraftContentList = ({}: ContentListProps) => {
 
   const {
     connectors: { connect, drag },
-    selected,
     id: contentListId,
     props,
   } = useNode((node) => ({
@@ -81,28 +80,6 @@ export const CraftContentList = ({}: ContentListProps) => {
   const [fetchContentItems] = useLazyGetContentItemsQuery()
   const viewport = usePreviewViewport()
   const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
-
-  const borderTopWidth = (responsiveStyle.borderTopWidth as number | undefined) ?? 0
-  const borderRightWidth = (responsiveStyle.borderRightWidth as number | undefined) ?? 0
-  const borderBottomWidth = (responsiveStyle.borderBottomWidth as number | undefined) ?? 0
-  const borderLeftWidth = (responsiveStyle.borderLeftWidth as number | undefined) ?? 0
-  const borderColor = (responsiveStyle.borderColor as string | undefined) ?? COLORS.gray400
-  const borderStyle = (responsiveStyle.borderStyle as "none" | "solid" | "dotted" | undefined) ?? "solid"
-  const borderOpacity = (responsiveStyle.borderOpacity as number | undefined) ?? 1
-  const borderRadius = (responsiveStyle.borderRadius as number | undefined) ?? 4
-
-  const hasCustomBorder =
-    borderTopWidth > 0 ||
-    borderRightWidth > 0 ||
-    borderBottomWidth > 0 ||
-    borderLeftWidth > 0
-
-  const effectiveBorderColor = hasCustomBorder
-    ? withOpacity(borderColor, borderOpacity)
-    : "transparent"
-
-  /** Как раньше: лёгкая серая обводка в редакторе, пока нет своих границ из панели «Границы». */
-  const defaultEditorChrome = !selected && !hasCustomBorder
 
   const openInlineSettingsModal = useCallback(
     (viewportAnchor?: InlineSettingsViewportAnchor | null) => {
@@ -507,6 +484,7 @@ export const CraftContentList = ({}: ContentListProps) => {
         connect(drag(ref))
       }}
       style={{
+        ...(responsiveStyle as CSSProperties),
         width: (responsiveStyle.width as string | number | undefined) ?? "100%",
         height: responsiveStyle.height as string | number | undefined,
         minWidth: responsiveStyle.minWidth as number | undefined,
@@ -516,13 +494,6 @@ export const CraftContentList = ({}: ContentListProps) => {
         display: "flex",
         flexDirection: "column",
         backgroundColor: (responsiveStyle.backgroundColor as string | undefined) ?? COLORS.white,
-        borderStyle: hasCustomBorder ? (borderStyle || "solid") : "solid",
-        borderColor: hasCustomBorder ? effectiveBorderColor : COLORS.gray300,
-        borderTopWidth: hasCustomBorder ? borderTopWidth : defaultEditorChrome ? 1 : 0,
-        borderRightWidth: hasCustomBorder ? borderRightWidth : defaultEditorChrome ? 1 : 0,
-        borderBottomWidth: hasCustomBorder ? borderBottomWidth : defaultEditorChrome ? 1 : 0,
-        borderLeftWidth: hasCustomBorder ? borderLeftWidth : defaultEditorChrome ? 1 : 0,
-        borderRadius,
         overflow:
           (responsiveStyle.overflow as "auto" | "hidden" | "visible" | "scroll" | undefined) ??
           "visible",

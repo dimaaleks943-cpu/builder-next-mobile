@@ -196,8 +196,6 @@ export const CraftLinkText = (props: LinkTextProps) => {
       .join(" ") || "none",
     WebkitTextStrokeWidth: strokeWidth ? strokeWidth : undefined,
     WebkitTextStrokeColor: strokeColor,
-
-    border: "1px solid transparent",
   }
 
   return (

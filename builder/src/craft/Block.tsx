@@ -1,7 +1,5 @@
 import { useNode } from "@craftjs/core"
 import type { ReactNode } from "react"
-import { COLORS } from "../theme/colors"
-import { withOpacity } from "../utils/colorUtils"
 import type {
   BlockLayoutMode,
   FlexAlignItems,
@@ -33,12 +31,6 @@ export const CraftBlock = (props: BlockProps) => {
   const flexAlignItems = responsiveStyle.flexAlignItems as FlexAlignItems | undefined
   const placeItemsY = responsiveStyle.placeItemsY as PlaceItemsValue | undefined
   const placeItemsX = responsiveStyle.placeItemsX as PlaceItemsValue | undefined
-  const borderTopWidth = (responsiveStyle.borderTopWidth as number | undefined) ?? 0
-  const borderRightWidth = (responsiveStyle.borderRightWidth as number | undefined) ?? 0
-  const borderBottomWidth = (responsiveStyle.borderBottomWidth as number | undefined) ?? 0
-  const borderLeftWidth = (responsiveStyle.borderLeftWidth as number | undefined) ?? 0
-  const borderColor = (responsiveStyle.borderColor as string | undefined) ?? COLORS.gray400
-  const borderOpacity = (responsiveStyle.borderOpacity as number | undefined) ?? 1
   const mixBlendMode =
     (responsiveStyle.mixBlendMode as CraftMixBlendMode | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode
   const opacityPercent =
@@ -58,16 +50,6 @@ export const CraftBlock = (props: BlockProps) => {
     id: node.id,
   }))
 
-  const hasCustomBorder =
-    borderTopWidth > 0 ||
-    borderRightWidth > 0 ||
-    borderBottomWidth > 0 ||
-    borderLeftWidth > 0
-
-  const effectiveBorderColor = hasCustomBorder
-    ? withOpacity(borderColor, borderOpacity)
-    : "transparent"
-
   return (
     <div
       ref={(ref) => {
@@ -77,12 +59,6 @@ export const CraftBlock = (props: BlockProps) => {
       style={{
         ...responsiveStyle,
         minHeight: fullSize ? undefined : (minHeight ?? 80),//TODO дефолтное значение что бы видеть блок при установки
-
-        borderColor: effectiveBorderColor,
-        borderTopWidth: hasCustomBorder ? borderTopWidth : 0,
-        borderRightWidth: hasCustomBorder ? borderRightWidth : 0,
-        borderBottomWidth: hasCustomBorder ? borderBottomWidth : 0,
-        borderLeftWidth: hasCustomBorder ? borderLeftWidth : 0,
 
         /** display и layout из «Расположение»; CSS position/float/clear — из «Позиционирование» (responsiveStyle). */
         display: layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block",
@@ -125,14 +101,6 @@ export const CraftBlock = (props: BlockProps) => {
         paddingRight: 0,
         paddingBottom: 0,
         paddingLeft: 0,
-        borderRadius: 0,
-        borderTopWidth: 0,
-        borderRightWidth: 0,
-        borderBottomWidth: 0,
-        borderLeftWidth: 0,
-        borderColor: COLORS.gray400,
-        borderStyle: "solid" as const,
-        borderOpacity: 1,
         ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
       },
     },
