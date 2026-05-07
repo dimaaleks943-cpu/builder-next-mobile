@@ -25,7 +25,7 @@ import {
   type Viewport,
 } from "../content/responsiveStyle";
 import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
-import { withOpacityHex } from "../lib/withOpacityHex";
+import { borderColorHasIntrinsicAlpha, withOpacityHex } from "../lib/withOpacityHex";
 
 /** См. site-runtime ContentList: отличаем первый запуск эффекта от смены категории, чтобы не дублировать fetch при SSR-кэше «Все». */
 const CATEGORY_FETCH_INIT = Symbol("categoryFetchInit");
@@ -168,8 +168,11 @@ export const ContentList = ({
 
   const showBorder = hasCustomBorder && borderStyle !== "none";
 
+  const baseBorderColor = borderColor ?? "#CBD5E0";
   const effectiveListBorderColor = showBorder
-    ? withOpacityHex(borderColor ?? "#CBD5E0", borderOpacity ?? 1)
+    ? borderColorHasIntrinsicAlpha(baseBorderColor)
+      ? baseBorderColor
+      : withOpacityHex(baseBorderColor, borderOpacity ?? 1)
     : "transparent";
 
   const listRootBorderStyle: ViewStyle = {

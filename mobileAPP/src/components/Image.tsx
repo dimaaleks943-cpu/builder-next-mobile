@@ -11,7 +11,7 @@ import {
 } from "../content/responsiveStyle";
 import { findContentItemField } from "../content/contentFieldValue";
 import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
-import { withOpacityHex } from "../lib/withOpacityHex";
+import { borderColorHasIntrinsicAlpha, withOpacityHex } from "../lib/withOpacityHex";
 
 interface ImageProps {
   style?: unknown;
@@ -92,8 +92,11 @@ export const Image = ({
 
   const showBorder = hasCustomBorder && borderStyle !== "none";
 
+  const baseBorderColor = borderColor ?? "#CBD5E0";
   const effectiveBorderColor = showBorder
-    ? withOpacityHex(borderColor ?? "#CBD5E0", borderOpacity ?? 1)
+    ? borderColorHasIntrinsicAlpha(baseBorderColor)
+      ? baseBorderColor
+      : withOpacityHex(baseBorderColor, borderOpacity ?? 1)
     : "transparent";
 
   const frameStyle: StyleProp<ViewStyle> = showBorder
