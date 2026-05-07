@@ -1,6 +1,7 @@
 import { useEditor } from "@craftjs/core"
 import {
   type ChangeEvent,
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -111,7 +112,9 @@ const getOutlineOffsetUi = (props: Record<string, unknown>, viewport: PreviewVie
   const v = getResponsiveStyleProp(props, "outlineOffset", viewport)
   if (v == null || v === "") return 0
   if (typeof v === "number" && !Number.isNaN(v)) return v
-  const s = String(v).trim().match(/^(\d+(?:\.\d+)?)px$/i)
+  const t = String(v).trim()
+  if (/^0(\.0+)?px$/i.test(t)) return 0
+  const s = t.match(/^(\d+(?:\.\d+)?)px$/i)
   if (s) return Number(s[1])
   const n = Number(v)
   return Number.isNaN(n) ? 0 : n
@@ -185,7 +188,11 @@ export const EffectsAccordion = () => {
   const handleBlendChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value
     actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "mixBlendMode", value, viewport)
+      if (value === "normal") {
+        setResponsiveStyleProp(props, "mixBlendMode", undefined, viewport)
+      } else {
+        setResponsiveStyleProp(props, "mixBlendMode", value, viewport)
+      }
     })
   }
 
@@ -250,23 +257,26 @@ export const EffectsAccordion = () => {
       if (safe === 0) {
         setResponsiveStyleProp(props, "outlineOffset", undefined, viewport)
       } else {
-        setResponsiveStyleProp(props, "outlineOffset", safe, viewport)
+        setResponsiveStyleProp(props, "outlineOffset", `${safe}px`, viewport)
       }
     })
   }
 
-  const applyBoxShadowPatch = (patch: Partial<BoxShadowParts>) => {
-    actions.setProp(selectedId, (props: any) => {
-      const raw = getEffectiveBoxShadowRaw(props, viewport)
-      const cur = parseBoxShadowFromProp(raw.length > 0 ? raw : undefined)
-      const built = buildBoxShadow({ ...cur, ...patch })
-      if (isBoxShadowOnCanvas(props, viewport)) {
-        setResponsiveStyleProp(props, "boxShadow", built, viewport)
-      } else {
-        props[BOX_SHADOW_DRAFT_KEY] = built
-      }
-    })
-  }
+  const applyBoxShadowPatch = useCallback(
+    (patch: Partial<BoxShadowParts>) => {
+      actions.setProp(selectedId, (props: any) => {
+        const raw = getEffectiveBoxShadowRaw(props, viewport)
+        const cur = parseBoxShadowFromProp(raw.length > 0 ? raw : undefined)
+        const built = buildBoxShadow({ ...cur, ...patch })
+        if (isBoxShadowOnCanvas(props, viewport)) {
+          setResponsiveStyleProp(props, "boxShadow", built, viewport)
+        } else {
+          props[BOX_SHADOW_DRAFT_KEY] = built
+        }
+      })
+    },
+    [actions, selectedId, viewport],
+  )
 
   const handleClearBoxShadow = () => {
     actions.setProp(selectedId, (props: any) => {

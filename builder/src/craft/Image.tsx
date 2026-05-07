@@ -104,7 +104,6 @@ export const CraftImage = (props: CraftImageProps) => {
     maxWidth,
     maxHeight,
     overflow,
-    objectFit: "cover",
     boxSizing: "border-box",
     backgroundColor: backgroundColor ?? COLORS.gray100,
   }
