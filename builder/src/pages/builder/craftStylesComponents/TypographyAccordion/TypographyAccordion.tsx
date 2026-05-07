@@ -8,24 +8,29 @@ import {
 import type { ChangeEvent } from "react"
 import { useEffect, useRef, useState } from "react"
 import { useEditor } from "@craftjs/core"
-import { COLORS } from "../../../theme/colors"
+import { COLORS } from "../../../../theme/colors.ts"
 import {
   FONT_SIZE_UNIT_MENU,
-} from "../../../utils/craftCssSizeProp.ts"
-import { AlignCenterIcon } from "../../../icons/AlignCenterIcon.tsx"
-import { AlignJustifyIcon } from "../../../icons/AlignJustifyIcon.tsx"
-import { AlignLeftIcon } from "../../../icons/AlignLeftIcon.tsx"
-import { CraftSettingsSelect } from "../components/craftSettingsControls/CraftSettingsSelect.tsx"
-import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSettingsInput.tsx"
-import { CraftSettingsValueWithUnit } from "../components/craftSettingsControls/CraftSettingsValueWithUnit.tsx"
-import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
-import { CraftSettingsMultiToggleGroup } from "../components/craftSettingsControls/CraftSettingsMultiToggleGroup.tsx"
-import { CraftSettingsColorField } from "../components/craftSettingsControls/CraftSettingsColorField.tsx"
-import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
+} from "../../../../utils/craftCssSizeProp.ts"
+import { AlignCenterIcon } from "../../../../icons/AlignCenterIcon.tsx"
+import { AlignJustifyIcon } from "../../../../icons/AlignJustifyIcon.tsx"
+import { AlignLeftIcon } from "../../../../icons/AlignLeftIcon.tsx"
+import { CraftSettingsSelect } from "../../components/craftSettingsControls/CraftSettingsSelect.tsx"
+import { CraftSettingsInput } from "../../components/craftSettingsControls/CraftSettingsInput.tsx"
+import { CraftSettingsValueWithUnit } from "../../components/craftSettingsControls/CraftSettingsValueWithUnit.tsx"
+import { CraftSettingsButtonGroup } from "../../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
+import { CraftSettingsColorField } from "../../components/craftSettingsControls/CraftSettingsColorField.tsx"
+import {
+  TypographyFormatRow,
+  type TextDecorationKind,
+} from "./components/TypographyFormatRow.tsx"
+import { usePreviewViewport } from "../../context/PreviewViewportContext.tsx"
 import {
   getResponsiveStyleProp,
+  resolveResponsiveStyle,
   setResponsiveStyleProp,
-} from "../responsiveStyle.ts"
+  type ResponsiveStyle,
+} from "../../responsiveStyle.ts"
 
 interface SelectedTypographyProps {
   fontFamily?: string;
@@ -37,17 +42,38 @@ interface SelectedTypographyProps {
   textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
   strokeColor?: string;
   strokeWidth?: number;
+  style?: ResponsiveStyle;
+  textDecoration?: string;
+  fontStyle?: string;
   isItalic?: boolean;
   isUnderline?: boolean;
   isStrikethrough?: boolean;
+}
+
+const TEXT_ALIGN_ICON_SIZE = 14
+
+const parseDecorationFromResolved = (resolved: Record<string, unknown>): TextDecorationKind | undefined => {
+  const td = resolved.textDecoration
+  if (typeof td === "string") {
+    if (td.includes("line-through")) return "line-through"
+    if (td.includes("underline")) return "underline"
+    if (td.includes("overline")) return "overline"
+  }
+  if (resolved.isStrikethrough) return "line-through"
+  if (resolved.isUnderline) return "underline"
+  return undefined
+}
+
+const parseItalicFromResolved = (resolved: Record<string, unknown>): boolean => {
+  const fs = resolved.fontStyle
+  if (fs === "italic") return true
+  return Boolean(resolved.isItalic)
 }
 
 interface EditorSelection {
   selectedId: string | null;
   selectedProps: SelectedTypographyProps | null;
 }
-
-const TEXT_ALIGN_ICON_SIZE = 14
 
 const renderTextAlignIcon = (
   id: "left" | "center" | "right" | "justify",
@@ -210,6 +236,45 @@ export const TypographyAccordion = () => {
     viewport,
   ) as string | undefined
 
+  const resolvedForFormat = resolveResponsiveStyle(
+    selectedProps.style,
+    viewport,
+  ) as Record<string, unknown>
+  const formatDecoration = parseDecorationFromResolved(resolvedForFormat)
+  const formatItalic = parseItalicFromResolved(resolvedForFormat)
+
+  const handleFormatClear = () => {
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      setResponsiveStyleProp(props, "isItalic", undefined, viewport)
+      setResponsiveStyleProp(props, "isUnderline", undefined, viewport)
+      setResponsiveStyleProp(props, "isStrikethrough", undefined, viewport)
+      setResponsiveStyleProp(props, "textDecoration", undefined, viewport)
+      setResponsiveStyleProp(props, "fontStyle", undefined, viewport)
+    })
+  }
+
+  const handleFormatDecorationPress = (kind: TextDecorationKind) => {
+    const next = formatDecoration === kind ? undefined : kind
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      setResponsiveStyleProp(props, "isUnderline", undefined, viewport)
+      setResponsiveStyleProp(props, "isStrikethrough", undefined, viewport)
+      setResponsiveStyleProp(props, "textDecoration", next, viewport)
+    })
+  }
+
+  const handleFormatItalicPress = () => {
+    const nextItalic = !formatItalic
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      setResponsiveStyleProp(props, "isItalic", undefined, viewport)
+      setResponsiveStyleProp(
+        props,
+        "fontStyle",
+        nextItalic ? "italic" : undefined,
+        viewport,
+      )
+    })
+  }
+
   return (
     <Accordion disableGutters>
       <AccordionSummary
@@ -309,53 +374,12 @@ export const TypographyAccordion = () => {
             })}
           />
 
-          <CraftSettingsMultiToggleGroup
-            label="Format"
-            values={[
-              getResponsiveStyleProp(
-                selectedProps as unknown as Record<string, unknown>,
-                "isStrikethrough",
-                viewport,
-              )
-                ? "strike"
-                : "",
-              getResponsiveStyleProp(
-                selectedProps as unknown as Record<string, unknown>,
-                "isUnderline",
-                viewport,
-              )
-                ? "underline"
-                : "",
-              getResponsiveStyleProp(
-                selectedProps as unknown as Record<string, unknown>,
-                "isItalic",
-                viewport,
-              )
-                ? "italic"
-                : "",
-            ].filter(Boolean)}
-            options={[
-              { id: "strike", content: "S" },
-              { id: "underline", content: "U" },
-              { id: "italic", content: "I" },
-            ]}
-            onChange={(next) => {
-              actions.setProp(selectedId, (props: any) => {
-                setResponsiveStyleProp(
-                  props,
-                  "isStrikethrough",
-                  next.includes("strike"),
-                  viewport,
-                )
-                setResponsiveStyleProp(
-                  props,
-                  "isUnderline",
-                  next.includes("underline"),
-                  viewport,
-                )
-                setResponsiveStyleProp(props, "isItalic", next.includes("italic"), viewport)
-              })
-            }}
+          <TypographyFormatRow
+            decoration={formatDecoration}
+            isItalic={formatItalic}
+            onClear={handleFormatClear}
+            onDecorationPress={handleFormatDecorationPress}
+            onItalicPress={handleFormatItalicPress}
           />
 
           {/* Capitalize */}

@@ -78,6 +78,8 @@ export const FULL_TO_SHORT = {
   textTransform: "tt",
   strokeColor: "sc",
   strokeWidth: "sw",
+  textDecoration: "td",
+  fontStyle: "fst",
   isItalic: "ii",
   isUnderline: "iu",
   isStrikethrough: "is",
