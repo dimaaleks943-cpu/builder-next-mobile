@@ -23,6 +23,13 @@ export const FULL_TO_SHORT = {
   borderColor: "bc",
   borderStyle: "bs",
 
+  //-- EffectsAccordion --//
+  mixBlendMode: "mbm",
+  opacity: "op",
+  outline: "oln",
+  outlineOffset: "ofo",
+  boxShadow: "bxs",
+
   // layout
   layout: "ly",
   itemsPerRow: "ipr",

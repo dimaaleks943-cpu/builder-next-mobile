@@ -111,6 +111,13 @@ const styleBranchToCssDeclarations = (style: StyleRecord): Record<string, string
   if (typeof style.borderStyle === "string") set("border-style", style.borderStyle)
   if (typeof style.borderColor === "string") set("border-color", style.borderColor)
 
+  // -- EffectAccordion --//
+  if (typeof style.mixBlendMode === "string") set("mix-blend-mode", style.mixBlendMode)
+  if (typeof style.opacity === "string") set("opacity", style.opacity)
+  if (typeof style.outline === "string") set("outline", style.outline)
+  if (typeof style.outlineOffset === "string") set("outline-offset", style.outlineOffset)
+  if (typeof style.boxShadow === "string") set("box-shadow", style.boxShadow)
+
   set("width", style.fullSize === true ? "100%" : toCssLength(style.width))
   set("height", style.fullSize === true ? "100%" : toCssLength(style.height))
   set("min-width", toCssLength(style.minWidth))
@@ -166,18 +173,6 @@ const styleBranchToCssDeclarations = (style: StyleRecord): Record<string, string
   if (style.isItalic === true) set("font-style", "italic")
   if (typeof style.strokeColor === "string") set("-webkit-text-stroke-color", style.strokeColor)
   set("-webkit-text-stroke-width", toCssLength(style.strokeWidth))
-
-  if (typeof style.mixBlendMode === "string") set("mix-blend-mode", style.mixBlendMode)
-  const opacityPercent = asNumber(style.opacityPercent)
-  if (opacityPercent !== undefined) {
-    set("opacity", String(Math.max(0, Math.min(100, opacityPercent)) / 100))
-  }
-  if (typeof style.outlineStyleMode === "string" && style.outlineStyleMode !== "none") {
-    set("outline-style", style.outlineStyleMode)
-    set("outline-width", toCssLength(style.outlineWidth) ?? "1px")
-    set("outline-offset", toCssLength(style.outlineOffset) ?? "0px")
-    if (typeof style.outlineColor === "string") set("outline-color", style.outlineColor)
-  }
 
   return declarations
 }
