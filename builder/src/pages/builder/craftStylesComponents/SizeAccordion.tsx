@@ -69,7 +69,7 @@ export const SizeAccordion = () => {
   const inputWidth = SIZE_VALUE_INPUT_WIDTH_PX
 
   return (
-    <Accordion defaultExpanded disableGutters>
+    <Accordion disableGutters>
       <AccordionSummary
         sx={{
           minHeight: 40,

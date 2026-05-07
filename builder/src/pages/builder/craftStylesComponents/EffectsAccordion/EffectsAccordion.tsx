@@ -323,7 +323,7 @@ export const EffectsAccordion = () => {
   }
 
   return (
-    <Accordion defaultExpanded disableGutters>
+    <Accordion disableGutters>
       <AccordionSummary
         sx={{
           minHeight: 40,

@@ -288,7 +288,7 @@ export const BordersAccordion = () => {
     activeSides === "all" ? ["top", "right", "bottom", "left"] : activeSides
 
   return (
-    <Accordion defaultExpanded disableGutters>
+    <Accordion disableGutters>
       <AccordionSummary
         sx={{
           minHeight: 40,

@@ -269,7 +269,7 @@ export const PositioningAccordion = () => {
   }, [actions, insetValue, isInsetAvailable, selectedId, viewport])
 
   return (
-    <Accordion defaultExpanded disableGutters>
+    <Accordion disableGutters>
       <AccordionSummary
         sx={{
           minHeight: "40px",

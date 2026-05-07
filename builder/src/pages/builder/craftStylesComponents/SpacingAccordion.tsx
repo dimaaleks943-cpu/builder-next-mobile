@@ -27,7 +27,7 @@ export const SpacingAccordion = () => {
   }
 
   return (
-    <Accordion defaultExpanded disableGutters>
+    <Accordion disableGutters>
       <AccordionSummary
         sx={{
           minHeight: 40,

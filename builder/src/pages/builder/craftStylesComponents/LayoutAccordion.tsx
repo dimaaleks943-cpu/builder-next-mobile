@@ -192,7 +192,7 @@ export const LayoutAccordion = () => {
   ) as PlaceItemsValue | undefined
 
   return (
-    <Accordion defaultExpanded disableGutters>
+    <Accordion disableGutters>
       <AccordionSummary
         sx={{
           minHeight: "40px",
