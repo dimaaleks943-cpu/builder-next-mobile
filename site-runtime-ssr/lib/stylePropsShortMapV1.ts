@@ -14,6 +14,15 @@ export const FULL_TO_SHORT = {
   zIndex: "zi",
   inset: "ins",
 
+  //-- BorderAccordion --//
+  borderRadius: "br",
+  borderTopWidth: "btw",
+  borderRightWidth: "brw",
+  borderBottomWidth: "bbw",
+  borderLeftWidth: "blw",
+  borderColor: "bc",
+  borderStyle: "bs",
+
   // layout
   layout: "ly",
   itemsPerRow: "ipr",
@@ -37,16 +46,6 @@ export const FULL_TO_SHORT = {
   paddingRight: "pr",
   paddingBottom: "pb",
   paddingLeft: "pl",
-
-  // border
-  borderRadius: "br",
-  borderTopWidth: "btw",
-  borderRightWidth: "brw",
-  borderBottomWidth: "bbw",
-  borderLeftWidth: "blw",
-  borderColor: "bc",
-  borderStyle: "bs",
-  borderOpacity: "bo",
 
   // background
   backgroundColor: "bgc",

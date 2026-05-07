@@ -102,6 +102,15 @@ const styleBranchToCssDeclarations = (style: StyleRecord): Record<string, string
   if (typeof style.float === "string") set("float", style.float)
   if (typeof style.clear === "string") set("clear", style.clear)
 
+  // -- BorderAccordion --//
+  set("border-radius", toCssLength(style.borderRadius))
+  set("border-top-width", toCssLength(style.borderTopWidth))
+  set("border-right-width", toCssLength(style.borderRightWidth))
+  set("border-bottom-width", toCssLength(style.borderBottomWidth))
+  set("border-left-width", toCssLength(style.borderLeftWidth))
+  if (typeof style.borderStyle === "string") set("border-style", style.borderStyle)
+  if (typeof style.borderColor === "string") set("border-color", style.borderColor)
+
   set("width", style.fullSize === true ? "100%" : toCssLength(style.width))
   set("height", style.fullSize === true ? "100%" : toCssLength(style.height))
   set("min-width", toCssLength(style.minWidth))
@@ -141,21 +150,6 @@ const styleBranchToCssDeclarations = (style: StyleRecord): Record<string, string
   set("padding-right", toCssLength(style.paddingRight))
   set("padding-bottom", toCssLength(style.paddingBottom))
   set("padding-left", toCssLength(style.paddingLeft))
-
-  set("border-radius", toCssLength(style.borderRadius))
-  set("border-top-width", toCssLength(style.borderTopWidth))
-  set("border-right-width", toCssLength(style.borderRightWidth))
-  set("border-bottom-width", toCssLength(style.borderBottomWidth))
-  set("border-left-width", toCssLength(style.borderLeftWidth))
-  if (typeof style.borderStyle === "string") set("border-style", style.borderStyle)
-  if (typeof style.borderColor === "string") {
-    const borderOpacity = asNumber(style.borderOpacity)
-    const effectiveColor =
-      borderOpacity !== undefined
-        ? withOpacity(style.borderColor, borderOpacity)
-        : style.borderColor
-    set("border-color", effectiveColor)
-  }
 
   if (typeof style.backgroundColor === "string") set("background-color", style.backgroundColor)
   if (typeof style.backgroundClip === "string") set("background-clip", style.backgroundClip)
