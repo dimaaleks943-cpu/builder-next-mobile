@@ -1,4 +1,5 @@
 import type { ChangeEvent } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   Accordion,
   AccordionDetails,
@@ -26,8 +27,17 @@ import {
 import { BorderIcon } from "../../../icons/BorderIcon.tsx"
 import { BorderDashIcon } from "../../../icons/BorderDashIcon.tsx"
 import { BorderDashCornIcon } from "../../../icons/BorderDashCornIcon.tsx"
+import { CloseIcon } from "../../../icons/CloseIcon.tsx"
+import { MinusIcon } from "../../../icons/MinusIcon.tsx"
+import { DashedIcon } from "../../../icons/DashedIcon.tsx"
+import { MoreHorizontalIcon } from "../../../icons/MoreHorizontalIcon.tsx"
+import {
+  formatBorderColorWithAlpha,
+  parseBorderColorForUi,
+} from "../../../utils/colorUtils.ts"
 
 const BORDER_RADIUS_MAX_PX = 100
+const BORDER_COLOR_DEBOUNCE_MS = 200
 
 enum BORDER_RADIUS_MODE {
   CORNERS = "corners",
@@ -99,10 +109,10 @@ const cssCornerIconRotateDeg = [270, 360, 90, 180] as const
 /** Порядок ячеек сетки 2×2: TL, TR, BL, BR → индексы в border-radius shorthand */
 const radiusCornerGridCssIndices = [0, 1, 3, 2] as const
 
-type BorderStyleUi = "none" | "solid" | "dotted"
+type BorderStyleUi = "none" | "solid" | "dashed" | "dotted"
 
 const borderStyleForButtonGroup = (value: string | undefined): BorderStyleUi => {
-  if (value === "none" || value === "solid" || value === "dotted") return value
+  if (value === "none" || value === "solid" || value === "dashed" || value === "dotted") return value
   return "solid"
 }
 
@@ -124,6 +134,101 @@ export const BordersAccordion = () => {
     actions,
     viewport,
   )
+
+  const borderColorFromProps = useMemo(() => {
+    if (!selectedProps) return undefined
+    return getResponsiveStyleProp(selectedProps, "borderColor", viewport) as string | undefined
+  }, [selectedProps, viewport])
+
+  const parsedBorderColor = useMemo(
+    () => parseBorderColorForUi(borderColorFromProps),
+    [borderColorFromProps],
+  )
+
+  const [localBorderHex, setLocalBorderHex] = useState(parsedBorderColor.hex)
+  const [localBorderOpacityPercent, setLocalBorderOpacityPercent] = useState(
+    () => Math.round(parsedBorderColor.alpha * 100),
+  )
+
+  const pendingBorderHexRef = useRef(parsedBorderColor.hex)
+  const borderOpacityPercentRef = useRef(Math.round(parsedBorderColor.alpha * 100))
+  const borderColorDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    setLocalBorderHex(parsedBorderColor.hex)
+    const p = Math.round(parsedBorderColor.alpha * 100)
+    setLocalBorderOpacityPercent(p)
+    pendingBorderHexRef.current = parsedBorderColor.hex
+    borderOpacityPercentRef.current = p
+  }, [selectedId, parsedBorderColor.hex, parsedBorderColor.alpha])
+
+  useEffect(() => {
+    borderOpacityPercentRef.current = localBorderOpacityPercent
+  }, [localBorderOpacityPercent])
+
+  useEffect(() => {
+    pendingBorderHexRef.current = localBorderHex
+  }, [localBorderHex])
+
+  useEffect(
+    () => () => {
+      if (borderColorDebounceRef.current) clearTimeout(borderColorDebounceRef.current)
+    },
+    [],
+  )
+
+  useEffect(() => {
+    if (borderColorDebounceRef.current) {
+      clearTimeout(borderColorDebounceRef.current)
+      borderColorDebounceRef.current = null
+    }
+  }, [selectedId])
+
+  const commitBorderColorToProps = useCallback(
+    (hex: string, alpha01: number) => {
+      if (!selectedId) return
+      const stored = formatBorderColorWithAlpha(hex, alpha01)
+      if (!stored) return
+      actions.setProp(selectedId, (props: any) => {
+        setResponsiveStyleProp(props, "borderColor", stored, viewport)
+      })
+    },
+    [selectedId, actions, viewport],
+  )
+
+  const scheduleBorderColorCommit = useCallback(() => {
+    if (!selectedId) return
+    if (borderColorDebounceRef.current) clearTimeout(borderColorDebounceRef.current)
+    borderColorDebounceRef.current = setTimeout(() => {
+      borderColorDebounceRef.current = null
+      commitBorderColorToProps(
+        pendingBorderHexRef.current,
+        borderOpacityPercentRef.current / 100,
+      )
+    }, BORDER_COLOR_DEBOUNCE_MS)
+  }, [selectedId, commitBorderColorToProps])
+
+  const handleBorderColorFieldChange = useCallback(
+    (value: string) => {
+      setLocalBorderHex(value)
+      pendingBorderHexRef.current = value
+      scheduleBorderColorCommit()
+    },
+    [scheduleBorderColorCommit],
+  )
+
+  const handleBorderOpacityPercentChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (!selectedId) return
+    const next = Number(event.target.value)
+    const safe = Math.min(100, Math.max(0, Number.isNaN(next) ? 0 : next))
+    setLocalBorderOpacityPercent(safe)
+    borderOpacityPercentRef.current = safe
+    if (borderColorDebounceRef.current) {
+      clearTimeout(borderColorDebounceRef.current)
+      borderColorDebounceRef.current = null
+    }
+    commitBorderColorToProps(pendingBorderHexRef.current, safe / 100)
+  }
 
   if (!selectedId || !selectedProps) {
     return null
@@ -403,9 +508,10 @@ export const BordersAccordion = () => {
                   value={styleGroupValue}
                   onChange={handleBorderStyleChange}
                   options={[
-                    { id: "none", content: "×" },
-                    { id: "solid", content: "—" },
-                    { id: "dotted", content: "⋯" },
+                    { id: "none", content: <CloseIcon size={14} fill={COLORS.purple400} /> },
+                    { id: "solid", content: <MinusIcon size={14} fill={COLORS.purple400} /> },
+                    { id: "dashed", content: <DashedIcon size={14} fill={COLORS.purple400} /> },
+                    { id: "dotted", content: <MoreHorizontalIcon size={14} fill={COLORS.purple400} /> },
                   ]}
                 />
 
@@ -436,25 +542,15 @@ export const BordersAccordion = () => {
 
                 <CraftSettingsColorField
                   label="Color"
-                  value={(getResponsiveStyleProp(selectedProps, "borderColor", viewport) as string | undefined) ?? "#000000"}
-                  onChange={(value) => {
-                    actions.setProp(selectedId, (props: any) => {
-                      setResponsiveStyleProp(props, "borderColor", value, viewport)
-                    })
-                  }}
+                  value={localBorderHex}
+                  onChange={handleBorderColorFieldChange}
                 />
 
                 <CraftSettingsInput
                   label="Opacity"
                   type="number"
-                  value={Math.round((((getResponsiveStyleProp(selectedProps, "borderOpacity", viewport) as number | undefined) ?? 1) * 100))}
-                  onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                    const next = Number(event.target.value)
-                    const safe = Math.min(100, Math.max(0, Number.isNaN(next) ? 0 : next))
-                    actions.setProp(selectedId, (props: any) => {
-                      setResponsiveStyleProp(props, "borderOpacity", safe / 100, viewport)
-                    })
-                  }}
+                  value={localBorderOpacityPercent}
+                  onChange={handleBorderOpacityPercentChange}
                 />
               </Box>
             </Box>

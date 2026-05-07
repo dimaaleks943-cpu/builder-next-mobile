@@ -858,14 +858,6 @@ export const CraftContentList = ({}: ContentListProps) => {
     filterScope: "",
     style: {
       [PreviewViewport.DESKTOP]: {
-        borderRadius: 4,
-        borderTopWidth: 0,
-        borderRightWidth: 0,
-        borderBottomWidth: 0,
-        borderLeftWidth: 0,
-        borderColor: COLORS.gray400,
-        borderStyle: "solid" as const,
-        borderOpacity: 1,
         itemsPerRow: 1,
         ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
       },
