@@ -9,8 +9,15 @@ import type { ChangeEvent } from "react"
 import { useEffect, useRef, useState } from "react"
 import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
+import {
+  FONT_SIZE_UNIT_MENU,
+} from "../../../utils/craftCssSizeProp.ts"
+import { AlignCenterIcon } from "../../../icons/AlignCenterIcon.tsx"
+import { AlignJustifyIcon } from "../../../icons/AlignJustifyIcon.tsx"
+import { AlignLeftIcon } from "../../../icons/AlignLeftIcon.tsx"
 import { CraftSettingsSelect } from "../components/craftSettingsControls/CraftSettingsSelect.tsx"
 import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSettingsInput.tsx"
+import { CraftSettingsValueWithUnit } from "../components/craftSettingsControls/CraftSettingsValueWithUnit.tsx"
 import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
 import { CraftSettingsMultiToggleGroup } from "../components/craftSettingsControls/CraftSettingsMultiToggleGroup.tsx"
 import { CraftSettingsColorField } from "../components/craftSettingsControls/CraftSettingsColorField.tsx"
@@ -22,10 +29,10 @@ import {
 
 interface SelectedTypographyProps {
   fontFamily?: string;
-  fontSize?: number;
-  lineHeight?: number;
+  fontSize?: number | string;
+  lineHeight?: number | string;
   fontWeight?: "normal" | "bold";
-  textAlign?: "left" | "center" | "right";
+  textAlign?: "left" | "center" | "right" | "justify";
   color?: string;
   textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
   strokeColor?: string;
@@ -38,6 +45,28 @@ interface SelectedTypographyProps {
 interface EditorSelection {
   selectedId: string | null;
   selectedProps: SelectedTypographyProps | null;
+}
+
+const TEXT_ALIGN_ICON_SIZE = 14
+
+const renderTextAlignIcon = (
+  id: "left" | "center" | "right" | "justify",
+  fill: string,
+) => {
+  switch (id) {
+    case "left":
+      return <AlignLeftIcon size={TEXT_ALIGN_ICON_SIZE} fill={fill} />
+    case "center":
+      return <AlignCenterIcon size={TEXT_ALIGN_ICON_SIZE} fill={fill} />
+    case "right":
+      return (
+        <Box sx={{ display: "inline-flex", transform: "scaleX(-1)" }}>
+          <AlignLeftIcon size={TEXT_ALIGN_ICON_SIZE} fill={fill} />
+        </Box>
+      )
+    case "justify":
+      return <AlignJustifyIcon size={TEXT_ALIGN_ICON_SIZE} fill={fill} />
+  }
 }
 
 export const TypographyAccordion = () => {
@@ -71,14 +100,14 @@ export const TypographyAccordion = () => {
   useEffect(() => {
     setColorDraft(
       (getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "color", viewport) as string | undefined) ??
-        COLORS.black,
+      COLORS.black,
     )
   }, [selectedProps, selectedId, viewport])
 
   useEffect(() => {
     setStrokeColorDraft(
       (getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "strokeColor", viewport) as string | undefined) ??
-        COLORS.black,
+      COLORS.black,
     )
   }, [selectedProps, selectedId, viewport])
 
@@ -125,19 +154,15 @@ export const TypographyAccordion = () => {
     })
   }
 
-  const handleFontSizeChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const next = Number(event.target.value)
-    const safe = Number.isNaN(next) ? undefined : next
+  const handleFontSizeCommit = (next: string | number | undefined) => {
     actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "fontSize", safe, viewport)
+      setResponsiveStyleProp(props, "fontSize", next, viewport)
     })
   }
 
-  const handleLineHeightChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const next = Number(event.target.value)
-    const safe = Number.isNaN(next) ? undefined : next
+  const handleLineHeightCommit = (next: string | number | undefined) => {
     actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "lineHeight", safe, viewport)
+      setResponsiveStyleProp(props, "lineHeight", next, viewport)
     })
   }
 
@@ -146,9 +171,15 @@ export const TypographyAccordion = () => {
     scheduleColorUpdate(value)
   }
 
-  const handleAlignChange = (align: "left" | "center" | "right") => {
+  const handleAlignChange = (align: "left" | "center" | "right" | "justify") => {
     actions.setProp(selectedId, (props: any) => {
       setResponsiveStyleProp(props, "textAlign", align, viewport)
+    })
+  }
+
+  const handleAlignReset = () => {
+    actions.setProp(selectedId, (props: any) => {
+      setResponsiveStyleProp(props, "textAlign", undefined, viewport)
     })
   }
 
@@ -172,6 +203,12 @@ export const TypographyAccordion = () => {
     setStrokeColorDraft(value)
     scheduleStrokeColorUpdate(value)
   }
+
+  const textAlignProp = getResponsiveStyleProp(
+    selectedProps as unknown as Record<string, unknown>,
+    "textAlign",
+    viewport,
+  ) as string | undefined
 
   return (
     <Accordion disableGutters>
@@ -209,22 +246,29 @@ export const TypographyAccordion = () => {
             ]}
           />
 
-          {/* Size / Height */}
-          <Box sx={{ display: "flex", gap: "8px" }}>
-            <CraftSettingsInput
+          <Box sx={{ display: "flex", columnGap: "8px" }}>
+            <CraftSettingsValueWithUnit
               label="Size"
-              type="number"
-              value={getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "fontSize", viewport) as number | undefined ?? ""}
-              onChange={handleFontSizeChange}
-              customStyles={{ columnGap: "36px" }}
+              value={getResponsiveStyleProp(
+                selectedProps as unknown as Record<string, unknown>,
+                "fontSize",
+                viewport,
+              )}
+              onCommit={handleFontSizeCommit}
+              allowedUnits={FONT_SIZE_UNIT_MENU}
+              placeholder=""
             />
 
-            <CraftSettingsInput
+            <CraftSettingsValueWithUnit
               label="Height"
-              type="number"
-              value={getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "lineHeight", viewport) as number | undefined ?? ""}
-              onChange={handleLineHeightChange}
-              customStyles={{ columnGap: "34px" }}
+              value={getResponsiveStyleProp(
+                selectedProps as unknown as Record<string, unknown>,
+                "lineHeight",
+                viewport,
+              )}
+              onCommit={handleLineHeightCommit}
+              allowedUnits={FONT_SIZE_UNIT_MENU}
+              placeholder=""
             />
           </Box>
 
@@ -235,18 +279,34 @@ export const TypographyAccordion = () => {
             onChange={handleColorChange}
           />
 
-          {/* Align */}
           <CraftSettingsButtonGroup
             label="Align"
-            value={(getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "textAlign", viewport) as string | undefined) ?? "left"}
-            options={[
-              { id: "left", content: "≡" },
-              { id: "center", content: "≡" },
-              { id: "right", content: "≡" },
-            ]}
+            value={textAlignProp}
             onChange={(id) =>
-              handleAlignChange(id as "left" | "center" | "right")
+              handleAlignChange(
+                id as "left" | "center" | "right" | "justify",
+              )
             }
+            onReset={handleAlignReset}
+            options={(
+              ["left", "center", "right", "justify"] as const
+            ).map((id) => {
+              const fill = COLORS.purple400
+              const isActive = id === textAlignProp
+              return {
+                id,
+                content: (
+                  <Box
+                    sx={{
+                      display: "inline-flex",
+                      opacity: isActive ? 1 : 0.85,
+                    }}
+                  >
+                    {renderTextAlignIcon(id, fill)}
+                  </Box>
+                ),
+              }
+            })}
           />
 
           <CraftSettingsMultiToggleGroup

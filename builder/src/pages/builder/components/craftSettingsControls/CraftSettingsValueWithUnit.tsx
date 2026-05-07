@@ -23,9 +23,8 @@ import {
 const orderedAllowedTokens = (
   allowed: readonly CraftSizeMenuToken[],
 ): CraftSizeMenuToken[] => {
-  return CRAFT_SIZE_MENU_UNITS_WEB.filter((u) =>
-    (allowed as readonly string[]).includes(u),
-  )
+  const globalSet = new Set<string>(CRAFT_SIZE_MENU_UNITS_WEB)
+  return allowed.filter((u) => globalSet.has(u))
 }
 
 const defaultMenuSelection = (
@@ -113,10 +112,18 @@ export const CraftSettingsValueWithUnit = ({
   const blurCommitTimer = useRef<number | null>(null)
 
   useEffect(() => {
+    if (unitless) {
+      if (value === undefined || value === null) {
+        setInputText("")
+        return
+      }
+      setInputText(typeof value === "number" ? String(value) : String(value))
+      return
+    }
     const next = viewStateFromProp(value, resolvedAllowed)
     setInputText(next.inputText)
     setMenuSelection(next.menuSelection)
-  }, [value, resolvedAllowed])
+  }, [value, resolvedAllowed, unitless])
 
   useEffect(() => {
     if (!anchorEl) return

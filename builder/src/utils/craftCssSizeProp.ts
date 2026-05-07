@@ -17,6 +17,9 @@ export const CSS_SIZE_UNITS_WEB = [
   "vh",
   "svw",
   "svh",
+  "pt",
+  "vmin",
+  "vmax",
 ] as const
 
 export type CssSizeUnit = (typeof CSS_SIZE_UNITS_WEB)[number]
@@ -31,8 +34,21 @@ export const CRAFT_SIZE_MENU_UNITS_WEB: readonly CraftSizeMenuToken[] = [
   "auto",
 ]
 
+/** Font-size style control: no `auto`; menu order matches UI. */
+export const FONT_SIZE_UNIT_MENU: readonly CraftSizeMenuToken[] = [
+  "px",
+  "em",
+  "rem",
+  "%",
+  "pt",
+  "vw",
+  "vh",
+  "vmin",
+  "vmax",
+]
+
 const LENGTH_RE =
-  /^(-?(?:\d+\.?\d*|\.\d+))(px|%|em|rem|ch|vw|vh|svw|svh)$/i
+  /^(-?(?:\d+\.?\d*|\.\d+))(px|%|em|rem|ch|vw|vh|svw|svh|pt|vmin|vmax)$/i
 
 const NUM_ONLY_RE = /^-?(?:\d+\.?\d*|\.\d+)$/
 
@@ -172,6 +188,12 @@ export const unitTokenLabel = (token: CraftSizeMenuToken): string => {
       return "SVW"
     case "svh":
       return "SVH"
+    case "pt":
+      return "PT"
+    case "vmin":
+      return "VMIN"
+    case "vmax":
+      return "VMAX"
     case "auto":
       return "AUTO"
     default:

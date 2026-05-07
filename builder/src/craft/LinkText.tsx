@@ -40,12 +40,8 @@ export const CraftLinkText = (props: LinkTextProps) => {
   const collectionField = props.collectionField ?? null
   const href = props.href ?? "http://www.google.com"
   const openInNewTab = props.openInNewTab ?? false
-  const lineHeight = (responsiveStyle.lineHeight as number | undefined) ?? 20
   const strokeColor = responsiveStyle.strokeColor as string | undefined
   const strokeWidth = (responsiveStyle.strokeWidth as number | undefined) ?? 0
-  const isItalic = (responsiveStyle.isItalic as boolean | undefined) ?? false
-  const isUnderline = (responsiveStyle.isUnderline as boolean | undefined) ?? false
-  const isStrikethrough = (responsiveStyle.isStrikethrough as boolean | undefined) ?? false
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(text)
   const spanRef = useRef<HTMLSpanElement | null>(null)
@@ -166,16 +162,6 @@ export const CraftLinkText = (props: LinkTextProps) => {
   const style: CSSProperties = {
     ...responsiveStyle,
     display: "inline-block",
-    //TODO сохранять значение в px сразу
-    lineHeight: typeof lineHeight === "number" ? `${lineHeight}px` : undefined,
-    //TODO переписать на прямую привязку к fontStyle
-    fontStyle: isItalic ? "italic" : "normal",
-    textDecoration: [
-      isUnderline ? "underline" : "",
-      isStrikethrough ? "line-through" : "",
-    ]
-      .filter(Boolean)
-      .join(" ") || "none",
     WebkitTextStrokeWidth: strokeWidth ? strokeWidth : undefined,
     WebkitTextStrokeColor: strokeColor,
   }
@@ -246,16 +232,11 @@ export const CraftLinkText = (props: LinkTextProps) => {
     openInNewTab: false,
     style: {
       [PreviewViewport.DESKTOP]: {
-        fontSize: 14,
+        fontSize: "14px",
+        lineHeight: "20px",
         fontWeight: "normal" as const,
-        textAlign: "left" as const,
         color: COLORS.green300,
-        lineHeight: 20,
-        textTransform: "none" as const,
-        strokeWidth: 0,
-        isItalic: false,
-        isUnderline: false,
-        isStrikethrough: false,
+
         marginTop: 0,
         marginRight: 0,
         marginBottom: 0,

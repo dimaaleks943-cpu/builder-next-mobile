@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react"
-import { Box, Divider, Paper, Popper, Typography } from "@mui/material"
+import { Box, Paper, Popper, Typography } from "@mui/material"
 import { COLORS } from "../../../../../theme/colors.ts"
-import { UndoIcon } from "../../../../../icons/UndoIcon.tsx"
+import { CraftSettingsStyleResetFooter } from "../../../components/craftSettingsControls/CraftSettingsStyleResetFooter.tsx"
 import { CraftSettingsSliderWithUnit } from "../../../components/craftSettingsControls/CraftSettingsSliderWithUnit.tsx"
 import { CRAFT_SIZE_MENU_UNITS_WEB } from "../../../../../utils/craftCssSizeProp.ts"
 import { INSET_OPTIONS } from "../positioningAccordion.const.tsx";
@@ -261,46 +261,10 @@ export const InsetControl = ({
             })}
           </Box>
 
-          <Box
-            sx={{
-              borderTop: `1px solid ${COLORS.purple100}`,
-              paddingTop: "8px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Box
-              component="button"
-              type="button"
-              onClick={() => activeInsetSide && onInsetReset(activeInsetSide)}
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                border: "none",
-                backgroundColor: "transparent",
-                padding: 0,
-                color: COLORS.gray700,
-                fontSize: "11px",
-                lineHeight: "14px",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              <UndoIcon size={12} fill={COLORS.black}/>
-              Сброс
-            </Box>
-            <Typography sx={{ fontSize: "10px", lineHeight: "14px", color: COLORS.black }}>
-              Alt + click
-            </Typography>
-          </Box>
-
-          <Divider/>
-
-          <Typography sx={{ fontSize: "10px", lineHeight: "14px", color: COLORS.black }}>
-            Сброс приведет к исходному значению.
-          </Typography>
+          <CraftSettingsStyleResetFooter
+            withTopSeparator
+            onReset={() => activeInsetSide && onInsetReset(activeInsetSide)}
+          />
         </Paper>
       </Popper>
     </>
