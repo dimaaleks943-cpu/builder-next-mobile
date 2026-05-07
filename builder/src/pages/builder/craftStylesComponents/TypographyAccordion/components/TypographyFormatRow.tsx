@@ -27,6 +27,7 @@ export const TypographyFormatRow = ({
   onItalicPress,
 }: Props) => {
   const accentFill = COLORS.purple400
+  const isClearHighlighted = decoration === undefined && !isItalic
 
   const segmentIconButtonSx = (opts: {
     active: boolean;
@@ -87,7 +88,10 @@ export const TypographyFormatRow = ({
             size="small"
             aria-label="Clear format"
             onClick={onClear}
-            sx={segmentIconButtonSx({ active: false, cornerLeft: true })}
+            sx={segmentIconButtonSx({
+              active: isClearHighlighted,
+              cornerLeft: true,
+            })}
           >
             <CloseIcon size={FORMAT_ICON_SIZE} fill={accentFill}/>
           </IconButton>
