@@ -11,11 +11,6 @@ import {
 import { COLORS } from "../theme/colors"
 import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
-import {
-  type CraftMixBlendMode,
-  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
-  resolveCraftVisualEffectsStyle,
-} from "./craftVisualEffects.ts"
 import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
@@ -51,19 +46,6 @@ export const CraftLinkText = (props: LinkTextProps) => {
   const isItalic = (responsiveStyle.isItalic as boolean | undefined) ?? false
   const isUnderline = (responsiveStyle.isUnderline as boolean | undefined) ?? false
   const isStrikethrough = (responsiveStyle.isStrikethrough as boolean | undefined) ?? false
-  const mixBlendMode =
-    (responsiveStyle.mixBlendMode as CraftMixBlendMode | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode
-  const opacityPercent =
-    (responsiveStyle.opacityPercent as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent
-  const outlineStyleMode =
-    (responsiveStyle.outlineStyleMode as (typeof DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS)["outlineStyleMode"]) ??
-    DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode
-  const outlineWidth =
-    (responsiveStyle.outlineWidth as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth
-  const outlineOffset =
-    (responsiveStyle.outlineOffset as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset
-  const outlineColor =
-    (responsiveStyle.outlineColor as string | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(text)
   const spanRef = useRef<HTMLSpanElement | null>(null)
@@ -214,14 +196,6 @@ export const CraftLinkText = (props: LinkTextProps) => {
         position: "relative",
         display: "inline-block",
         maxWidth: "max-content",
-        ...resolveCraftVisualEffectsStyle({
-          mixBlendMode,
-          opacityPercent,
-          outlineStyleMode,
-          outlineWidth,
-          outlineOffset,
-          outlineColor,
-        }),
       }}
     >
       <span
@@ -290,7 +264,6 @@ export const CraftLinkText = (props: LinkTextProps) => {
         paddingRight: 0,
         paddingBottom: 0,
         paddingLeft: 0,
-        ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
       },
     },
   },

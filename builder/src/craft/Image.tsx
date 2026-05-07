@@ -11,11 +11,6 @@ import {
 import { COLORS } from "../theme/colors"
 import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
-import {
-  type CraftMixBlendMode,
-  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
-  resolveCraftVisualEffectsStyle,
-} from "./craftVisualEffects.ts"
 import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
@@ -43,19 +38,6 @@ export const CraftImage = (props: CraftImageProps) => {
   const overflow = responsiveStyle.overflow as "auto" | "hidden" | "visible" | "scroll" | undefined
   const collectionField = props.collectionField ?? null
   const backgroundColor = responsiveStyle.backgroundColor as string | undefined
-  const mixBlendMode =
-    (responsiveStyle.mixBlendMode as CraftMixBlendMode | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode
-  const opacityPercent =
-    (responsiveStyle.opacityPercent as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent
-  const outlineStyleMode =
-    (responsiveStyle.outlineStyleMode as (typeof DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS)["outlineStyleMode"]) ??
-    DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode
-  const outlineWidth =
-    (responsiveStyle.outlineWidth as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth
-  const outlineOffset =
-    (responsiveStyle.outlineOffset as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset
-  const outlineColor =
-    (responsiveStyle.outlineColor as string | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor
 
   const {
     connectors: { connect, drag },
@@ -125,14 +107,6 @@ export const CraftImage = (props: CraftImageProps) => {
     objectFit: "cover",
     boxSizing: "border-box",
     backgroundColor: backgroundColor ?? COLORS.gray100,
-    ...resolveCraftVisualEffectsStyle({
-      mixBlendMode,
-      opacityPercent,
-      outlineStyleMode,
-      outlineWidth,
-      outlineOffset,
-      outlineColor,
-    }),
   }
 
   return (
@@ -169,7 +143,6 @@ export const CraftImage = (props: CraftImageProps) => {
     collectionField: null,
     style: {
       [PreviewViewport.DESKTOP]: {
-        ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
       },
     },
   },

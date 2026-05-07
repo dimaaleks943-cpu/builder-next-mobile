@@ -7,11 +7,6 @@ import type {
   PlaceItemsValue,
 } from "../builder.enum"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
-import {
-  type CraftMixBlendMode,
-  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
-  resolveCraftVisualEffectsStyle,
-} from "./craftVisualEffects.ts"
 import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
@@ -31,19 +26,6 @@ export const CraftBlock = (props: BlockProps) => {
   const flexAlignItems = responsiveStyle.flexAlignItems as FlexAlignItems | undefined
   const placeItemsY = responsiveStyle.placeItemsY as PlaceItemsValue | undefined
   const placeItemsX = responsiveStyle.placeItemsX as PlaceItemsValue | undefined
-  const mixBlendMode =
-    (responsiveStyle.mixBlendMode as CraftMixBlendMode | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode
-  const opacityPercent =
-    (responsiveStyle.opacityPercent as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent
-  const outlineStyleMode =
-    (responsiveStyle.outlineStyleMode as (typeof DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS)["outlineStyleMode"]) ??
-    DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode
-  const outlineWidth =
-    (responsiveStyle.outlineWidth as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth
-  const outlineOffset =
-    (responsiveStyle.outlineOffset as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset
-  const outlineColor =
-    (responsiveStyle.outlineColor as string | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor
   const {
     connectors: { connect, drag },
   } = useNode((node) => ({
@@ -69,14 +51,6 @@ export const CraftBlock = (props: BlockProps) => {
           layout === "grid" && placeItemsY != null && placeItemsX != null
             ? `${placeItemsY} ${placeItemsX}`
             : undefined,
-        ...resolveCraftVisualEffectsStyle({
-          mixBlendMode,
-          opacityPercent,
-          outlineStyleMode,
-          outlineWidth,
-          outlineOffset,
-          outlineColor,
-        }),
       }}
     >
       {props.children}
@@ -101,7 +75,6 @@ export const CraftBlock = (props: BlockProps) => {
         paddingRight: 0,
         paddingBottom: 0,
         paddingLeft: 0,
-        ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
       },
     },
   },

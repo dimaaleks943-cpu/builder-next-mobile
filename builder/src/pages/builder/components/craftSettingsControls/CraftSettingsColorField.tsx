@@ -56,8 +56,8 @@ export const CraftSettingsColorField = ({ label, value, onChange }: Props) => {
       >
         <Box
           sx={{
-            width: "18px",
-            height: "18px",
+            width: "12px",
+            height: "12px",
             borderRadius: "2px",
             border: `1px solid ${COLORS.gray300}`,
             backgroundColor: value || COLORS.black,

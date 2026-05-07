@@ -3,7 +3,7 @@ export { PositioningAccordion } from "./PositioningAccordion/PositioningAccordio
 export { SizeAccordion } from "./SizeAccordion.tsx";
 export { SpacingAccordion } from "./SpacingAccordion.tsx";
 export { BordersAccordion } from "./BordersAccordion.tsx";
-export { EffectsAccordion } from "./EffectsAccordion.tsx";
+export { EffectsAccordion } from "./EffectsAccordion/EffectsAccordion.tsx";
 export { BackgroundAccordion } from "./BackgroundAccordion.tsx";
 export { TypographyAccordion } from "./TypographyAccordion.tsx";
 export { CraftSettingsSelect } from "../components/craftSettingsControls/CraftSettingsSelect.tsx";

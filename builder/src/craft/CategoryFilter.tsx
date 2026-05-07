@@ -5,11 +5,6 @@ import type { ContentCategory } from "../api/extranet"
 import { COLORS } from "../theme/colors"
 import { useCollectionFilterScope } from "../pages/builder/context/CollectionFilterScopeContext.tsx"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
-import {
-  type CraftMixBlendMode,
-  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
-  resolveCraftVisualEffectsStyle,
-} from "./craftVisualEffects.ts"
 import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import {
@@ -214,26 +209,6 @@ export const CraftCategoryFilter = () => {
           (responsiveStyle.overflow as "auto" | "hidden" | "visible" | "scroll" | undefined) ??
           "visible",
         position: "relative",
-        ...resolveCraftVisualEffectsStyle({
-          mixBlendMode:
-            (responsiveStyle.mixBlendMode as CraftMixBlendMode | undefined) ??
-            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode,
-          opacityPercent:
-            (responsiveStyle.opacityPercent as number | undefined) ??
-            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent,
-          outlineStyleMode:
-            (responsiveStyle.outlineStyleMode as (typeof DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS)["outlineStyleMode"]) ??
-            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode,
-          outlineWidth:
-            (responsiveStyle.outlineWidth as number | undefined) ??
-            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth,
-          outlineOffset:
-            (responsiveStyle.outlineOffset as number | undefined) ??
-            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset,
-          outlineColor:
-            (responsiveStyle.outlineColor as string | undefined) ??
-            DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor,
-        }),
       }}
     >
       <div
@@ -515,7 +490,6 @@ export const CraftCategoryFilter = () => {
       [PreviewViewport.DESKTOP]: {
         width: "100%",
         minHeight: 48,
-        ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
       },
     },
   },

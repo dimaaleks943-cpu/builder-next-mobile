@@ -11,11 +11,6 @@ import type {
   PlaceItemsValue,
 } from "../builder.enum"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
-import {
-  type CraftMixBlendMode,
-  DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
-  resolveCraftVisualEffectsStyle,
-} from "./craftVisualEffects.ts"
 import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
@@ -53,19 +48,6 @@ export const CraftContentListCell = (props: ContentListCellProps) => {
   const placeItemsY = responsiveStyle.placeItemsY as PlaceItemsValue | undefined
   const placeItemsX = responsiveStyle.placeItemsX as PlaceItemsValue | undefined
   const backgroundColor = responsiveStyle.backgroundColor as string | undefined
-  const mixBlendMode =
-    (responsiveStyle.mixBlendMode as CraftMixBlendMode | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.mixBlendMode
-  const opacityPercent =
-    (responsiveStyle.opacityPercent as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.opacityPercent
-  const outlineStyleMode =
-    (responsiveStyle.outlineStyleMode as (typeof DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS)["outlineStyleMode"]) ??
-    DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineStyleMode
-  const outlineWidth =
-    (responsiveStyle.outlineWidth as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineWidth
-  const outlineOffset =
-    (responsiveStyle.outlineOffset as number | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineOffset
-  const outlineColor =
-    (responsiveStyle.outlineColor as string | undefined) ?? DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS.outlineColor
   const {
     connectors: { connect, drag },
     selected,
@@ -128,14 +110,6 @@ export const CraftContentListCell = (props: ContentListCellProps) => {
         // alignItems в конце объекта, чтобы не перезаписаться другими стилями при мерже/каскаде.
         alignItems:
           layout === "flex" ? (flexAlignItems ?? "flex-start") : "flex-start",
-        ...resolveCraftVisualEffectsStyle({
-          mixBlendMode,
-          opacityPercent,
-          outlineStyleMode,
-          outlineWidth,
-          outlineOffset,
-          outlineColor,
-        }),
       }}
     >
       <ContentListCellContext.Provider value={true}>
@@ -153,7 +127,6 @@ export const CraftContentListCell = (props: ContentListCellProps) => {
         layout: "block" as BlockLayoutMode,
         gridAutoFlow: "row" as const,
         flexFlow: "row" as const,
-        ...DEFAULT_CRAFT_VISUAL_EFFECTS_PROPS,
       },
     },
   },
