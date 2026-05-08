@@ -3,6 +3,7 @@ import {
   AccordionDetails,
   AccordionSummary,
   Box,
+  Button,
   Typography,
 } from "@mui/material"
 import type { ChangeEvent } from "react"
@@ -31,6 +32,8 @@ import {
   setResponsiveStyleProp,
   type ResponsiveStyle,
 } from "../../responsiveStyle.ts"
+import { ChevronDownIcon } from "../../../../icons/ChevronDownIcon.tsx"
+import { CloseIcon } from "../../../../icons/CloseIcon.tsx"
 
 interface SelectedTypographyProps {
   fontFamily?: string;
@@ -119,6 +122,7 @@ export const TypographyAccordion = () => {
   const [strokeColorDraft, setStrokeColorDraft] = useState<string>(
     selectedProps.strokeColor ?? COLORS.black,
   )
+  const [moreTypeOptionsOpen, setMoreTypeOptionsOpen] = useState(false)
 
   const colorTimeoutRef = useRef<number | undefined>(undefined)
   const strokeColorTimeoutRef = useRef<number | undefined>(undefined)
@@ -382,47 +386,102 @@ export const TypographyAccordion = () => {
             onItalicPress={handleFormatItalicPress}
           />
 
-          {/* Capitalize */}
-          <CraftSettingsButtonGroup
-            label="Capitalize"
-            value={(getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "textTransform", viewport) as string | undefined) ?? "none"}
-            options={[
-              { id: "none", content: "x" },
-              { id: "uppercase", content: "AA" },
-              { id: "capitalize", content: "Aa" },
-              { id: "lowercase", content: "aa" },
-            ]}
-            onChange={(id) =>
-              handleCapitalizeChange(
-                id as "none" | "uppercase" | "capitalize" | "lowercase",
-              )
-            }
-          />
-
-          {/* Stroke */}
-          <Box
+          <Button
+            type="button"
+            variant="outlined"
+            disableElevation
+            onClick={() => setMoreTypeOptionsOpen((open) => !open)}
             sx={{
-              display: "grid",
-              gridTemplateColumns: "102px 1fr",
-              gap: "8px",
-              width: "100%",
-              boxSizing: "border-box",
+              alignSelf: "stretch",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "4px",
+              padding: "4px",
+              minHeight: 0,
+              borderRadius: "2px",
+              border: `1px solid ${COLORS.purple100}`,
+              backgroundColor: COLORS.white,
+              color: COLORS.gray700,
+              textTransform: "none",
+              boxShadow: "none",
+              "&:hover": {
+                backgroundColor: COLORS.white,
+                border: `1px solid ${COLORS.purple100}`,
+                boxShadow: "none",
+              },
             }}
           >
-            <CraftSettingsInput
-              label="Stroke"
-              type="number"
-              value={(getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "strokeWidth", viewport) as number | undefined) ?? 0}
-              onChange={handleStrokeWidthChange}
-              customStyles={{ columnGap: "26px" }}
-            />
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                transform: moreTypeOptionsOpen ? "rotate(180deg)" : "none",
+                transition: "transform 0.15s ease",
+              }}
+            >
+              <ChevronDownIcon size={12} fill={COLORS.gray700} />
+            </Box>
+            <Typography
+              sx={{
+                fontSize: "10px",
+                lineHeight: "14px",
+                color: COLORS.gray700,
+              }}
+            >
+              More type options
+            </Typography>
+          </Button>
 
-            <CraftSettingsColorField
-              label="Color"
-              value={strokeColorDraft}
-              onChange={handleStrokeColorChange}
-            />
-          </Box>
+          {moreTypeOptionsOpen ? (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "6px",
+              }}
+            >
+              <CraftSettingsButtonGroup
+                label="Capitalize"
+                value={(getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "textTransform", viewport) as string | undefined) ?? "none"}
+                options={[
+                  { id: "none", content: <CloseIcon size={16} /> },
+                  { id: "uppercase", content: "AA" },
+                  { id: "capitalize", content: "Aa" },
+                  { id: "lowercase", content: "aa" },
+                ]}
+                onChange={(id) =>
+                  handleCapitalizeChange(
+                    id as "none" | "uppercase" | "capitalize" | "lowercase",
+                  )
+                }
+              />
+
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: "102px 1fr",
+                  gap: "8px",
+                  width: "100%",
+                  boxSizing: "border-box",
+                }}
+              >
+                <CraftSettingsInput
+                  label="Stroke"
+                  type="number"
+                  value={(getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "strokeWidth", viewport) as number | undefined) ?? 0}
+                  onChange={handleStrokeWidthChange}
+                  customStyles={{ columnGap: "26px" }}
+                />
+
+                <CraftSettingsColorField
+                  label="Color"
+                  value={strokeColorDraft}
+                  onChange={handleStrokeColorChange}
+                />
+              </Box>
+            </Box>
+          ) : null}
         </Box>
       </AccordionDetails>
     </Accordion>
