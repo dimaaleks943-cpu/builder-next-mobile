@@ -32,6 +32,7 @@ import {
   TypographyFormatRow,
   type TextDecorationKind,
 } from "./components/TypographyFormatRow.tsx"
+import { TypographyBreakingRow } from "./components/TypographyBreakingRow.tsx"
 import { usePreviewViewport } from "../../context/PreviewViewportContext.tsx"
 import {
   getResponsiveStyleProp,
@@ -812,6 +813,13 @@ export const TypographyAccordion = () => {
                     id as "none" | "uppercase" | "capitalize" | "lowercase",
                   )
                 }
+              />
+
+              <TypographyBreakingRow
+                actions={actions}
+                selectedId={selectedId}
+                selectedProps={selectedProps as unknown as Record<string, unknown>}
+                viewport={viewport}
               />
 
               <Box

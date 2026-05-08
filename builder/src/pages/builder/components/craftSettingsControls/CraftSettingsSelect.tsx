@@ -14,6 +14,8 @@ interface Props {
   onChange: (event: ChangeEvent<HTMLSelectElement>) => void;
   options: Option[];
   disabled?: boolean;
+  /** When false, only the select is shown (full width); label is omitted and used as `aria-label`. */
+  showInlineLabel?: boolean;
 }
 
 export const CraftSettingsSelect = ({
@@ -22,7 +24,24 @@ export const CraftSettingsSelect = ({
   onChange,
   options,
   disabled = false,
+  showInlineLabel = true,
 }: Props) => {
+  const selectShellSx = showInlineLabel
+    ? {
+        flex: 4,
+        position: "relative" as const,
+        display: "flex",
+        alignItems: "center",
+      }
+    : {
+        flex: 1,
+        width: "100%",
+        minWidth: 0,
+        position: "relative" as const,
+        display: "flex",
+        alignItems: "center",
+      }
+
   return (
     <Box
       sx={{
@@ -31,31 +50,28 @@ export const CraftSettingsSelect = ({
         alignItems: "center",
         justifyContent: "space-between",
         columnGap: "8px",
+        ...(showInlineLabel ? {} : { width: "100%", minWidth: 0 }),
       }}
     >
-      <Typography
-        sx={{
-          fontSize: "10px",
-          lineHeight: "14px",
-          color: COLORS.gray700,
-          flex: 1,
-        }}
-      >
-        {label}
-      </Typography>
-      <Box
-        sx={{
-          flex: 4,
-          position: "relative",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
+      {showInlineLabel ? (
+        <Typography
+          sx={{
+            fontSize: "10px",
+            lineHeight: "14px",
+            color: COLORS.gray700,
+            flex: 1,
+          }}
+        >
+          {label}
+        </Typography>
+      ) : null}
+      <Box sx={selectShellSx}>
         <Box
           component="select"
           value={value}
           onChange={onChange}
           disabled={disabled}
+          aria-label={showInlineLabel ? undefined : label}
           sx={{
             width: "100%",
             boxSizing: "border-box",
