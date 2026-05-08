@@ -4,14 +4,21 @@ import {
   AccordionSummary,
   Box,
   Button,
+  IconButton,
+  Tooltip,
   Typography,
 } from "@mui/material"
-import type { ChangeEvent } from "react"
+import type {
+  ChangeEvent,
+  KeyboardEvent,
+} from "react"
 import { useEffect, useRef, useState } from "react"
 import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../../theme/colors.ts"
 import {
   FONT_SIZE_UNIT_MENU,
+  parseSizeProp,
+  type CraftSizeMenuToken,
 } from "../../../../utils/craftCssSizeProp.ts"
 import { AlignCenterIcon } from "../../../../icons/AlignCenterIcon.tsx"
 import { AlignJustifyIcon } from "../../../../icons/AlignJustifyIcon.tsx"
@@ -34,6 +41,8 @@ import {
 } from "../../responsiveStyle.ts"
 import { ChevronDownIcon } from "../../../../icons/ChevronDownIcon.tsx"
 import { CloseIcon } from "../../../../icons/CloseIcon.tsx"
+import { MoreHorizontalIcon } from "../../../../icons/MoreHorizontalIcon.tsx"
+import { BottomResetLabel } from "./components/BottomResetLabel.tsx"
 
 interface SelectedTypographyProps {
   fontFamily?: string;
@@ -54,6 +63,28 @@ interface SelectedTypographyProps {
 }
 
 const TEXT_ALIGN_ICON_SIZE = 14
+
+const LETTER_SPACING_UNIT_MENU: readonly CraftSizeMenuToken[] = ["px", "em", "rem"]
+
+const parseTextIndentDraftFromProp = (value: unknown): string => {
+  if (value === undefined || value === null) return ""
+  if (typeof value === "number") {
+    if (!Number.isFinite(value) || value === 0) return ""
+    return String(value)
+  }
+  if (typeof value === "string") {
+    const t = value.trim()
+    if (t === "") return ""
+    const pxMatch = t.match(/^(-?(?:\d+\.?\d*|\.\d+))px$/i)
+    if (pxMatch) {
+      const n = Number(pxMatch[1])
+      return Number.isFinite(n) && n !== 0 ? pxMatch[1] : ""
+    }
+    const n = Number(t)
+    return Number.isFinite(n) && n !== 0 ? String(n) : ""
+  }
+  return ""
+}
 
 const parseDecorationFromResolved = (resolved: Record<string, unknown>): TextDecorationKind | undefined => {
   const td = resolved.textDecoration
@@ -84,17 +115,17 @@ const renderTextAlignIcon = (
 ) => {
   switch (id) {
     case "left":
-      return <AlignLeftIcon size={TEXT_ALIGN_ICON_SIZE} fill={fill} />
+      return <AlignLeftIcon size={TEXT_ALIGN_ICON_SIZE} fill={fill}/>
     case "center":
-      return <AlignCenterIcon size={TEXT_ALIGN_ICON_SIZE} fill={fill} />
+      return <AlignCenterIcon size={TEXT_ALIGN_ICON_SIZE} fill={fill}/>
     case "right":
       return (
         <Box sx={{ display: "inline-flex", transform: "scaleX(-1)" }}>
-          <AlignLeftIcon size={TEXT_ALIGN_ICON_SIZE} fill={fill} />
+          <AlignLeftIcon size={TEXT_ALIGN_ICON_SIZE} fill={fill}/>
         </Box>
       )
     case "justify":
-      return <AlignJustifyIcon size={TEXT_ALIGN_ICON_SIZE} fill={fill} />
+      return <AlignJustifyIcon size={TEXT_ALIGN_ICON_SIZE} fill={fill}/>
   }
 }
 
@@ -123,6 +154,7 @@ export const TypographyAccordion = () => {
     selectedProps.strokeColor ?? COLORS.black,
   )
   const [moreTypeOptionsOpen, setMoreTypeOptionsOpen] = useState(false)
+  const [textIndentDraft, setTextIndentDraft] = useState("")
 
   const colorTimeoutRef = useRef<number | undefined>(undefined)
   const strokeColorTimeoutRef = useRef<number | undefined>(undefined)
@@ -138,6 +170,18 @@ export const TypographyAccordion = () => {
     setStrokeColorDraft(
       (getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "strokeColor", viewport) as string | undefined) ??
       COLORS.black,
+    )
+  }, [selectedProps, selectedId, viewport])
+
+  useEffect(() => {
+    setTextIndentDraft(
+      parseTextIndentDraftFromProp(
+        getResponsiveStyleProp(
+          selectedProps as unknown as Record<string, unknown>,
+          "textIndent",
+          viewport,
+        ),
+      ),
     )
   }, [selectedProps, selectedId, viewport])
 
@@ -246,6 +290,153 @@ export const TypographyAccordion = () => {
   ) as Record<string, unknown>
   const formatDecoration = parseDecorationFromResolved(resolvedForFormat)
   const formatItalic = parseItalicFromResolved(resolvedForFormat)
+
+  const isGridDisplay = resolvedForFormat.display === "grid"
+
+  const letterSpacingProp = getResponsiveStyleProp(
+    selectedProps as unknown as Record<string, unknown>,
+    "letterSpacing",
+    viewport,
+  )
+
+  const textIndentProp = getResponsiveStyleProp(
+    selectedProps as unknown as Record<string, unknown>,
+    "textIndent",
+    viewport,
+  )
+
+  const columnCountProp = getResponsiveStyleProp(
+    selectedProps as unknown as Record<string, unknown>,
+    "columnCount",
+    viewport,
+  )
+
+  const hasLetterSpacingValue =
+    letterSpacingProp !== undefined &&
+    letterSpacingProp !== null &&
+    String(letterSpacingProp).trim() !== ""
+
+  const hasTextIndentValue =
+    parseTextIndentDraftFromProp(textIndentProp) !== ""
+
+  const hasColumnCountValue =
+    columnCountProp !== undefined &&
+    columnCountProp !== null &&
+    columnCountProp !== "" &&
+    !(typeof columnCountProp === "number" && columnCountProp === 0)
+
+  const handleLetterSpacingCommit = (
+    next: string | number | undefined,
+  ) => {
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      if (next === undefined || next === null || next === "") {
+        setResponsiveStyleProp(props, "letterSpacing", undefined, viewport)
+        return
+      }
+      if (typeof next === "number") {
+        setResponsiveStyleProp(
+          props,
+          "letterSpacing",
+          next === 0 ? undefined : `${next}px`,
+          viewport,
+        )
+        return
+      }
+      const parsed = parseSizeProp(next)
+      if (parsed.kind === "length" && Number(parsed.n) === 0) {
+        setResponsiveStyleProp(props, "letterSpacing", undefined, viewport)
+        return
+      }
+      setResponsiveStyleProp(props, "letterSpacing", next, viewport)
+    })
+  }
+
+  const resetLetterSpacing = () => {
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      setResponsiveStyleProp(props, "letterSpacing", undefined, viewport)
+    })
+  }
+
+  const handleTextIndentDraftChange = (
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    let next = event.target.value.replace(/[^\d.]/g, "")
+    const dot = next.indexOf(".")
+    if (dot !== -1) {
+      next =
+        next.slice(0, dot + 1) + next.slice(dot + 1).replace(/\./g, "")
+    }
+    setTextIndentDraft(next)
+  }
+
+  const commitTextIndentDraft = () => {
+    const t = textIndentDraft.trim()
+    if (t === "") {
+      actions.setProp(selectedId, (props: Record<string, unknown>) => {
+        setResponsiveStyleProp(props, "textIndent", undefined, viewport)
+      })
+      return
+    }
+    const n = Number(t)
+    if (!Number.isFinite(n) || n === 0) {
+      actions.setProp(selectedId, (props: Record<string, unknown>) => {
+        setResponsiveStyleProp(props, "textIndent", undefined, viewport)
+      })
+      return
+    }
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      setResponsiveStyleProp(props, "textIndent", `${n}px`, viewport)
+    })
+  }
+
+  const resetTextIndent = () => {
+    setTextIndentDraft("")
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      setResponsiveStyleProp(props, "textIndent", undefined, viewport)
+    })
+  }
+
+  const handleTextIndentKeyDown = (
+    event: KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key === "Enter") {
+      event.preventDefault()
+      event.currentTarget.blur()
+    }
+  }
+
+  const handleColumnCountCommit = (
+    next: string | number | undefined,
+  ) => {
+    if (!isGridDisplay) return
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      if (next === undefined || next === null || next === "") {
+        setResponsiveStyleProp(props, "columnCount", undefined, viewport)
+        return
+      }
+      if (typeof next === "string" && /^auto$/i.test(next.trim())) {
+        setResponsiveStyleProp(props, "columnCount", undefined, viewport)
+        return
+      }
+      const n = typeof next === "number" ? next : Number(next)
+      if (!Number.isFinite(n) || n <= 0) {
+        setResponsiveStyleProp(props, "columnCount", undefined, viewport)
+        return
+      }
+      const k = Math.trunc(n)
+      if (k <= 0) {
+        setResponsiveStyleProp(props, "columnCount", undefined, viewport)
+        return
+      }
+      setResponsiveStyleProp(props, "columnCount", k, viewport)
+    })
+  }
+
+  const resetColumnCount = () => {
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      setResponsiveStyleProp(props, "columnCount", undefined, viewport)
+    })
+  }
 
   const handleFormatClear = () => {
     actions.setProp(selectedId, (props: Record<string, unknown>) => {
@@ -420,7 +611,7 @@ export const TypographyAccordion = () => {
                 transition: "transform 0.15s ease",
               }}
             >
-              <ChevronDownIcon size={12} fill={COLORS.gray700} />
+              <ChevronDownIcon size={12} fill={COLORS.gray700}/>
             </Box>
             <Typography
               sx={{
@@ -441,11 +632,177 @@ export const TypographyAccordion = () => {
                 gap: "6px",
               }}
             >
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  gap: "6px",
+                  alignItems: "flex-start",
+                  width: "100%",
+                  boxSizing: "border-box",
+                }}
+              >
+                <Box
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    rowGap: "2px",
+                    alignItems: "center",
+                  }}
+                >
+                  <CraftSettingsValueWithUnit
+                    label="Letter spacing"
+                    value={letterSpacingProp}
+                    onCommit={handleLetterSpacingCommit}
+                    allowedUnits={LETTER_SPACING_UNIT_MENU}
+                    withoutLabel
+                    inputWidth="100%"
+                    customWidth="100%"
+                    placeholder="Normal"
+                  />
+                  <BottomResetLabel
+                    hasValue={hasLetterSpacingValue}
+                    onReset={resetLetterSpacing}
+                  >
+                    Letter spacing
+                  </BottomResetLabel>
+                </Box>
+
+                <Box
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    rowGap: "2px",
+                    alignItems: "center",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: "100%",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      boxSizing: "border-box",
+                      borderRadius: "4px",
+                      border: `1px solid ${COLORS.purple100}`,
+                      backgroundColor: COLORS.white,
+                      paddingLeft: "4px",
+                      paddingRight: "4px",
+                      "&:focus-within": {
+                        borderColor: COLORS.purple400,
+                      },
+                    }}
+                  >
+                    <Box
+                      component="input"
+                      type="text"
+                      inputMode="decimal"
+                      value={textIndentDraft}
+                      onChange={handleTextIndentDraftChange}
+                      onBlur={commitTextIndentDraft}
+                      onKeyDown={handleTextIndentKeyDown}
+                      autoComplete="off"
+                      aria-label="Text indent"
+                      sx={{
+                        border: "none",
+                        outline: "none",
+                        backgroundColor: "transparent",
+                        padding: "6px 0",
+                        fontSize: "12px",
+                        lineHeight: "14px",
+                        color: "inherit",
+                        width: "100%",
+                        minWidth: 0,
+                      }}
+                    />
+                    <Typography
+                      sx={{
+                        flexShrink: 0,
+                        fontSize: "10px",
+                        lineHeight: "14px",
+                        fontWeight: 600,
+                        color: COLORS.gray700,
+                      }}
+                    >
+                      px
+                    </Typography>
+                  </Box>
+                  <BottomResetLabel
+                    hasValue={hasTextIndentValue}
+                    onReset={resetTextIndent}
+                  >
+                    Text indent
+                  </BottomResetLabel>
+                </Box>
+
+                <Box
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    rowGap: "2px",
+                    alignItems: "center",
+                  }}
+                >
+                  <Tooltip
+                    title={
+                      isGridDisplay
+                        ? ""
+                        : "Доступно только при display: grid" //TODO проверить после починик layout
+                    }
+                    disableHoverListener={isGridDisplay}
+                    disableFocusListener={isGridDisplay}
+                    disableTouchListener={isGridDisplay}
+                  >
+                    <Box sx={{ width: "100%" }}>
+                      <CraftSettingsValueWithUnit
+                        label="Columns"
+                        value={columnCountProp}
+                        onCommit={handleColumnCountCommit}
+                        withoutLabel
+                        unitless
+                        inputWidth="100%"
+                        customWidth="100%"
+                        placeholder="Auto"
+                        disabled={!isGridDisplay}
+                      />
+                    </Box>
+                  </Tooltip>
+                  <BottomResetLabel
+                    hasValue={hasColumnCountValue}
+                    onReset={resetColumnCount}
+                  >
+                    Columns
+                  </BottomResetLabel>
+                </Box>
+
+                <IconButton
+                  disableRipple
+                  size="small"
+                  aria-label="More columns options"
+                  sx={{
+                    flexShrink: 0,
+                    padding: "4px",
+                    color: COLORS.gray700,
+                    "&:hover": {
+                      backgroundColor: COLORS.secondaryVeryLightGray,
+                    },
+                  }}
+                >
+                  <MoreHorizontalIcon size={14} fill={COLORS.gray700}/>
+                </IconButton>
+              </Box>
+
               <CraftSettingsButtonGroup
                 label="Capitalize"
                 value={(getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "textTransform", viewport) as string | undefined) ?? "none"}
                 options={[
-                  { id: "none", content: <CloseIcon size={16} /> },
+                  { id: "none", content: <CloseIcon size={16}/> },
                   { id: "uppercase", content: "AA" },
                   { id: "capitalize", content: "Aa" },
                   { id: "lowercase", content: "aa" },
