@@ -6,3 +6,4 @@ alwaysApply: true
 - When creating a React component with props, props must be typed using an interface
 - If the props interface is not imported or reused elsewhere, it should be named `Props`
 - When specifying any color, it must be taken from the global COLORS variable
+- Do not declare top-level constants, in-component const objects, or useMemo values whose sole purpose is to hold style objects passed to sx (or equivalent MUI style props) inside the component file. Put those in neighboring styles.ts via MUI styled(...). Inline <Component sx={{ ... }} /> and brief single-use sx in JSX are fine.

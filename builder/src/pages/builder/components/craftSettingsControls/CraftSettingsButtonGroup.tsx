@@ -1,12 +1,8 @@
-import { useEffect, useRef, useState } from "react"
-import { Box, Popper } from "@mui/material"
+import { Box } from "@mui/material"
 import type { ReactNode } from "react"
 import { COLORS } from "../../../../theme/colors.ts"
-import { CraftSettingsStyleResetFooter } from "./CraftSettingsStyleResetFooter.tsx"
-import {
-  CraftSettingsFixedLabel,
-  CraftSettingsResetPopoverPaper,
-} from "./styles.ts"
+import { CraftSettingsResetLabelWithPopper } from "./CraftSettingsResetLabelWithPopper.tsx"
+import { CraftSettingsFixedLabel } from "./styles.ts"
 
 interface Option {
   id: string;
@@ -37,71 +33,22 @@ export const CraftSettingsButtonGroup = ({
   onReset,
   resetLabelActive,
 }: Props) => {
-  const [resetAnchorEl, setResetAnchorEl] = useState<HTMLElement | null>(null)
-  const resetPaperRef = useRef<HTMLDivElement | null>(null)
   const resetEnabled = Boolean(onReset) && !withoutLabel
   const hasResettableValue =
     resetLabelActive !== undefined
       ? resetLabelActive
       : value !== undefined && String(value).trim() !== ""
 
-  useEffect(() => {
-    if (!resetEnabled || !resetAnchorEl) return
-    const onDocMouseDown = (event: MouseEvent) => {
-      const target = event.target as Node
-      if (resetAnchorEl.contains(target)) return
-      if (resetPaperRef.current?.contains(target)) return
-      setResetAnchorEl(null)
-    }
-    document.addEventListener("mousedown", onDocMouseDown, true)
-    return () => document.removeEventListener("mousedown", onDocMouseDown, true)
-  }, [resetEnabled, resetAnchorEl])
-
   return (
-    <Box
-      sx={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}
-    >
+    <Box sx={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}>
       {!withoutLabel && resetEnabled ? (
-        <>
-          <CraftSettingsFixedLabel
-            component="button"
-            type="button"
-            onClick={(event) => {
-              setResetAnchorEl((prev) =>
-                prev ? null : event.currentTarget,
-              )
-            }}
-            sx={{
-              color: hasResettableValue ? COLORS.purple400 : COLORS.gray700,
-              cursor: hasResettableValue ? "pointer" : "default",
-              border: "none",
-              backgroundColor: "transparent",
-              padding: 0,
-              fontFamily: "inherit",
-              ...(hasResettableValue
-                ? { "&:hover": { color: COLORS.purple400 } }
-                : {}),
-            }}
-          >
-            {label}
-          </CraftSettingsFixedLabel>
-          <Popper
-            open={Boolean(resetAnchorEl)}
-            anchorEl={resetAnchorEl}
-            placement="bottom-start"
-            modifiers={[{ name: "offset", options: { offset: [0, 6] } }]}
-            style={{ zIndex: 4000 }}
-          >
-            <CraftSettingsResetPopoverPaper ref={resetPaperRef} elevation={3}>
-              <CraftSettingsStyleResetFooter
-                onReset={() => {
-                  onReset?.()
-                  setResetAnchorEl(null)
-                }}
-              />
-            </CraftSettingsResetPopoverPaper>
-          </Popper>
-        </>
+        <CraftSettingsResetLabelWithPopper
+          kind="buttonToggle"
+          label={label}
+          withoutLabel={withoutLabel}
+          onReset={onReset}
+          hasResettableValue={hasResettableValue}
+        />
       ) : null}
       {!withoutLabel && !resetEnabled ? (
         <CraftSettingsFixedLabel>{label}</CraftSettingsFixedLabel>

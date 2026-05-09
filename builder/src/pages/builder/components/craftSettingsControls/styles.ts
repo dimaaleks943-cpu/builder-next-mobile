@@ -19,6 +19,40 @@ export const CraftSettingsFluidLabel = styled(Typography)(() => ({
   flex: 1,
 })) as typeof Typography
 
+/** Purple clickable label that opens the craft style reset popover */
+export const CraftSettingsResetTriggerFixedLabel = styled(CraftSettingsFixedLabel)(() => ({
+  color: COLORS.purple400,
+  fontWeight: 400,
+  cursor: "pointer",
+})) as typeof Typography
+
+/** Same as {@link CraftSettingsResetTriggerFixedLabel} for fluid-width rows */
+export const CraftSettingsResetTriggerFluidLabel = styled(CraftSettingsFluidLabel)(() => ({
+  color: COLORS.purple400,
+  fontWeight: 400,
+  cursor: "pointer",
+})) as typeof Typography
+
+/** Native button: matches {@link CraftSettingsFixedLabel} metrics without Typography `component` typing issues */
+export const CraftSettingsResetToggleLabelButton = styled("button", {
+  shouldForwardProp: (prop) => prop !== "$hasResettableValue",
+})<{ $hasResettableValue: boolean }>(({ $hasResettableValue }) => ({
+  width: "48px",
+  minWidth: "48px",
+  flexShrink: 0,
+  fontSize: "10px",
+  lineHeight: "14px",
+  textAlign: "left",
+  border: "none",
+  backgroundColor: "transparent",
+  padding: 0,
+  margin: 0,
+  fontFamily: "inherit",
+  color: $hasResettableValue ? COLORS.purple400 : COLORS.gray700,
+  cursor: $hasResettableValue ? "pointer" : "default",
+  ...($hasResettableValue ? { "&:hover": { color: COLORS.purple400 } } : {}),
+}))
+
 export const CraftSettingsSelectShellInline = styled(Box)(() => ({
   flex: 4,
   position: "relative",

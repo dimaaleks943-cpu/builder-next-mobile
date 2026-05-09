@@ -1,13 +1,9 @@
-import { useEffect, useRef, useState } from "react"
-import { Box, Popper } from "@mui/material"
-import type { ChangeEvent, MouseEvent as ReactMouseEvent } from "react"
+import { Box } from "@mui/material"
+import type { ChangeEvent } from "react"
 import { COLORS } from "../../../../theme/colors.ts"
 import { ChevronRightIcon } from "../../../../icons/ChevronRightIcon.tsx"
-import { CraftSettingsStyleResetFooter } from "./CraftSettingsStyleResetFooter.tsx"
+import { CraftSettingsResetLabelWithPopper } from "./CraftSettingsResetLabelWithPopper.tsx"
 import {
-  CraftSettingsFixedLabel,
-  CraftSettingsFluidLabel,
-  CraftSettingsResetPopoverPaper,
   CraftSettingsSelectShellFullRow,
   CraftSettingsSelectShellInline,
 } from "./styles.ts"
@@ -50,79 +46,7 @@ export const CraftSettingsSelect = ({
   labelReset,
   disableResetPopperPortal = false,
 }: Props) => {
-  const [resetAnchorEl, setResetAnchorEl] = useState<HTMLElement | null>(null)
-  const resetPaperRef = useRef<HTMLDivElement | null>(null)
-  const resetEnabled =
-    Boolean(showInlineLabel) &&
-    Boolean(labelReset) &&
-    Boolean(labelReset?.hasValue)
-
-  useEffect(() => {
-    if (!labelReset?.hasValue) {
-      setResetAnchorEl(null)
-    }
-  }, [labelReset?.hasValue])
-
-  useEffect(() => {
-    if (!resetEnabled || !resetAnchorEl) return
-    const onDocMouseDown = (event: globalThis.MouseEvent) => {
-      const target = event.target as Node
-      if (resetAnchorEl.contains(target)) return
-      if (resetPaperRef.current?.contains(target)) return
-      setResetAnchorEl(null)
-    }
-    document.addEventListener("mousedown", onDocMouseDown, true)
-    return () => document.removeEventListener("mousedown", onDocMouseDown, true)
-  }, [resetEnabled, resetAnchorEl])
-
-  const handleResetLabelClick = (event: ReactMouseEvent<HTMLElement>) => {
-    setResetAnchorEl(event.currentTarget)
-  }
-
-  const handleFooterReset = () => {
-    labelReset?.onReset()
-    setResetAnchorEl(null)
-  }
-
   const SelectShell = showInlineLabel ? CraftSettingsSelectShellInline : CraftSettingsSelectShellFullRow
-
-  const renderInlineLabel = () => {
-    if (!showInlineLabel) return null
-
-    if (!labelReset || !labelReset.hasValue) {
-      return (
-        <CraftSettingsFixedLabel>{label}</CraftSettingsFixedLabel>
-      )
-    }
-
-    return (
-      <>
-        <CraftSettingsFluidLabel
-          onClick={handleResetLabelClick}
-          component="span"
-          sx={{
-            color: COLORS.purple400,
-            fontWeight: 400,
-            cursor: "pointer",
-          }}
-        >
-          {label}
-        </CraftSettingsFluidLabel>
-        <Popper
-          open={Boolean(resetAnchorEl)}
-          anchorEl={resetAnchorEl}
-          placement="bottom-start"
-          modifiers={[{ name: "offset", options: { offset: [0, 6] } }]}
-          style={{ zIndex: 4000 }}
-          disablePortal={disableResetPopperPortal}
-        >
-          <CraftSettingsResetPopoverPaper ref={resetPaperRef} elevation={3}>
-            <CraftSettingsStyleResetFooter onReset={handleFooterReset} />
-          </CraftSettingsResetPopoverPaper>
-        </Popper>
-      </>
-    )
-  }
 
   return (
     <Box
@@ -135,7 +59,14 @@ export const CraftSettingsSelect = ({
         ...(showInlineLabel ? {} : { width: "100%", minWidth: 0 }),
       }}
     >
-      {renderInlineLabel()}
+      <CraftSettingsResetLabelWithPopper
+        kind="labelReset"
+        label={label}
+        hidden={!showInlineLabel}
+        variant="fluid"
+        labelReset={labelReset}
+        disableResetPopperPortal={disableResetPopperPortal}
+      />
       <SelectShell>
         <Box
           component="select"
