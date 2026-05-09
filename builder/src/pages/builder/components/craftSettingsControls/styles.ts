@@ -1,12 +1,54 @@
-import { Box, styled } from "@mui/material";
-import { COLORS } from "../../../../theme/colors.ts";
+import { Box, Paper, Typography, styled } from "@mui/material"
+import { COLORS } from "../../../../theme/colors.ts"
 
-export const Triangle = styled(Box)(() => ({
+/** Fixed-width left label (48px) for craft settings rows */
+export const CraftSettingsFixedLabel = styled(Typography)(() => ({
+  width: "48px",
+  minWidth: "48px",
+  flexShrink: 0,
+  fontSize: "10px",
+  lineHeight: "14px",
+  color: COLORS.gray700,
+  textAlign: "left",
+})) as typeof Typography
+
+/** Inline label that grows (e.g. select / value-with-unit row) */
+export const CraftSettingsFluidLabel = styled(Typography)(() => ({
+  fontSize: "10px",
+  lineHeight: "14px",
+  flex: 1,
+})) as typeof Typography
+
+export const CraftSettingsSelectShellInline = styled(Box)(() => ({
+  flex: 4,
+  position: "relative",
+  display: "flex",
+  alignItems: "center",
+}))
+
+export const CraftSettingsSelectShellFullRow = styled(Box)(() => ({
+  flex: 1,
+  width: "100%",
+  minWidth: 0,
+  position: "relative",
+  display: "flex",
+  alignItems: "center",
+}))
+
+export const CraftSettingsResetPopoverPaper = styled(Paper)(() => ({
+  width: "211px",
+  border: `1px solid ${COLORS.purple100}`,
+  borderRadius: "8px",
+  padding: "8px",
+  boxSizing: "border-box",
+}))
+
+/** Zero-size absolute layer for CSS-border triangles on the flex-align overlay */
+export const FlexAlignSpaceAroundArrow = styled(Box)(() => ({
   position: "absolute",
   width: 0,
   height: 0,
-  borderLeft: "4px solid transparent",
-  borderRight: "4px solid transparent",
-  borderTop: `6px solid ${COLORS.gray700}`,
-  transform: "rotate(180deg)",
-}));
+  padding: 0,
+  margin: 0,
+  lineHeight: 0,
+}))

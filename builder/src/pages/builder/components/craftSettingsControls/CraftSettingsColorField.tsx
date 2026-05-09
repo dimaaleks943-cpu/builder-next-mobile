@@ -1,8 +1,12 @@
-import { Box, Paper, Popper, Typography } from "@mui/material"
+import { Box, Popper } from "@mui/material"
 import type { ChangeEvent, MouseEvent as ReactMouseEvent } from "react"
 import { useEffect, useRef, useState } from "react"
 import { COLORS } from "../../../../theme/colors.ts"
 import { CraftSettingsStyleResetFooter } from "./CraftSettingsStyleResetFooter.tsx"
+import {
+  CraftSettingsFixedLabel,
+  CraftSettingsResetPopoverPaper,
+} from "./styles.ts"
 
 interface Props {
   label: string;
@@ -59,46 +63,27 @@ export const CraftSettingsColorField = ({
     setResetAnchorEl(null)
   }
 
-  const labelTypographySx = {
-    width: "48px",
-    minWidth: "48px",
-    flexShrink: 0,
-    fontSize: "10px",
-    lineHeight: "14px",
-    color: COLORS.gray700,
-    textAlign: "left" as const,
-  }
-
   const renderLabel = () => {
     if (hideLabel) return null
-    if (!labelReset) {
+    if (!labelReset || !labelReset.hasValue) {
       return (
-        <Typography sx={labelTypographySx}>
-          {label}
-        </Typography>
+        <CraftSettingsFixedLabel>{label}</CraftSettingsFixedLabel>
       )
     }
-    if (!labelReset.hasValue) {
-      return (
-        <Typography sx={labelTypographySx}>
-          {label}
-        </Typography>
-      )
-    }
+
     return (
       <>
-        <Typography
+        <CraftSettingsFixedLabel
           onClick={handleResetLabelClick}
           component="span"
           sx={{
-            ...labelTypographySx,
             color: COLORS.purple400,
             fontWeight: 400,
             cursor: "pointer",
           }}
         >
           {label}
-        </Typography>
+        </CraftSettingsFixedLabel>
         <Popper
           open={Boolean(resetAnchorEl)}
           anchorEl={resetAnchorEl}
@@ -107,18 +92,9 @@ export const CraftSettingsColorField = ({
           style={{ zIndex: 4000 }}
           disablePortal={disableResetPopperPortal}
         >
-          <Paper
-            ref={resetPaperRef}
-            elevation={3}
-            sx={{
-              width: "211px",
-              border: `1px solid ${COLORS.purple100}`,
-              borderRadius: "8px",
-              padding: "8px",
-            }}
-          >
+          <CraftSettingsResetPopoverPaper ref={resetPaperRef} elevation={3}>
             <CraftSettingsStyleResetFooter onReset={handleFooterReset}/>
-          </Paper>
+          </CraftSettingsResetPopoverPaper>
         </Popper>
       </>
     )

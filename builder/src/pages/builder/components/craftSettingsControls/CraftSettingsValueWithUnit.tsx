@@ -6,7 +6,6 @@ import {
   MenuList,
   Paper,
   Popper,
-  Typography,
 } from "@mui/material"
 import { COLORS } from "../../../../theme/colors.ts"
 import {
@@ -19,6 +18,7 @@ import {
   parseSizeProp,
   unitTokenLabel,
 } from "../../../../utils/craftCssSizeProp.ts"
+import { CraftSettingsFluidLabel } from "./styles.ts"
 
 const orderedAllowedTokens = (
   allowed: readonly CraftSizeMenuToken[],
@@ -248,17 +248,14 @@ export const CraftSettingsValueWithUnit = ({
         columnGap: "8px",
       }}
     >
-      <Typography
+      <CraftSettingsFluidLabel
         sx={{
-          fontSize: "10px",
-          lineHeight: "14px",
           color: COLORS.gray700,
-          flex: 1,
           display: withoutLabel ? "none" : "block",
         }}
       >
         {label}
-      </Typography>
+      </CraftSettingsFluidLabel>
       <Box
         sx={{
           width: inputWidth ?? (withoutLabel ? "100%" : undefined),

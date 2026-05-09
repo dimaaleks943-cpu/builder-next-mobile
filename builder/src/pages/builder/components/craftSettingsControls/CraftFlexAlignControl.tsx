@@ -1,5 +1,5 @@
 import { useRef } from "react"
-import { Box, Typography } from "@mui/material"
+import { Box } from "@mui/material"
 import type { ChangeEvent } from "react"
 import { COLORS } from "../../../../theme/colors"
 import { CraftSettingsSelect } from "./CraftSettingsSelect"
@@ -8,7 +8,10 @@ import type {
   FlexFlowOption,
   FlexJustifyContent,
 } from "../../../../builder.enum"
-import { Triangle } from "./styles.ts";
+import {
+  CraftSettingsFixedLabel,
+  FlexAlignSpaceAroundArrow,
+} from "./styles.ts"
 
 const JUSTIFY_VALUES: FlexJustifyContent[] = [
   "flex-start",
@@ -252,16 +255,7 @@ export const CraftFlexAlignControl = ({
             {label}
           </Box>
         ) : (
-          <Typography
-            sx={{
-              fontSize: "10px",
-              lineHeight: "14px",
-              color: COLORS.gray700,
-              minWidth: "48px",
-            }}
-          >
-            {label}
-          </Typography>
+          <CraftSettingsFixedLabel>{label}</CraftSettingsFixedLabel>
         )}
         <Box
           sx={{
@@ -369,7 +363,7 @@ export const CraftFlexAlignControl = ({
                 <>
                   {isRowLike ? (
                     <>
-                      <Triangle
+                      <FlexAlignSpaceAroundArrow
                         sx={{
                           left: "2px",
                           top: "43%",
@@ -378,7 +372,7 @@ export const CraftFlexAlignControl = ({
                           borderRight: `6px solid ${COLORS.gray700}`,
                         }}
                       />
-                      <Triangle
+                      <FlexAlignSpaceAroundArrow
                         sx={{
                           right: "2px",
                           top: "43%",
@@ -390,7 +384,7 @@ export const CraftFlexAlignControl = ({
                     </>
                   ) : (
                     <>
-                      <Triangle
+                      <FlexAlignSpaceAroundArrow
                         sx={{
                           top: "2px",
                           left: "43%",
@@ -399,7 +393,7 @@ export const CraftFlexAlignControl = ({
                           borderBottom: `6px solid ${COLORS.gray700}`,
                         }}
                       />
-                      <Triangle
+                      <FlexAlignSpaceAroundArrow
                         sx={{
                           bottom: "2px",
                           left: "43%",

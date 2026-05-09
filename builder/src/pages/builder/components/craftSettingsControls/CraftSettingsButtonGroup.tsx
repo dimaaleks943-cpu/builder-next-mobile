@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from "react"
-import { Box, Paper, Popper, Typography } from "@mui/material"
+import { Box, Popper } from "@mui/material"
 import type { ReactNode } from "react"
 import { COLORS } from "../../../../theme/colors.ts"
 import { CraftSettingsStyleResetFooter } from "./CraftSettingsStyleResetFooter.tsx"
+import {
+  CraftSettingsFixedLabel,
+  CraftSettingsResetPopoverPaper,
+} from "./styles.ts"
 
 interface Option {
   id: string;
@@ -53,23 +57,13 @@ export const CraftSettingsButtonGroup = ({
     return () => document.removeEventListener("mousedown", onDocMouseDown, true)
   }, [resetEnabled, resetAnchorEl])
 
-  const labelSx = {
-    width: "48px",
-    minWidth: "48px",
-    flexShrink: 0,
-    fontSize: "10px",
-    lineHeight: "14px",
-    color: COLORS.gray700,
-    textAlign: "left" as const,
-  }
-
   return (
     <Box
       sx={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}
     >
       {!withoutLabel && resetEnabled ? (
         <>
-          <Typography
+          <CraftSettingsFixedLabel
             component="button"
             type="button"
             onClick={(event) => {
@@ -78,7 +72,6 @@ export const CraftSettingsButtonGroup = ({
               )
             }}
             sx={{
-              ...labelSx,
               color: hasResettableValue ? COLORS.purple400 : COLORS.gray700,
               cursor: hasResettableValue ? "pointer" : "default",
               border: "none",
@@ -91,7 +84,7 @@ export const CraftSettingsButtonGroup = ({
             }}
           >
             {label}
-          </Typography>
+          </CraftSettingsFixedLabel>
           <Popper
             open={Boolean(resetAnchorEl)}
             anchorEl={resetAnchorEl}
@@ -99,29 +92,19 @@ export const CraftSettingsButtonGroup = ({
             modifiers={[{ name: "offset", options: { offset: [0, 6] } }]}
             style={{ zIndex: 4000 }}
           >
-            <Paper
-              ref={resetPaperRef}
-              elevation={3}
-              sx={{
-                width: "211px",
-                border: `1px solid ${COLORS.purple100}`,
-                borderRadius: "8px",
-                padding: "8px",
-                boxSizing: "border-box",
-              }}
-            >
+            <CraftSettingsResetPopoverPaper ref={resetPaperRef} elevation={3}>
               <CraftSettingsStyleResetFooter
                 onReset={() => {
                   onReset?.()
                   setResetAnchorEl(null)
                 }}
               />
-            </Paper>
+            </CraftSettingsResetPopoverPaper>
           </Popper>
         </>
       ) : null}
       {!withoutLabel && !resetEnabled ? (
-        <Typography sx={labelSx}>{label}</Typography>
+        <CraftSettingsFixedLabel>{label}</CraftSettingsFixedLabel>
       ) : null}
       <Box
         sx={{

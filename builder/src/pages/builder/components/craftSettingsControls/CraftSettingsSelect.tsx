@@ -1,9 +1,16 @@
 import { useEffect, useRef, useState } from "react"
-import { Box, Paper, Popper, Typography } from "@mui/material"
+import { Box, Popper } from "@mui/material"
 import type { ChangeEvent, MouseEvent as ReactMouseEvent } from "react"
 import { COLORS } from "../../../../theme/colors.ts"
 import { ChevronRightIcon } from "../../../../icons/ChevronRightIcon.tsx"
 import { CraftSettingsStyleResetFooter } from "./CraftSettingsStyleResetFooter.tsx"
+import {
+  CraftSettingsFixedLabel,
+  CraftSettingsFluidLabel,
+  CraftSettingsResetPopoverPaper,
+  CraftSettingsSelectShellFullRow,
+  CraftSettingsSelectShellInline,
+} from "./styles.ts"
 
 interface Option {
   id: string;
@@ -77,71 +84,30 @@ export const CraftSettingsSelect = ({
     setResetAnchorEl(null)
   }
 
-  const selectShellSx = showInlineLabel
-    ? {
-        flex: 4,
-        position: "relative" as const,
-        display: "flex",
-        alignItems: "center",
-      }
-    : {
-        flex: 1,
-        width: "100%",
-        minWidth: 0,
-        position: "relative" as const,
-        display: "flex",
-        alignItems: "center",
-      }
-
-  const labelBaseSx = {
-    fontSize: "10px",
-    lineHeight: "14px",
-    flex: 1,
-  }
+  const SelectShell = showInlineLabel ? CraftSettingsSelectShellInline : CraftSettingsSelectShellFullRow
 
   const renderInlineLabel = () => {
     if (!showInlineLabel) return null
 
-    if (!labelReset) {
+    if (!labelReset || !labelReset.hasValue) {
       return (
-        <Typography
-          sx={{
-            ...labelBaseSx,
-            color: COLORS.gray700,
-          }}
-        >
-          {label}
-        </Typography>
-      )
-    }
-
-    if (!labelReset.hasValue) {
-      return (
-        <Typography
-          sx={{
-            ...labelBaseSx,
-            color: COLORS.gray700,
-          }}
-        >
-          {label}
-        </Typography>
+        <CraftSettingsFixedLabel>{label}</CraftSettingsFixedLabel>
       )
     }
 
     return (
       <>
-        <Typography
+        <CraftSettingsFluidLabel
           onClick={handleResetLabelClick}
           component="span"
           sx={{
-            ...labelBaseSx,
             color: COLORS.purple400,
             fontWeight: 400,
             cursor: "pointer",
           }}
         >
           {label}
-        </Typography>
+        </CraftSettingsFluidLabel>
         <Popper
           open={Boolean(resetAnchorEl)}
           anchorEl={resetAnchorEl}
@@ -150,18 +116,9 @@ export const CraftSettingsSelect = ({
           style={{ zIndex: 4000 }}
           disablePortal={disableResetPopperPortal}
         >
-          <Paper
-            ref={resetPaperRef}
-            elevation={3}
-            sx={{
-              width: "211px",
-              border: `1px solid ${COLORS.purple100}`,
-              borderRadius: "8px",
-              padding: "8px",
-            }}
-          >
+          <CraftSettingsResetPopoverPaper ref={resetPaperRef} elevation={3}>
             <CraftSettingsStyleResetFooter onReset={handleFooterReset} />
-          </Paper>
+          </CraftSettingsResetPopoverPaper>
         </Popper>
       </>
     )
@@ -179,7 +136,7 @@ export const CraftSettingsSelect = ({
       }}
     >
       {renderInlineLabel()}
-      <Box sx={selectShellSx}>
+      <SelectShell>
         <Box
           component="select"
           value={value}
@@ -221,7 +178,7 @@ export const CraftSettingsSelect = ({
         >
           <ChevronRightIcon size={12} fill={COLORS.gray700} />
         </Box>
-      </Box>
+      </SelectShell>
     </Box>
   )
 }
