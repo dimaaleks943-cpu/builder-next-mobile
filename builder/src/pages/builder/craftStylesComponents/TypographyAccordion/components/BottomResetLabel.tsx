@@ -10,13 +10,19 @@ interface Props {
   children: string;
   hasValue: boolean;
   onReset: () => void;
+  /** Compact caption under inputs (8px) vs inline row labels (10px), matching CraftSettingsSelect. */
+  variant?: "caption" | "field";
 }
 
 export const BottomResetLabel = ({
   children,
   hasValue,
   onReset,
+  variant = "caption",
 }: Props) => {
+  const fontStyles = variant === "field"
+      ? { fontSize: "10px", lineHeight: "14px" }
+      : { fontSize: "8px", lineHeight: "10px" }
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
   const popperRef = useRef<HTMLDivElement | null>(null)
 
@@ -46,8 +52,7 @@ export const BottomResetLabel = ({
     return (
       <Typography
         sx={{
-          fontSize: "8px",
-          lineHeight: "10px",
+          ...fontStyles,
           color: COLORS.gray700,
         }}
       >
@@ -60,12 +65,9 @@ export const BottomResetLabel = ({
     <>
       <Typography
         onClick={handleLabelClick}
-        component="span"
         sx={{
-          fontSize: "8px",
-          lineHeight: "10px",
+          ...fontStyles,
           color: COLORS.purple400,
-          fontWeight: 600,
         }}
       >
         {children}

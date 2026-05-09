@@ -33,6 +33,7 @@ import {
   type TextDecorationKind,
 } from "./components/TypographyFormatRow.tsx"
 import { TypographyBreakingRow } from "./components/TypographyBreakingRow.tsx"
+import { TypographyWrapTruncateSection } from "./components/TypographyWrapTruncateSection.tsx"
 import { usePreviewViewport } from "../../context/PreviewViewportContext.tsx"
 import {
   getResponsiveStyleProp,
@@ -485,7 +486,7 @@ export const TypographyAccordion = () => {
       </AccordionSummary>
       <AccordionDetails>
 
-        <Box sx={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <CraftSettingsSelect
             label="Font"
             value={(getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "fontFamily", viewport) as string | undefined) ?? "system"}
@@ -630,7 +631,7 @@ export const TypographyAccordion = () => {
               sx={{
                 display: "flex",
                 flexDirection: "column",
-                gap: "6px",
+                gap: "8px",
               }}
             >
               <Box
@@ -816,6 +817,13 @@ export const TypographyAccordion = () => {
               />
 
               <TypographyBreakingRow
+                actions={actions}
+                selectedId={selectedId}
+                selectedProps={selectedProps as unknown as Record<string, unknown>}
+                viewport={viewport}
+              />
+
+              <TypographyWrapTruncateSection
                 actions={actions}
                 selectedId={selectedId}
                 selectedProps={selectedProps as unknown as Record<string, unknown>}

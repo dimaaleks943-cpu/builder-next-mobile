@@ -161,7 +161,7 @@ export const CraftLinkText = (props: LinkTextProps) => {
 
   const style: CSSProperties = {
     ...responsiveStyle,
-    display: "inline-block",
+    display: "block",
     WebkitTextStrokeWidth: strokeWidth ? strokeWidth : undefined,
     WebkitTextStrokeColor: strokeColor,
   }

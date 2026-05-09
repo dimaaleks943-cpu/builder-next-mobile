@@ -17,6 +17,11 @@ interface Props {
   withoutLabel?: boolean;
   /** When set, clicking the label opens a popover with {@link CraftSettingsStyleResetFooter}. */
   onReset?: () => void;
+  /**
+   * When set with {@link onReset}, controls purple reset affordance on the label.
+   * Use when {@link value} is always defined for UI (e.g. default "clip") but reset should reflect an explicit craft style only.
+   */
+  resetLabelActive?: boolean;
 }
 
 export const CraftSettingsButtonGroup = ({
@@ -26,12 +31,15 @@ export const CraftSettingsButtonGroup = ({
   onChange,
   withoutLabel = false,
   onReset,
+  resetLabelActive,
 }: Props) => {
   const [resetAnchorEl, setResetAnchorEl] = useState<HTMLElement | null>(null)
   const resetPaperRef = useRef<HTMLDivElement | null>(null)
   const resetEnabled = Boolean(onReset) && !withoutLabel
   const hasResettableValue =
-    value !== undefined && String(value).trim() !== ""
+    resetLabelActive !== undefined
+      ? resetLabelActive
+      : value !== undefined && String(value).trim() !== ""
 
   useEffect(() => {
     if (!resetEnabled || !resetAnchorEl) return

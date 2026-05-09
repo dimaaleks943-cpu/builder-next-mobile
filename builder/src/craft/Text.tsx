@@ -155,13 +155,13 @@ export const CraftText = (props: TextProps) => {
 
   const style: CSSProperties = {
     ...responsiveStyle,
-    display: "inline-block",
+    display: "block",
     WebkitTextStrokeWidth: strokeWidth ? strokeWidth : undefined,
     WebkitTextStrokeColor: strokeColor,
   }
 
   const outerWrapperStyle: CSSProperties = {
-    display: "inline-block",
+    display: "block",
   }
 
   return (
