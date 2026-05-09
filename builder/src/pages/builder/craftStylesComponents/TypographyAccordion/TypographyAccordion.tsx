@@ -33,6 +33,7 @@ import {
   type TextDecorationKind,
 } from "./components/TypographyFormatRow.tsx"
 import { TypographyDecorationSettingsPopper } from "./components/TypographyDecorationSettingsPopper.tsx"
+import { TypographyColumnsSettingsPopper } from "./components/TypographyColumnsSettingsPopper.tsx"
 import {
   buildTextDecorationAdvanced,
   parseTextDecorationAdvanced,
@@ -167,6 +168,10 @@ export const TypographyAccordion = () => {
   const decorationSettingsWrapRef = useRef<HTMLDivElement>(null)
   const decorationSettingsPopperRef = useRef<HTMLDivElement>(null)
   const [decorationSettingsAnchorEl, setDecorationSettingsAnchorEl] = useState<HTMLElement | null>(null)
+  const columnsSettingsWrapRef = useRef<HTMLDivElement>(null)
+  const columnsSettingsPopperRef = useRef<HTMLDivElement>(null)
+  const [columnsSettingsAnchorEl, setColumnsSettingsAnchorEl] =
+    useState<HTMLElement | null>(null)
 
   const colorTimeoutRef = useRef<number | undefined>(undefined)
   const strokeColorTimeoutRef = useRef<number | undefined>(undefined)
@@ -198,16 +203,29 @@ export const TypographyAccordion = () => {
   }, [selectedProps, selectedId, viewport])
 
   useEffect(() => {
-    if (!decorationSettingsAnchorEl) return
+    if (!moreTypeOptionsOpen) {
+      setColumnsSettingsAnchorEl(null)
+    }
+  }, [moreTypeOptionsOpen])
+
+  useEffect(() => {
+    if (!decorationSettingsAnchorEl && !columnsSettingsAnchorEl) return
     const onDocMouseDown = (event: MouseEvent) => {
       const target = event.target as Node
-      if (decorationSettingsWrapRef.current?.contains(target)) return
-      if (decorationSettingsPopperRef.current?.contains(target)) return
+      const inDecoration =
+        decorationSettingsWrapRef.current?.contains(target) ||
+        decorationSettingsPopperRef.current?.contains(target)
+      const inColumns =
+        columnsSettingsWrapRef.current?.contains(target) ||
+        columnsSettingsPopperRef.current?.contains(target)
+      if (inDecoration || inColumns) return
       setDecorationSettingsAnchorEl(null)
+      setColumnsSettingsAnchorEl(null)
     }
     document.addEventListener("mousedown", onDocMouseDown, true)
+
     return () => document.removeEventListener("mousedown", onDocMouseDown, true)
-  }, [decorationSettingsAnchorEl])
+  }, [decorationSettingsAnchorEl, columnsSettingsAnchorEl])
 
   const scheduleColorUpdate = (value: string) => {
     if (!selectedId) return
@@ -558,6 +576,16 @@ export const TypographyAccordion = () => {
     setDecorationSettingsAnchorEl(el)
   }
 
+  const toggleColumnsSettingsPopper = () => {
+    if (columnsSettingsAnchorEl) {
+      setColumnsSettingsAnchorEl(null)
+      return
+    }
+    const el = columnsSettingsWrapRef.current
+    if (!el) return
+    setColumnsSettingsAnchorEl(el)
+  }
+
   const applyDecorationPartsPatch = (
     patch: Partial<TextDecorationAdvancedParts>,
   ) => {
@@ -733,6 +761,16 @@ export const TypographyAccordion = () => {
             onClose={() => setDecorationSettingsAnchorEl(null)}
             onApplyPartsPatch={applyDecorationPartsPatch}
             onApplySkipInk={applyTextDecorationSkipInk}
+          />
+
+          <TypographyColumnsSettingsPopper
+            open={Boolean(columnsSettingsAnchorEl)}
+            anchorEl={columnsSettingsAnchorEl}
+            popperRef={columnsSettingsPopperRef}
+            viewport={viewport}
+            selectedId={selectedId}
+            selectedProps={selectedProps as unknown as Record<string, unknown>}
+            actions={actions}
           />
 
           <Button
@@ -939,21 +977,24 @@ export const TypographyAccordion = () => {
                   </BottomResetLabel>
                 </Box>
 
-                <IconButton
-                  disableRipple
-                  size="small"
-                  aria-label="More columns options"
-                  sx={{
-                    flexShrink: 0,
-                    padding: "4px",
-                    color: COLORS.gray700,
-                    "&:hover": {
-                      backgroundColor: COLORS.secondaryVeryLightGray,
-                    },
-                  }}
-                >
-                  <MoreHorizontalIcon size={14} fill={COLORS.gray700}/>
-                </IconButton>
+                <Box ref={columnsSettingsWrapRef}>
+                  <IconButton
+                    disableRipple
+                    size="small"
+                    aria-label="More columns options"
+                    onClick={toggleColumnsSettingsPopper}
+                    sx={{
+                      flexShrink: 0,
+                      padding: "4px",
+                      color: COLORS.gray700,
+                      "&:hover": {
+                        backgroundColor: COLORS.secondaryVeryLightGray,
+                      },
+                    }}
+                  >
+                    <MoreHorizontalIcon size={14} fill={COLORS.gray700}/>
+                  </IconButton>
+                </Box>
               </Box>
 
               <CraftSettingsButtonGroup

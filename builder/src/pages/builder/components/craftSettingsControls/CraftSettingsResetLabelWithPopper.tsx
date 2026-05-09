@@ -28,6 +28,8 @@ interface IButtonToggleProps {
   withoutLabel: boolean;
   onReset?: () => void;
   hasResettableValue: boolean;
+  /** Keep reset UI in the DOM tree (needed inside nested poppers so outside-click handlers still see clicks). */
+  disableResetPopperPortal?: boolean;
 }
 
 export type Props =
@@ -71,7 +73,9 @@ export const CraftSettingsResetLabelWithPopper = (props: Props) => {
   const disablePortal =
     props.kind === "labelReset"
       ? Boolean(props.disableResetPopperPortal)
-      : false
+      : props.kind === "buttonToggle"
+        ? Boolean(props.disableResetPopperPortal)
+        : false
 
   const renderPopper = () => (
     <Popper

@@ -22,6 +22,8 @@ interface Props {
    * Use when {@link value} is always defined for UI (e.g. default "clip") but reset should reflect an explicit craft style only.
    */
   resetLabelActive?: boolean;
+  /** @see CraftSettingsResetLabelWithPopper buttonToggle disableResetPopperPortal */
+  disableResetPopperPortal?: boolean;
 }
 
 export const CraftSettingsButtonGroup = ({
@@ -32,6 +34,7 @@ export const CraftSettingsButtonGroup = ({
   withoutLabel = false,
   onReset,
   resetLabelActive,
+  disableResetPopperPortal = false,
 }: Props) => {
   const resetEnabled = Boolean(onReset) && !withoutLabel
   const hasResettableValue =
@@ -48,6 +51,7 @@ export const CraftSettingsButtonGroup = ({
           withoutLabel={withoutLabel}
           onReset={onReset}
           hasResettableValue={hasResettableValue}
+          disableResetPopperPortal={disableResetPopperPortal}
         />
       ) : null}
       {!withoutLabel && !resetEnabled ? (

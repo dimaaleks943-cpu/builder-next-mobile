@@ -147,9 +147,8 @@ export const BuilderRightPanel = ({
                 <BordersAccordion/>
                 <EffectsAccordion />
                 <BackgroundAccordion />
-                {(selectedType === "Text" || selectedType === "LinkText") && (
                 <TypographyAccordion />
-              )}
+
               </Box>
             )}
 
