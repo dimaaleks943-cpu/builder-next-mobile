@@ -6,9 +6,15 @@ interface Props {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  hideLabel?: boolean;
 }
 
-export const CraftSettingsColorField = ({ label, value, onChange }: Props) => {
+export const CraftSettingsColorField = ({
+  label,
+  value,
+  onChange,
+  hideLabel = false,
+}: Props) => {
   const handlePickerChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange(event.target.value)
   }
@@ -24,22 +30,24 @@ export const CraftSettingsColorField = ({ label, value, onChange }: Props) => {
         minWidth: 0,
         display: "flex",
         alignItems: "center",
-        gap: "8px",
+        gap: hideLabel ? 0 : "8px",
       }}
     >
-      <Typography
-        sx={{
-          width: "48px",
-          minWidth: "48px",
-          flexShrink: 0,
-          fontSize: "10px",
-          lineHeight: "14px",
-          color: COLORS.gray700,
-          textAlign: "left",
-        }}
-      >
-        {label}
-      </Typography>
+      {hideLabel ? null : (
+        <Typography
+          sx={{
+            width: "48px",
+            minWidth: "48px",
+            flexShrink: 0,
+            fontSize: "10px",
+            lineHeight: "14px",
+            color: COLORS.gray700,
+            textAlign: "left",
+          }}
+        >
+          {label}
+        </Typography>
+      )}
       <Box
         sx={{
           flex: 1,

@@ -280,6 +280,23 @@ export const TypographyAccordion = () => {
     scheduleStrokeColorUpdate(value)
   }
 
+  const resetStrokeWidth = () => {
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      setResponsiveStyleProp(props, "strokeWidth", undefined, viewport)
+    })
+  }
+
+  const resetStrokeColor = () => {
+    if (strokeColorTimeoutRef.current !== undefined) {
+      window.clearTimeout(strokeColorTimeoutRef.current)
+      strokeColorTimeoutRef.current = undefined
+    }
+    setStrokeColorDraft(COLORS.black)
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      setResponsiveStyleProp(props, "strokeColor", undefined, viewport)
+    })
+  }
+
   const textAlignProp = getResponsiveStyleProp(
     selectedProps as unknown as Record<string, unknown>,
     "textAlign",
@@ -326,6 +343,28 @@ export const TypographyAccordion = () => {
     columnCountProp !== null &&
     columnCountProp !== "" &&
     !(typeof columnCountProp === "number" && columnCountProp === 0)
+
+  const responsiveStrokeWidth = getResponsiveStyleProp(
+    selectedProps as unknown as Record<string, unknown>,
+    "strokeWidth",
+    viewport,
+  ) as number | undefined
+
+  const hasStrokeWidthResetValue =
+    responsiveStrokeWidth !== undefined &&
+    responsiveStrokeWidth !== null &&
+    Number(responsiveStrokeWidth) !== 0
+
+  const responsiveStrokeColor = getResponsiveStyleProp(
+    selectedProps as unknown as Record<string, unknown>,
+    "strokeColor",
+    viewport,
+  ) as string | undefined
+
+  const hasStrokeColorResetValue =
+    responsiveStrokeColor !== undefined &&
+    responsiveStrokeColor !== null &&
+    String(responsiveStrokeColor).trim() !== ""
 
   const handleLetterSpacingCommit = (
     next: string | number | undefined,
@@ -508,33 +547,69 @@ export const TypographyAccordion = () => {
             ]}
           />
 
-          <Box sx={{ display: "flex", columnGap: "8px" }}>
-            <CraftSettingsValueWithUnit
-              label="Size"
-              value={getResponsiveStyleProp(
-                selectedProps as unknown as Record<string, unknown>,
-                "fontSize",
-                viewport,
-              )}
-              onCommit={handleFontSizeCommit}
-              allowedUnits={FONT_SIZE_UNIT_MENU}
-              placeholder=""
-            />
-
-            <CraftSettingsValueWithUnit
-              label="Height"
-              value={getResponsiveStyleProp(
-                selectedProps as unknown as Record<string, unknown>,
-                "lineHeight",
-                viewport,
-              )}
-              onCommit={handleLineHeightCommit}
-              allowedUnits={FONT_SIZE_UNIT_MENU}
-              placeholder=""
-            />
+          <Box
+            sx={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              columnGap: "8px",
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+          >
+            <Typography sx={{ flex: 1, fontSize: "10px", lineHeight: "14px", color: COLORS.gray700 }}>
+              Size
+            </Typography>
+            <Box
+              sx={{
+                flex: 4,
+                minWidth: 0,
+                display: "flex",
+                alignItems: "center",
+                columnGap: "8px",
+              }}
+            >
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <CraftSettingsValueWithUnit
+                  label="Size"
+                  withoutLabel
+                  unitAffixVariant="mutedLowercase"
+                  value={getResponsiveStyleProp(
+                    selectedProps as unknown as Record<string, unknown>,
+                    "fontSize",
+                    viewport,
+                  )}
+                  onCommit={handleFontSizeCommit}
+                  allowedUnits={FONT_SIZE_UNIT_MENU}
+                  placeholder=""
+                  inputWidth="100%"
+                  customWidth="100%"
+                />
+              </Box>
+              <Typography sx={{ flexShrink: 0, fontSize: "10px", lineHeight: "14px", color: COLORS.gray700 }}>
+                Height
+              </Typography>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <CraftSettingsValueWithUnit
+                  label="Height"
+                  withoutLabel
+                  unitAffixVariant="mutedLowercase"
+                  value={getResponsiveStyleProp(
+                    selectedProps as unknown as Record<string, unknown>,
+                    "lineHeight",
+                    viewport,
+                  )}
+                  onCommit={handleLineHeightCommit}
+                  allowedUnits={FONT_SIZE_UNIT_MENU}
+                  placeholder=""
+                  inputWidth="100%"
+                  customWidth="100%"
+                />
+              </Box>
+            </Box>
           </Box>
 
-          {/* Color */}
           <CraftSettingsColorField
             label="Color"
             value={colorDraft}
@@ -833,25 +908,98 @@ export const TypographyAccordion = () => {
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: "102px 1fr",
-                  gap: "8px",
+                  gridTemplateColumns: "48px 1fr 1fr",
+                  gridTemplateRows: "auto auto",
+                  columnGap: "8px",
+                  rowGap: "2px",
                   width: "100%",
                   boxSizing: "border-box",
                 }}
               >
-                <CraftSettingsInput
-                  label="Stroke"
-                  type="number"
-                  value={(getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "strokeWidth", viewport) as number | undefined) ?? 0}
-                  onChange={handleStrokeWidthChange}
-                  customStyles={{ columnGap: "26px" }}
-                />
+                <Typography
+                  sx={{
+                    gridRow: "1 / -1",
+                    alignSelf: "center",
+                    fontSize: "10px",
+                    lineHeight: "14px",
+                    color: COLORS.gray700,
+                  }}
+                >
+                  Stroke
+                </Typography>
 
-                <CraftSettingsColorField
-                  label="Color"
-                  value={strokeColorDraft}
-                  onChange={handleStrokeColorChange}
-                />
+                <Box
+                  sx={{
+                    gridColumn: 2,
+                    gridRow: 1,
+                    minWidth: 0,
+                    width: "100%",
+                  }}
+                >
+                  <CraftSettingsInput
+                    hideLabel
+                    label="Stroke width"
+                    type="number"
+                    min={0}
+                    suffix="px"
+                    value={responsiveStrokeWidth ?? 0}
+                    onChange={handleStrokeWidthChange}
+                    customStyles={{ flex: "none", width: "100%" }}
+                  />
+                </Box>
+
+                <Box
+                  sx={{
+                    gridColumn: 3,
+                    gridRow: 1,
+                    minWidth: 0,
+                    width: "100%",
+                  }}
+                >
+                  <CraftSettingsColorField
+                    hideLabel
+                    label="Stroke color"
+                    value={strokeColorDraft}
+                    onChange={handleStrokeColorChange}
+                  />
+                </Box>
+
+                <Box
+                  sx={{
+                    gridColumn: 2,
+                    gridRow: 2,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    rowGap: "2px",
+                  }}
+                >
+                  <BottomResetLabel
+                    variant="caption"
+                    hasValue={hasStrokeWidthResetValue}
+                    onReset={resetStrokeWidth}
+                  >
+                    Width
+                  </BottomResetLabel>
+                </Box>
+                <Box
+                  sx={{
+                    gridColumn: 3,
+                    gridRow: 2,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    rowGap: "2px",
+                  }}
+                >
+                  <BottomResetLabel
+                    variant="caption"
+                    hasValue={hasStrokeColorResetValue}
+                    onReset={resetStrokeColor}
+                  >
+                    Color
+                  </BottomResetLabel>
+                </Box>
               </Box>
             </Box>
           ) : null}

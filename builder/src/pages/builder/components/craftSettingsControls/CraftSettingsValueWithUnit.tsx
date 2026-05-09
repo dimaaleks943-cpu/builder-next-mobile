@@ -81,6 +81,8 @@ interface Props {
   disableUnitPopperPortal?: boolean;
   unitless?: boolean;
   customWidth?: string;
+  /** Default matches legacy uppercase chip labels; mutedLowercase matches typography mocks. */
+  unitAffixVariant?: "chip" | "mutedLowercase";
 }
 
 export const CraftSettingsValueWithUnit = ({
@@ -96,6 +98,7 @@ export const CraftSettingsValueWithUnit = ({
   disableUnitPopperPortal = false,
   unitless = false,
   customWidth = "42px",
+  unitAffixVariant = "chip",
 }: Props) => {
   const resolvedAllowed = allowedUnits ?? CRAFT_SIZE_MENU_UNITS_WEB
   const unitOptions = useMemo(
@@ -226,6 +229,13 @@ export const CraftSettingsValueWithUnit = ({
       ? "CUSTOM"
       : unitTokenLabel(menuSelection as CraftSizeMenuToken)
 
+  const mutedLowercaseAffix =
+    menuSelection === "custom"
+      ? "custom"
+      : menuSelection === "auto"
+        ? "auto"
+        : String(menuSelection).toLowerCase()
+
   const isAuto = menuSelection === "auto"
   const displayValue = isAuto ? "auto" : inputText
 
@@ -316,16 +326,24 @@ export const CraftSettingsValueWithUnit = ({
               fontFamily: "inherit",
               fontSize: "10px",
               lineHeight: "14px",
-              fontWeight: 600,
-              letterSpacing: "0.04em",
-              color: COLORS.gray700,
+              fontWeight: 400,
+              letterSpacing:
+                unitAffixVariant === "mutedLowercase" ? "normal" : "0.04em",
+              color:
+                unitAffixVariant === "mutedLowercase"
+                  ? COLORS.gray500
+                  : COLORS.gray700,
               backgroundColor: "transparent",
               cursor: disabled ? "default" : "pointer",
+              textTransform:
+                unitAffixVariant === "mutedLowercase" ? "none" : undefined,
               "&:hover": disabled ? undefined : { color: COLORS.purple400 },
               "&:disabled": { opacity: 0.5 },
             }}
           >
-            {chipLabel}
+            {unitAffixVariant === "mutedLowercase"
+              ? mutedLowercaseAffix
+              : chipLabel}
           </Box>
         ) : null}
       </Box>
