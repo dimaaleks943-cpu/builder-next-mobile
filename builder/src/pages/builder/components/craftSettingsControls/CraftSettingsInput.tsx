@@ -1,6 +1,8 @@
-import { Box, Typography } from "@mui/material"
-import type { ChangeEvent } from "react"
+import { Box, Paper, Popper, Typography } from "@mui/material"
+import type { ChangeEvent, MouseEvent as ReactMouseEvent } from "react"
+import { useEffect, useRef, useState } from "react"
 import { COLORS } from "../../../../theme/colors.ts"
+import { CraftSettingsStyleResetFooter } from "./CraftSettingsStyleResetFooter.tsx"
 
 interface Props {
   label: string;
@@ -13,6 +15,13 @@ interface Props {
   /** Inside the bordered shell, right-aligned (muted). Shell matches value-with-unit fields. */
   suffix?: string;
   min?: number;
+  disabled?: boolean;
+  labelReset?: {
+    hasValue: boolean;
+    onReset: () => void;
+  };
+  /** @see CraftSettingsSelect.disableResetPopperPortal */
+  disableResetPopperPortal?: boolean;
 }
 
 export const CraftSettingsInput = ({
@@ -25,7 +34,107 @@ export const CraftSettingsInput = ({
   hideLabel = false,
   suffix,
   min,
+  disabled = false,
+  labelReset,
+  disableResetPopperPortal = false,
 }: Props) => {
+  const [resetAnchorEl, setResetAnchorEl] = useState<HTMLElement | null>(null)
+  const resetPaperRef = useRef<HTMLDivElement | null>(null)
+  const resetEnabled =
+    Boolean(labelReset) && Boolean(labelReset?.hasValue) && !hideLabel
+
+  useEffect(() => {
+    if (!labelReset?.hasValue) {
+      setResetAnchorEl(null)
+    }
+  }, [labelReset?.hasValue])
+
+  useEffect(() => {
+    if (!resetEnabled || !resetAnchorEl) return
+    const onDocMouseDown = (event: globalThis.MouseEvent) => {
+      const target = event.target as Node
+      if (resetAnchorEl.contains(target)) return
+      if (resetPaperRef.current?.contains(target)) return
+      setResetAnchorEl(null)
+    }
+    document.addEventListener("mousedown", onDocMouseDown, true)
+    return () => document.removeEventListener("mousedown", onDocMouseDown, true)
+  }, [resetEnabled, resetAnchorEl])
+
+  const handleResetLabelClick = (event: ReactMouseEvent<HTMLElement>) => {
+    setResetAnchorEl(event.currentTarget)
+  }
+
+  const handleFooterReset = () => {
+    labelReset?.onReset()
+    setResetAnchorEl(null)
+  }
+
+  const labelTypographySx = {
+    width: "48px",
+    minWidth: "48px",
+    flexShrink: 0,
+    fontSize: "10px",
+    lineHeight: "14px",
+    color: COLORS.gray700,
+    textAlign: "left" as const,
+  }
+
+  const renderLabel = () => {
+    if (hideLabel) return null
+    if (!labelReset) {
+      return (
+        <Typography sx={labelTypographySx}>
+          {label}
+        </Typography>
+      )
+    }
+    if (!labelReset.hasValue) {
+      return (
+        <Typography sx={labelTypographySx}>
+          {label}
+        </Typography>
+      )
+    }
+    return (
+      <>
+        <Typography
+          onClick={handleResetLabelClick}
+          component="span"
+          sx={{
+            ...labelTypographySx,
+            color: COLORS.purple400,
+            fontWeight: 400,
+            cursor: "pointer",
+          }}
+        >
+          {label}
+        </Typography>
+        <Popper
+          open={Boolean(resetAnchorEl)}
+          anchorEl={resetAnchorEl}
+          placement="bottom-start"
+          modifiers={[{ name: "offset", options: { offset: [0, 6] } }]}
+          style={{ zIndex: 4000 }}
+          disablePortal={disableResetPopperPortal}
+        >
+          <Paper
+            ref={resetPaperRef}
+            elevation={3}
+            sx={{
+              width: "211px",
+              border: `1px solid ${COLORS.purple100}`,
+              borderRadius: "8px",
+              padding: "8px",
+            }}
+          >
+            <CraftSettingsStyleResetFooter onReset={handleFooterReset}/>
+          </Paper>
+        </Popper>
+      </>
+    )
+  }
+
   const control = suffix ? (
     <Box
       sx={{
@@ -39,9 +148,13 @@ export const CraftSettingsInput = ({
         backgroundColor: COLORS.white,
         paddingLeft: "4px",
         paddingRight: "4px",
-        "&:focus-within": {
-          borderColor: COLORS.purple400,
-        },
+        ...(disabled
+          ? { opacity: 0.55, pointerEvents: "none" }
+          : {
+              "&:focus-within": {
+                borderColor: COLORS.purple400,
+              },
+            }),
       }}
     >
       <Box
@@ -50,6 +163,7 @@ export const CraftSettingsInput = ({
         value={value}
         onChange={onChange}
         placeholder={placeholder}
+        disabled={disabled}
         {...(min !== undefined ? { min } : {})}
         aria-label={hideLabel ? label : undefined}
         sx={{
@@ -83,6 +197,7 @@ export const CraftSettingsInput = ({
       value={value}
       onChange={onChange}
       placeholder={placeholder}
+      disabled={disabled}
       {...(min !== undefined ? { min } : {})}
       aria-label={hideLabel ? label : undefined}
       sx={{
@@ -95,6 +210,7 @@ export const CraftSettingsInput = ({
         borderRadius: "4px",
         border: `1px solid ${COLORS.purple100}`,
         backgroundColor: COLORS.white,
+        ...(disabled ? { opacity: 0.55, pointerEvents: "none" } : {}),
       }}
     />
   )
@@ -112,21 +228,7 @@ export const CraftSettingsInput = ({
         ...customStyles,
       }}
     >
-      {hideLabel ? null : (
-        <Typography
-          sx={{
-            width: "48px",
-            minWidth: "48px",
-            flexShrink: 0,
-            fontSize: "10px",
-            lineHeight: "14px",
-            color: COLORS.gray700,
-            textAlign: "left",
-          }}
-        >
-          {label}
-        </Typography>
-      )}
+      {renderLabel()}
       {control}
     </Box>
   )

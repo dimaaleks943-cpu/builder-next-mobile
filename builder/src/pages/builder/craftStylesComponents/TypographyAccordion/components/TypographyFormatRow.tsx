@@ -1,4 +1,5 @@
 import { Box, IconButton, Typography } from "@mui/material"
+import type { RefObject } from "react"
 import { COLORS } from "../../../../../theme/colors.ts"
 import { CloseIcon } from "../../../../../icons/CloseIcon.tsx"
 import { FormatItalicIcon } from "../../../../../icons/FormatItalicIcon.tsx"
@@ -17,6 +18,8 @@ interface Props {
   onClear: () => void;
   onDecorationPress: (kind: TextDecorationKind) => void;
   onItalicPress: () => void;
+  decorationSettingsWrapRef: RefObject<HTMLDivElement | null>;
+  onToggleDecorationSettingsPopper: () => void;
 }
 
 export const TypographyFormatRow = ({
@@ -25,6 +28,8 @@ export const TypographyFormatRow = ({
   onClear,
   onDecorationPress,
   onItalicPress,
+  decorationSettingsWrapRef,
+  onToggleDecorationSettingsPopper,
 }: Props) => {
   const accentFill = COLORS.purple400
   const isClearHighlighted = decoration === undefined && !isItalic
@@ -141,21 +146,24 @@ export const TypographyFormatRow = ({
             <FormatItalicIcon size={FORMAT_ICON_SIZE} fill={accentFill}/>
           </IconButton>
         </Box>
-        <IconButton
-          disableRipple
-          size="small"
-          aria-label="More format options"
-          sx={{
-            flexShrink: 0,
-            padding: "4px",
-            color: COLORS.gray700,
-            "&:hover": {
-              backgroundColor: COLORS.secondaryVeryLightGray,
-            },
-          }}
-        >
-          <MoreHorizontalIcon size={FORMAT_ICON_SIZE} fill={COLORS.gray700}/>
-        </IconButton>
+        <Box ref={decorationSettingsWrapRef}>
+          <IconButton
+            disableRipple
+            size="small"
+            aria-label="More format options"
+            onClick={onToggleDecorationSettingsPopper}
+            sx={{
+              flexShrink: 0,
+              padding: "4px",
+              color: COLORS.gray700,
+              "&:hover": {
+                backgroundColor: COLORS.secondaryVeryLightGray,
+              },
+            }}
+          >
+            <MoreHorizontalIcon size={FORMAT_ICON_SIZE} fill={COLORS.gray700}/>
+          </IconButton>
+        </Box>
       </Box>
     </Box>
   )

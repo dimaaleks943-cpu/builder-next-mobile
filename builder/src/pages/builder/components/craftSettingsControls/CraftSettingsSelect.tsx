@@ -26,6 +26,11 @@ interface Props {
     hasValue: boolean;
     onReset: () => void;
   };
+  /**
+   * Keep the reset Popper in the DOM under the parent (no portal). Use inside another Popper
+   * that closes on outside `mousedown` using `Node.contains()` on a panel ref.
+   */
+  disableResetPopperPortal?: boolean;
 }
 
 export const CraftSettingsSelect = ({
@@ -36,6 +41,7 @@ export const CraftSettingsSelect = ({
   disabled = false,
   showInlineLabel = true,
   labelReset,
+  disableResetPopperPortal = false,
 }: Props) => {
   const [resetAnchorEl, setResetAnchorEl] = useState<HTMLElement | null>(null)
   const resetPaperRef = useRef<HTMLDivElement | null>(null)
@@ -142,6 +148,7 @@ export const CraftSettingsSelect = ({
           placement="bottom-start"
           modifiers={[{ name: "offset", options: { offset: [0, 6] } }]}
           style={{ zIndex: 4000 }}
+          disablePortal={disableResetPopperPortal}
         >
           <Paper
             ref={resetPaperRef}

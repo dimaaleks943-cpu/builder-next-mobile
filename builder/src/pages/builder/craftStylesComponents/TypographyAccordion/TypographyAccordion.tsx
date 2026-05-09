@@ -32,6 +32,12 @@ import {
   TypographyFormatRow,
   type TextDecorationKind,
 } from "./components/TypographyFormatRow.tsx"
+import { TypographyDecorationSettingsPopper } from "./components/TypographyDecorationSettingsPopper.tsx"
+import {
+  buildTextDecorationAdvanced,
+  parseTextDecorationAdvanced,
+  type TextDecorationAdvancedParts,
+} from "./textDecorationAdvanced.ts"
 import { TypographyBreakingRow } from "./components/TypographyBreakingRow.tsx"
 import { TypographyWrapTruncateSection } from "./components/TypographyWrapTruncateSection.tsx"
 import { usePreviewViewport } from "../../context/PreviewViewportContext.tsx"
@@ -58,6 +64,7 @@ interface SelectedTypographyProps {
   strokeWidth?: number;
   style?: ResponsiveStyle;
   textDecoration?: string;
+  textDecorationSkipInk?: string;
   fontStyle?: string;
   isItalic?: boolean;
   isUnderline?: boolean;
@@ -157,6 +164,9 @@ export const TypographyAccordion = () => {
   )
   const [moreTypeOptionsOpen, setMoreTypeOptionsOpen] = useState(false)
   const [textIndentDraft, setTextIndentDraft] = useState("")
+  const decorationSettingsWrapRef = useRef<HTMLDivElement>(null)
+  const decorationSettingsPopperRef = useRef<HTMLDivElement>(null)
+  const [decorationSettingsAnchorEl, setDecorationSettingsAnchorEl] = useState<HTMLElement | null>(null)
 
   const colorTimeoutRef = useRef<number | undefined>(undefined)
   const strokeColorTimeoutRef = useRef<number | undefined>(undefined)
@@ -186,6 +196,18 @@ export const TypographyAccordion = () => {
       ),
     )
   }, [selectedProps, selectedId, viewport])
+
+  useEffect(() => {
+    if (!decorationSettingsAnchorEl) return
+    const onDocMouseDown = (event: MouseEvent) => {
+      const target = event.target as Node
+      if (decorationSettingsWrapRef.current?.contains(target)) return
+      if (decorationSettingsPopperRef.current?.contains(target)) return
+      setDecorationSettingsAnchorEl(null)
+    }
+    document.addEventListener("mousedown", onDocMouseDown, true)
+    return () => document.removeEventListener("mousedown", onDocMouseDown, true)
+  }, [decorationSettingsAnchorEl])
 
   const scheduleColorUpdate = (value: string) => {
     if (!selectedId) return
@@ -309,6 +331,20 @@ export const TypographyAccordion = () => {
   ) as Record<string, unknown>
   const formatDecoration = parseDecorationFromResolved(resolvedForFormat)
   const formatItalic = parseItalicFromResolved(resolvedForFormat)
+
+  const decorationTdRaw = getResponsiveStyleProp(
+    selectedProps as unknown as Record<string, unknown>,
+    "textDecoration",
+    viewport,
+  ) as string | undefined
+  const decorationTdParts = parseTextDecorationAdvanced(decorationTdRaw)
+  const decorationSkipInkRaw = getResponsiveStyleProp(
+    selectedProps as unknown as Record<string, unknown>,
+    "textDecorationSkipInk",
+    viewport,
+  )
+  const decorationSkipInk =
+    typeof decorationSkipInkRaw === "string" ? decorationSkipInkRaw : undefined
 
   const isGridDisplay = resolvedForFormat.display === "grid"
 
@@ -485,6 +521,7 @@ export const TypographyAccordion = () => {
       setResponsiveStyleProp(props, "isUnderline", undefined, viewport)
       setResponsiveStyleProp(props, "isStrikethrough", undefined, viewport)
       setResponsiveStyleProp(props, "textDecoration", undefined, viewport)
+      setResponsiveStyleProp(props, "textDecorationSkipInk", undefined, viewport)
       setResponsiveStyleProp(props, "fontStyle", undefined, viewport)
     })
   }
@@ -508,6 +545,37 @@ export const TypographyAccordion = () => {
         nextItalic ? "italic" : undefined,
         viewport,
       )
+    })
+  }
+
+  const toggleDecorationSettingsPopper = () => {
+    if (decorationSettingsAnchorEl) {
+      setDecorationSettingsAnchorEl(null)
+      return
+    }
+    const el = decorationSettingsWrapRef.current
+    if (!el) return
+    setDecorationSettingsAnchorEl(el)
+  }
+
+  const applyDecorationPartsPatch = (
+    patch: Partial<TextDecorationAdvancedParts>,
+  ) => {
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      const curRaw = getResponsiveStyleProp(
+        props,
+        "textDecoration",
+        viewport,
+      ) as string | undefined
+      const merged = { ...parseTextDecorationAdvanced(curRaw), ...patch }
+      const built = buildTextDecorationAdvanced(merged)
+      setResponsiveStyleProp(props, "textDecoration", built, viewport)
+    })
+  }
+
+  const applyTextDecorationSkipInk = (next: string | undefined) => {
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      setResponsiveStyleProp(props, "textDecorationSkipInk", next, viewport)
     })
   }
 
@@ -652,6 +720,19 @@ export const TypographyAccordion = () => {
             onClear={handleFormatClear}
             onDecorationPress={handleFormatDecorationPress}
             onItalicPress={handleFormatItalicPress}
+            decorationSettingsWrapRef={decorationSettingsWrapRef}
+            onToggleDecorationSettingsPopper={toggleDecorationSettingsPopper}
+          />
+
+          <TypographyDecorationSettingsPopper
+            open={Boolean(decorationSettingsAnchorEl)}
+            anchorEl={decorationSettingsAnchorEl}
+            popperRef={decorationSettingsPopperRef}
+            parts={decorationTdParts}
+            textDecorationSkipInk={decorationSkipInk}
+            onClose={() => setDecorationSettingsAnchorEl(null)}
+            onApplyPartsPatch={applyDecorationPartsPatch}
+            onApplySkipInk={applyTextDecorationSkipInk}
           />
 
           <Button
