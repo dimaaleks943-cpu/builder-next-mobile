@@ -160,6 +160,9 @@ const styleBranchToCssDeclarations = (style: StyleRecord): Record<string, string
 
   if (typeof style.backgroundColor === "string") set("background-color", style.backgroundColor)
   if (typeof style.backgroundClip === "string") set("background-clip", style.backgroundClip)
+  if (typeof style.WebkitTextFillColor === "string") {
+    set("-webkit-text-fill-color", style.WebkitTextFillColor)
+  }
 
   set("font-size", toCssLength(style.fontSize))
   if (typeof style.fontWeight === "string") set("font-weight", style.fontWeight)

@@ -7,8 +7,60 @@
  * - все новые styles props добавляются только через этот маппинг.
  */
 export const FULL_TO_SHORT = {
+  //-- PositioningAccordion --//
+  position: "ps",
+  float: "flt",
+  clear: "clr",
+  zIndex: "zi",
+  inset: "ins",
+
+  //-- BorderAccordion --//
+  borderRadius: "br",
+  borderTopWidth: "btw",
+  borderRightWidth: "brw",
+  borderBottomWidth: "bbw",
+  borderLeftWidth: "blw",
+  borderColor: "bc",
+  borderStyle: "bs",
+
+  //-- TypographyAccordion --//
+  fontFamily: "ffm",
+  fontSize: "fz",
+  lineHeight: "lh",
+  fontWeight: "fw",
+  textAlign: "ta",
+  color: "cl",
+  textTransform: "tt",
+  strokeColor: "sc",
+  strokeWidth: "sw",
+  textDecoration: "td",
+  textDecorationSkipInk: "tdsi",
+  fontStyle: "fst",
+  letterSpacing: "ls",
+  textIndent: "ti",
+  textShadow: "txs",
+  columnCount: "cc",
+  columnGap: "cg",
+  columnRule: "crl",
+  columnRuleStyle: "crs",
+  columnRuleWidth: "crw",
+  columnRuleColor: "crc",
+  columnSpan: "csp",
+  wordBreak: "wb",
+  whiteSpace: "wsp",
+  overflowWrap: "ow",
+  textOverflow: "to",
+
+  //-- EffectsAccordion --//
+  mixBlendMode: "mbm",
+  opacity: "op",
+  outline: "oln",
+  outlineOffset: "ofo",
+  boxShadow: "bxs",
+
   // layout
   layout: "ly",
+  /** Элементов в строке сетки списка (ContentList). */
   itemsPerRow: "ipr",
   fullSize: "fs",
   gridColumns: "gcl",
@@ -31,19 +83,10 @@ export const FULL_TO_SHORT = {
   paddingBottom: "pb",
   paddingLeft: "pl",
 
-  // border
-  borderRadius: "br",
-  borderTopWidth: "btw",
-  borderRightWidth: "brw",
-  borderBottomWidth: "bbw",
-  borderLeftWidth: "blw",
-  borderColor: "bc",
-  borderStyle: "bs",
-  borderOpacity: "bo",
-
   // background
   backgroundColor: "bgc",
   backgroundClip: "bgcl",
+  WebkitTextFillColor: "wtfc",
 
   // size
   width: "w",
@@ -53,21 +96,7 @@ export const FULL_TO_SHORT = {
   maxWidth: "maw",
   maxHeight: "mah",
   overflow: "ovf",
-
-  // typography
-  fontSize: "fz",
-  fontWeight: "fw",
-  textAlign: "ta",
-  color: "cl",
-  fontFamily: "ffm",
-  lineHeight: "lh",
-  textTransform: "tt",
-  strokeColor: "sc",
-  strokeWidth: "sw",
-  isItalic: "ii",
-  isUnderline: "iu",
-  isStrikethrough: "is",
-} as const;
+} as const
 
 export type FullStylePropKey = keyof typeof FULL_TO_SHORT;
 export type ShortStylePropKey = (typeof FULL_TO_SHORT)[FullStylePropKey];
