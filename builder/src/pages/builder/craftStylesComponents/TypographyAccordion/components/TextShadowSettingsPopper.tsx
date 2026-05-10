@@ -2,51 +2,39 @@ import { Paper, Popper } from "@mui/material"
 import debounce from "lodash/debounce"
 import type { Ref } from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { COLORS } from "../../../../../../theme/colors.ts"
-import { CraftSettingsButtonGroup } from "../../../../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
-import { CraftSettingsColorField } from "../../../../components/craftSettingsControls/CraftSettingsColorField.tsx"
-import { ShadowLengthSliderRowWithReset } from "../../../shared/ShadowLengthSliderRowWithReset.tsx"
+import { COLORS } from "../../../../../theme/colors.ts"
+import { CraftSettingsColorField } from "../../../components/craftSettingsControls/CraftSettingsColorField.tsx"
+import { ShadowLengthSliderRowWithReset } from "../../shared/ShadowLengthSliderRowWithReset.tsx"
 import {
-  type BoxShadowParts,
-  DEFAULT_BOX_SHADOW,
-  normalizeShadowLengthToken,
-} from "../../boxShadowUtils.ts"
+  DEFAULT_TEXT_SHADOW,
+  type TextShadowParts,
+  textShadowFieldDiffersFromDefault,
+} from "../textShadowUtils.ts"
 
-const BOX_SHADOW_SLIDER_ROWS = [
+const TEXT_SHADOW_SLIDER_ROWS = [
   { label: "X", key: "offsetX" as const, min: -100, max: 100 },
   { label: "Y", key: "offsetY" as const, min: -100, max: 100 },
   { label: "Blur", key: "blur" as const, min: 0, max: 100 },
-  { label: "Size", key: "spread" as const, min: -50, max: 50 },
 ] as const
 
 const COLOR_COMMIT_DEBOUNCE_MS = 120
-
-const boxShadowLengthDiffersFromDefault = (
-  key: "offsetX" | "offsetY" | "blur" | "spread",
-  parts: BoxShadowParts,
-): boolean =>
-  normalizeShadowLengthToken(parts[key]) !==
-  normalizeShadowLengthToken(DEFAULT_BOX_SHADOW[key])
-
-const boxShadowColorDiffersFromDefault = (parts: BoxShadowParts): boolean =>
-  parts.color.trim() !== DEFAULT_BOX_SHADOW.color.trim()
 
 interface Props {
   open: boolean
   anchorEl: HTMLElement | null
   popperRef: Ref<HTMLDivElement>
-  boxShadowParts: BoxShadowParts
-  onApplyPatch: (patch: Partial<BoxShadowParts>) => void
+  textShadowParts: TextShadowParts
+  onApplyPatch: (patch: Partial<TextShadowParts>) => void
 }
 
-export const BoxShadowSettingsPopper = ({
+export const TextShadowSettingsPopper = ({
   open,
   anchorEl,
   popperRef,
-  boxShadowParts,
+  textShadowParts,
   onApplyPatch,
 }: Props) => {
-  const [colorDraft, setColorDraft] = useState(boxShadowParts.color)
+  const [colorDraft, setColorDraft] = useState(textShadowParts.color)
   const onApplyPatchRef = useRef(onApplyPatch)
   onApplyPatchRef.current = onApplyPatch
 
@@ -67,8 +55,8 @@ export const BoxShadowSettingsPopper = ({
   }, [open, debouncedCommitColor])
 
   useEffect(() => {
-    setColorDraft(boxShadowParts.color)
-  }, [boxShadowParts.color])
+    setColorDraft(textShadowParts.color)
+  }, [textShadowParts.color])
 
   const handleColorChange = (value: string) => {
     setColorDraft(value)
@@ -97,35 +85,20 @@ export const BoxShadowSettingsPopper = ({
           gap: "10px",
         }}
       >
-        <CraftSettingsButtonGroup
-          label="Type"
-          value={boxShadowParts.inset ? "inside" : "outside"}
-          onChange={(id) => onApplyPatch({ inset: id === "inside" })}
-          options={[
-            { id: "outside", content: "Outside" },
-            { id: "inside", content: "Inside" },
-          ]}
-          onReset={() => onApplyPatch({ inset: DEFAULT_BOX_SHADOW.inset })}
-          resetLabelActive={
-            boxShadowParts.inset !== DEFAULT_BOX_SHADOW.inset
-          }
-          disableResetPopperPortal
-        />
-
-        {BOX_SHADOW_SLIDER_ROWS.map((row) => (
+        {TEXT_SHADOW_SLIDER_ROWS.map((row) => (
           <ShadowLengthSliderRowWithReset
             key={row.key}
             label={row.label}
-            value={boxShadowParts[row.key]}
+            value={textShadowParts[row.key]}
             min={row.min}
             max={row.max}
-            hasResetValue={boxShadowLengthDiffersFromDefault(
+            hasResetValue={textShadowFieldDiffersFromDefault(
               row.key,
-              boxShadowParts,
+              textShadowParts,
             )}
             onReset={() =>
               onApplyPatch({
-                [row.key]: DEFAULT_BOX_SHADOW[row.key],
+                [row.key]: DEFAULT_TEXT_SHADOW[row.key],
               })
             }
             onCommitLength={(next) => onApplyPatch({ [row.key]: next })}
@@ -138,8 +111,8 @@ export const BoxShadowSettingsPopper = ({
           onChange={handleColorChange}
           disableResetPopperPortal
           labelReset={{
-            hasValue: boxShadowColorDiffersFromDefault(boxShadowParts),
-            onReset: () => onApplyPatch({ color: DEFAULT_BOX_SHADOW.color }),
+            hasValue: textShadowFieldDiffersFromDefault("color", textShadowParts),
+            onReset: () => onApplyPatch({ color: DEFAULT_TEXT_SHADOW.color }),
           }}
         />
       </Paper>

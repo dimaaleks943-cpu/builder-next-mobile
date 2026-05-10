@@ -66,7 +66,7 @@ const extractTrailingColor = (
   return { rest: m[1].trim(), color: m[2].trim() }
 }
 
-const normalizeShadowLengthToken = (token: string | undefined): string => {
+export const normalizeShadowLengthToken = (token: string | undefined): string => {
   if (token == null || token === "") return "0px"
   const p = parseSizeProp(token)
   if (p.kind === "length") return `${p.n}${p.unit}`

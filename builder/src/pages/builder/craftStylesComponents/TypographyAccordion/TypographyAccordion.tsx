@@ -52,6 +52,18 @@ import { ChevronDownIcon } from "../../../../icons/ChevronDownIcon.tsx"
 import { CloseIcon } from "../../../../icons/CloseIcon.tsx"
 import { MoreHorizontalIcon } from "../../../../icons/MoreHorizontalIcon.tsx"
 import { BottomResetLabel } from "./components/BottomResetLabel.tsx"
+import { TextShadowSettingsPopper } from "./components/TextShadowSettingsPopper.tsx"
+import { TextShadowToolbar } from "./components/TextShadowToolbar.tsx"
+import {
+  buildTextShadow,
+  DEFAULT_TEXT_SHADOW,
+  formatTextShadowSummary,
+  getEffectiveTextShadowRaw,
+  isTextShadowOnCanvas,
+  parseTextShadowFromProp,
+  TEXT_SHADOW_DRAFT_KEY,
+  type TextShadowParts,
+} from "./textShadowUtils.ts"
 
 interface SelectedTypographyProps {
   fontFamily?: string;
@@ -172,6 +184,10 @@ export const TypographyAccordion = () => {
   const columnsSettingsPopperRef = useRef<HTMLDivElement>(null)
   const [columnsSettingsAnchorEl, setColumnsSettingsAnchorEl] =
     useState<HTMLElement | null>(null)
+  const textShadowWrapRef = useRef<HTMLDivElement | null>(null)
+  const textShadowPopperRef = useRef<HTMLDivElement | null>(null)
+  const [textShadowAnchorEl, setTextShadowAnchorEl] =
+    useState<HTMLElement | null>(null)
 
   const colorTimeoutRef = useRef<number | undefined>(undefined)
   const strokeColorTimeoutRef = useRef<number | undefined>(undefined)
@@ -226,6 +242,18 @@ export const TypographyAccordion = () => {
 
     return () => document.removeEventListener("mousedown", onDocMouseDown, true)
   }, [decorationSettingsAnchorEl, columnsSettingsAnchorEl])
+
+  useEffect(() => {
+    if (!textShadowAnchorEl) return
+    const onDocMouseDown = (event: MouseEvent) => {
+      const target = event.target as Node
+      if (textShadowWrapRef.current?.contains(target)) return
+      if (textShadowPopperRef.current?.contains(target)) return
+      setTextShadowAnchorEl(null)
+    }
+    document.addEventListener("mousedown", onDocMouseDown, true)
+    return () => document.removeEventListener("mousedown", onDocMouseDown, true)
+  }, [textShadowAnchorEl])
 
   const scheduleColorUpdate = (value: string) => {
     if (!selectedId) return
@@ -335,6 +363,84 @@ export const TypographyAccordion = () => {
     actions.setProp(selectedId, (props: Record<string, unknown>) => {
       setResponsiveStyleProp(props, "strokeColor", undefined, viewport)
     })
+  }
+
+  const applyTextShadowPatch = (patch: Partial<TextShadowParts>) => {
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      const raw = getEffectiveTextShadowRaw(props, viewport)
+      const cur = parseTextShadowFromProp(raw.length > 0 ? raw : undefined)
+      const built = buildTextShadow({ ...cur, ...patch })
+      if (isTextShadowOnCanvas(props, viewport)) {
+        setResponsiveStyleProp(props, "textShadow", built, viewport)
+      } else {
+        props[TEXT_SHADOW_DRAFT_KEY] = built
+      }
+    })
+  }
+
+  const handleClearTextShadow = () => {
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      delete props[TEXT_SHADOW_DRAFT_KEY]
+      setResponsiveStyleProp(props, "textShadow", undefined, viewport)
+    })
+    setTextShadowAnchorEl(null)
+  }
+
+  const handleToggleTextShadowCanvas = () => {
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+      const applied = isTextShadowOnCanvas(props, viewport)
+      const styleVal = getResponsiveStyleProp(props, "textShadow", viewport)
+      const styleStr = typeof styleVal === "string" ? styleVal.trim() : ""
+
+      if (applied && styleStr.length > 0) {
+        props[TEXT_SHADOW_DRAFT_KEY] = styleStr
+        setResponsiveStyleProp(props, "textShadow", undefined, viewport)
+        return
+      }
+
+      const draft = props[TEXT_SHADOW_DRAFT_KEY]
+      if (typeof draft === "string" && draft.trim().length > 0) {
+        setResponsiveStyleProp(props, "textShadow", draft.trim(), viewport)
+        delete props[TEXT_SHADOW_DRAFT_KEY]
+      }
+    })
+  }
+
+  const textShadowRawEffective = getEffectiveTextShadowRaw(
+    selectedProps as unknown as Record<string, unknown>,
+    viewport,
+  )
+  const hasTextShadowConfig = textShadowRawEffective.length > 0
+  const textShadowOnCanvas = isTextShadowOnCanvas(
+    selectedProps as unknown as Record<string, unknown>,
+    viewport,
+  )
+  const textShadowParts = parseTextShadowFromProp(
+    hasTextShadowConfig ? textShadowRawEffective : undefined,
+  )
+  const textShadowSummaryLabel = hasTextShadowConfig
+    ? formatTextShadowSummary(textShadowParts)
+    : ""
+
+  const toggleTextShadowPopper = () => {
+    if (textShadowAnchorEl) {
+      setTextShadowAnchorEl(null)
+      return
+    }
+    const el = textShadowWrapRef.current
+    if (!el) return
+    setTextShadowAnchorEl(el)
+    if (!hasTextShadowConfig) {
+      actions.setProp(selectedId, (props: Record<string, unknown>) => {
+        delete props[TEXT_SHADOW_DRAFT_KEY]
+        setResponsiveStyleProp(
+          props,
+          "textShadow",
+          buildTextShadow(DEFAULT_TEXT_SHADOW),
+          viewport,
+        )
+      })
+    }
   }
 
   const textAlignProp = getResponsiveStyleProp(
@@ -1123,6 +1229,25 @@ export const TypographyAccordion = () => {
                   </BottomResetLabel>
                 </Box>
               </Box>
+              <TextShadowToolbar
+                hasTextShadowConfig={hasTextShadowConfig}
+                textShadowParts={textShadowParts}
+                textShadowSummaryLabel={textShadowSummaryLabel}
+                textShadowOnCanvas={textShadowOnCanvas}
+                popperOpen={Boolean(textShadowAnchorEl)}
+                wrapRef={textShadowWrapRef}
+                onTogglePopper={toggleTextShadowPopper}
+                onToggleCanvasVisibility={handleToggleTextShadowCanvas}
+                onClear={handleClearTextShadow}
+              />
+
+              <TextShadowSettingsPopper
+                open={Boolean(textShadowAnchorEl)}
+                anchorEl={textShadowAnchorEl}
+                popperRef={textShadowPopperRef}
+                textShadowParts={textShadowParts}
+                onApplyPatch={applyTextShadowPatch}
+              />
             </Box>
           ) : null}
         </Box>
