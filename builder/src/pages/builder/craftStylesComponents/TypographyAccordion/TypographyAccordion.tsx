@@ -79,9 +79,6 @@ interface SelectedTypographyProps {
   textDecoration?: string;
   textDecorationSkipInk?: string;
   fontStyle?: string;
-  isItalic?: boolean;
-  isUnderline?: boolean;
-  isStrikethrough?: boolean;
 }
 
 const TEXT_ALIGN_ICON_SIZE = 14
@@ -115,16 +112,11 @@ const parseDecorationFromResolved = (resolved: Record<string, unknown>): TextDec
     if (td.includes("underline")) return "underline"
     if (td.includes("overline")) return "overline"
   }
-  if (resolved.isStrikethrough) return "line-through"
-  if (resolved.isUnderline) return "underline"
   return undefined
 }
 
-const parseItalicFromResolved = (resolved: Record<string, unknown>): boolean => {
-  const fs = resolved.fontStyle
-  if (fs === "italic") return true
-  return Boolean(resolved.isItalic)
-}
+const parseItalicFromResolved = (resolved: Record<string, unknown>): boolean =>
+  resolved.fontStyle === "italic"
 
 interface EditorSelection {
   selectedId: string | null;
@@ -641,9 +633,6 @@ export const TypographyAccordion = () => {
 
   const handleFormatClear = () => {
     actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "isItalic", undefined, viewport)
-      setResponsiveStyleProp(props, "isUnderline", undefined, viewport)
-      setResponsiveStyleProp(props, "isStrikethrough", undefined, viewport)
       setResponsiveStyleProp(props, "textDecoration", undefined, viewport)
       setResponsiveStyleProp(props, "textDecorationSkipInk", undefined, viewport)
       setResponsiveStyleProp(props, "fontStyle", undefined, viewport)
@@ -653,8 +642,6 @@ export const TypographyAccordion = () => {
   const handleFormatDecorationPress = (kind: TextDecorationKind) => {
     const next = formatDecoration === kind ? undefined : kind
     actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "isUnderline", undefined, viewport)
-      setResponsiveStyleProp(props, "isStrikethrough", undefined, viewport)
       setResponsiveStyleProp(props, "textDecoration", next, viewport)
     })
   }
@@ -662,7 +649,6 @@ export const TypographyAccordion = () => {
   const handleFormatItalicPress = () => {
     const nextItalic = !formatItalic
     actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "isItalic", undefined, viewport)
       setResponsiveStyleProp(
         props,
         "fontStyle",

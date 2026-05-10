@@ -23,6 +23,34 @@ export const FULL_TO_SHORT = {
   borderColor: "bc",
   borderStyle: "bs",
 
+  //-- TypographyAccordion --//
+  fontFamily: "ffm",
+  fontSize: "fz",
+  lineHeight: "lh",
+  fontWeight: "fw",
+  textAlign: "ta",
+  color: "cl",
+  textTransform: "tt",
+  strokeColor: "sc",
+  strokeWidth: "sw",
+  textDecoration: "td",
+  textDecorationSkipInk: "tdsi",
+  fontStyle: "fst",
+  letterSpacing: "ls",
+  textIndent: "ti",
+  textShadow: "txs",
+  columnCount: "cc",
+  columnGap: "cg",
+  columnRule: "crl",
+  columnRuleStyle: "crs",
+  columnRuleWidth: "crw",
+  columnRuleColor: "crc",
+  columnSpan: "csp",
+  wordBreak: "wb",
+  whiteSpace: "wsp",
+  overflowWrap: "ow",
+  textOverflow: "to",
+
   //-- EffectsAccordion --//
   mixBlendMode: "mbm",
   opacity: "op",
@@ -67,23 +95,6 @@ export const FULL_TO_SHORT = {
   maxWidth: "maw",
   maxHeight: "mah",
   overflow: "ovf",
-
-  // typography
-  fontSize: "fz",
-  fontWeight: "fw",
-  textAlign: "ta",
-  color: "cl",
-  fontFamily: "ffm",
-  lineHeight: "lh",
-  textTransform: "tt",
-  strokeColor: "sc",
-  strokeWidth: "sw",
-  textDecoration: "td",
-  textDecorationSkipInk: "tdsi",
-  fontStyle: "fst",
-  isItalic: "ii",
-  isUnderline: "iu",
-  isStrikethrough: "is",
 } as const
 
 export type FullStylePropKey = keyof typeof FULL_TO_SHORT
