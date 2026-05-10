@@ -642,11 +642,11 @@ export const ImageGradientMenuPopper = ({
                   { id: "repeat-x", content: <TileIcon size={16} fill={iconFill}/> },
                   {
                     id: "repeat-y",
-                    content: <Box sx={{ display: "inline-flex", transform: "scaleX(-1)" }}>
+                    content: <Box sx={{ display: "inline-flex", transform: "rotate(90deg)" }}>
                       <MoreHorizontalIcon size={16} fill={iconFill}/>
                     </Box>,
                   },
-                  { id: "no-repeat", content: <CloseIcon size={16} fill={iconFill}/> },
+                  { id: "no-repeat", content: <CloseIcon size={12} fill={iconFill}/> },
                 ]}
               />
               <CraftSettingsButtonGroup
