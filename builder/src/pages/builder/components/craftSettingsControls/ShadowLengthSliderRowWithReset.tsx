@@ -1,10 +1,10 @@
 import { Box } from "@mui/material"
-import { CraftSettingsResetLabelWithPopper } from "../../components/craftSettingsControls/CraftSettingsResetLabelWithPopper.tsx"
-import { CraftSettingsSliderWithUnit } from "../../components/craftSettingsControls/CraftSettingsSliderWithUnit.tsx"
+import { CraftSettingsResetLabelWithPopper } from "./CraftSettingsResetLabelWithPopper.tsx"
+import { CraftSettingsSliderWithUnit } from "./CraftSettingsSliderWithUnit.tsx"
 import {
   BOX_SHADOW_LENGTH_UNITS,
   commitLength,
-} from "../EffectsAccordion/boxShadowUtils.ts"
+} from "../../craftStylesComponents/EffectsAccordion/boxShadowUtils.ts"
 
 interface Props {
   label: string

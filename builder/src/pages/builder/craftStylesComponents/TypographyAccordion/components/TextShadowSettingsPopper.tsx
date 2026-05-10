@@ -4,12 +4,12 @@ import type { Ref } from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { COLORS } from "../../../../../theme/colors.ts"
 import { CraftSettingsColorField } from "../../../components/craftSettingsControls/CraftSettingsColorField.tsx"
-import { ShadowLengthSliderRowWithReset } from "../../shared/ShadowLengthSliderRowWithReset.tsx"
+import { ShadowLengthSliderRowWithReset } from "../../../components/craftSettingsControls/ShadowLengthSliderRowWithReset.tsx"
 import {
   DEFAULT_TEXT_SHADOW,
   type TextShadowParts,
   textShadowFieldDiffersFromDefault,
-} from "../textShadowUtils.ts"
+} from "../utils/textShadowUtils.ts"
 
 const TEXT_SHADOW_SLIDER_ROWS = [
   { label: "X", key: "offsetX" as const, min: -100, max: 100 },

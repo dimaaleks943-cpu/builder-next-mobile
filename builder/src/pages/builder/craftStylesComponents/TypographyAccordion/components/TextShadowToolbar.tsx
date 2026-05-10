@@ -1,6 +1,6 @@
 import type { RefObject } from "react"
-import { ShadowEffectToolbar } from "../../shared/ShadowEffectToolbar.tsx"
-import type { TextShadowParts } from "../textShadowUtils.ts"
+import { ShadowEffectToolbar } from "../../../components/craftSettingsControls/ShadowEffectToolbar.tsx"
+import type { TextShadowParts } from "../utils/textShadowUtils.ts"
 
 interface Props {
   hasTextShadowConfig: boolean

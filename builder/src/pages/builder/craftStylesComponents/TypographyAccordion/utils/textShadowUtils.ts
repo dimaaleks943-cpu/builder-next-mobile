@@ -1,8 +1,8 @@
-import type { PreviewViewport } from "../../builder.enum.ts"
-import { getResponsiveStyleProp } from "../../responsiveStyle.ts"
+import type { PreviewViewport } from "../../../builder.enum.ts"
+import { getResponsiveStyleProp } from "../../../responsiveStyle.ts"
 import {
   normalizeShadowLengthToken,
-} from "../EffectsAccordion/boxShadowUtils.ts"
+} from "../../EffectsAccordion/boxShadowUtils.ts"
 
 export interface TextShadowParts {
   offsetX: string

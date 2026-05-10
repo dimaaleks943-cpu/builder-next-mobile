@@ -17,7 +17,7 @@ import { CraftSettingsColorField } from "../../../components/craftSettingsContro
 import type {
   TextDecorationAdvancedParts,
   TextDecorationLinePreset,
-} from "../textDecorationAdvanced.ts"
+} from "../utils/textDecorationAdvanced.ts"
 
 const COLOR_COMMIT_DEBOUNCE_MS = 120
 

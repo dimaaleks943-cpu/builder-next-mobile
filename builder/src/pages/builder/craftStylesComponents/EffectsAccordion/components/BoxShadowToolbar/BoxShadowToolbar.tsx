@@ -1,6 +1,6 @@
 import type { RefObject } from "react"
 import type { BoxShadowParts } from "../../boxShadowUtils.ts"
-import { ShadowEffectToolbar } from "../../../shared/ShadowEffectToolbar.tsx"
+import { ShadowEffectToolbar } from "../../../../components/craftSettingsControls/ShadowEffectToolbar.tsx"
 
 interface Props {
   hasBoxShadowConfig: boolean

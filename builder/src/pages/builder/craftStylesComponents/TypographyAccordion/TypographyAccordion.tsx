@@ -38,7 +38,7 @@ import {
   buildTextDecorationAdvanced,
   parseTextDecorationAdvanced,
   type TextDecorationAdvancedParts,
-} from "./textDecorationAdvanced.ts"
+} from "./utils/textDecorationAdvanced.ts"
 import { TypographyBreakingRow } from "./components/TypographyBreakingRow.tsx"
 import { TypographyWrapTruncateSection } from "./components/TypographyWrapTruncateSection.tsx"
 import { usePreviewViewport } from "../../context/PreviewViewportContext.tsx"
@@ -63,7 +63,7 @@ import {
   parseTextShadowFromProp,
   TEXT_SHADOW_DRAFT_KEY,
   type TextShadowParts,
-} from "./textShadowUtils.ts"
+} from "./utils/textShadowUtils.ts"
 
 interface SelectedTypographyProps {
   fontFamily?: string;
