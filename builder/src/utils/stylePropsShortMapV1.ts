@@ -85,6 +85,7 @@ export const FULL_TO_SHORT = {
 
   // background
   backgroundColor: "bgc",
+  backgroundImage: "bgi",
   backgroundClip: "bgcl",
   WebkitTextFillColor: "wtfc",
 

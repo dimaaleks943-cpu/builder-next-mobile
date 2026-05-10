@@ -6,8 +6,13 @@ import {
   IconButton,
   Typography,
 } from "@mui/material"
-import type { ChangeEvent } from "react"
-import { useEffect, useRef, useState } from "react"
+import {
+  type ChangeEvent,
+  type MouseEvent as ReactMouseEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../../theme/colors.ts"
 import { AddIcon } from "../../../../icons/AddIcon.tsx"
@@ -18,6 +23,10 @@ import {
   getResponsiveStyleProp,
   setResponsiveStyleProp,
 } from "../../responsiveStyle.ts"
+import {
+  ImageGradientMenuPopper,
+  type BackgroundImageCommitOptions,
+} from "./components/ImageGradientMenuPopper.tsx"
 
 const DEFAULT_BG_DISPLAY = COLORS.white
 
@@ -65,6 +74,10 @@ export const BackgroundAccordion = () => {
 
   const [colorDraft, setColorDraft] = useState<string>(DEFAULT_BG_DISPLAY)
   const colorTimeoutRef = useRef<number | undefined>(undefined)
+  const [imageGradientMenuAnchor, setImageGradientMenuAnchor] =
+    useState<HTMLElement | null>(null)
+  const imageGradientMenuPopperRef = useRef<HTMLDivElement | null>(null)
+  const imageGradientRowRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     setColorDraft(
@@ -72,6 +85,19 @@ export const BackgroundAccordion = () => {
         DEFAULT_BG_DISPLAY,
     )
   }, [selectedProps, selectedId, viewport])
+
+  useEffect(() => {
+    if (!imageGradientMenuAnchor) return
+    const onDocMouseDown = (event: MouseEvent) => {
+      const target = event.target as Node
+      if (imageGradientRowRef.current?.contains(target)) return
+      if (imageGradientMenuPopperRef.current?.contains(target)) return
+      setImageGradientMenuAnchor(null)
+    }
+    document.addEventListener("mousedown", onDocMouseDown, true)
+
+    return () => document.removeEventListener("mousedown", onDocMouseDown, true)
+  }, [imageGradientMenuAnchor])
 
   if (!selectedId || !selectedProps) {
     return null
@@ -128,6 +154,83 @@ export const BackgroundAccordion = () => {
     })
   }
 
+  const toggleImageGradientMenu = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    setImageGradientMenuAnchor((prev) =>
+      prev ? null : event.currentTarget,
+    )
+  }
+
+  const backgroundImageRaw = getResponsiveStyleProp(
+    selectedProps,
+    "backgroundImage",
+    viewport,
+  ) as string | undefined
+
+  const backgroundSizeRaw = getResponsiveStyleProp(
+    selectedProps,
+    "backgroundSize",
+    viewport,
+  ) as string | undefined
+
+  const backgroundPositionRaw = getResponsiveStyleProp(
+    selectedProps,
+    "backgroundPosition",
+    viewport,
+  ) as string | undefined
+
+  const backgroundRepeatRaw = getResponsiveStyleProp(
+    selectedProps,
+    "backgroundRepeat",
+    viewport,
+  ) as string | undefined
+
+  const backgroundAttachmentRaw = getResponsiveStyleProp(
+    selectedProps,
+    "backgroundAttachment",
+    viewport,
+  ) as string | undefined
+
+  const commitBackgroundImage = (
+    next: string | undefined,
+    options?: BackgroundImageCommitOptions,
+  ) => {
+    actions.setProp(selectedId, (props: any) => {
+      setResponsiveStyleProp(props, "backgroundImage", next, viewport)
+      if (options?.urlFillDefaults === "apply") {
+        setResponsiveStyleProp(props, "backgroundPosition", "0px 0px", viewport)
+        setResponsiveStyleProp(props, "backgroundSize", "auto", viewport)
+      }
+      if (options?.urlFillDefaults === "clear") {
+        setResponsiveStyleProp(props, "backgroundPosition", undefined, viewport)
+        setResponsiveStyleProp(props, "backgroundSize", undefined, viewport)
+      }
+    })
+  }
+
+  const commitBackgroundSize = (next: string | undefined) => {
+    actions.setProp(selectedId, (props: any) => {
+      setResponsiveStyleProp(props, "backgroundSize", next, viewport)
+    })
+  }
+
+  const commitBackgroundPosition = (next: string | undefined) => {
+    actions.setProp(selectedId, (props: any) => {
+      setResponsiveStyleProp(props, "backgroundPosition", next, viewport)
+    })
+  }
+
+  const commitBackgroundRepeat = (next: string | undefined) => {
+    actions.setProp(selectedId, (props: any) => {
+      setResponsiveStyleProp(props, "backgroundRepeat", next, viewport)
+    })
+  }
+
+  const commitBackgroundAttachment = (next: string | undefined) => {
+    actions.setProp(selectedId, (props: any) => {
+      setResponsiveStyleProp(props, "backgroundAttachment", next, viewport)
+    })
+  }
+
   return (
     <Accordion disableGutters>
       <AccordionSummary
@@ -150,6 +253,7 @@ export const BackgroundAccordion = () => {
           }}
         >
           <Box
+            ref={imageGradientRowRef}
             sx={{
               display: "flex",
               alignItems: "center",
@@ -168,13 +272,30 @@ export const BackgroundAccordion = () => {
             </Typography>
             <IconButton
               size="small"
-              onClick={() => {}}
+              onClick={toggleImageGradientMenu}
               sx={{ color: COLORS.purple400, padding: "4px" }}
               aria-label="Add image or gradient"
+              aria-expanded={Boolean(imageGradientMenuAnchor)}
             >
               <AddIcon width={20} height={20} fill={COLORS.purple400} />
             </IconButton>
           </Box>
+
+          <ImageGradientMenuPopper
+            open={Boolean(imageGradientMenuAnchor)}
+            anchorEl={imageGradientMenuAnchor}
+            popperRef={imageGradientMenuPopperRef}
+            backgroundImage={backgroundImageRaw}
+            backgroundSize={backgroundSizeRaw}
+            backgroundPosition={backgroundPositionRaw}
+            backgroundRepeat={backgroundRepeatRaw}
+            backgroundAttachment={backgroundAttachmentRaw}
+            onCommitBackgroundImage={commitBackgroundImage}
+            onCommitBackgroundSize={commitBackgroundSize}
+            onCommitBackgroundPosition={commitBackgroundPosition}
+            onCommitBackgroundRepeat={commitBackgroundRepeat}
+            onCommitBackgroundAttachment={commitBackgroundAttachment}
+          />
 
           <CraftSettingsColorField
             label="Color"

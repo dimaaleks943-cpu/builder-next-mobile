@@ -85,7 +85,8 @@ export const CraftSettingsButtonGroup = ({
                 borderRadius: "2px",
                 border: "none",
                 cursor: "pointer",
-                fontSize: "12px",
+                fontSize: "10px",
+                lineHeight: "14px",
                 color: COLORS.purple400,
                 backgroundColor: isActive ? COLORS.white : COLORS.purple100,
               }}

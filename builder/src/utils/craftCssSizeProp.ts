@@ -47,6 +47,29 @@ export const FONT_SIZE_UNIT_MENU: readonly CraftSizeMenuToken[] = [
   "vmax",
 ]
 
+/** Font-size style control: no `auto`; menu order matches UI. */
+export const BACKGROUND_SIZE_UNIT_MENU: readonly CraftSizeMenuToken[] = [
+  "px",
+  "%",
+  "vw",
+  "vh",
+  "svw",
+  "svh",
+  "em",
+  "rem",
+  "auto",
+]
+
+/** `background-position` axes: matches image gradient position picker. */
+export const BACKGROUND_POSITION_UNIT_MENU: readonly CraftSizeMenuToken[] = [
+  "px",
+  "%",
+  "vw",
+  "vh",
+  "svw",
+  "svh",
+]
+
 const LENGTH_RE =
   /^(-?(?:\d+\.?\d*|\.\d+))(px|%|em|rem|ch|vw|vh|svw|svh|pt|vmin|vmax)$/i
 
