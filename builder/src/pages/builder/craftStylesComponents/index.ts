@@ -4,7 +4,7 @@ export { SizeAccordion } from "./SizeAccordion.tsx";
 export { SpacingAccordion } from "./SpacingAccordion.tsx";
 export { BordersAccordion } from "./BordersAccordion.tsx";
 export { EffectsAccordion } from "./EffectsAccordion/EffectsAccordion.tsx";
-export { BackgroundAccordion } from "./BackgroundAccordion.tsx";
+export { BackgroundAccordion } from "./BackgroundAccordion/BackgroundAccordion.tsx";
 export { TypographyAccordion } from "./TypographyAccordion/TypographyAccordion.tsx";
 export { CraftSettingsSelect } from "../components/craftSettingsControls/CraftSettingsSelect.tsx";
 export { CraftSettingsInput } from "../components/craftSettingsControls/CraftSettingsInput.tsx";

@@ -9,15 +9,15 @@ import {
 import type { ChangeEvent } from "react"
 import { useEffect, useRef, useState } from "react"
 import { useEditor } from "@craftjs/core"
-import { COLORS } from "../../../theme/colors.ts"
-import { AddIcon } from "../../../icons/AddIcon.tsx"
-import { CraftSettingsColorField } from "../components/craftSettingsControls/CraftSettingsColorField.tsx"
-import { CraftSettingsSelect } from "../components/craftSettingsControls/CraftSettingsSelect.tsx"
-import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
+import { COLORS } from "../../../../theme/colors.ts"
+import { AddIcon } from "../../../../icons/AddIcon.tsx"
+import { CraftSettingsColorField } from "../../components/craftSettingsControls/CraftSettingsColorField.tsx"
+import { CraftSettingsSelect } from "../../components/craftSettingsControls/CraftSettingsSelect.tsx"
+import { usePreviewViewport } from "../../context/PreviewViewportContext.tsx"
 import {
   getResponsiveStyleProp,
   setResponsiveStyleProp,
-} from "../responsiveStyle.ts"
+} from "../../responsiveStyle.ts"
 
 const DEFAULT_BG_DISPLAY = COLORS.white
 
