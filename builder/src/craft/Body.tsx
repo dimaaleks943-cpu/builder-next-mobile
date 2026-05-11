@@ -36,7 +36,6 @@ const {
         //TODO изменить после layuotBLock
         display: layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block",
         position: "relative",
-        boxSizing: "border-box",
       }}
     >
       {props.children}
@@ -50,6 +49,7 @@ const {
     style: {
       [PreviewViewport.DESKTOP]: {
         layout: "block" as BodyLayoutMode,
+        boxSizing: "border-box",
         marginTop: 0,
         marginRight: 0,
         marginBottom: 0,

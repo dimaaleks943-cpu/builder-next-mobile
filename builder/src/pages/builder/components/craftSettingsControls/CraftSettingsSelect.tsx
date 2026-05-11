@@ -34,6 +34,8 @@ interface Props {
    * that closes on outside `mousedown` using `Node.contains()` on a panel ref.
    */
   disableResetPopperPortal?: boolean;
+  /** Fires on pointer down on the native `<select>` (e.g. commit implicit default before opening). */
+  onNativeSelectPointerDown?: () => void;
 }
 
 export const CraftSettingsSelect = ({
@@ -45,6 +47,7 @@ export const CraftSettingsSelect = ({
   showInlineLabel = true,
   labelReset,
   disableResetPopperPortal = false,
+  onNativeSelectPointerDown,
 }: Props) => {
   const SelectShell = showInlineLabel ? CraftSettingsSelectShellInline : CraftSettingsSelectShellFullRow
 
@@ -72,6 +75,9 @@ export const CraftSettingsSelect = ({
           component="select"
           value={value}
           onChange={onChange}
+          onPointerDown={() => {
+            onNativeSelectPointerDown?.()
+          }}
           disabled={disabled}
           aria-label={showInlineLabel ? undefined : label}
           sx={{

@@ -46,7 +46,6 @@ export const CraftBlock = (props: BlockProps) => {
         display: layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block",
         alignItems: layout === "flex" ? flexAlignItems : undefined,
         justifyContent: layout === "flex" ? flexJustifyContent : undefined,
-        boxSizing: "border-box",
         placeItems:
           layout === "grid" && placeItemsY != null && placeItemsX != null
             ? `${placeItemsY} ${placeItemsX}`

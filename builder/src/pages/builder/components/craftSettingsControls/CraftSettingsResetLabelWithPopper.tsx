@@ -103,20 +103,14 @@ export const CraftSettingsResetLabelWithPopper = (props: Props) => {
 
     return props.variant === "fluid" ? (
       <>
-        <CraftSettingsResetTriggerFluidLabel
-          onClick={handleAnchorClick}
-          component="span"
-        >
+        <CraftSettingsResetTriggerFluidLabel onClick={handleAnchorClick}>
           {props.label}
         </CraftSettingsResetTriggerFluidLabel>
         {renderPopper()}
       </>
     ) : (
       <>
-        <CraftSettingsResetTriggerFixedLabel
-          onClick={handleAnchorClick}
-          component="span"
-        >
+        <CraftSettingsResetTriggerFixedLabel onClick={handleAnchorClick}>
           {props.label}
         </CraftSettingsResetTriggerFixedLabel>
         {renderPopper()}

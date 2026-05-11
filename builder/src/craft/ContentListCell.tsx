@@ -102,7 +102,6 @@ export const CraftContentListCell = (props: ContentListCellProps) => {
           layout === "grid" && placeItemsY != null && placeItemsX != null
             ? `${placeItemsY} ${placeItemsX}`
             : undefined,
-        boxSizing: "border-box",
         backgroundColor: selected
           ? "rgba(108, 93, 211, 0.08)"
           : (backgroundColor ?? "transparent"),
