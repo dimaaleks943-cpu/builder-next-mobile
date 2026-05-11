@@ -20,12 +20,15 @@ import {
   Box,
   IconButton,
   Typography,
+  type PopperProps,
 } from "@mui/material"
 import {
   type ChangeEvent,
   type MouseEvent as ReactMouseEvent,
   useEffect,
   useLayoutEffect,
+  useCallback,
+  useMemo,
   useRef,
   useState,
 } from "react"
@@ -48,17 +51,19 @@ import {
   BACKGROUND_IMAGE_LAYER_VISIBLE_KEY,
   BACKGROUND_IMAGE_LAYERS_KEY,
   clearAllBackgroundLayers,
+  DEFAULT_PLACEHOLDER_BACKGROUND_IMAGE_URL,
   ensureCanonicalStyleSlots,
   getBackgroundLayersModel,
   getCommaPropParts, inferBackgroundFillKind,
   newBackgroundLayerId, parseCssUrl,
   persistBackgroundLayersModel,
   prependSlotToCommaProp,
+  toCssBackgroundUrlValue,
   removeCommaPropLayerAt,
   reorderCommaPropLayers,
   replaceCommaPropLayer,
   syncPaintedBackgroundStack,
-} from "./backgroundImageLayersUtils.ts"
+} from "./utils/backgroundImageLayersUtils.ts"
 import { SortableBackgroundLayerRow } from "./components/SortableBackgroundLayerRow.tsx"
 import type { BackgroundImageCommitOptions } from "./components/ImageGradientMenuPopper.tsx";
 import { ImageGradientMenuPopper } from "./components/ImageGradientMenuPopper.tsx";
@@ -100,7 +105,6 @@ type ImageGradientMenuTarget =
   | { kind: "layer"; index: number }
 
 type ImageGradientMenuState = {
-  anchor: HTMLElement
   target: ImageGradientMenuTarget
 }
 
@@ -120,10 +124,25 @@ export const BackgroundAccordion = () => {
   const colorTimeoutRef = useRef<number | undefined>(undefined)
   const [imageGradientMenu, setImageGradientMenu] =
     useState<ImageGradientMenuState | null>(null)
+  const menuAnchorElementRef = useRef<HTMLElement | null>(null)
   const imageGradientMenuPopperRef = useRef<HTMLDivElement | null>(null)
   const imageGradientRowRef = useRef<HTMLDivElement | null>(null)
   const imageGradientMenuRef = useRef<ImageGradientMenuState | null>(null)
   imageGradientMenuRef.current = imageGradientMenu
+  const pendingEmptyBackgroundSeedRef = useRef(false)
+
+  const closeImageGradientMenu = useCallback(() => {
+    menuAnchorElementRef.current = null
+    setImageGradientMenu(null)
+  }, [])
+
+  const imageGradientMenuAnchorEl = useMemo((): PopperProps["anchorEl"] => {
+    if (!imageGradientMenu) return null
+    return () => menuAnchorElementRef.current as HTMLElement
+  }, [imageGradientMenu])
+  const commitBackgroundImageRef = useRef<
+    (next: string | undefined, options?: BackgroundImageCommitOptions) => void
+  >(() => {})
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -142,15 +161,19 @@ export const BackgroundAccordion = () => {
   useEffect(() => {
     if (!imageGradientMenu) return
     const onDocMouseDown = (event: MouseEvent) => {
-      const target = event.target as Node
+      const target = event.target
+      if (!(target instanceof Node)) return
       if (imageGradientRowRef.current?.contains(target)) return
       if (imageGradientMenuPopperRef.current?.contains(target)) return
-      setImageGradientMenu(null)
+      if (target instanceof Element && target.closest("[data-bg-gradient-popper]")) {
+        return
+      }
+      closeImageGradientMenu()
     }
-    document.addEventListener("mousedown", onDocMouseDown)
+    document.addEventListener("mousedown", onDocMouseDown, true)
 
-    return () => document.removeEventListener("mousedown", onDocMouseDown)
-  }, [imageGradientMenu])
+    return () => document.removeEventListener("mousedown", onDocMouseDown, true)
+  }, [closeImageGradientMenu, imageGradientMenu])
 
   useLayoutEffect(() => {
     if (!selectedId || !selectedProps) return
@@ -189,6 +212,18 @@ export const BackgroundAccordion = () => {
       syncPaintedBackgroundStack(props, viewport, model)
     })
   }, [actions, selectedId, selectedProps, viewport])
+
+  useEffect(() => {
+    if (!selectedId || !selectedProps) return
+    if (!pendingEmptyBackgroundSeedRef.current) return
+    if (!imageGradientMenu || imageGradientMenu.target.kind !== "add") return
+    if (getBackgroundLayersModel(selectedProps, viewport).layers.length > 0) return
+    pendingEmptyBackgroundSeedRef.current = false
+    commitBackgroundImageRef.current(
+      toCssBackgroundUrlValue(DEFAULT_PLACEHOLDER_BACKGROUND_IMAGE_URL),
+      { urlFillDefaults: "apply" },
+    )
+  }, [imageGradientMenu, selectedId, selectedProps, viewport])
 
   if (!selectedId || !selectedProps) {
     return null
@@ -249,12 +284,17 @@ export const BackgroundAccordion = () => {
   }
 
   const toggleAddImageGradientMenu = (event: ReactMouseEvent<HTMLElement>) => {
-    setImageGradientMenu((prev) =>
-      prev?.anchor === event.currentTarget ? null : {
-        anchor: event.currentTarget,
-        target: { kind: "add" },
-      },
-    )
+    const el = event.currentTarget
+    menuAnchorElementRef.current = el
+    setImageGradientMenu((prev) => {
+      if (prev?.target.kind === "add") {
+        pendingEmptyBackgroundSeedRef.current = false
+        menuAnchorElementRef.current = null
+        return null
+      }
+      pendingEmptyBackgroundSeedRef.current = layersModel.layers.length === 0
+      return { target: { kind: "add" } }
+    })
   }
 
   const menuTarget = imageGradientMenu?.target
@@ -359,7 +399,10 @@ export const BackgroundAccordion = () => {
           return
         }
         clearAllBackgroundLayers(props, viewport)
-        queueMicrotask(() => setImageGradientMenu(null))
+        queueMicrotask(() => {
+          menuAnchorElementRef.current = null
+          setImageGradientMenu(null)
+        })
         return
       }
 
@@ -386,7 +429,7 @@ export const BackgroundAccordion = () => {
         queueMicrotask(() => {
           setImageGradientMenu((prev) =>
             prev?.target.kind === "add"
-              ? { anchor: prev.anchor, target: { kind: "layer", index: 0 } }
+              ? { target: { kind: "layer", index: 0 } }
               : prev,
           )
         })
@@ -407,6 +450,8 @@ export const BackgroundAccordion = () => {
       }
     })
   }
+
+  commitBackgroundImageRef.current = commitBackgroundImage
 
   const clearLayer = (layerIndex: number) => {
     actions.setProp(selectedId, (props: any) => {
@@ -432,10 +477,12 @@ export const BackgroundAccordion = () => {
     })
     setImageGradientMenu((prev) => {
       if (!prev || prev.target.kind !== "layer") return prev
-      if (prev.target.index === layerIndex) return null
+      if (prev.target.index === layerIndex) {
+        menuAnchorElementRef.current = null
+        return null
+      }
       if (prev.target.index > layerIndex) {
         return {
-          anchor: prev.anchor,
           target: { kind: "layer", index: prev.target.index - 1 },
         }
       }
@@ -474,7 +521,7 @@ export const BackgroundAccordion = () => {
       const layerIds = arrayMove(model.layerIds, oldIndex, newIndex)
       persistBackgroundLayersModel(props, viewport, { layers, visible, layerIds })
     })
-    setImageGradientMenu(null)
+    closeImageGradientMenu()
   }
 
   const commitCommaLayer = (
@@ -630,16 +677,18 @@ export const BackgroundAccordion = () => {
                               )
                             }
                             onOpenMenu={(e) => {
-                              setImageGradientMenu((prev) =>
-                                prev?.anchor === e.currentTarget &&
-                                prev.target.kind === "layer" &&
-                                prev.target.index === i
-                                  ? null
-                                  : {
-                                    anchor: e.currentTarget,
-                                    target: { kind: "layer", index: i },
-                                  },
-                              )
+                              const el = e.currentTarget
+                              menuAnchorElementRef.current = el
+                              setImageGradientMenu((prev) => {
+                                if (
+                                  prev?.target.kind === "layer" &&
+                                  prev.target.index === i
+                                ) {
+                                  menuAnchorElementRef.current = null
+                                  return null
+                                }
+                                return { target: { kind: "layer", index: i } }
+                              })
                             }}
                             onToggleCanvasVisibility={() => toggleLayerVisible(i)}
                             onClear={() => clearLayer(i)}
@@ -655,7 +704,7 @@ export const BackgroundAccordion = () => {
 
           <ImageGradientMenuPopper
             open={Boolean(imageGradientMenu)}
-            anchorEl={imageGradientMenu?.anchor ?? null}
+            anchorEl={imageGradientMenuAnchorEl}
             popperRef={imageGradientMenuPopperRef}
             backgroundImage={popperBackgroundImage}
             backgroundSize={popperBackgroundSize}

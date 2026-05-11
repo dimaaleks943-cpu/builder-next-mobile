@@ -1,4 +1,4 @@
-import { COLORS } from "../../../../../theme/colors.ts"
+import { COLORS } from "../../../../theme/colors.ts"
 import {
   PositionGridFrame,
   PositionNineGridCell,
@@ -6,7 +6,7 @@ import {
   PositionNineGridDot,
   PositionNineGridDotShell,
   PositionNineGridLayout,
-} from "./ImageGradientMenuPopper.styles.ts"
+} from "./BackgroundPositionNineGrid.styles.ts"
 
 const BG_POSITION_PRESETS = [
   "0% 0%",
@@ -44,7 +44,7 @@ const normalizePercentAxis = (token: string): string | null => {
   return `${n}%`
 }
 
-/** Returns canonical `x% y%` only when both axes are plain percentages; otherwise null (no preset match). */
+/** Возвращает каноничное `x% y%`, только если обе оси — проценты; иначе null (нет совпадения с пресетом сетки). */
 const normalizeBgPositionPair = (raw: string | undefined): string | null => {
   if (!raw?.trim()) return null
   const tokens = raw.trim().replace(/\s+/g, " ").split(" ")
@@ -79,15 +79,13 @@ const PositionDiamondFrame = () => (
 )
 
 interface Props {
-  backgroundPosition: string | undefined
-  onCommit: (next: string) => void
+  /** Значение в виде `left top`, например `50% 100%`. */
+  positionPair: string | undefined
+  onCommitPair: (nextPair: string) => void
 }
 
-export const BackgroundPositionNineGrid = ({
-  backgroundPosition,
-  onCommit,
-}: Props) => {
-  const normalized = normalizeBgPositionPair(backgroundPosition)
+export const BackgroundPositionNineGrid = ({ positionPair, onCommitPair }: Props) => {
+  const normalized = normalizeBgPositionPair(positionPair)
   const selectedIndex =
     normalized !== null
       ? (BG_POSITION_PRESETS as readonly string[]).indexOf(normalized)
@@ -105,7 +103,7 @@ export const BackgroundPositionNineGrid = ({
               aria-label={PRESET_ARIA[index]}
               aria-pressed={selected}
               onClick={() => {
-                onCommit(preset)
+                onCommitPair(preset)
               }}
             >
               <PositionNineGridDotShell>

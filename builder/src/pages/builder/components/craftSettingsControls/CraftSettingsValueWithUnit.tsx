@@ -18,6 +18,15 @@ import {
   parseSizeProp,
   unitTokenLabel,
 } from "../../../../utils/craftCssSizeProp.ts"
+import {
+  degreesToUnitValue,
+  formatAngleInputDisplay,
+  formatGradientAngleCss,
+  parseGradientAnglePrefix,
+  unitValueToDegrees,
+  wrapUnitValue,
+  type GradientAngleUnit,
+} from "../../craftStylesComponents/BackgroundAccordion/utils/linearGradientAngleUtils.ts"
 import { CraftSettingsFluidLabel } from "./styles.ts"
 
 const orderedAllowedTokens = (
@@ -34,6 +43,59 @@ const defaultMenuSelection = (
   const first = ordered.find((u) => u !== "auto")
   return first ?? "px"
 }
+
+const ANGLE_NUM_RE = /^-?(?:\d+\.?\d*|\.\d+)$/
+
+const trimAngleNumericString = (s: string): string => {
+  if (/^\./.test(s)) return `0${s}`
+  if (/\.$/.test(s)) return s.slice(0, -1)
+  return s
+}
+
+const orderedGradientAngleUnits = (
+  allowed: readonly GradientAngleUnit[] | undefined,
+): GradientAngleUnit[] => (allowed?.length ? [...allowed] : [])
+
+const viewStateFromGradientAngleProp = (
+  value: unknown,
+  allowed: readonly GradientAngleUnit[],
+): { inputText: string; menuSelection: GradientAngleUnit | "custom" } => {
+  const allowedSet = new Set<GradientAngleUnit>(allowed)
+  if (allowed.length === 0) {
+    return { inputText: "", menuSelection: "deg" }
+  }
+  if (typeof value !== "string") {
+    return { inputText: "", menuSelection: allowed[0]! }
+  }
+  const m = value.trim().match(/^(-?(?:\d+\.?\d*|\.\d+))(deg|grad|turn|rad)$/i)
+  if (m) {
+    const u = m[2]!.toLowerCase() as GradientAngleUnit
+    if (allowedSet.has(u)) {
+      return { inputText: trimAngleNumericString(m[1]!), menuSelection: u }
+    }
+  }
+  return { inputText: value.trim(), menuSelection: "custom" }
+}
+
+const commitGradientAngleFromInput = (
+  inputText: string,
+  menuSelection: GradientAngleUnit | "custom",
+): string | undefined => {
+  if (menuSelection === "custom") return undefined
+  const t = inputText.trim()
+  if (t === "") return undefined
+  if (!ANGLE_NUM_RE.test(t)) return undefined
+  const n = Number(trimAngleNumericString(t))
+  if (!Number.isFinite(n)) return undefined
+  const wrapped = wrapUnitValue(n, menuSelection)
+  return formatGradientAngleCss(wrapped, menuSelection)
+}
+
+const gradientAngleUnitMenuLabel = (u: GradientAngleUnit): string =>
+  u === "deg" ? "DEG" : u === "rad" ? "RAD" : u === "turn" ? "TURN" : "GRAD"
+
+const isGradientAngleUnitToken = (x: string): x is GradientAngleUnit =>
+  x === "deg" || x === "grad" || x === "turn" || x === "rad"
 
 const viewStateFromProp = (
   value: unknown,
@@ -73,6 +135,8 @@ interface Props {
   value: unknown;
   onCommit: (next: string | number | undefined) => void;
   allowedUnits?: readonly CraftSizeMenuToken[];
+  /** CSS gradient angle units (`75deg`…); меню и парсинг как у размеров, но с wrap по кругу. */
+  gradientAngleUnits?: readonly GradientAngleUnit[];
   disabled?: boolean;
   placeholder?: string;
   mode?: FormatSizePropMode;
@@ -90,6 +154,7 @@ export const CraftSettingsValueWithUnit = ({
   value,
   onCommit,
   allowedUnits,
+  gradientAngleUnits,
   disabled = false,
   placeholder = "Auto",
   mode = "web",
@@ -100,15 +165,21 @@ export const CraftSettingsValueWithUnit = ({
   customWidth = "42px",
   unitAffixVariant = "chip",
 }: Props) => {
-  const resolvedAllowed = allowedUnits ?? CRAFT_SIZE_MENU_UNITS_WEB
-  const unitOptions = useMemo(
-    () => orderedAllowedTokens(resolvedAllowed),
-    [resolvedAllowed],
+  const resolvedAngleUnits = useMemo(
+    () => orderedGradientAngleUnits(gradientAngleUnits),
+    [gradientAngleUnits],
   )
+  const isGradientAngleMode = resolvedAngleUnits.length > 0
+
+  const resolvedAllowed = allowedUnits ?? CRAFT_SIZE_MENU_UNITS_WEB
+  const unitOptions = useMemo(() => {
+    if (isGradientAngleMode) return resolvedAngleUnits
+    return orderedAllowedTokens(resolvedAllowed)
+  }, [isGradientAngleMode, resolvedAngleUnits, resolvedAllowed])
 
   const [inputText, setInputText] = useState("")
   const [menuSelection, setMenuSelection] =
-    useState<CraftSizeMenuSelection>("px")
+    useState<CraftSizeMenuSelection | GradientAngleUnit>(() => gradientAngleUnits?.length ? gradientAngleUnits[0]! : "px",)
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
   const menuPaperRef = useRef<HTMLDivElement | null>(null)
 
@@ -123,10 +194,16 @@ export const CraftSettingsValueWithUnit = ({
       setInputText(typeof value === "number" ? String(value) : String(value))
       return
     }
+    if (isGradientAngleMode) {
+      const next = viewStateFromGradientAngleProp(value, resolvedAngleUnits)
+      setInputText(next.inputText)
+      setMenuSelection(next.menuSelection)
+      return
+    }
     const next = viewStateFromProp(value, resolvedAllowed)
     setInputText(next.inputText)
     setMenuSelection(next.menuSelection)
-  }, [value, resolvedAllowed, unitless])
+  }, [value, resolvedAllowed, unitless, isGradientAngleMode, resolvedAngleUnits])
 
   useEffect(() => {
     if (!anchorEl) return
@@ -172,7 +249,16 @@ export const CraftSettingsValueWithUnit = ({
       onCommit(t)
       return
     }
-    const parsed = parseInputWithUnit(inputText, menuSelection)
+    if (isGradientAngleMode) {
+      const sel = menuSelection as GradientAngleUnit | "custom"
+      const out = commitGradientAngleFromInput(inputText, sel)
+      if (out !== undefined) onCommit(out)
+      return
+    }
+    const parsed = parseInputWithUnit(
+      inputText,
+      menuSelection as CraftSizeMenuSelection,
+    )
     commitParsed(parsed)
   }
 
@@ -195,6 +281,12 @@ export const CraftSettingsValueWithUnit = ({
     if (event.key === "Escape") {
       event.stopPropagation()
       setAnchorEl(null)
+      if (isGradientAngleMode) {
+        const v = viewStateFromGradientAngleProp(value, resolvedAngleUnits)
+        setInputText(v.inputText)
+        setMenuSelection(v.menuSelection)
+        return
+      }
       const v = viewStateFromProp(value, resolvedAllowed)
       setInputText(v.inputText)
       setMenuSelection(v.menuSelection)
@@ -207,36 +299,74 @@ export const CraftSettingsValueWithUnit = ({
     }
   }
 
-  const handlePickUnit = (token: CraftSizeMenuToken) => {
+  const handlePickUnit = (token: CraftSizeMenuToken | GradientAngleUnit) => {
     cancelBlurCommit()
     setAnchorEl(null)
 
     if (unitless) return
 
-    if (token === "auto") {
+    if (isGradientAngleMode && isGradientAngleUnitToken(token)) {
+      const nextUnit = token
+      const prevUnitEffective = (): GradientAngleUnit => {
+        if (menuSelection !== "custom" && isGradientAngleUnitToken(menuSelection)) {
+          return menuSelection
+        }
+        const p = parseGradientAnglePrefix(typeof value === "string" ? value : null)
+        return p.kind === "numeric" ? p.unit : nextUnit
+      }
+      const pu = prevUnitEffective()
+
+      const t = inputText.trim()
+      let angleDegCanonical: number
+      if (!ANGLE_NUM_RE.test(t)) {
+        const parsed = parseGradientAnglePrefix(typeof value === "string" ? value : null)
+        angleDegCanonical = parsed.kind === "numeric" ? parsed.angleDeg : 0
+      } else {
+        const n = Number(trimAngleNumericString(t))
+        const wrapped = wrapUnitValue(n, pu)
+        angleDegCanonical = unitValueToDegrees(wrapped, pu)
+      }
+
+      const nextVal = degreesToUnitValue(angleDegCanonical, nextUnit)
+      const nextWrapped = wrapUnitValue(nextVal, nextUnit)
+      const nextText = formatAngleInputDisplay(nextWrapped, nextUnit)
+      setMenuSelection(nextUnit)
+      setInputText(nextText)
+      onCommit(formatGradientAngleCss(nextWrapped, nextUnit))
+      return
+    }
+
+    const sizeToken = token as CraftSizeMenuToken
+    if (sizeToken === "auto") {
       setMenuSelection("auto")
       setInputText("")
       onCommit("auto")
       return
     }
-    const parsed = parseInputWithUnit(inputText, token)
-    setMenuSelection(token)
+    const parsed = parseInputWithUnit(inputText, sizeToken)
+    setMenuSelection(sizeToken)
     commitParsed(parsed)
   }
 
-  const chipLabel =
-    menuSelection === "custom"
+  const chipLabel = isGradientAngleMode
+    ? menuSelection === "custom"
+      ? "CUSTOM"
+      : gradientAngleUnitMenuLabel(menuSelection as GradientAngleUnit)
+    : menuSelection === "custom"
       ? "CUSTOM"
       : unitTokenLabel(menuSelection as CraftSizeMenuToken)
 
-  const mutedLowercaseAffix =
-    menuSelection === "custom"
+  const mutedLowercaseAffix = isGradientAngleMode
+    ? menuSelection === "custom"
+      ? "custom"
+      : String(menuSelection).toLowerCase()
+    : menuSelection === "custom"
       ? "custom"
       : menuSelection === "auto"
         ? "auto"
         : String(menuSelection).toLowerCase()
 
-  const isAuto = menuSelection === "auto"
+  const isAuto = !isGradientAngleMode && menuSelection === "auto"
   const displayValue = isAuto ? "auto" : inputText
 
   return (
@@ -358,13 +488,15 @@ export const CraftSettingsValueWithUnit = ({
             <MenuList dense>
               {unitOptions.map((token) => (
                 <MenuItem
-                  key={token}
+                  key={String(token)}
                   selected={menuSelection !== "custom" && menuSelection === token}
                   onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => handlePickUnit(token)}
+                  onClick={() => handlePickUnit(token as CraftSizeMenuToken | GradientAngleUnit)}
                   sx={{ fontSize: "12px", lineHeight: "14px" }}
                 >
-                  {unitTokenLabel(token)}
+                  {isGradientAngleMode
+                    ? gradientAngleUnitMenuLabel(token as GradientAngleUnit)
+                    : unitTokenLabel(token as CraftSizeMenuToken)}
                 </MenuItem>
               ))}
             </MenuList>

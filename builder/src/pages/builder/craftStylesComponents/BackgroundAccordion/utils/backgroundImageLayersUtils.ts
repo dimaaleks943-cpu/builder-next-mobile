@@ -1,9 +1,10 @@
 import { arrayMove } from "@dnd-kit/sortable"
-import type { PreviewViewport } from "../../builder.enum.ts"
+import backgroundImagePlaceholderUrl from "../../../../../assets/background-image.svg"
+import type { PreviewViewport } from "../../../builder.enum.ts"
 import {
   getResponsiveStyleProp,
   setResponsiveStyleProp,
-} from "../../responsiveStyle.ts"
+} from "../../../responsiveStyle.ts"
 
 export const BACKGROUND_IMAGE_LAYERS_KEY = "backgroundImageLayers"
 export const BACKGROUND_IMAGE_LAYER_VISIBLE_KEY = "backgroundImageLayerVisible"
@@ -296,6 +297,10 @@ export const prependSlotToCommaProp = (
   newSlotValue: string,
 ) => {
   const slotKey = LAYER_STYLE_SLOT_KEYS[key]
+  if (previousLayerCount <= 0) {
+    props[slotKey] = [newSlotValue]
+    return
+  }
   ensureCanonicalStyleSlots(props, viewport, previousLayerCount)
   const prev = [...(props[slotKey] as string[])]
   props[slotKey] = [newSlotValue, ...prev]
@@ -340,13 +345,156 @@ export const parseCssUrl = (raw: string | undefined): string | null => {
   return unquoted ? unquoted[1].trim() : null
 }
 
+/** Дефолтная картинка при первом добавлении фона (как в legacy Craft UI). */
+export const DEFAULT_PLACEHOLDER_BACKGROUND_IMAGE_URL = backgroundImagePlaceholderUrl
+
+export const toCssBackgroundUrlValue = (href: string) => `url(${JSON.stringify(href)})`
+
+/** Дефолтный сплошной оверлей при выборе типа overlay в редакторе фона. */
+export const DEFAULT_OVERLAY_BACKGROUND_IMAGE =
+  "linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5))"
+
+const LEGACY_OVERLAY_RGBA_MARKER = /rgba\s*\(\s*27\s*,\s*29\s*,\s*33/i
+
+export const extractLinearGradientBody = (raw: string): string | null => {
+  const t = raw.trim()
+  const exec = /^linear-gradient\s*\(/i.exec(t)
+  if (!exec) return null
+  const openIdx = exec.index + exec[0].length - 1
+  let depth = 0
+  for (let i = openIdx; i < t.length; i++) {
+    const c = t[i]
+    if (c === "(") depth++
+    else if (c === ")") {
+      depth--
+      if (depth === 0) return t.slice(openIdx + 1, i).trim()
+    }
+  }
+  return null
+}
+
+const stripTrailingGradientStopHints = (stop: string): string => {
+  let s = stop.trim()
+  s = s.replace(/\s+\d+(\.\d+)?%\s*$/i, "").trim()
+  return s
+}
+
+const gradientStopsEqualForOverlay = (a: string, b: string): boolean =>
+  stripTrailingGradientStopHints(a) === stripTrailingGradientStopHints(b)
+
+export const isUniformOverlayLinearGradient = (raw: string): boolean => {
+  const body = extractLinearGradientBody(raw)
+  if (!body) return false
+  const parts = splitTopLevelCssCommas(body)
+  if (parts.length !== 2) return false
+  return gradientStopsEqualForOverlay(parts[0]!, parts[1]!)
+}
+
+const clampUnitAlpha = (a: number): number =>
+  Number.isFinite(a) ? Math.min(1, Math.max(0, a)) : 0.5
+
+export const hexRgbToCssHex = (r: number, g: number, b: number): string => {
+  const toByte = (x: number) =>
+    Math.min(255, Math.max(0, Math.round(Number.isFinite(x) ? x : 0)))
+    .toString(16)
+    .padStart(2, "0")
+  return `#${toByte(r)}${toByte(g)}${toByte(b)}`
+}
+
+export const parseCssHexRgb = (hex: string): { r: number; g: number; b: number } | null => {
+  const h = hex.trim().replace(/^#/, "")
+  if (!/^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$/.test(h)) return null
+  const full =
+    h.length === 3 ? h.split("").map((c) => `${c}${c}`).join("") : h
+  const n = parseInt(full, 16)
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }
+}
+
+const parseRgbFromCssColorStop = (
+  stop: string,
+): { r: number; g: number; b: number; a: number } | null => {
+  const s = stripTrailingGradientStopHints(stop)
+  let m = s.match(
+    /^rgba\s*\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)$/i,
+  )
+  if (m) {
+    return {
+      r: Number(m[1]),
+      g: Number(m[2]),
+      b: Number(m[3]),
+      a: clampUnitAlpha(Number(m[4])),
+    }
+  }
+  m = s.match(/^rgb\s*\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)$/i)
+  if (m) {
+    return {
+      r: Number(m[1]),
+      g: Number(m[2]),
+      b: Number(m[3]),
+      a: 1,
+    }
+  }
+  const hex = parseCssHexRgb(s)
+  if (hex) return { ...hex, a: 1 }
+  return null
+}
+
+export const parseOverlayGradientUiState = (
+  raw: string | undefined,
+): { hex: string; alpha: number } | null => {
+  if (typeof raw !== "string" || !raw.trim()) return null
+  const t = raw.trim()
+  if (!/^linear-gradient\s*\(/i.test(t)) return null
+
+  const body = extractLinearGradientBody(t)
+  if (!body) return null
+
+  if (isUniformOverlayLinearGradient(t)) {
+    const parts = splitTopLevelCssCommas(body)
+    const parsed = parseRgbFromCssColorStop(parts[0]!)
+    if (!parsed) return null
+    return {
+      hex: hexRgbToCssHex(parsed.r, parsed.g, parsed.b),
+      alpha: parsed.a,
+    }
+  }
+
+  if (!LEGACY_OVERLAY_RGBA_MARKER.test(t)) return null
+
+  const rgbaMatch = body.match(
+    /rgba\s*\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/i,
+  )
+  if (!rgbaMatch) return null
+  return {
+    hex: hexRgbToCssHex(
+      Number(rgbaMatch[1]),
+      Number(rgbaMatch[2]),
+      Number(rgbaMatch[3]),
+    ),
+    alpha: clampUnitAlpha(Number(rgbaMatch[4])),
+  }
+}
+
+export const buildUniformOverlayBackgroundImage = (
+  hex: string,
+  alpha: number,
+): string | undefined => {
+  const rgb = parseCssHexRgb(hex)
+  if (!rgb) return undefined
+  const a = clampUnitAlpha(alpha)
+  const { r, g, b } = rgb
+  return `linear-gradient(rgba(${r}, ${g}, ${b}, ${a}), rgba(${r}, ${g}, ${b}, ${a}))`
+}
+
 export const inferBackgroundFillKind = (raw: string | undefined): BackgroundFillKind => {
   if (typeof raw !== "string" || !raw.trim()) return "url"
   const t = raw.trim()
   if (/^url\s*\(/i.test(t)) return "url"
+  if (/repeating-radial-gradient\s*\(/i.test(t)) return "radial-gradient"
   if (/radial-gradient\s*\(/i.test(t)) return "radial-gradient"
   if (/linear-gradient\s*\(/i.test(t)) {
-    if (/rgba\s*\(\s*27\s*,\s*29\s*,\s*33/i.test(t)) return "overlay"
+    if (LEGACY_OVERLAY_RGBA_MARKER.test(t)) return "overlay"
+    if (isUniformOverlayLinearGradient(t)) return "overlay"
     return "linear-gradient"
   }
   return "url"

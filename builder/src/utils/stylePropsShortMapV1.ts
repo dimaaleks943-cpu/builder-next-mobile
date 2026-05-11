@@ -58,6 +58,16 @@ export const FULL_TO_SHORT = {
   outlineOffset: "ofo",
   boxShadow: "bxs",
 
+  //-- BackgroundAccordion --//
+  backgroundColor: "bgc",
+  backgroundImage: "bgi",
+  backgroundSize: "bgsz",
+  backgroundPosition: "bgp",
+  backgroundRepeat: "bgrp",
+  backgroundAttachment: "bga",
+  backgroundClip: "bgcl",
+  WebkitTextFillColor: "wtfc",
+
   // layout
   layout: "ly",
   /** Элементов в строке сетки списка (ContentList). */
@@ -82,12 +92,6 @@ export const FULL_TO_SHORT = {
   paddingRight: "pr",
   paddingBottom: "pb",
   paddingLeft: "pl",
-
-  // background
-  backgroundColor: "bgc",
-  backgroundImage: "bgi",
-  backgroundClip: "bgcl",
-  WebkitTextFillColor: "wtfc",
 
   // size
   width: "w",

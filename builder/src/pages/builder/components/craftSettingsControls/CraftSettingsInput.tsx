@@ -1,5 +1,5 @@
 import { Box, Typography } from "@mui/material"
-import type { ChangeEvent } from "react"
+import type { ChangeEvent, FocusEvent, KeyboardEvent } from "react"
 import { COLORS } from "../../../../theme/colors.ts"
 import { CraftSettingsResetLabelWithPopper } from "./CraftSettingsResetLabelWithPopper.tsx"
 
@@ -8,6 +8,8 @@ interface Props {
   type?: "text" | "number";
   value: string | number;
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (event: FocusEvent<HTMLInputElement>) => void;
+  onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
   customStyles?: Record<string, unknown>;
   placeholder?: string;
   hideLabel?: boolean;
@@ -28,6 +30,8 @@ export const CraftSettingsInput = ({
   type = "text",
   value,
   onChange,
+  onBlur,
+  onKeyDown,
   customStyles,
   placeholder,
   hideLabel = false,
@@ -64,6 +68,8 @@ export const CraftSettingsInput = ({
         type={type}
         value={value}
         onChange={onChange}
+        onBlur={onBlur}
+        onKeyDown={onKeyDown}
         placeholder={placeholder}
         disabled={disabled}
         {...(min !== undefined ? { min } : {})}
@@ -98,6 +104,8 @@ export const CraftSettingsInput = ({
       type={type}
       value={value}
       onChange={onChange}
+      onBlur={onBlur}
+      onKeyDown={onKeyDown}
       placeholder={placeholder}
       disabled={disabled}
       {...(min !== undefined ? { min } : {})}
