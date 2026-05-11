@@ -1,4 +1,4 @@
-import { Box, Checkbox, Paper, Typography, styled } from "@mui/material"
+import { Box, Checkbox, Paper, TextField, Typography, styled } from "@mui/material"
 import { COLORS } from "../../../../../theme/colors.ts"
 
 export const ImageGradientMenuPaper = styled(Paper)(() => ({
@@ -87,34 +87,61 @@ export const ChooseImageTriggerButton = styled("button")(() => ({
   boxSizing: "border-box",
 }))
 
-export const SizeDualRow = styled(Box)(() => ({
-  display: "flex",
-  gap: "6px",
-  paddingLeft: "52px",
-  alignSelf: "stretch",
-  width: "100%",
+export const ImageUrlEntryPaper = styled(Paper)(() => ({
+  width: "200px",
+  maxWidth: "min(200px, calc(100vw - 24px))",
+  padding: "8px",
+  borderRadius: "4px",
+  boxShadow: "0px 2px 4px 0px rgba(0, 0, 0, 0.25)",
+  backgroundColor: COLORS.white,
   boxSizing: "border-box",
-}))
-
-export const UnitFieldColumn = styled(Box)(() => ({
-  flex: 1,
-  minWidth: 0,
   display: "flex",
   flexDirection: "column",
-  alignItems: "center",
-  gap: "2px",
+  gap: "8px",
 }))
 
-export const UnitFieldShell = styled(Box)(() => ({
-  alignSelf: "stretch",
+export const ImageUrlEntryActionsRow = styled(Box)(() => ({
   display: "flex",
+  justifyContent: "flex-end",
+  gap: "6px",
   alignItems: "center",
-  justifyContent: "space-between",
-  padding: "4px",
+  width: "100%",
+}))
+
+export const ImageUrlEntryButton = styled("button")(() => ({
+  padding: "4px 8px",
   borderRadius: "2px",
   border: `1px solid ${COLORS.purple100}`,
-  backgroundColor: COLORS.gray100,
+  backgroundColor: COLORS.white,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  fontSize: "10px",
+  lineHeight: "14px",
+  color: COLORS.black,
+  margin: 0,
   boxSizing: "border-box",
+}))
+
+export const ImageUrlEntryPrimaryButton = styled(ImageUrlEntryButton)(() => ({
+  backgroundColor: COLORS.purple400,
+  borderColor: COLORS.purple400,
+  color: COLORS.white,
+}))
+
+export const ImageUrlEntryField = styled(TextField)(() => ({
+  width: "100%",
+  "& .MuiInputBase-root": {
+    fontSize: "10px",
+    lineHeight: "14px",
+    borderRadius: "2px",
+  },
+  "& .MuiInputBase-input": {
+    padding: "6px 8px",
+    color: COLORS.black,
+  },
+  "& .MuiOutlinedInput-notchedOutline": {
+    borderColor: COLORS.purple100,
+  },
 }))
 
 export const UnitFieldCaption = styled(Typography)(() => ({

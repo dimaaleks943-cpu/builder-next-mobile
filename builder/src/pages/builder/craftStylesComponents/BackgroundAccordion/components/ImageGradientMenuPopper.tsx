@@ -1,5 +1,5 @@
 import { Box, Popper, Typography } from "@mui/material"
-import type { ChangeEvent, Ref } from "react"
+import type { ChangeEvent, MouseEvent as ReactMouseEvent, Ref } from "react"
 import { useEffect, useRef, useState } from "react"
 import { COLORS } from "../../../../../theme/colors.ts"
 import { AppsIcon } from "../../../../../icons/AppsIcon.tsx"
@@ -23,6 +23,11 @@ import {
   ImageMetaColumn,
   ImagePreviewFrame,
   ImageTransparencyCheckerboard,
+  ImageUrlEntryActionsRow,
+  ImageUrlEntryButton,
+  ImageUrlEntryField,
+  ImageUrlEntryPaper,
+  ImageUrlEntryPrimaryButton,
   InsetAxisLabel,
   InsetAxisRow,
   MenuRow,
@@ -173,12 +178,6 @@ interface Props {
   onCommitBackgroundAttachment: (next: string | undefined) => void
 }
 
-const formatFileSizeKb = (bytes: number): string => {
-  const kb = bytes / 1024
-  if (kb < 10) return `${kb.toFixed(1)} kB`
-  return `${Math.round(kb)} kB`
-}
-
 export const ImageGradientMenuPopper = ({
   open,
   anchorEl,
@@ -194,14 +193,12 @@ export const ImageGradientMenuPopper = ({
   onCommitBackgroundRepeat,
   onCommitBackgroundAttachment,
 }: Props) => {
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const lastObjectUrlRef = useRef<string | null>(null)
-  const [imageLabel, setImageLabel] = useState("background-im...")
-  const [imageDimsLabel, setImageDimsLabel] = useState("250 x 250")
-  const [imageSizeLabel, setImageSizeLabel] = useState("3.4 kB")
-  const [naturalImagePx, setNaturalImagePx] = useState<{ w: number; h: number } | null>(
-    null,
-  )
+  const [imageUrlPopperAnchor, setImageUrlPopperAnchor] =
+    useState<HTMLElement | null>(null)
+  const imageUrlPopperPaperRef = useRef<HTMLDivElement | null>(null)
+  const [urlDraft, setUrlDraft] = useState("")
+  const [naturalImagePx, setNaturalImagePx] =
+    useState<{ w: number; h: number } | null>(null)
 
   const fillKind = inferBackgroundFillKind(backgroundImage)
   const previewHref = fillKind === "url" ? parseCssUrl(backgroundImage) : null
@@ -265,12 +262,36 @@ export const ImageGradientMenuPopper = ({
   }, [previewHref])
 
   useEffect(() => {
-    if (fillKind !== "url") return
-    if (previewHref) return
-    setImageLabel("background-im...")
-    setImageDimsLabel("250 x 250")
-    setImageSizeLabel("3.4 kB")
-  }, [fillKind, previewHref])
+    if (!imageUrlPopperAnchor) return
+    setUrlDraft(parseCssUrl(backgroundImage) ?? "")
+  }, [imageUrlPopperAnchor, backgroundImage])
+
+  useEffect(() => {
+    if (!imageUrlPopperAnchor) return
+    const onDocMouseDown = (event: MouseEvent) => {
+      const target = event.target as Node
+      if (imageUrlPopperAnchor.contains(target)) return
+      if (imageUrlPopperPaperRef.current?.contains(target)) return
+      setImageUrlPopperAnchor(null)
+    }
+    document.addEventListener("mousedown", onDocMouseDown, true)
+
+    return () => document.removeEventListener("mousedown", onDocMouseDown, true)
+  }, [imageUrlPopperAnchor])
+
+  const urlDisplayLabel =
+    previewHref === null
+      ? "No image URL"
+      : previewHref.length > 28
+        ? `${previewHref.slice(0, 25)}…`
+        : previewHref
+
+  const dimsDisplayLabel =
+    naturalImagePx !== null && naturalImagePx.w > 0 && naturalImagePx.h > 0
+      ? `${naturalImagePx.w} × ${naturalImagePx.h}`
+      : previewHref
+        ? "…"
+        : "—"
 
   const retinaCheckboxEnabled =
     Boolean(previewHref) &&
@@ -295,19 +316,18 @@ export const ImageGradientMenuPopper = ({
     onCommitBackgroundSize("auto")
   }
 
-  const handleChooseImageClick = () => {
-    fileInputRef.current?.click()
+  const handleChooseImageClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    setImageUrlPopperAnchor((prev) =>
+      prev === event.currentTarget ? null : event.currentTarget,
+    )
   }
 
-  useEffect(
-    () => () => {
-      if (lastObjectUrlRef.current) {
-        URL.revokeObjectURL(lastObjectUrlRef.current)
-        lastObjectUrlRef.current = null
-      }
-    },
-    [],
-  )
+  const handleApplyImageUrl = () => {
+    const trimmed = urlDraft.trim()
+    if (!trimmed) return
+    onCommitBackgroundImage(toCssUrlValue(trimmed), { urlFillDefaults: "apply" })
+    setImageUrlPopperAnchor(null)
+  }
 
   const handleFillKindChange = (id: string) => {
     const next = id as BackgroundFillKind
@@ -329,25 +349,6 @@ export const ImageGradientMenuPopper = ({
     if (next === "overlay") {
       onCommitBackgroundImage(DEFAULT_OVERLAY_LINEAR, { urlFillDefaults: "clear" })
     }
-  }
-
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    event.target.value = ""
-    if (!file || !file.type.startsWith("image/")) return
-    const url = URL.createObjectURL(file)
-    if (lastObjectUrlRef.current) URL.revokeObjectURL(lastObjectUrlRef.current)
-    lastObjectUrlRef.current = url
-    onCommitBackgroundImage(toCssUrlValue(url))
-    const shortName =
-      file.name.length > 16 ? `${file.name.slice(0, 13)}…` : file.name
-    setImageLabel(shortName)
-    setImageSizeLabel(formatFileSizeKb(file.size))
-    const img = new Image()
-    img.onload = () => {
-      setImageDimsLabel(`${img.naturalWidth} x ${img.naturalHeight}`)
-    }
-    img.src = url
   }
 
   const iconFill = COLORS.purple400
@@ -378,8 +379,6 @@ export const ImageGradientMenuPopper = ({
       style={{ zIndex: 4000 }}
     >
       <ImageGradientMenuPaper ref={popperRef} elevation={0}>
-        <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleFileChange}/>
-
         <ImageGradientMenuSection>
           <CraftSettingsButtonGroup
             label="Type"
@@ -430,30 +429,18 @@ export const ImageGradientMenuPopper = ({
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {imageLabel}
+                      {urlDisplayLabel}
                     </Typography>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <Typography
-                        sx={{
-                          fontSize: "10px",
-                          lineHeight: "14px",
-                          letterSpacing: "0.015em",
-                          color: COLORS.gray700,
-                        }}
-                      >
-                        {imageDimsLabel}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontSize: "10px",
-                          lineHeight: "14px",
-                          letterSpacing: "0.015em",
-                          color: COLORS.gray700,
-                        }}
-                      >
-                        {imageSizeLabel}
-                      </Typography>
-                    </Box>
+                    <Typography
+                      sx={{
+                        fontSize: "10px",
+                        lineHeight: "14px",
+                        letterSpacing: "0.015em",
+                        color: COLORS.gray700,
+                      }}
+                    >
+                      {dimsDisplayLabel}
+                    </Typography>
                     <PixelHintRow>
                       <PixelDensityCheckbox
                         size="small"
@@ -479,6 +466,42 @@ export const ImageGradientMenuPopper = ({
                     Choose image
                   </Typography>
                 </ChooseImageTriggerButton>
+                <Popper
+                  open={Boolean(imageUrlPopperAnchor)}
+                  anchorEl={imageUrlPopperAnchor}
+                  placement="left-start"
+                  disablePortal
+                  modifiers={[{ name: "offset", options: { offset: [0, 8] } }]}
+                  style={{ zIndex: 4001 }}
+                >
+                  <ImageUrlEntryPaper ref={imageUrlPopperPaperRef} elevation={0}>
+                    <ImageUrlEntryField
+                      size="small"
+                      fullWidth
+                      placeholder="https://…"
+                      value={urlDraft}
+                      onChange={(e) => setUrlDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault()
+                          handleApplyImageUrl()
+                        }
+                      }}
+                      variant="outlined"
+                    />
+                    <ImageUrlEntryActionsRow>
+                      <ImageUrlEntryButton
+                        type="button"
+                        onClick={() => setImageUrlPopperAnchor(null)}
+                      >
+                        Cancel
+                      </ImageUrlEntryButton>
+                      <ImageUrlEntryPrimaryButton type="button" onClick={handleApplyImageUrl}>
+                        Apply
+                      </ImageUrlEntryPrimaryButton>
+                    </ImageUrlEntryActionsRow>
+                  </ImageUrlEntryPaper>
+                </Popper>
               </ChooseImageButtonRow>
             </ImageGradientMenuSectionDense>
 
