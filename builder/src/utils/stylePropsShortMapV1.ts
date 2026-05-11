@@ -68,6 +68,19 @@ export const FULL_TO_SHORT = {
   backgroundClip: "bgcl",
   WebkitTextFillColor: "wtfc",
 
+  //-- SizeAccordion --//
+  width: "w",
+  height: "h",
+  minWidth: "miw",
+  minHeight: "mih",
+  maxWidth: "maw",
+  maxHeight: "mah",
+  overflow: "ovf",
+  aspectRatio: "asp",
+  boxSizing: "bxsz",
+  objectFit: "objf",
+  objectPosition: "objp",
+
   // layout
   layout: "ly",
   /** Элементов в строке сетки списка (ContentList). */
@@ -92,15 +105,6 @@ export const FULL_TO_SHORT = {
   paddingRight: "pr",
   paddingBottom: "pb",
   paddingLeft: "pl",
-
-  // size
-  width: "w",
-  height: "h",
-  minWidth: "miw",
-  minHeight: "mih",
-  maxWidth: "maw",
-  maxHeight: "mah",
-  overflow: "ovf",
 } as const
 
 export type FullStylePropKey = keyof typeof FULL_TO_SHORT
