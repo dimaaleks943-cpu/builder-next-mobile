@@ -81,6 +81,16 @@ export const FULL_TO_SHORT = {
   objectFit: "objf",
   objectPosition: "objp",
 
+  //-- SpacingAccordion --//
+  marginTop: "mt",
+  marginRight: "mr",
+  marginBottom: "mb",
+  marginLeft: "ml",
+  paddingTop: "pt",
+  paddingRight: "pr",
+  paddingBottom: "pb",
+  paddingLeft: "pl",
+
   // layout
   layout: "ly",
   /** Элементов в строке сетки списка (ContentList). */
@@ -95,16 +105,6 @@ export const FULL_TO_SHORT = {
   flexAlignItems: "fai",
   placeItemsY: "piy",
   placeItemsX: "pix",
-
-  // spacing
-  marginTop: "mt",
-  marginRight: "mr",
-  marginBottom: "mb",
-  marginLeft: "ml",
-  paddingTop: "pt",
-  paddingRight: "pr",
-  paddingBottom: "pb",
-  paddingLeft: "pl",
 } as const
 
 export type FullStylePropKey = keyof typeof FULL_TO_SHORT
