@@ -44,8 +44,8 @@ import {
   BACKGROUND_POSITION_UNIT_MENU,
   BACKGROUND_SIZE_UNIT_MENU,
 } from "../../../../../utils/craftCssSizeProp.ts"
+import { type BackgroundFillKind, inferBackgroundFillKind, parseCssUrl } from "../backgroundImageLayersUtils.ts";
 
-type BackgroundFillKind = "url" | "linear-gradient" | "radial-gradient" | "overlay"
 
 type BackgroundSizeMode = "custom" | "cover" | "contain"
 
@@ -54,27 +54,6 @@ const DEFAULT_LINEAR_GRADIENT = `linear-gradient(135deg, ${COLORS.purple400} 0%,
 const DEFAULT_RADIAL_GRADIENT = `radial-gradient(circle at 50% 50%, ${COLORS.purple200} 0%, ${COLORS.purple400} 100%)`
 
 const DEFAULT_OVERLAY_LINEAR = `linear-gradient(180deg, rgba(27, 29, 33, 0.5) 0%, rgba(27, 29, 33, 0) 100%)`
-
-const parseCssUrl = (raw: string | undefined): string | null => {
-  if (!raw) return null
-  const t = raw.trim()
-  const quoted = t.match(/^url\s*\(\s*(["'])(.*?)\1\s*\)$/i)
-  if (quoted) return quoted[2]
-  const unquoted = t.match(/^url\s*\(\s*([^)\s]+)\s*\)$/i)
-  return unquoted ? unquoted[1].trim() : null
-}
-
-const inferBackgroundFillKind = (raw: string | undefined): BackgroundFillKind => {
-  if (typeof raw !== "string" || !raw.trim()) return "url"
-  const t = raw.trim()
-  if (/^url\s*\(/i.test(t)) return "url"
-  if (/radial-gradient\s*\(/i.test(t)) return "radial-gradient"
-  if (/linear-gradient\s*\(/i.test(t)) {
-    if (/rgba\s*\(\s*27\s*,\s*29\s*,\s*33/i.test(t)) return "overlay"
-    return "linear-gradient"
-  }
-  return "url"
-}
 
 const toCssUrlValue = (href: string) => `url(${JSON.stringify(href)})`
 
@@ -333,6 +312,7 @@ export const ImageGradientMenuPopper = ({
     const next = id as BackgroundFillKind
     if (next === "url") {
       const href = parseCssUrl(backgroundImage)
+      if (!href && !backgroundImage?.trim()) return
       onCommitBackgroundImage(href ? toCssUrlValue(href) : undefined, {
         urlFillDefaults: "apply",
       })

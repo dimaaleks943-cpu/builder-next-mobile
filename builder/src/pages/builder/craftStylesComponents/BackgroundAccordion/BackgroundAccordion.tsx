@@ -1,4 +1,19 @@
 import {
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
+import {
+  SortableContext,
+  arrayMove,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
@@ -10,6 +25,7 @@ import {
   type ChangeEvent,
   type MouseEvent as ReactMouseEvent,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react"
@@ -24,9 +40,28 @@ import {
   setResponsiveStyleProp,
 } from "../../responsiveStyle.ts"
 import {
-  ImageGradientMenuPopper,
-  type BackgroundImageCommitOptions,
-} from "./components/ImageGradientMenuPopper.tsx"
+  BACKGROUND_IMAGE_LAYER_ATTACHMENTS_KEY,
+  BACKGROUND_IMAGE_LAYER_IDS_KEY,
+  BACKGROUND_IMAGE_LAYER_POSITIONS_KEY,
+  BACKGROUND_IMAGE_LAYER_REPEATS_KEY,
+  BACKGROUND_IMAGE_LAYER_SIZES_KEY,
+  BACKGROUND_IMAGE_LAYER_VISIBLE_KEY,
+  BACKGROUND_IMAGE_LAYERS_KEY,
+  clearAllBackgroundLayers,
+  ensureCanonicalStyleSlots,
+  getBackgroundLayersModel,
+  getCommaPropParts, inferBackgroundFillKind,
+  newBackgroundLayerId, parseCssUrl,
+  persistBackgroundLayersModel,
+  prependSlotToCommaProp,
+  removeCommaPropLayerAt,
+  reorderCommaPropLayers,
+  replaceCommaPropLayer,
+  syncPaintedBackgroundStack,
+} from "./backgroundImageLayersUtils.ts"
+import { SortableBackgroundLayerRow } from "./components/SortableBackgroundLayerRow.tsx"
+import type { BackgroundImageCommitOptions } from "./components/ImageGradientMenuPopper.tsx";
+import { ImageGradientMenuPopper } from "./components/ImageGradientMenuPopper.tsx";
 
 const DEFAULT_BG_DISPLAY = COLORS.white
 
@@ -60,6 +95,15 @@ const getBackgroundClippingSelectId = (
   return "none"
 }
 
+type ImageGradientMenuTarget =
+  | { kind: "add" }
+  | { kind: "layer"; index: number }
+
+type ImageGradientMenuState = {
+  anchor: HTMLElement
+  target: ImageGradientMenuTarget
+}
+
 export const BackgroundAccordion = () => {
   const { actions } = useEditor()
   const viewport = usePreviewViewport()
@@ -74,10 +118,19 @@ export const BackgroundAccordion = () => {
 
   const [colorDraft, setColorDraft] = useState<string>(DEFAULT_BG_DISPLAY)
   const colorTimeoutRef = useRef<number | undefined>(undefined)
-  const [imageGradientMenuAnchor, setImageGradientMenuAnchor] =
-    useState<HTMLElement | null>(null)
+  const [imageGradientMenu, setImageGradientMenu] =
+    useState<ImageGradientMenuState | null>(null)
   const imageGradientMenuPopperRef = useRef<HTMLDivElement | null>(null)
   const imageGradientRowRef = useRef<HTMLDivElement | null>(null)
+  const imageGradientMenuRef = useRef<ImageGradientMenuState | null>(null)
+  imageGradientMenuRef.current = imageGradientMenu
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 2 },
+    }),
+    useSensor(KeyboardSensor),
+  )
 
   useEffect(() => {
     setColorDraft(
@@ -87,21 +140,62 @@ export const BackgroundAccordion = () => {
   }, [selectedProps, selectedId, viewport])
 
   useEffect(() => {
-    if (!imageGradientMenuAnchor) return
+    if (!imageGradientMenu) return
     const onDocMouseDown = (event: MouseEvent) => {
       const target = event.target as Node
       if (imageGradientRowRef.current?.contains(target)) return
       if (imageGradientMenuPopperRef.current?.contains(target)) return
-      setImageGradientMenuAnchor(null)
+      setImageGradientMenu(null)
     }
-    document.addEventListener("mousedown", onDocMouseDown, true)
+    document.addEventListener("mousedown", onDocMouseDown)
 
-    return () => document.removeEventListener("mousedown", onDocMouseDown, true)
-  }, [imageGradientMenuAnchor])
+    return () => document.removeEventListener("mousedown", onDocMouseDown)
+  }, [imageGradientMenu])
+
+  useLayoutEffect(() => {
+    if (!selectedId || !selectedProps) return
+    const layersRaw = selectedProps[BACKGROUND_IMAGE_LAYERS_KEY]
+    const idsRaw = selectedProps[BACKGROUND_IMAGE_LAYER_IDS_KEY]
+    const visRaw = selectedProps[BACKGROUND_IMAGE_LAYER_VISIBLE_KEY]
+    if (!Array.isArray(layersRaw) || layersRaw.length === 0) return
+
+    const layers = layersRaw.map((x) => String(x).trim()).filter(Boolean)
+    if (layers.length === 0) return
+
+    const idsOk = Array.isArray(idsRaw) && idsRaw.length === layers.length
+    const visOk = Array.isArray(visRaw) && visRaw.length === layers.length
+    const slotLenMatches = (key: string) =>
+      Array.isArray(selectedProps[key]) &&
+      (selectedProps[key] as unknown[]).length === layers.length
+    const slotsOk =
+      slotLenMatches(BACKGROUND_IMAGE_LAYER_SIZES_KEY) &&
+      slotLenMatches(BACKGROUND_IMAGE_LAYER_POSITIONS_KEY) &&
+      slotLenMatches(BACKGROUND_IMAGE_LAYER_REPEATS_KEY) &&
+      slotLenMatches(BACKGROUND_IMAGE_LAYER_ATTACHMENTS_KEY)
+
+    if (idsOk && visOk && slotsOk) return
+
+    actions.setProp(selectedId, (props: any) => {
+      if (!idsOk || !visOk) {
+        persistBackgroundLayersModel(props, viewport, {
+          layers,
+          visible: visOk ? visRaw.map(Boolean) : layers.map(() => true),
+          layerIds: idsOk ? idsRaw.map(String) : layers.map(() => newBackgroundLayerId()),
+        })
+        return
+      }
+      const model = getBackgroundLayersModel(props, viewport)
+      ensureCanonicalStyleSlots(props, viewport, model.layers.length)
+      syncPaintedBackgroundStack(props, viewport, model)
+    })
+  }, [actions, selectedId, selectedProps, viewport])
 
   if (!selectedId || !selectedProps) {
     return null
   }
+
+  const layersModel = getBackgroundLayersModel(selectedProps, viewport)
+  const hasBackgroundLayers = layersModel.layers.length > 0
 
   const scheduleBackgroundColorUpdate = (value: string) => {
     if (!selectedId) return
@@ -154,82 +248,268 @@ export const BackgroundAccordion = () => {
     })
   }
 
-  const toggleImageGradientMenu = (event: ReactMouseEvent<HTMLButtonElement>) => {
-    setImageGradientMenuAnchor((prev) =>
-      prev ? null : event.currentTarget,
+  const toggleAddImageGradientMenu = (event: ReactMouseEvent<HTMLElement>) => {
+    setImageGradientMenu((prev) =>
+      prev?.anchor === event.currentTarget ? null : {
+        anchor: event.currentTarget,
+        target: { kind: "add" },
+      },
     )
   }
 
-  const backgroundImageRaw = getResponsiveStyleProp(
-    selectedProps,
-    "backgroundImage",
-    viewport,
-  ) as string | undefined
+  const menuTarget = imageGradientMenu?.target
 
-  const backgroundSizeRaw = getResponsiveStyleProp(
-    selectedProps,
-    "backgroundSize",
-    viewport,
-  ) as string | undefined
+  const layerCount = layersModel.layers.length
+  const editLayerIndex =
+    menuTarget?.kind === "layer" ? menuTarget.index : null
 
-  const backgroundPositionRaw = getResponsiveStyleProp(
-    selectedProps,
-    "backgroundPosition",
-    viewport,
-  ) as string | undefined
+  const popperBackgroundImage =
+    menuTarget?.kind === "layer" && editLayerIndex !== null
+      ? layersModel.layers[editLayerIndex]
+      : undefined
 
-  const backgroundRepeatRaw = getResponsiveStyleProp(
-    selectedProps,
-    "backgroundRepeat",
-    viewport,
-  ) as string | undefined
+  const popperBackgroundSize =
+    menuTarget?.kind === "add"
+      ? "auto"
+      : layerCount === 0 || editLayerIndex === null
+        ? undefined
+        : getCommaPropParts(
+          selectedProps,
+          viewport,
+          "backgroundSize",
+          layerCount,
+          "auto",
+        )[editLayerIndex]
 
-  const backgroundAttachmentRaw = getResponsiveStyleProp(
-    selectedProps,
-    "backgroundAttachment",
-    viewport,
-  ) as string | undefined
+  const popperBackgroundPosition =
+    menuTarget?.kind === "add"
+      ? "0px 0px"
+      : layerCount === 0 || editLayerIndex === null
+        ? undefined
+        : getCommaPropParts(
+          selectedProps,
+          viewport,
+          "backgroundPosition",
+          layerCount,
+          "0px 0px",
+        )[editLayerIndex]
+
+  const popperBackgroundRepeat =
+    menuTarget?.kind === "add"
+      ? undefined
+      : layerCount === 0 || editLayerIndex === null
+        ? undefined
+        : getCommaPropParts(
+          selectedProps,
+          viewport,
+          "backgroundRepeat",
+          layerCount,
+          "repeat",
+        )[editLayerIndex]
+
+  const popperBackgroundAttachment =
+    menuTarget?.kind === "add"
+      ? undefined
+      : layerCount === 0 || editLayerIndex === null
+        ? undefined
+        : getCommaPropParts(
+          selectedProps,
+          viewport,
+          "backgroundAttachment",
+          layerCount,
+          "scroll",
+        )[editLayerIndex]
+
+  const applyUrlDefaultsForLayer = (
+    props: Record<string, unknown>,
+    layerIndex: number,
+    layerCountForProp: number,
+    mode: "apply" | "clear" | undefined,
+  ) => {
+    if (mode === "apply" || mode === "clear") {
+      replaceCommaPropLayer(
+        props,
+        viewport,
+        "backgroundSize",
+        layerCountForProp,
+        layerIndex,
+        "auto",
+        "auto",
+      )
+      replaceCommaPropLayer(
+        props,
+        viewport,
+        "backgroundPosition",
+        layerCountForProp,
+        layerIndex,
+        "0px 0px",
+        "0px 0px",
+      )
+    }
+  }
 
   const commitBackgroundImage = (
     next: string | undefined,
     options?: BackgroundImageCommitOptions,
   ) => {
+    const menuSnap = imageGradientMenuRef.current
     actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "backgroundImage", next, viewport)
-      if (options?.urlFillDefaults === "apply") {
-        setResponsiveStyleProp(props, "backgroundPosition", "0px 0px", viewport)
-        setResponsiveStyleProp(props, "backgroundSize", "auto", viewport)
+      if (next === undefined || String(next).trim() === "") {
+        if (menuSnap?.target?.kind === "add") {
+          return
+        }
+        clearAllBackgroundLayers(props, viewport)
+        queueMicrotask(() => setImageGradientMenu(null))
+        return
       }
-      if (options?.urlFillDefaults === "clear") {
-        setResponsiveStyleProp(props, "backgroundPosition", undefined, viewport)
-        setResponsiveStyleProp(props, "backgroundSize", undefined, viewport)
+
+      const trimmed = String(next).trim()
+      const model = getBackgroundLayersModel(props, viewport)
+      const target = menuSnap?.target
+
+      if (!target) {
+        return
       }
+
+      if (target.kind === "add") {
+        const newLayers = [trimmed, ...model.layers]
+        const newVisible = [true, ...model.visible]
+        const newIds = [newBackgroundLayerId(), ...model.layerIds]
+        const nextModel = { layers: newLayers, visible: newVisible, layerIds: newIds }
+        const prevLen = model.layers.length
+        prependSlotToCommaProp(props, viewport, "backgroundSize", prevLen, "auto")
+        prependSlotToCommaProp(props, viewport, "backgroundPosition", prevLen, "0px 0px")
+        prependSlotToCommaProp(props, viewport, "backgroundRepeat", prevLen, "repeat")
+        prependSlotToCommaProp(props, viewport, "backgroundAttachment", prevLen, "scroll")
+        persistBackgroundLayersModel(props, viewport, nextModel)
+        applyUrlDefaultsForLayer(props, 0, newLayers.length, options?.urlFillDefaults)
+        queueMicrotask(() => {
+          setImageGradientMenu((prev) =>
+            prev?.target.kind === "add"
+              ? { anchor: prev.anchor, target: { kind: "layer", index: 0 } }
+              : prev,
+          )
+        })
+        return
+      }
+
+      if (target.kind === "layer") {
+        const idx = target.index
+        if (idx < 0 || idx >= model.layers.length) return
+        const nextLayers = model.layers.slice()
+        nextLayers[idx] = trimmed
+        persistBackgroundLayersModel(props, viewport, {
+          layers: nextLayers,
+          visible: model.visible,
+          layerIds: model.layerIds,
+        })
+        applyUrlDefaultsForLayer(props, idx, model.layers.length, options?.urlFillDefaults)
+      }
+    })
+  }
+
+  const clearLayer = (layerIndex: number) => {
+    actions.setProp(selectedId, (props: any) => {
+      const model = getBackgroundLayersModel(props, viewport)
+      if (layerIndex < 0 || layerIndex >= model.layers.length) return
+      const oldLen = model.layers.length
+      removeCommaPropLayerAt(props, viewport, "backgroundSize", oldLen, layerIndex)
+      removeCommaPropLayerAt(props, viewport, "backgroundPosition", oldLen, layerIndex)
+      removeCommaPropLayerAt(props, viewport, "backgroundRepeat", oldLen, layerIndex)
+      removeCommaPropLayerAt(props, viewport, "backgroundAttachment", oldLen, layerIndex)
+      const newLayers = model.layers.filter((_, j) => j !== layerIndex)
+      const newVisible = model.visible.filter((_, j) => j !== layerIndex)
+      const newIds = model.layerIds.filter((_, j) => j !== layerIndex)
+      if (newLayers.length === 0) {
+        clearAllBackgroundLayers(props, viewport)
+        return
+      }
+      persistBackgroundLayersModel(props, viewport, {
+        layers: newLayers,
+        visible: newVisible,
+        layerIds: newIds,
+      })
+    })
+    setImageGradientMenu((prev) => {
+      if (!prev || prev.target.kind !== "layer") return prev
+      if (prev.target.index === layerIndex) return null
+      if (prev.target.index > layerIndex) {
+        return {
+          anchor: prev.anchor,
+          target: { kind: "layer", index: prev.target.index - 1 },
+        }
+      }
+      return prev
+    })
+  }
+
+  const toggleLayerVisible = (layerIndex: number) => {
+    actions.setProp(selectedId, (props: any) => {
+      const model = getBackgroundLayersModel(props, viewport)
+      if (layerIndex < 0 || layerIndex >= model.visible.length) return
+      const nextVisible = model.visible.slice()
+      nextVisible[layerIndex] = !nextVisible[layerIndex]
+      persistBackgroundLayersModel(props, viewport, {
+        ...model,
+        visible: nextVisible,
+      })
+    })
+  }
+
+  const onLayersDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    actions.setProp(selectedId, (props: any) => {
+      const model = getBackgroundLayersModel(props, viewport)
+      const oldIndex = model.layerIds.indexOf(String(active.id))
+      const newIndex = model.layerIds.indexOf(String(over.id))
+      if (oldIndex < 0 || newIndex < 0) return
+      const len = model.layers.length
+      reorderCommaPropLayers(props, viewport, "backgroundSize", len, oldIndex, newIndex)
+      reorderCommaPropLayers(props, viewport, "backgroundPosition", len, oldIndex, newIndex)
+      reorderCommaPropLayers(props, viewport, "backgroundRepeat", len, oldIndex, newIndex)
+      reorderCommaPropLayers(props, viewport, "backgroundAttachment", len, oldIndex, newIndex)
+      const layers = arrayMove(model.layers, oldIndex, newIndex)
+      const visible = arrayMove(model.visible, oldIndex, newIndex)
+      const layerIds = arrayMove(model.layerIds, oldIndex, newIndex)
+      persistBackgroundLayersModel(props, viewport, { layers, visible, layerIds })
+    })
+    setImageGradientMenu(null)
+  }
+
+  const commitCommaLayer = (
+    key: "backgroundSize" | "backgroundPosition" | "backgroundRepeat" | "backgroundAttachment",
+    next: string | undefined,
+    filler: string,
+  ) => {
+    actions.setProp(selectedId, (props: any) => {
+      const model = getBackgroundLayersModel(props, viewport)
+      const target = imageGradientMenuRef.current?.target
+      if (target?.kind === "add") return
+      if (target?.kind !== "layer") return
+      const idx = target.index
+      if (idx < 0 || idx >= model.layers.length) return
+      replaceCommaPropLayer(props, viewport, key, model.layers.length, idx, next, filler)
     })
   }
 
   const commitBackgroundSize = (next: string | undefined) => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "backgroundSize", next, viewport)
-    })
+    commitCommaLayer("backgroundSize", next, "auto")
   }
 
   const commitBackgroundPosition = (next: string | undefined) => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "backgroundPosition", next, viewport)
-    })
+    commitCommaLayer("backgroundPosition", next, "0px 0px")
   }
 
   const commitBackgroundRepeat = (next: string | undefined) => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "backgroundRepeat", next, viewport)
-    })
+    commitCommaLayer("backgroundRepeat", next, "repeat")
   }
 
   const commitBackgroundAttachment = (next: string | undefined) => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "backgroundAttachment", next, viewport)
-    })
+    commitCommaLayer("backgroundAttachment", next, "scroll")
   }
+
+  const addMenuHighlight = imageGradientMenu?.target.kind === "add"
 
   return (
     <Accordion disableGutters>
@@ -256,40 +536,132 @@ export const BackgroundAccordion = () => {
             ref={imageGradientRowRef}
             sx={{
               display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
+              flexDirection: "column",
+              gap: "8px",
               width: "100%",
             }}
           >
-            <Typography
+            <Box
               sx={{
-                fontSize: "10px",
-                lineHeight: "14px",
-                color: COLORS.gray700,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
               }}
             >
-              Image & Gradient
-            </Typography>
-            <IconButton
-              size="small"
-              onClick={toggleImageGradientMenu}
-              sx={{ color: COLORS.purple400, padding: "4px" }}
-              aria-label="Add image or gradient"
-              aria-expanded={Boolean(imageGradientMenuAnchor)}
-            >
-              <AddIcon width={20} height={20} fill={COLORS.purple400} />
-            </IconButton>
+              <Typography
+                sx={{
+                  fontSize: "10px",
+                  lineHeight: "14px",
+                  color: COLORS.gray700,
+                }}
+              >
+                Image & Gradient
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={toggleAddImageGradientMenu}
+                sx={{
+                  color: COLORS.purple400,
+                  padding: "4px",
+                  ...(addMenuHighlight
+                    ? {
+                      boxShadow: `0 0 0 1px ${COLORS.purple400}`,
+                      backgroundColor: COLORS.purple100,
+                      borderRadius: "6px",
+                    }
+                    : {}),
+                }}
+                aria-label="Add image or gradient"
+                aria-expanded={Boolean(imageGradientMenu)}
+              >
+                <AddIcon width={20} height={20} fill={COLORS.purple400} />
+              </IconButton>
+            </Box>
+            {hasBackgroundLayers ? (
+              <Box
+                sx={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  padding: "8px",
+                  borderRadius: "6px",
+                  border: `1px dashed ${COLORS.gray300}`,
+                  backgroundColor: COLORS.gray100,
+                }}
+              >
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  modifiers={[restrictToVerticalAxis]}
+                  onDragEnd={onLayersDragEnd}
+                >
+                  <SortableContext
+                    items={layersModel.layerIds}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                        width: "100%",
+                      }}
+                    >
+                      {layersModel.layers.map((layer, i) => {
+                        const fillKind = inferBackgroundFillKind(layer)
+                        const previewHref = fillKind === "url" ? parseCssUrl(layer) : null
+                        const summaryLabel =
+                          fillKind === "url" ? (previewHref ?? layer) : layer
+                        const layerId = layersModel.layerIds[i]
+                        if (!layerId) return null
+                        return (
+                          <SortableBackgroundLayerRow
+                            key={layerId}
+                            id={layerId}
+                            previewUrl={previewHref}
+                            gradientFillCss={previewHref ? null : layer}
+                            summaryLabel={summaryLabel}
+                            layerVisibleOnCanvas={layersModel.visible[i] ?? true}
+                            popperOpen={
+                              Boolean(
+                                imageGradientMenu &&
+                                imageGradientMenu.target.kind === "layer" &&
+                                imageGradientMenu.target.index === i,
+                              )
+                            }
+                            onOpenMenu={(e) => {
+                              setImageGradientMenu((prev) =>
+                                prev?.anchor === e.currentTarget &&
+                                prev.target.kind === "layer" &&
+                                prev.target.index === i
+                                  ? null
+                                  : {
+                                    anchor: e.currentTarget,
+                                    target: { kind: "layer", index: i },
+                                  },
+                              )
+                            }}
+                            onToggleCanvasVisibility={() => toggleLayerVisible(i)}
+                            onClear={() => clearLayer(i)}
+                          />
+                        )
+                      })}
+                    </Box>
+                  </SortableContext>
+                </DndContext>
+              </Box>
+            ) : null}
           </Box>
 
           <ImageGradientMenuPopper
-            open={Boolean(imageGradientMenuAnchor)}
-            anchorEl={imageGradientMenuAnchor}
+            open={Boolean(imageGradientMenu)}
+            anchorEl={imageGradientMenu?.anchor ?? null}
             popperRef={imageGradientMenuPopperRef}
-            backgroundImage={backgroundImageRaw}
-            backgroundSize={backgroundSizeRaw}
-            backgroundPosition={backgroundPositionRaw}
-            backgroundRepeat={backgroundRepeatRaw}
-            backgroundAttachment={backgroundAttachmentRaw}
+            backgroundImage={popperBackgroundImage}
+            backgroundSize={popperBackgroundSize}
+            backgroundPosition={popperBackgroundPosition}
+            backgroundRepeat={popperBackgroundRepeat}
+            backgroundAttachment={popperBackgroundAttachment}
             onCommitBackgroundImage={commitBackgroundImage}
             onCommitBackgroundSize={commitBackgroundSize}
             onCommitBackgroundPosition={commitBackgroundPosition}
