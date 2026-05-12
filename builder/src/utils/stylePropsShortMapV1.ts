@@ -91,8 +91,10 @@ export const FULL_TO_SHORT = {
   paddingBottom: "pb",
   paddingLeft: "pl",
 
+  //-- LayoutAccordion --//
+  display: "dsp",
+
   // layout
-  layout: "ly",
   /** Элементов в строке сетки списка (ContentList). */
   itemsPerRow: "ipr",
   fullSize: "fs",

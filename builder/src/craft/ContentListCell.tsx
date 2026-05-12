@@ -1,15 +1,7 @@
 import { useNode } from "@craftjs/core"
 import type { ReactNode } from "react"
-import { COLORS } from "../theme/colors"
 import { ContentListCellContext } from "../pages/builder/context/ContentListCellContext.tsx"
-import type {
-  BlockLayoutMode,
-  FlexAlignItems,
-  FlexFlowOption,
-  FlexJustifyContent,
-  GridAutoFlow,
-  PlaceItemsValue,
-} from "../builder.enum"
+import type { PlaceItemsValue } from "../builder.enum"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
@@ -24,33 +16,18 @@ export type ContentListCellProps = {
  * Одна ячейка списка коллекции. Canvas: в неё можно перетащить элементы (Text и т.д.).
  * Любая ячейка может быть источником правды: ContentList синхронизирует изменения во все ячейки.
  *
- * layout / gridColumns / gridRows управляются через LayoutAccordion и
+ * display / gridColumns / gridRows управляются через LayoutAccordion и
  * описывают, как раскладывать дочерние элементы внутри ячейки.
  */
 export const CraftContentListCell = (props: ContentListCellProps) => {
   const viewport = usePreviewViewport()
   const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
-  const width = responsiveStyle.width as string | number | undefined
-  const height = responsiveStyle.height as string | number | undefined
-  const minWidth = responsiveStyle.minWidth as number | undefined
-  const minHeight = responsiveStyle.minHeight as number | undefined
-  const maxWidth = responsiveStyle.maxWidth as string | number | undefined
-  const maxHeight = responsiveStyle.maxHeight as string | number | undefined
-  const overflow = responsiveStyle.overflow as "auto" | "hidden" | "visible" | "scroll" | undefined
-  const layout = (responsiveStyle.layout as BlockLayoutMode | undefined) ?? "block"
-  const gridColumns = responsiveStyle.gridColumns as number | undefined
-  const gridRows = responsiveStyle.gridRows as number | undefined
-  const gridAutoFlow = (responsiveStyle.gridAutoFlow as GridAutoFlow | undefined) ?? "row"
-  const gap = responsiveStyle.gap as number | undefined
-  const flexFlow = (responsiveStyle.flexFlow as FlexFlowOption | undefined) ?? "row"
-  const flexJustifyContent = responsiveStyle.flexJustifyContent as FlexJustifyContent | undefined
-  const flexAlignItems = responsiveStyle.flexAlignItems as FlexAlignItems | undefined
+  const display = (responsiveStyle.display as string | undefined) ?? "block"
+  const isGridLayout = display === "grid" || display === "inline-grid"
   const placeItemsY = responsiveStyle.placeItemsY as PlaceItemsValue | undefined
   const placeItemsX = responsiveStyle.placeItemsX as PlaceItemsValue | undefined
-  const backgroundColor = responsiveStyle.backgroundColor as string | undefined
   const {
     connectors: { connect, drag },
-    selected,
   } = useNode((node) => ({
     selected: node.events.selected,
   }))
@@ -63,52 +40,11 @@ export const CraftContentListCell = (props: ContentListCellProps) => {
       }}
       style={{
         flex: 1,
-        width,
-        height,
-        minWidth,
-        minHeight: minHeight ?? 48,
-        maxWidth,
-        maxHeight,
-        overflow,
         padding: "16px",
-        position: "relative" as const,
-        display:
-          layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block",
-        flexDirection:
-          layout === "flex"
-            ? flexFlow === "column"
-              ? "column"
-              : "row"
-            : undefined,
-        flexWrap:
-          layout === "flex" ? (flexFlow === "wrap" ? "wrap" : "nowrap") : undefined,
-        justifyContent: layout === "flex" ? flexJustifyContent : undefined,
-        gap:
-          (layout === "grid" || layout === "flex") &&
-          gap != null &&
-          gap >= 0
-            ? gap
-            : undefined,
-        gridTemplateColumns:
-          layout === "grid" && gridColumns && gridColumns > 0
-            ? `repeat(${gridColumns}, minmax(0, 1fr))`
-            : undefined,
-        gridTemplateRows:
-          layout === "grid" && gridRows && gridRows > 0
-            ? `repeat(${gridRows}, auto)`
-            : undefined,
-        gridAutoFlow: layout === "grid" ? gridAutoFlow : undefined,
         placeItems:
-          layout === "grid" && placeItemsY != null && placeItemsX != null
+          isGridLayout && placeItemsY != null && placeItemsX != null
             ? `${placeItemsY} ${placeItemsX}`
             : undefined,
-        backgroundColor: selected
-          ? "rgba(108, 93, 211, 0.08)"
-          : (backgroundColor ?? "transparent"),
-        border: selected ? `1px dashed ${COLORS.purple400}` : "none", //TODO поправить при исправление компонента
-        // alignItems в конце объекта, чтобы не перезаписаться другими стилями при мерже/каскаде.
-        alignItems:
-          layout === "flex" ? (flexAlignItems ?? "flex-start") : "flex-start",
       }}
     >
       <ContentListCellContext.Provider value={true}>
@@ -123,7 +59,8 @@ export const CraftContentListCell = (props: ContentListCellProps) => {
   props: {
     style: {
       [PreviewViewport.DESKTOP]: {
-        layout: "block" as BlockLayoutMode,
+        display: "block",
+        padding: "16px",
         gridAutoFlow: "row" as const,
         flexFlow: "row" as const,
       },

@@ -1,4 +1,3 @@
-export type BlockLayoutMode = "block" | "flex" | "grid" | "absolute";
 export type GridAutoFlow = "row" | "column";
 /** Для flex: row = row nowrap, column = column nowrap, wrap = row wrap */
 export type FlexFlowOption = "row" | "column" | "wrap";

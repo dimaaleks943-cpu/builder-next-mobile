@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useEditor, useNode } from "@craftjs/core"
-import type { CSSProperties } from "react"
 import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
 import { LinkTextSettingsFields } from "../pages/builder/settingsCraftComponents/LinkTextSettingsFields.tsx"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
@@ -40,8 +39,6 @@ export const CraftLinkText = (props: LinkTextProps) => {
   const collectionField = props.collectionField ?? null
   const href = props.href ?? "http://www.google.com"
   const openInNewTab = props.openInNewTab ?? false
-  const strokeColor = responsiveStyle.strokeColor as string | undefined
-  const strokeWidth = (responsiveStyle.strokeWidth as number | undefined) ?? 0
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(text)
   const spanRef = useRef<HTMLSpanElement | null>(null)
@@ -159,13 +156,6 @@ export const CraftLinkText = (props: LinkTextProps) => {
     }
   }
 
-  const style: CSSProperties = {
-    ...responsiveStyle,
-    display: "block",
-    WebkitTextStrokeWidth: strokeWidth ? strokeWidth : undefined,
-    WebkitTextStrokeColor: strokeColor,
-  }
-
   return (
     <>
     <a
@@ -200,7 +190,7 @@ export const CraftLinkText = (props: LinkTextProps) => {
         onInput={handleInput}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        style={style}
+        style={{...responsiveStyle}}
       >
         {displayText}
       </span>

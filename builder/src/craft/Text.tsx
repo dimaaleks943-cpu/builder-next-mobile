@@ -33,8 +33,6 @@ export const CraftText = (props: TextProps) => {
   const text = props.text ?? "Текст"
   const i18nKey = props.i18nKey ?? null
   const collectionField = props.collectionField ?? null
-  const strokeColor = responsiveStyle.strokeColor as string | undefined
-  const strokeWidth = (responsiveStyle.strokeWidth as number | undefined) ?? 0
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(text)
   const spanRef = useRef<HTMLSpanElement | null>(null)
@@ -153,13 +151,6 @@ export const CraftText = (props: TextProps) => {
     }
   }
 
-  const style: CSSProperties = {
-    ...responsiveStyle,
-    display: "block",
-    WebkitTextStrokeWidth: strokeWidth ? strokeWidth : undefined,
-    WebkitTextStrokeColor: strokeColor,
-  }
-
   const outerWrapperStyle: CSSProperties = {
     display: "block",
   }
@@ -183,7 +174,7 @@ export const CraftText = (props: TextProps) => {
           onInput={handleInput}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
-          style={style}
+          style={{...responsiveStyle}}
         >
           {displayText}
         </span>

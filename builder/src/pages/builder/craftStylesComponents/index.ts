@@ -1,4 +1,4 @@
-export { LayoutAccordion } from "./LayoutAccordion.tsx";
+export { LayoutAccordion } from "./LayoutAccordion/components/LayoutAccordion.tsx";
 export { PositioningAccordion } from "./PositioningAccordion/PositioningAccordion.tsx";
 export { SizeAccordion } from "./SizeAccordion/SizeAccordion.tsx";
 export { SpacingAccordion } from "./SpacingAccordion.tsx";

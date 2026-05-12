@@ -5,8 +5,6 @@ import { usePreviewViewport } from "../pages/builder/context/PreviewViewportCont
 import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 
-export type BodyLayoutMode = "block" | "flex" | "grid" | "absolute"
-
 export type BodyProps = {
   children?: ReactNode
   style?: ResponsiveStyle
@@ -16,7 +14,7 @@ export type BodyProps = {
 export const CraftBody = (props: BodyProps) => {
   const viewport = usePreviewViewport()
   const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
-  const layout = (responsiveStyle.layout as BodyLayoutMode | undefined) ?? "block"
+
 const {
     connectors: { connect, drag }
   } = useNode((node) => ({
@@ -32,10 +30,6 @@ const {
       style={{
         ...responsiveStyle,
         width: "100%",
-        minHeight: 80,
-        //TODO изменить после layuotBLock
-        display: layout === "flex" ? "flex" : layout === "grid" ? "grid" : "block",
-        position: "relative",
       }}
     >
       {props.children}
@@ -48,16 +42,18 @@ const {
   props: {
     style: {
       [PreviewViewport.DESKTOP]: {
-        layout: "block" as BodyLayoutMode,
+        display: "block",
         boxSizing: "border-box",
-        marginTop: 0,
-        marginRight: 0,
-        marginBottom: 0,
-        marginLeft: 0,
-        paddingTop: 0,
-        paddingRight: 0,
-        paddingBottom: 0,
-        paddingLeft: 0,
+        position: "relative",
+        width: "100%",
+        // marginTop: 0,
+        // marginRight: 0,
+        // marginBottom: 0,
+        // marginLeft: 0,
+        // paddingTop: 0,
+        // paddingRight: 0,
+        // paddingBottom: 0,
+        // paddingLeft: 0,
       },
     },
   },

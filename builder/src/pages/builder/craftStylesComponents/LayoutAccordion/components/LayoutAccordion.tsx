@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from "react"
+import { type ChangeEvent } from "react"
 import {
   Accordion,
   AccordionDetails,
@@ -7,43 +7,51 @@ import {
   Typography,
 } from "@mui/material"
 import { useEditor } from "@craftjs/core"
-import { COLORS } from "../../../theme/colors"
-import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup"
-import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSettingsInput"
+import { COLORS } from "../../../../../theme/colors.ts"
+import { CraftSettingsButtonGroup } from "../../../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
+import { CraftSettingsInput } from "../../../components/craftSettingsControls/CraftSettingsInput.tsx"
 import {
   CraftAlignControl,
-} from "../components/craftSettingsControls/CraftAlignControl"
-import { useBuilderModeContext } from "../context/BuilderModeContext"
-import { MODE_TYPE } from "../builder.enum"
-import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
+} from "../../../components/craftSettingsControls/CraftAlignControl.tsx"
+import { useBuilderModeContext } from "../../../context/BuilderModeContext.tsx"
+import { MODE_TYPE } from "../../../builder.enum.ts"
+import { usePreviewViewport } from "../../../context/PreviewViewportContext.tsx"
 import {
   getResponsiveStyleProp,
   setResponsiveStyleProp,
-} from "../responsiveStyle.ts"
+} from "../../../responsiveStyle.ts"
 import type {
   PlaceItemsValue,
   FlexFlowOption,
   FlexJustifyContent,
   FlexAlignItems,
-} from "../../../builder.enum"
-import { CraftFlexAlignControl } from "../components/craftSettingsControls/CraftFlexAlignControl"
+  GridAutoFlow,
+} from "../../../../../builder.enum.ts"
+import { CraftFlexAlignControl } from "../../../components/craftSettingsControls/CraftFlexAlignControl.tsx"
+import {
+  LayoutDisplayControl,
+  type LayoutDisplayInlineOption,
+} from "./LayoutDisplayControl.tsx"
 
-type LayoutMode = "block" | "flex" | "grid" | "absolute"
-type GridFlowOption = "row" | "column"
-
-const LAYOUT_OPTIONS_WEB: { id: LayoutMode; content: string }[] = [
+const LAYOUT_PRIMARY_WEB = [
   { id: "block", content: "Блок" },
   { id: "flex", content: "Флекс" },
   { id: "grid", content: "Сетка" },
-  { id: "absolute", content: "Абс" },
+] as const
+
+const LAYOUT_PRIMARY_RN = [{ id: "flex", content: "Флекс" }] as const
+
+const LAYOUT_INLINE_OPTIONS: LayoutDisplayInlineOption[] = [
+  { value: "none", label: "none" },
+  { value: "inline-block", label: "inline-block" },
+  { value: "inline-flex", label: "inline-flex" },
+  { value: "inline-grid", label: "inline-grid" },
 ]
 
-const LAYOUT_OPTIONS_RN: { id: LayoutMode; content: string }[] = [
-  { id: "flex", content: "Флекс" },
-]
+const displayIsFlex = (d: string) => d === "flex" || d === "inline-flex"
+const displayIsGrid = (d: string) => d === "grid" || d === "inline-grid"
 
 export const LayoutAccordion = () => {
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>("block")
   const modeContext = useBuilderModeContext()
   const isRn = modeContext?.mode === MODE_TYPE.RN
   const viewport = usePreviewViewport()
@@ -62,23 +70,30 @@ export const LayoutAccordion = () => {
     return null
   }
 
-  const effectiveLayout: LayoutMode =
-    (getResponsiveStyleProp(
-      selectedProps,
-      "layout",
-      viewport,
-    ) as LayoutMode | undefined) ?? layoutMode
+  const rawDisplay = getResponsiveStyleProp(selectedProps, "display", viewport) as
+    | string
+    | undefined
+  const displayStr =
+    typeof rawDisplay === "string" ? rawDisplay.trim() : ""
 
-  /** В режиме RN показываем только флекс; значение для UI принудительно "flex". */
-  const displayLayout: LayoutMode = isRn ? "flex" : effectiveLayout
-  const options = isRn ? LAYOUT_OPTIONS_RN : LAYOUT_OPTIONS_WEB
-
-  const handleLayoutChange = (value: LayoutMode) => {
-    setLayoutMode(value)
+  const setDisplayValue = (next: string | undefined) => {
     actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "layout", value, viewport)
+      setResponsiveStyleProp(props, "display", next, viewport)
     })
   }
+
+  const handleDisplayChange = (next: string | undefined) => {
+    if (isRn) {
+      setDisplayValue("flex")
+      return
+    }
+    setDisplayValue(next)
+  }
+
+  const showFlexSection = isRn
+    ? displayIsFlex(displayStr) || displayIsGrid(displayStr)
+    : displayIsFlex(displayStr)
+  const showGridSection = !isRn && displayIsGrid(displayStr)
 
   const handleGridColumnsChange = (event: ChangeEvent<HTMLInputElement>) => {
     const next = Number(event.target.value)
@@ -97,7 +112,7 @@ export const LayoutAccordion = () => {
     })
   }
 
-  const handleGridAutoFlowChange = (value: GridFlowOption) => {
+  const handleGridAutoFlowChange = (value: GridAutoFlow) => {
     actions.setProp(selectedId, (props: any) => {
       setResponsiveStyleProp(props, "gridAutoFlow", value, viewport)
     })
@@ -151,12 +166,12 @@ export const LayoutAccordion = () => {
     })
   }
 
-  const effectiveGridAutoFlow: GridFlowOption =
+  const effectiveGridAutoFlow: GridAutoFlow =
     (getResponsiveStyleProp(
       selectedProps,
       "gridAutoFlow",
       viewport,
-    ) as GridFlowOption | undefined) ?? "row"
+    ) as GridAutoFlow | undefined) ?? "row"
 
   const effectiveFlexFlow: FlexFlowOption =
     (getResponsiveStyleProp(
@@ -209,17 +224,17 @@ export const LayoutAccordion = () => {
           Расположение
         </Typography>
       </AccordionSummary>
-      <AccordionDetails>
+      <AccordionDetails sx={{ padding: "8px" }}>
         <Box sx={{ width: "100%" }}>
-          <CraftSettingsButtonGroup
-            withoutLabel
-            label="Layout"
-            value={displayLayout}
-            options={options}
-            onChange={(id) => handleLayoutChange(id as LayoutMode)}
+          <LayoutDisplayControl
+            display={displayStr}
+            primaryOptions={[...(isRn ? LAYOUT_PRIMARY_RN : LAYOUT_PRIMARY_WEB)]}
+            inlineOptions={LAYOUT_INLINE_OPTIONS}
+            onDisplayChange={handleDisplayChange}
+            hideInlineRow={isRn}
           />
 
-          {effectiveLayout === "flex" && (
+          {showFlexSection && (
             <Box
               sx={{
                 marginTop: "12px",
@@ -254,7 +269,7 @@ export const LayoutAccordion = () => {
             </Box>
           )}
 
-          {!isRn && effectiveLayout === "grid" && (
+          {showGridSection && (
             <Box
               sx={{
                 marginTop: "12px",
@@ -285,7 +300,7 @@ export const LayoutAccordion = () => {
                   { id: "row", content: "Row" },
                   { id: "column", content: "Column" },
                 ]}
-                onChange={(id) => handleGridAutoFlowChange(id as GridFlowOption)}
+                onChange={(id) => handleGridAutoFlowChange(id as GridAutoFlow)}
               />
 
               <CraftAlignControl
@@ -308,4 +323,3 @@ export const LayoutAccordion = () => {
     </Accordion>
   )
 }
-
