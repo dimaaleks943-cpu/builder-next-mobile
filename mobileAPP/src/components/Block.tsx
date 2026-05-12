@@ -5,8 +5,7 @@ import {
   resolveResponsiveStyle,
 } from "../content/responsiveStyle";
 import { isFlexDisplay, isGridDisplay } from "../utils/layoutDisplayDerived";
-
-type FlexFlowOption = "row" | "column" | "wrap";
+import { flexFlowToRn } from "../utils/flexFlowRn";
 type FlexJustifyContent =
   | "flex-start"
   | "center"
@@ -31,7 +30,7 @@ export const Block = ({ children, style }: BlockProps) => {
 
   const fullSize = Boolean(rs.fullSize);
   const display = (rs.display as string | undefined) ?? "block";
-  const flexFlow = (rs.flexFlow as FlexFlowOption | undefined) ?? "row";
+  const flexFlow = (rs.flexFlow as string | undefined) ?? "row";
   const flexJustifyContent = rs.flexJustifyContent as
     | FlexJustifyContent
     | undefined;
@@ -51,16 +50,19 @@ export const Block = ({ children, style }: BlockProps) => {
 
   const isGridLayout = isGridDisplay(display);
   const isFlexLayout = isFlexDisplay(display) || isGridLayout;
+  const { flexDirection: ffDir, flexWrap: ffWrap } = flexFlowToRn(flexFlow);
+
   const flexDirection = isFlexLayout
     ? isGridLayout
       ? "row"
-      : flexFlow === "column"
-        ? "column"
-        : "row"
+      : ffDir
     : "row";
 
-  const flexWrap =
-    isFlexLayout && (isGridLayout || flexFlow === "wrap") ? "wrap" : "nowrap";
+  const flexWrap = !isFlexLayout
+    ? "nowrap"
+    : isGridLayout
+      ? "wrap"
+      : ffWrap;
   const positionRaw = (rs.position as string | undefined) ?? "relative";
   const position = positionRaw === "absolute" ? "absolute" : "relative";
   const shadowStyle = fullSize

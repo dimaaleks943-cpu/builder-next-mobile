@@ -26,6 +26,7 @@ import {
 } from "../content/responsiveStyle";
 import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 import { isFlexDisplay, isGridDisplay } from "../utils/layoutDisplayDerived";
+import { flexFlowToRn } from "../utils/flexFlowRn";
 import { borderColorHasIntrinsicAlpha, withOpacityHex } from "../lib/withOpacityHex";
 
 const CATEGORY_FETCH_INIT = Symbol("categoryFetchInit");
@@ -77,7 +78,7 @@ export const ContentList = ({
   const cellFlexFlow =
     mergedCellStyle.flexFlow == null
       ? undefined
-      : (mergedCellStyle.flexFlow as "row" | "column" | "wrap");
+      : String(mergedCellStyle.flexFlow);
   const cellFlexJustifyContent =
     mergedCellStyle.flexJustifyContent == null
       ? undefined
@@ -425,7 +426,7 @@ interface ContentListItemProps {
   viewport: Viewport;
   display?: string;
   gap?: number;
-  flexFlow?: "row" | "column" | "wrap";
+  flexFlow?: string;
   flexJustifyContent?:
     | "flex-start"
     | "flex-end"
@@ -486,15 +487,18 @@ const ContentListItem = ({
   const isFlexLayout = isFlexDisplay(display) || isGridLayout;
   const hasTemplate = children && children.length > 0;
 
+  const { flexDirection: ffDir, flexWrap: ffWrap } = flexFlowToRn(flexFlow);
+
   const flexDirection = isFlexLayout
     ? isGridLayout
       ? "row"
-      : flexFlow === "column"
-        ? "column"
-        : "row"
+      : ffDir
     : "column";
-  const flexWrap =
-    isFlexLayout && (isGridLayout || flexFlow === "wrap") ? "wrap" : "nowrap";
+  const flexWrap = !isFlexLayout
+    ? "nowrap"
+    : isGridLayout
+      ? "wrap"
+      : ffWrap;
   const alignItems =
     isFlexLayout && flexAlignItems != null
       ? flexAlignItems
