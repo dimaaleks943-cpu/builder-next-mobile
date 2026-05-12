@@ -7,31 +7,31 @@ import {
   Typography,
 } from "@mui/material"
 import { useEditor } from "@craftjs/core"
-import { COLORS } from "../../../../../theme/colors.ts"
-import { CraftSettingsButtonGroup } from "../../../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
-import { CraftSettingsInput } from "../../../components/craftSettingsControls/CraftSettingsInput.tsx"
+import { COLORS } from "../../../../theme/colors.ts"
+import { CraftSettingsButtonGroup } from "../../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
+import { CraftSettingsInput } from "../../components/craftSettingsControls/CraftSettingsInput.tsx"
 import {
   CraftAlignControl,
-} from "../../../components/craftSettingsControls/CraftAlignControl.tsx"
-import { useBuilderModeContext } from "../../../context/BuilderModeContext.tsx"
-import { MODE_TYPE } from "../../../builder.enum.ts"
-import { usePreviewViewport } from "../../../context/PreviewViewportContext.tsx"
+} from "../../components/craftSettingsControls/CraftAlignControl.tsx"
+import { useBuilderModeContext } from "../../context/BuilderModeContext.tsx"
+import { MODE_TYPE } from "../../builder.enum.ts"
+import { usePreviewViewport } from "../../context/PreviewViewportContext.tsx"
 import {
   getResponsiveStyleProp,
   setResponsiveStyleProp,
-} from "../../../responsiveStyle.ts"
+} from "../../responsiveStyle.ts"
 import type {
   PlaceItemsValue,
   FlexFlowOption,
   FlexJustifyContent,
   FlexAlignItems,
   GridAutoFlow,
-} from "../../../../../builder.enum.ts"
-import { CraftFlexAlignControl } from "../../../components/craftSettingsControls/CraftFlexAlignControl.tsx"
+} from "../../../../builder.enum.ts"
+import { CraftFlexAlignControl } from "../../components/craftSettingsControls/CraftFlexAlignControl.tsx"
 import {
   LayoutDisplayControl,
   type LayoutDisplayInlineOption,
-} from "./LayoutDisplayControl.tsx"
+} from "./components/LayoutDisplayControl.tsx"
 
 const LAYOUT_PRIMARY_WEB = [
   { id: "block", content: "Блок" },
