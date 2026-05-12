@@ -10,6 +10,7 @@ import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../../theme/colors.ts"
 import { CraftSettingsButtonGroup } from "../../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
 import { CraftSettingsInput } from "../../components/craftSettingsControls/CraftSettingsInput.tsx"
+import { LayoutGapControl } from "./components/LayoutGapControl/LayoutGapControl.tsx"
 import {
   CraftAlignControl,
 } from "../../components/craftSettingsControls/CraftAlignControl.tsx"
@@ -119,11 +120,9 @@ export const LayoutAccordion = () => {
     })
   }
 
-  const handleGapChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const next = Number(event.target.value)
-    const safe = Number.isNaN(next) ? undefined : next
+  const handleGapCommit = (next: string | number | undefined) => {
     actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "gap", safe, viewport)
+      setResponsiveStyleProp(props, "gap", next, viewport)
     })
   }
 
@@ -262,11 +261,9 @@ export const LayoutAccordion = () => {
                 alignItems={effectiveFlexAlign}
                 onChange={handleFlexAlignChange}
               />
-              <CraftSettingsInput
-                label="Gap"
-                type="number"
-                value={getResponsiveStyleProp(selectedProps, "gap", viewport) as number | undefined ?? ""}
-                onChange={handleGapChange}
+              <LayoutGapControl
+                value={getResponsiveStyleProp(selectedProps, "gap", viewport)}
+                onCommit={handleGapCommit}
               />
             </Box>
           )}
@@ -312,11 +309,9 @@ export const LayoutAccordion = () => {
                 onChange={handleAlignChange}
               />
 
-              <CraftSettingsInput
-                label="Gap"
-                type="number"
-                value={getResponsiveStyleProp(selectedProps, "gap", viewport) as number | undefined ?? ""}
-                onChange={handleGapChange}
+              <LayoutGapControl
+                value={getResponsiveStyleProp(selectedProps, "gap", viewport)}
+                onCommit={handleGapCommit}
               />
             </Box>
           )}

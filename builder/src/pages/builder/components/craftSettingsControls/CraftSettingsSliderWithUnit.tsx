@@ -72,6 +72,9 @@ export const CraftSettingsSliderWithUnit = ({
         display: "flex",
         alignItems: "center",
         gap: "6px",
+        flex: 1,
+        minWidth: 0,
+        width: "100%",
       }}
     >
       <Slider
