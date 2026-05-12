@@ -25,12 +25,10 @@ import {
   type Viewport,
 } from "../content/responsiveStyle";
 import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
+import { isFlexDisplay, isGridDisplay } from "../utils/layoutDisplayDerived";
 import { borderColorHasIntrinsicAlpha, withOpacityHex } from "../lib/withOpacityHex";
 
-/** См. site-runtime ContentList: отличаем первый запуск эффекта от смены категории, чтобы не дублировать fetch при SSR-кэше «Все». */
 const CATEGORY_FETCH_INIT = Symbol("categoryFetchInit");
-
-type CellLayoutMode = "block" | "flex" | "absolute";
 
 interface ContentListProps {
   /**
@@ -40,7 +38,7 @@ interface ContentListProps {
   selectedSource?: string;
   /** Responsive стили корня списка (ветки `desktop` / `tablet` / …), включая `itemsPerRow`, рамки, фон. */
   style?: unknown;
-  /** Вложенный responsive `style` шаблонной ячейки (из craft); layout/gap/flex читаются после `resolveResponsiveStyle`. */
+  /** Вложенный responsive `style` шаблонной ячейки (из craft); display/gap/flex читаются после `resolveResponsiveStyle`. */
   cellTemplateStyle?: unknown;
   children?: ComponentNode[];
 }
@@ -66,8 +64,8 @@ export const ContentList = ({
     [cellTemplateStyle, viewport],
   );
 
-  const cellLayout =
-    (mergedCellStyle.layout as CellLayoutMode | "grid" | undefined) ?? "block";
+  const cellDisplay =
+    (mergedCellStyle.display as string | undefined) ?? "block";
   const rawCellGap =
     mergedCellStyle.gap == null
       ? null
@@ -388,7 +386,7 @@ export const ContentList = ({
                     collectionKey={selectedSource}
                     itemsPerRow={itemsPerRow}
                     viewport={viewport}
-                    layout={cellLayout}
+                    display={cellDisplay}
                     gap={cellGap ?? undefined}
                     flexFlow={cellFlexFlow ?? undefined}
                     flexJustifyContent={cellFlexJustifyContent ?? undefined}
@@ -425,7 +423,7 @@ interface ContentListItemProps {
   collectionKey: string | null;
   itemsPerRow: number;
   viewport: Viewport;
-  layout?: "block" | "flex" | "absolute" | "grid";
+  display?: string;
   gap?: number;
   flexFlow?: "row" | "column" | "wrap";
   flexJustifyContent?:
@@ -470,7 +468,7 @@ const ContentListItem = ({
   collectionKey,
   itemsPerRow,
   viewport,
-  layout = "block",
+  display = "block",
   gap,
   flexFlow = "row",
   flexJustifyContent,
@@ -484,26 +482,25 @@ const ContentListItem = ({
   const cellOpacityStyle = resolveCraftVisualEffectsRnStyle({
     opacityPercent: cellOpacityPercent,
   });
-  const effectiveLayout = layout === "grid" ? "flex" : layout;
-  const isFlex = effectiveLayout === "flex";
-
+  const isGridLayout = isGridDisplay(display);
+  const isFlexLayout = isFlexDisplay(display) || isGridLayout;
   const hasTemplate = children && children.length > 0;
 
-  const flexDirection = isFlex
-    ? layout === "grid"
+  const flexDirection = isFlexLayout
+    ? isGridLayout
       ? "row"
       : flexFlow === "column"
         ? "column"
         : "row"
     : "column";
   const flexWrap =
-    isFlex && (layout === "grid" || flexFlow === "wrap") ? "wrap" : "nowrap";
+    isFlexLayout && (isGridLayout || flexFlow === "wrap") ? "wrap" : "nowrap";
   const alignItems =
-    isFlex && flexAlignItems != null
+    isFlexLayout && flexAlignItems != null
       ? flexAlignItems
       : (toAlignItems(placeItemsY) ?? undefined);
   const justifyContent =
-    isFlex && flexJustifyContent != null
+    isFlexLayout && flexJustifyContent != null
       ? flexJustifyContent
       : (toJustifyContent(placeItemsX) ?? undefined);
 

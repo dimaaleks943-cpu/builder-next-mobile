@@ -4,8 +4,7 @@ import { useResponsiveViewport } from "../contexts/ResponsiveViewportContext";
 import {
   resolveResponsiveStyle,
 } from "../content/responsiveStyle";
-
-type BlockLayoutMode = "block" | "flex" | "absolute"; //TODO должен быть только flex
+import { isFlexDisplay, isGridDisplay } from "../utils/layoutDisplayDerived";
 
 type FlexFlowOption = "row" | "column" | "wrap";
 type FlexJustifyContent =
@@ -31,7 +30,7 @@ export const Block = ({ children, style }: BlockProps) => {
   const rs = resolveResponsiveStyle(style, viewport);
 
   const fullSize = Boolean(rs.fullSize);
-  const layout = (rs.layout as BlockLayoutMode | "grid" | undefined) ?? "block";
+  const display = (rs.display as string | undefined) ?? "block";
   const flexFlow = (rs.flexFlow as FlexFlowOption | undefined) ?? "row";
   const flexJustifyContent = rs.flexJustifyContent as
     | FlexJustifyContent
@@ -50,24 +49,20 @@ export const Block = ({ children, style }: BlockProps) => {
       ? String(rs.backgroundColor)
       : "#FFFFFF";
 
+  const isGridLayout = isGridDisplay(display);
+  const isFlexLayout = isFlexDisplay(display) || isGridLayout;
+  const flexDirection = isFlexLayout
+    ? isGridLayout
+      ? "row"
+      : flexFlow === "column"
+        ? "column"
+        : "row"
+    : "row";
 
-  /** при layout="flex" направление и выравнивание задаются flexFlow, flexJustifyContent, flexAlignItems.
-   *  "grid" трактуем как flex (row + wrap). TODO по идем приходить grid не должен, это престраховка */
-  const effectiveLayout = layout === "grid" ? "flex" : layout;
-  const isFlex = effectiveLayout === "flex";
-  const flexDirection =
-    effectiveLayout === "absolute"
-      ? "column"
-      : isFlex
-        ? layout === "grid"
-          ? "row"
-          : flexFlow === "column"
-            ? "column"
-            : "row"
-        : "row";
-
-  const flexWrap = isFlex && flexFlow === "wrap" ? "wrap" : "nowrap";
-  const position = effectiveLayout === "absolute" ? "absolute" : "relative";
+  const flexWrap =
+    isFlexLayout && (isGridLayout || flexFlow === "wrap") ? "wrap" : "nowrap";
+  const positionRaw = (rs.position as string | undefined) ?? "relative";
+  const position = positionRaw === "absolute" ? "absolute" : "relative";
   const shadowStyle = fullSize
     ? {}
     : {
@@ -78,7 +73,7 @@ export const Block = ({ children, style }: BlockProps) => {
         elevation: 1,
       };
 
-  const gapStyle = isFlex && gap != null && gap >= 0 ? { gap } : {};
+  const gapStyle = isFlexLayout && gap != null && gap >= 0 ? { gap } : {};
 
   return (
     <View
@@ -89,11 +84,11 @@ export const Block = ({ children, style }: BlockProps) => {
           flexDirection,
           flexWrap,
           position,
-          ...(isFlex && flexJustifyContent != null && { justifyContent: flexJustifyContent }),
-          ...(isFlex && flexAlignItems != null && { alignItems: flexAlignItems }),
+          ...(isFlexLayout && flexJustifyContent != null && { justifyContent: flexJustifyContent }),
+          ...(isFlexLayout && flexAlignItems != null && { alignItems: flexAlignItems }),
           ...gapStyle,
-            backgroundColor,
-         ...rs,
+          backgroundColor,
+          ...rs,
         },
       ]}
     >

@@ -85,14 +85,8 @@ const styleBranchToCssDeclarations = (style: StyleRecord): Record<string, string
     if (value !== undefined) declarations[property] = value
   }
 
-  const layout = typeof style.layout === "string" ? style.layout : undefined
-  if (layout === "flex") {
-    set("display", "flex")
-  } else if (layout === "grid") {
-    set("display", "grid")
-  } else if (layout === "block") {
-    set("display", "block")
-  }
+  const display = typeof style.display === "string" ? style.display : undefined
+  if (display) set("display", display)
 
   // -- PositioningAccordion --//
   const zIndexValue = asNumber(style.zIndex ?? style["z-index"])

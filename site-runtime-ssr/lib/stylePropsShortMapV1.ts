@@ -58,8 +58,43 @@ export const FULL_TO_SHORT = {
   outlineOffset: "ofo",
   boxShadow: "bxs",
 
+  //-- BackgroundAccordion --//
+  backgroundColor: "bgc",
+  backgroundImage: "bgi",
+  backgroundSize: "bgsz",
+  backgroundPosition: "bgp",
+  backgroundRepeat: "bgrp",
+  backgroundAttachment: "bga",
+  backgroundClip: "bgcl",
+  WebkitTextFillColor: "wtfc",
+
+  //-- SizeAccordion --//
+  width: "w",
+  height: "h",
+  minWidth: "miw",
+  minHeight: "mih",
+  maxWidth: "maw",
+  maxHeight: "mah",
+  overflow: "ovf",
+  aspectRatio: "asp",
+  boxSizing: "bxsz",
+  objectFit: "objf",
+  objectPosition: "objp",
+
+  //-- SpacingAccordion --//
+  marginTop: "mt",
+  marginRight: "mr",
+  marginBottom: "mb",
+  marginLeft: "ml",
+  paddingTop: "pt",
+  paddingRight: "pr",
+  paddingBottom: "pb",
+  paddingLeft: "pl",
+
+  //-- LayoutAccordion --//
+  display: "dsp",
+
   // layout
-  layout: "ly",
   /** Элементов в строке сетки списка (ContentList). */
   itemsPerRow: "ipr",
   fullSize: "fs",
@@ -72,30 +107,6 @@ export const FULL_TO_SHORT = {
   flexAlignItems: "fai",
   placeItemsY: "piy",
   placeItemsX: "pix",
-
-  // spacing
-  marginTop: "mt",
-  marginRight: "mr",
-  marginBottom: "mb",
-  marginLeft: "ml",
-  paddingTop: "pt",
-  paddingRight: "pr",
-  paddingBottom: "pb",
-  paddingLeft: "pl",
-
-  // background
-  backgroundColor: "bgc",
-  backgroundClip: "bgcl",
-  WebkitTextFillColor: "wtfc",
-
-  // size
-  width: "w",
-  height: "h",
-  minWidth: "miw",
-  minHeight: "mih",
-  maxWidth: "maw",
-  maxHeight: "mah",
-  overflow: "ovf",
 } as const
 
 export type FullStylePropKey = keyof typeof FULL_TO_SHORT
