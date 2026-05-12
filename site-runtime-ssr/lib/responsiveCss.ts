@@ -132,11 +132,8 @@ const styleBranchToCssDeclarations = (style: StyleRecord): Record<string, string
   if (typeof style.gridAutoFlow === "string") set("grid-auto-flow", style.gridAutoFlow)
   set("gap", toCssLength(style.gap))
 
-  const flexFlow = typeof style.flexFlow === "string" ? style.flexFlow : undefined
-  if (flexFlow) {
-    set("flex-direction", flexFlow === "column" ? "column" : "row")
-    set("flex-wrap", flexFlow === "wrap" ? "wrap" : "nowrap")
-  }
+  if (style.flexFlow === "string") {set("flex-flow", style.flexFlow)}
+  
   if (typeof style.flexJustifyContent === "string") set("justify-content", style.flexJustifyContent)
   if (typeof style.flexAlignItems === "string") set("align-items", style.flexAlignItems)
   if (typeof style.placeItemsY === "string" && typeof style.placeItemsX === "string") {
