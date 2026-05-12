@@ -1,9 +1,12 @@
 import { useNode } from "@craftjs/core"
-import type { ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
-import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
+import {
+  resolveResponsiveStyle,
+  type ResponsiveStyle,
+} from "../pages/builder/responsiveStyle.ts"
 
 export type BlockProps = {
   children?: ReactNode
@@ -25,7 +28,7 @@ export const CraftBlock = (props: BlockProps) => {
         if (!ref) return
         connect(drag(ref))
       }}
-      style={{ ...responsiveStyle }}
+      style={responsiveStyle as CSSProperties}
     >
       {props.children}
     </div>

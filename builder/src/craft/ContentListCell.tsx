@@ -1,11 +1,13 @@
 import { useNode } from "@craftjs/core"
-import type { ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
 import { ContentListCellContext } from "../pages/builder/context/ContentListCellContext.tsx"
-import type { PlaceItemsValue } from "../builder.enum"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
-import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
+import {
+  resolveResponsiveStyle,
+  type ResponsiveStyle,
+} from "../pages/builder/responsiveStyle.ts"
 
 export type ContentListCellProps = {
   children?: ReactNode
@@ -16,16 +18,11 @@ export type ContentListCellProps = {
  * Одна ячейка списка коллекции. Canvas: в неё можно перетащить элементы (Text и т.д.).
  * Любая ячейка может быть источником правды: ContentList синхронизирует изменения во все ячейки.
  *
- * display / gridColumns / gridRows управляются через LayoutAccordion и
- * описывают, как раскладывать дочерние элементы внутри ячейки.
+ * display, flexFlow, justifyContent, alignItems, gridTemplate*, placeItems, gap — в `responsiveStyle` в виде имён React/CSS.
  */
 export const CraftContentListCell = (props: ContentListCellProps) => {
   const viewport = usePreviewViewport()
   const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
-  const display = (responsiveStyle.display as string | undefined) ?? "block"
-  const isGridLayout = display === "grid" || display === "inline-grid"
-  const placeItemsY = responsiveStyle.placeItemsY as PlaceItemsValue | undefined
-  const placeItemsX = responsiveStyle.placeItemsX as PlaceItemsValue | undefined
   const {
     connectors: { connect, drag },
   } = useNode((node) => ({
@@ -39,12 +36,9 @@ export const CraftContentListCell = (props: ContentListCellProps) => {
         connect(drag(ref))
       }}
       style={{
+        ...(responsiveStyle as CSSProperties),
         flex: 1,
         padding: "16px",
-        placeItems:
-          isGridLayout && placeItemsY != null && placeItemsX != null
-            ? `${placeItemsY} ${placeItemsX}`
-            : undefined,
       }}
     >
       <ContentListCellContext.Provider value={true}>

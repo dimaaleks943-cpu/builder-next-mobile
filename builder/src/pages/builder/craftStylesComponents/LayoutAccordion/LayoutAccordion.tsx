@@ -53,6 +53,30 @@ const LAYOUT_INLINE_OPTIONS: LayoutDisplayInlineOption[] = [
 const displayIsFlex = (d: string) => d === "flex" || d === "inline-flex"
 const displayIsGrid = (d: string) => d === "grid" || d === "inline-grid"
 
+const gridTemplateColumnsToCount = (raw: unknown): number | undefined => {
+  if (typeof raw !== "string") return undefined
+  const m = /^repeat\((\d+)\s*,\s*minmax\(0\s*,\s*1fr\)\)$/i.exec(raw.trim())
+  return m?.[1] ? Number(m[1]) : undefined
+}
+
+const gridTemplateRowsToCount = (raw: unknown): number | undefined => {
+  if (typeof raw !== "string") return undefined
+  const m = /^repeat\((\d+)\s*,\s*auto\)$/i.exec(raw.trim())
+  return m?.[1] ? Number(m[1]) : undefined
+}
+
+const parsePlaceItemsString = (
+  raw: unknown,
+): { y: PlaceItemsValue | undefined; x: PlaceItemsValue | undefined } => {
+  if (typeof raw !== "string" || !raw.trim()) {
+    return { y: undefined, x: undefined }
+  }
+  const parts = raw.trim().split(/\s+/)
+  const y = parts[0] as PlaceItemsValue
+  const x = (parts[1] ?? parts[0]) as PlaceItemsValue
+  return { y, x }
+}
+
 export const LayoutAccordion = () => {
   const modeContext = useBuilderModeContext()
   const isRn = modeContext?.mode === MODE_TYPE.RN
@@ -101,7 +125,11 @@ export const LayoutAccordion = () => {
     const next = Number(event.target.value)
     const safe = Number.isNaN(next) ? undefined : next
     actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "gridColumns", safe, viewport)
+      const tpl =
+        safe != null && safe > 0
+          ? `repeat(${safe}, minmax(0, 1fr))`
+          : undefined
+      setResponsiveStyleProp(props, "gridTemplateColumns", tpl, viewport)
       setResponsiveStyleProp(props, "itemsPerRow", safe, viewport)
     })
   }
@@ -110,7 +138,9 @@ export const LayoutAccordion = () => {
     const next = Number(event.target.value)
     const safe = Number.isNaN(next) ? undefined : next
     actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "gridRows", safe, viewport)
+      const tpl =
+        safe != null && safe > 0 ? `repeat(${safe}, auto)` : undefined
+      setResponsiveStyleProp(props, "gridTemplateRows", tpl, viewport)
     })
   }
 
@@ -144,14 +174,14 @@ export const LayoutAccordion = () => {
   ) => {
     actions.setProp(selectedId, (props: any) => {
       if (justifyContent === undefined && alignItems === undefined) {
-        setResponsiveStyleProp(props, "flexJustifyContent", undefined, viewport)
-        setResponsiveStyleProp(props, "flexAlignItems", undefined, viewport)
+        setResponsiveStyleProp(props, "justifyContent", undefined, viewport)
+        setResponsiveStyleProp(props, "alignItems", undefined, viewport)
       } else {
         if (justifyContent != null) {
-          setResponsiveStyleProp(props, "flexJustifyContent", justifyContent, viewport)
+          setResponsiveStyleProp(props, "justifyContent", justifyContent, viewport)
         }
         if (alignItems != null) {
-          setResponsiveStyleProp(props, "flexAlignItems", alignItems, viewport)
+          setResponsiveStyleProp(props, "alignItems", alignItems, viewport)
         }
       }
     })
@@ -163,11 +193,9 @@ export const LayoutAccordion = () => {
   ) => {
     actions.setProp(selectedId, (props: any) => {
       if (alignY === undefined && alignX === undefined) {
-        setResponsiveStyleProp(props, "placeItemsY", undefined, viewport)
-        setResponsiveStyleProp(props, "placeItemsX", undefined, viewport)
+        setResponsiveStyleProp(props, "placeItems", undefined, viewport)
       } else if (alignY != null && alignX != null) {
-        setResponsiveStyleProp(props, "placeItemsY", alignY, viewport)
-        setResponsiveStyleProp(props, "placeItemsX", alignX, viewport)
+        setResponsiveStyleProp(props, "placeItems", `${alignY} ${alignX}`, viewport)
       }
     })
   }
@@ -193,29 +221,22 @@ export const LayoutAccordion = () => {
 
   const effectiveFlexJustify = getResponsiveStyleProp(
     selectedProps,
-    "flexJustifyContent",
+    "justifyContent",
     viewport,
-  ) as
-    | FlexJustifyContent
-    | undefined
+  ) as FlexJustifyContent | undefined
   const effectiveFlexAlign = getResponsiveStyleProp(
     selectedProps,
-    "flexAlignItems",
+    "alignItems",
     viewport,
-  ) as
-    | FlexAlignItems
-    | undefined
+  ) as FlexAlignItems | undefined
 
-  const effectivePlaceItemsY = getResponsiveStyleProp(
+  const rawPlaceItems = getResponsiveStyleProp(
     selectedProps,
-    "placeItemsY",
+    "placeItems",
     viewport,
-  ) as PlaceItemsValue | undefined
-  const effectivePlaceItemsX = getResponsiveStyleProp(
-    selectedProps,
-    "placeItemsX",
-    viewport,
-  ) as PlaceItemsValue | undefined
+  )
+  const { y: effectivePlaceItemsY, x: effectivePlaceItemsX } =
+    parsePlaceItemsString(rawPlaceItems)
 
   return (
     <Accordion disableGutters>
@@ -281,13 +302,29 @@ export const LayoutAccordion = () => {
                 <CraftSettingsInput
                   label="Columns"
                   type="number"
-                  value={getResponsiveStyleProp(selectedProps, "gridColumns", viewport) as number | undefined ?? ""}
+                  value={
+                    gridTemplateColumnsToCount(
+                      getResponsiveStyleProp(
+                        selectedProps,
+                        "gridTemplateColumns",
+                        viewport,
+                      ),
+                    ) ?? ""
+                  }
                   onChange={handleGridColumnsChange}
                 />
                 <CraftSettingsInput
                   label="Rows"
                   type="number"
-                  value={getResponsiveStyleProp(selectedProps, "gridRows", viewport) as number | undefined ?? ""}
+                  value={
+                    gridTemplateRowsToCount(
+                      getResponsiveStyleProp(
+                        selectedProps,
+                        "gridTemplateRows",
+                        viewport,
+                      ),
+                    ) ?? ""
+                  }
                   onChange={handleGridRowsChange}
                 />
               </Box>

@@ -1,3 +1,7 @@
+/**
+ * Визуальный грид выравнивания; значения в крафт пишутся родителем в `responsiveStyle`
+ * как прямые ключи React/CSS: `justifyContent`, `alignItems` (см. LayoutAccordion).
+ */
 import {
   FlexAlignBarHorizontal,
   FlexAlignBarVertical,

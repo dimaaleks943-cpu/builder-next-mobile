@@ -5,13 +5,12 @@ import {
   type ShortStylePropKey,
 } from "../../utils/stylePropsShortMapV1"
 
-
 export type ResponsiveStyleValue = Record<string, unknown>
 
 export type ResponsiveStyle = Partial<
   Record<PreviewViewport, ResponsiveStyleValue>
 >
-//TODO really need?
+
 export const getResponsiveStyleBranch = (
   viewport: PreviewViewport,
 ): PreviewViewport => {
@@ -51,7 +50,6 @@ export const setResponsiveStyleProp = (
     [branch]: currentBranch,
   }
 
-  // Keep a single source of truth in props.style.* and remove flat duplicates.
   delete props[key]
   const shortKey = FULL_TO_SHORT[key as FullStylePropKey] as
     | ShortStylePropKey
@@ -86,7 +84,7 @@ export const resolveResponsiveStyle = (
 
   const phone = style?.phone ?? {}
 
-  return { ...desktop,  ...tabletLandscape, ...tablet, ...phoneLandscape, ...phone }
+  return { ...desktop, ...tabletLandscape, ...tablet, ...phoneLandscape, ...phone }
 }
 
 export const getResponsiveStyleProp = (

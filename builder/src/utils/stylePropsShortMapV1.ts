@@ -98,15 +98,14 @@ export const FULL_TO_SHORT = {
   /** Элементов в строке сетки списка (ContentList). */
   itemsPerRow: "ipr",
   fullSize: "fs",
-  gridColumns: "gcl",
-  gridRows: "grw",
+  gridTemplateColumns: "gtc",
+  gridTemplateRows: "gtr",
   gridAutoFlow: "gaf",
   gap: "gp",
   flexFlow: "ff",
-  flexJustifyContent: "fjc",
-  flexAlignItems: "fai",
-  placeItemsY: "piy",
-  placeItemsX: "pix",
+  justifyContent: "juc",
+  alignItems: "ali",
+  placeItems: "pit",
 } as const
 
 export type FullStylePropKey = keyof typeof FULL_TO_SHORT
