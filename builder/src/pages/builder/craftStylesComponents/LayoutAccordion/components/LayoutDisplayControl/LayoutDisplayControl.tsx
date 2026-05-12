@@ -9,8 +9,8 @@ import {
   LayoutDisplayRow,
   LayoutDisplaySegmentBtn,
   LayoutDisplaySegmented,
-} from "./LayoutDisplayControl.styles.ts"
-import { ChevronRightIcon } from "../../../../../icons/ChevronRightIcon.tsx"
+} from "./styles.ts"
+import { ChevronRightIcon } from "../../../../../../icons/ChevronRightIcon.tsx"
 
 export interface LayoutDisplayPrimaryOption {
   id: string

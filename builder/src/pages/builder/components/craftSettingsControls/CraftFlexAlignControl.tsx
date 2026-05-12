@@ -12,6 +12,7 @@ import {
   CraftSettingsFixedLabel,
   FlexAlignSpaceAroundArrow,
 } from "./styles.ts"
+import { isFlexFlowRowLike } from "../../../../utils/flexFlowDerived.ts"
 
 const JUSTIFY_VALUES: FlexJustifyContent[] = [
   "flex-start",
@@ -102,7 +103,7 @@ export const CraftFlexAlignControl = ({
   )
   const DOUBLE_CLICK_MS = 400
 
-  const isRowLike = flexFlow === "row" || flexFlow === "wrap"
+  const isRowLike = isFlexFlowRowLike(flexFlow)
   const effectiveJustify: FlexJustifyContent = justifyContent ?? "flex-start"
   const effectiveAlign: FlexAlignItems = alignItems ?? "stretch"
   const hasAlign = justifyContent != null || alignItems != null

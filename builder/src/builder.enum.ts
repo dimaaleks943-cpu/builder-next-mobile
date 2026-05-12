@@ -1,6 +1,18 @@
 export type GridAutoFlow = "row" | "column";
-/** Для flex: row = row nowrap, column = column nowrap, wrap = row wrap */
-export type FlexFlowOption = "row" | "column" | "wrap";
+/** `flex-flow` в craft — строка как в CSS shorthand (доверяем данным компонента). */
+export type FlexFlowOption =
+  | "row"
+  | "column"
+  | "row wrap"
+  | "row wrap-reverse"
+  | "row-reverse"
+  | "row-reverse wrap"
+  | "row-reverse wrap-reverse"
+  | "column wrap"
+  | "column wrap-reverse"
+  | "column-reverse"
+  | "column-reverse wrap"
+  | "column-reverse wrap-reverse";
 /** justify-content для flex */
 export type FlexJustifyContent =
   | "flex-start"

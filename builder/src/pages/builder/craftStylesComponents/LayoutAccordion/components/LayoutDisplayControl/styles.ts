@@ -1,5 +1,5 @@
 import { Box, Menu, MenuItem, styled } from "@mui/material"
-import { COLORS } from "../../../../../theme/colors.ts"
+import { COLORS } from "../../../../../../theme/colors.ts"
 
 export const LayoutDisplayRow = styled(Box)(() => ({
   display: "flex",

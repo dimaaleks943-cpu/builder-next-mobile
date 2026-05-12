@@ -31,7 +31,8 @@ import { CraftFlexAlignControl } from "../../components/craftSettingsControls/Cr
 import {
   LayoutDisplayControl,
   type LayoutDisplayInlineOption,
-} from "./components/LayoutDisplayControl.tsx"
+} from "./components/LayoutDisplayControl/LayoutDisplayControl.tsx"
+import { LayoutFlexFlowControl } from "./components/LayoutFlexFlowControl/LayoutFlexFlowControl.tsx"
 
 const LAYOUT_PRIMARY_WEB = [
   { id: "block", content: "Блок" },
@@ -132,6 +133,12 @@ export const LayoutAccordion = () => {
     })
   }
 
+  const handleFlexFlowReset = () => {
+    actions.setProp(selectedId, (props: any) => {
+      setResponsiveStyleProp(props, "flexFlow", undefined, viewport)
+    })
+  }
+
   const handleFlexAlignChange = (
     justifyContent: FlexJustifyContent | undefined,
     alignItems: FlexAlignItems | undefined,
@@ -173,12 +180,17 @@ export const LayoutAccordion = () => {
       viewport,
     ) as GridAutoFlow | undefined) ?? "row"
 
-  const effectiveFlexFlow: FlexFlowOption =
-    (getResponsiveStyleProp(
-      selectedProps,
-      "flexFlow",
-      viewport,
-    ) as FlexFlowOption | undefined) ?? "row"
+  const rawFlexFlow = getResponsiveStyleProp(
+    selectedProps,
+    "flexFlow",
+    viewport,
+  ) as FlexFlowOption | undefined
+  const rawFlexFlowStr =
+    rawFlexFlow != null && String(rawFlexFlow).trim() !== ""
+      ? (String(rawFlexFlow).trim() as FlexFlowOption)
+      : undefined
+  const effectiveFlexFlow: FlexFlowOption = rawFlexFlowStr ?? "row"
+  const flexFlowHasExplicitStyle = rawFlexFlowStr != null
 
   const effectiveFlexJustify = getResponsiveStyleProp(
     selectedProps,
@@ -235,23 +247,13 @@ export const LayoutAccordion = () => {
           />
 
           {showFlexSection && (
-            <Box
-              sx={{
-                marginTop: "12px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-              }}
-            >
-              <CraftSettingsButtonGroup
+            <Box sx={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "12px" }}>
+              <LayoutFlexFlowControl
                 label="Direction"
                 value={effectiveFlexFlow}
-                options={[
-                  { id: "row", content: "→" },
-                  { id: "column", content: "↓" },
-                  { id: "wrap", content: "⇅" },
-                ]}
-                onChange={(id) => handleFlexFlowChange(id as FlexFlowOption)}
+                onChange={handleFlexFlowChange}
+                onReset={handleFlexFlowReset}
+                hasExplicitStyle={flexFlowHasExplicitStyle}
               />
               <CraftFlexAlignControl
                 label="Align"
