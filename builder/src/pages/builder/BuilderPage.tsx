@@ -15,6 +15,7 @@ import { CollectionFilterScopeProvider } from "./context/CollectionFilterScopeCo
 import { BuilderTemplatePageContext } from "./context/BuilderTemplatePageContext.tsx"
 import { BuilderModeContext } from "./context/BuilderModeContext.tsx"
 import { PreviewViewportContext } from "./context/PreviewViewportContext.tsx"
+import { CraftGridManualEditBridgeProvider } from "./context/CraftGridManualEditBridgeContext.tsx"
 import { CraftInlineSettingsBridgeProvider } from "./context/CraftInlineSettingsBridgeContext.tsx"
 import { COLORS } from "../../theme/colors"
 import { CraftBlock } from "../../craft/Block.tsx"
@@ -296,6 +297,7 @@ export const BuilderPage = () => {
         }}
       >
         <CraftInlineSettingsBridgeProvider>
+        <CraftGridManualEditBridgeProvider>
         <RightPanelContext.Provider
           value={{
             tabIndex: rightPanelTabIndex,
@@ -364,6 +366,7 @@ export const BuilderPage = () => {
             </CollectionsContext.Provider>
           </CollectionFilterScopeProvider>
         </RightPanelContext.Provider>
+        </CraftGridManualEditBridgeProvider>
         </CraftInlineSettingsBridgeProvider>
       </Editor>
       </PreviewViewportContext.Provider>

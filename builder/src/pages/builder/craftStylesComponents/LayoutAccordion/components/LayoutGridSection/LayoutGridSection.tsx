@@ -3,6 +3,7 @@ import type {
   GridAutoFlow,
   PlaceItemsValue,
 } from "../../../../../../builder.enum.ts"
+import { SettingIcon } from "../../../../../../icons/SettingIcon.tsx"
 import { ZigzagRightIcon } from "../../../../../../icons/ZigzagRightIcon.tsx"
 import { COLORS } from "../../../../../../theme/colors.ts"
 import { CraftAlignControl } from "../CraftAlignControl/CraftAlignControl.tsx"
@@ -19,6 +20,7 @@ import {
   LayoutGridSectionGridInputsArea,
   LayoutGridSectionGridMainLabelColumn,
   LayoutGridSectionGridRow,
+  LayoutGridSectionGridSettingsButton,
   LayoutGridSectionNumericStack,
   LayoutGridSectionRoot,
   LayoutGridSectionSubLabel,
@@ -47,6 +49,7 @@ interface Props {
   onAlignReset: () => void
   gapValue: unknown
   onGapCommit: (next: string | number | undefined) => void
+  onGridManualEditOpen?: () => void
 }
 
 const gridHasExplicitStyle = (
@@ -76,6 +79,7 @@ export const LayoutGridSection = ({
   onAlignReset,
   gapValue,
   onGapCommit,
+  onGridManualEditOpen,
 }: Props) => {
   const gridExplicit = gridHasExplicitStyle(
     gridTemplateColumnsRaw,
@@ -95,6 +99,7 @@ export const LayoutGridSection = ({
                 ? { hasValue: true, onReset: onGridReset }
                 : undefined
             }
+            sx={{marginBottom: "16px"}}
           />
         </LayoutGridSectionGridMainLabelColumn>
         <LayoutGridSectionGridInputsArea>
@@ -122,6 +127,15 @@ export const LayoutGridSection = ({
             />
             <LayoutGridSectionSubLabel>Rows</LayoutGridSectionSubLabel>
           </LayoutGridSectionNumericStack>
+          <LayoutGridSectionGridSettingsButton
+            type="button"
+            aria-label="Grid settings"
+            onClick={() => {
+              onGridManualEditOpen?.()
+            }}
+          >
+            <SettingIcon size={16} fill={COLORS.gray700} />
+          </LayoutGridSectionGridSettingsButton>
         </LayoutGridSectionGridInputsArea>
       </LayoutGridSectionGridRow>
 

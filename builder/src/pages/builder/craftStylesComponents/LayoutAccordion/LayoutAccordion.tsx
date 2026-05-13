@@ -33,6 +33,7 @@ import {
   buildGridTemplateColumns,
   buildGridTemplateRows,
 } from "./components/LayoutGridSection/utils.ts"
+import { useCraftGridManualEditBridge } from "../../context/CraftGridManualEditBridgeContext.tsx"
 import { LayoutGridSection } from "./components/LayoutGridSection/LayoutGridSection.tsx"
 
 const LAYOUT_PRIMARY_WEB = [
@@ -69,6 +70,7 @@ export const LayoutAccordion = () => {
   const modeContext = useBuilderModeContext()
   const isRn = modeContext?.mode === MODE_TYPE.RN
   const viewport = usePreviewViewport()
+  const { openGridManualEdit } = useCraftGridManualEditBridge()
 
   const { actions } = useEditor()
   const { selectedId, selectedProps } = useEditor((state) => {
@@ -321,6 +323,9 @@ export const LayoutAccordion = () => {
               onAlignReset={handleAlignReset}
               gapValue={getResponsiveStyleProp(selectedProps, "gap", viewport)}
               onGapCommit={handleGapCommit}
+              onGridManualEditOpen={() => {
+                openGridManualEdit(selectedId)
+              }}
             />
           )}
         </Box>

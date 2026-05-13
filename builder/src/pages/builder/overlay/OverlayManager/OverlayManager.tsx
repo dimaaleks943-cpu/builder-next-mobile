@@ -1,6 +1,7 @@
 import { useEditor } from "@craftjs/core"
 import { useMemo } from "react"
 import type { PreviewViewport } from "../../builder.enum.ts"
+import { useCraftGridManualEditBridge } from "../../context/CraftGridManualEditBridgeContext.tsx"
 import { useCraftInlineSettingsBridge } from "../../context/CraftInlineSettingsBridgeContext.tsx"
 import { CRAFT_INLINE_SETTINGS_BADGE_LABELS } from "../constants.ts"
 import { computeInlineModalAnchorNearBadge } from "./inlineModalAnchor.ts"
@@ -20,6 +21,7 @@ export const OverlayManager = ({
   overlayRootElement,
   canvasElement,
 }: Props) => {
+  const { activeNodeId: gridManualEditNodeId } = useCraftGridManualEditBridge()
   const selection = useSelectionHoverCollector()
   const { requestInlineSettingsOpen } = useCraftInlineSettingsBridge()
   const { actions } = useEditor()
@@ -39,6 +41,10 @@ export const OverlayManager = ({
       labelKey && CRAFT_INLINE_SETTINGS_BADGE_LABELS.has(labelKey),
     )
   }, [selection?.label])
+
+  if (gridManualEditNodeId) {
+    return null
+  }
 
   if (!selection || !geometry.isVisible) {
     return null

@@ -1,4 +1,4 @@
-import { Box, Typography, styled } from "@mui/material"
+import { Box, IconButton, Typography, styled } from "@mui/material"
 import { COLORS } from "../../../../../../theme/colors.ts"
 
 export const LayoutGridSectionRoot = styled(Box)(() => ({
@@ -25,7 +25,13 @@ export const LayoutGridSectionGridInputsArea = styled(Box)(() => ({
   flex: 1,
   minWidth: 0,
   display: "flex",
+  alignItems: "flex-start",
   gap: "8px",
+}))
+
+export const LayoutGridSectionGridSettingsButton = styled(IconButton)(() => ({
+  flexShrink: 0,
+  padding: "4px",
 }))
 
 export const LayoutGridSectionNumericStack = styled(Box)(() => ({

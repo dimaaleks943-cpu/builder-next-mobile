@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Box, IconButton } from "@mui/material"
 import { Frame, Element, useEditor, type SerializedNodes } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
@@ -19,7 +19,8 @@ import { MonitorIcon } from "../../../icons/MonitorIcon.tsx";
 import { TabletIcon } from "../../../icons/TabletIcon.tsx";
 import { MobileIcon } from "../../../icons/MobileIcon.tsx";
 import { useBuilderModeContext } from "../context/BuilderModeContext.tsx";
-import { OverlayManager } from "../overlay/OverlayManager/OverlayManager.tsx";
+import { OverlayGridManualEditor } from "../overlay/OverlayGridManualEditor/OverlayGridManualEditor.tsx"
+import { OverlayManager } from "../overlay/OverlayManager/OverlayManager.tsx"
 
 const MIN_PREVIEW_WIDTH = 320
 const MAX_WEB_PREVIEW_WIDTH = 3840
@@ -89,8 +90,21 @@ export const BuilderCanvas = ({
     return { breadcrumb: names }
   })
 
-  const canvasRef = useRef<HTMLDivElement>(null)
-  const overlayRootRef = useRef<HTMLDivElement | null>(null)
+  const canvasRef = useRef<HTMLDivElement | null>(null)
+  const [canvasElement, setCanvasElement] = useState<HTMLDivElement | null>(null)
+  const [overlayRootElement, setOverlayRootElement] = useState<HTMLDivElement | null>(
+    null,
+  )
+
+  const handleCanvasRef = useCallback((el: HTMLDivElement | null) => {
+    canvasRef.current = el
+    setCanvasElement(el)
+  }, [])
+
+  const handleOverlayRootRef = useCallback((el: HTMLDivElement | null) => {
+    setOverlayRootElement(el)
+  }, [])
+
   const appliedPreviewWidth = customPreviewWidth ?? getPreviewMaxWidth(previewViewport)
 
   const mapWidthToViewport = (width: number): PreviewViewport => {
@@ -452,7 +466,7 @@ export const BuilderCanvas = ({
       </Box>
       {/* Сам холст, подключённый к Craft.js */}
       <Box
-        ref={canvasRef}
+        ref={handleCanvasRef}
         tabIndex={-1}
         sx={{
           flex: 1,
@@ -505,9 +519,7 @@ export const BuilderCanvas = ({
         </Box>
         <Box
           id="builder-badge-overlay-root"
-          ref={(ref: HTMLDivElement | null) => {
-            overlayRootRef.current = ref
-          }}
+          ref={handleOverlayRootRef}
           sx={{
             position: "absolute",
             inset: 0,
@@ -517,8 +529,13 @@ export const BuilderCanvas = ({
         >
           <OverlayManager
             previewViewport={previewViewport}
-            overlayRootElement={overlayRootRef.current}
-            canvasElement={canvasRef.current}
+            overlayRootElement={overlayRootElement}
+            canvasElement={canvasElement}
+          />
+          <OverlayGridManualEditor
+            previewViewport={previewViewport}
+            overlayRootElement={overlayRootElement}
+            canvasElement={canvasElement}
           />
         </Box>
       </Box>

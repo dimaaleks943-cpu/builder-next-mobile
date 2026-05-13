@@ -1,7 +1,8 @@
 import { useEditor } from "@craftjs/core"
 import { useMemo } from "react"
 import { resolveNodeDisplayName } from "../../../../utils/resolveNodeDisplayName"
-import type { OverlaySelectionData } from "../interface.ts"
+import { resolveCraftDomElement } from "../resolveCraftDomElement.ts"
+import type { OverlaySelectionData } from "../interface.ts";
 
 export const useSelectionHoverCollector = (): OverlaySelectionData | null => {
   const { selectedId, selectedNode } = useEditor((state) => {
@@ -13,7 +14,11 @@ export const useSelectionHoverCollector = (): OverlaySelectionData | null => {
   })
 
   return useMemo(() => {
-    if (!selectedId || !selectedNode?.dom) {
+    if (!selectedId || !selectedNode) {
+      return null
+    }
+    const dom = resolveCraftDomElement(selectedNode.dom)
+    if (!dom) {
       return null
     }
 
@@ -23,7 +28,7 @@ export const useSelectionHoverCollector = (): OverlaySelectionData | null => {
 
     return {
       nodeId: selectedId,
-      dom: selectedNode.dom as HTMLElement,
+      dom,
       label: resolveNodeDisplayName(selectedNode),
       resolvedName,
     }

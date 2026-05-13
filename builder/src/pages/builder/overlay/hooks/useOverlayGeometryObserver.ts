@@ -16,6 +16,9 @@ const HIDDEN_GEOMETRY: OverlayGeometry = {
   height: 0,
 }
 
+const isResizeObservableElement = (value: unknown): value is Element =>
+  typeof Element !== "undefined" && value instanceof Element
+
 const POSITION_AFFECTING_STYLE_PROPS = [
   "inset",
   "top",
@@ -77,7 +80,10 @@ export const useOverlayGeometryObserver = ({
   const [geometry, setGeometry] = useState<OverlayGeometry>(HIDDEN_GEOMETRY)
 
   useEffect(() => {
-    if (!anchorElement || !overlayRootElement || !canvasElement) {
+    const anchorOk = isResizeObservableElement(anchorElement)
+    const overlayOk = isResizeObservableElement(overlayRootElement)
+    const canvasOk = isResizeObservableElement(canvasElement)
+    if (!anchorOk || !overlayOk || !canvasOk) {
       setGeometry(HIDDEN_GEOMETRY)
       return
     }
@@ -148,7 +154,7 @@ export const useOverlayGeometryObserver = ({
       }
     })
 
-    let currentObservedElement: HTMLElement | null = anchorElement
+    let currentObservedElement: Element | null = anchorElement
     while (currentObservedElement) {
       mutationObserver.observe(currentObservedElement, {
         attributes: true,
