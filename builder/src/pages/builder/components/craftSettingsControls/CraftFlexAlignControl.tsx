@@ -182,7 +182,7 @@ export const CraftFlexAlignControl = ({
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: "46px 62px 150px",
+          gridTemplateColumns: "44px 62px 150px",
           gap: "12px",
         }}
       >

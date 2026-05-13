@@ -10,6 +10,7 @@ export const CraftSettingsFixedLabel = styled(Typography)(() => ({
   lineHeight: "14px",
   color: COLORS.gray700,
   textAlign: "left",
+  letterSpacing: "normal",
 })) as typeof Typography
 
 /** Inline label that grows (e.g. select / value-with-unit row) */

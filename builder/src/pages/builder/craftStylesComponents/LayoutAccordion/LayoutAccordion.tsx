@@ -8,12 +8,7 @@ import {
 } from "@mui/material"
 import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../../theme/colors.ts"
-import { CraftSettingsButtonGroup } from "../../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
-import { CraftSettingsInput } from "../../components/craftSettingsControls/CraftSettingsInput.tsx"
 import { LayoutGapControl } from "./components/LayoutGapControl/LayoutGapControl.tsx"
-import {
-  CraftAlignControl,
-} from "../../components/craftSettingsControls/CraftAlignControl.tsx"
 import { useBuilderModeContext } from "../../context/BuilderModeContext.tsx"
 import { MODE_TYPE } from "../../builder.enum.ts"
 import { usePreviewViewport } from "../../context/PreviewViewportContext.tsx"
@@ -34,6 +29,11 @@ import {
   type LayoutDisplayInlineOption,
 } from "./components/LayoutDisplayControl/LayoutDisplayControl.tsx"
 import { LayoutFlexFlowControl } from "./components/LayoutFlexFlowControl/LayoutFlexFlowControl.tsx"
+import {
+  buildGridTemplateColumns,
+  buildGridTemplateRows,
+} from "./components/LayoutGridSection/utils.ts"
+import { LayoutGridSection } from "./components/LayoutGridSection/LayoutGridSection.tsx"
 
 const LAYOUT_PRIMARY_WEB = [
   { id: "block", content: "Блок" },
@@ -52,18 +52,6 @@ const LAYOUT_INLINE_OPTIONS: LayoutDisplayInlineOption[] = [
 
 const displayIsFlex = (d: string) => d === "flex" || d === "inline-flex"
 const displayIsGrid = (d: string) => d === "grid" || d === "inline-grid"
-
-const gridTemplateColumnsToCount = (raw: unknown): number | undefined => {
-  if (typeof raw !== "string") return undefined
-  const m = /^repeat\((\d+)\s*,\s*minmax\(0\s*,\s*1fr\)\)$/i.exec(raw.trim())
-  return m?.[1] ? Number(m[1]) : undefined
-}
-
-const gridTemplateRowsToCount = (raw: unknown): number | undefined => {
-  if (typeof raw !== "string") return undefined
-  const m = /^repeat\((\d+)\s*,\s*auto\)$/i.exec(raw.trim())
-  return m?.[1] ? Number(m[1]) : undefined
-}
 
 const parsePlaceItemsString = (
   raw: unknown,
@@ -126,9 +114,7 @@ export const LayoutAccordion = () => {
     const safe = Number.isNaN(next) ? undefined : next
     actions.setProp(selectedId, (props: any) => {
       const tpl =
-        safe != null && safe > 0
-          ? `repeat(${safe}, minmax(0, 1fr))`
-          : undefined
+        safe != null && safe > 0 ? buildGridTemplateColumns(safe) : undefined
       setResponsiveStyleProp(props, "gridTemplateColumns", tpl, viewport)
       setResponsiveStyleProp(props, "itemsPerRow", safe, viewport)
     })
@@ -139,14 +125,28 @@ export const LayoutAccordion = () => {
     const safe = Number.isNaN(next) ? undefined : next
     actions.setProp(selectedId, (props: any) => {
       const tpl =
-        safe != null && safe > 0 ? `repeat(${safe}, auto)` : undefined
+        safe != null && safe > 0 ? buildGridTemplateRows(safe) : undefined
       setResponsiveStyleProp(props, "gridTemplateRows", tpl, viewport)
+    })
+  }
+
+  const handleGridReset = () => {
+    actions.setProp(selectedId, (props: any) => {
+      setResponsiveStyleProp(props, "gridTemplateColumns", undefined, viewport)
+      setResponsiveStyleProp(props, "gridTemplateRows", undefined, viewport)
+      setResponsiveStyleProp(props, "itemsPerRow", undefined, viewport)
     })
   }
 
   const handleGridAutoFlowChange = (value: GridAutoFlow) => {
     actions.setProp(selectedId, (props: any) => {
       setResponsiveStyleProp(props, "gridAutoFlow", value, viewport)
+    })
+  }
+
+  const handleGridAutoFlowReset = () => {
+    actions.setProp(selectedId, (props: any) => {
+      setResponsiveStyleProp(props, "gridAutoFlow", undefined, viewport)
     })
   }
 
@@ -200,12 +200,17 @@ export const LayoutAccordion = () => {
     })
   }
 
-  const effectiveGridAutoFlow: GridAutoFlow =
-    (getResponsiveStyleProp(
-      selectedProps,
-      "gridAutoFlow",
-      viewport,
-    ) as GridAutoFlow | undefined) ?? "row"
+  const rawGridAutoFlow = getResponsiveStyleProp(
+    selectedProps,
+    "gridAutoFlow",
+    viewport,
+  ) as GridAutoFlow | undefined
+  const rawGridAutoFlowStr =
+    rawGridAutoFlow != null && String(rawGridAutoFlow).trim() !== ""
+      ? (String(rawGridAutoFlow).trim() as GridAutoFlow)
+      : undefined
+  const gridAutoFlowHasExplicitStyle = rawGridAutoFlowStr != null
+  const effectiveGridAutoFlow: GridAutoFlow = rawGridAutoFlowStr ?? "row"
 
   const rawFlexFlow = getResponsiveStyleProp(
     selectedProps,
@@ -230,13 +235,14 @@ export const LayoutAccordion = () => {
     viewport,
   ) as FlexAlignItems | undefined
 
-  const rawPlaceItems = getResponsiveStyleProp(
-    selectedProps,
-    "placeItems",
-    viewport,
-  )
+  const rawPlaceItems = getResponsiveStyleProp(selectedProps, "placeItems", viewport,)
+
+  const placeItemsHasExplicitStyle =
+    typeof rawPlaceItems === "string" && rawPlaceItems.trim() !== ""
   const { y: effectivePlaceItemsY, x: effectivePlaceItemsX } =
     parsePlaceItemsString(rawPlaceItems)
+
+  const handleAlignReset = () => handleAlignChange(undefined, undefined)
 
   return (
     <Accordion disableGutters>
@@ -290,67 +296,32 @@ export const LayoutAccordion = () => {
           )}
 
           {showGridSection && (
-            <Box
-              sx={{
-                marginTop: "12px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-              }}
-            >
-              <Box sx={{ display: "flex", gap: "8px" }}>
-                <CraftSettingsInput
-                  label="Columns"
-                  type="number"
-                  value={
-                    gridTemplateColumnsToCount(
-                      getResponsiveStyleProp(
-                        selectedProps,
-                        "gridTemplateColumns",
-                        viewport,
-                      ),
-                    ) ?? ""
-                  }
-                  onChange={handleGridColumnsChange}
-                />
-                <CraftSettingsInput
-                  label="Rows"
-                  type="number"
-                  value={
-                    gridTemplateRowsToCount(
-                      getResponsiveStyleProp(
-                        selectedProps,
-                        "gridTemplateRows",
-                        viewport,
-                      ),
-                    ) ?? ""
-                  }
-                  onChange={handleGridRowsChange}
-                />
-              </Box>
-
-              <CraftSettingsButtonGroup
-                label="Direction"
-                value={effectiveGridAutoFlow}
-                options={[
-                  { id: "row", content: "Row" },
-                  { id: "column", content: "Column" },
-                ]}
-                onChange={(id) => handleGridAutoFlowChange(id as GridAutoFlow)}
-              />
-
-              <CraftAlignControl
-                label="Align"
-                alignY={effectivePlaceItemsY}
-                alignX={effectivePlaceItemsX}
-                onChange={handleAlignChange}
-              />
-
-              <LayoutGapControl
-                value={getResponsiveStyleProp(selectedProps, "gap", viewport)}
-                onCommit={handleGapCommit}
-              />
-            </Box>
+            <LayoutGridSection
+              gridTemplateColumnsRaw={getResponsiveStyleProp(
+                selectedProps,
+                "gridTemplateColumns",
+                viewport,
+              )}
+              gridTemplateRowsRaw={getResponsiveStyleProp(
+                selectedProps,
+                "gridTemplateRows",
+                viewport,
+              )}
+              onGridColumnsChange={handleGridColumnsChange}
+              onGridRowsChange={handleGridRowsChange}
+              onGridReset={handleGridReset}
+              gridAutoFlow={effectiveGridAutoFlow}
+              gridAutoFlowHasExplicitStyle={gridAutoFlowHasExplicitStyle}
+              onGridAutoFlowChange={handleGridAutoFlowChange}
+              onGridAutoFlowReset={handleGridAutoFlowReset}
+              alignY={effectivePlaceItemsY}
+              alignX={effectivePlaceItemsX}
+              onAlignChange={handleAlignChange}
+              placeItemsHasExplicitStyle={placeItemsHasExplicitStyle}
+              onAlignReset={handleAlignReset}
+              gapValue={getResponsiveStyleProp(selectedProps, "gap", viewport)}
+              onGapCommit={handleGapCommit}
+            />
           )}
         </Box>
       </AccordionDetails>
