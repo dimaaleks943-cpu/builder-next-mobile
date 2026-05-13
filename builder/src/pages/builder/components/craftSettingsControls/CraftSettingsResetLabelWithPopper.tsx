@@ -1,4 +1,5 @@
 import { Popper } from "@mui/material"
+import type { SxProps, Theme } from "@mui/material/styles"
 import { CraftSettingsStyleResetFooter } from "./CraftSettingsStyleResetFooter.tsx"
 import {
   CraftSettingsFixedLabel,
@@ -20,6 +21,8 @@ interface ILabelResetFieldProps {
     onReset: () => void;
   };
   disableResetPopperPortal?: boolean;
+  /** Merged into the rendered label node (fixed, reset trigger, or fluid). */
+  sx?: SxProps<Theme>;
 }
 
 interface IButtonToggleProps {
@@ -97,20 +100,20 @@ export const CraftSettingsResetLabelWithPopper = (props: Props) => {
 
     if (!props.labelReset || !props.labelReset.hasValue) {
       return (
-        <CraftSettingsFixedLabel>{props.label}</CraftSettingsFixedLabel>
+        <CraftSettingsFixedLabel sx={props.sx}>{props.label}</CraftSettingsFixedLabel>
       )
     }
 
     return props.variant === "fluid" ? (
       <>
-        <CraftSettingsResetTriggerFluidLabel onClick={handleAnchorClick}>
+        <CraftSettingsResetTriggerFluidLabel onClick={handleAnchorClick} sx={props.sx}>
           {props.label}
         </CraftSettingsResetTriggerFluidLabel>
         {renderPopper()}
       </>
     ) : (
       <>
-        <CraftSettingsResetTriggerFixedLabel onClick={handleAnchorClick}>
+        <CraftSettingsResetTriggerFixedLabel onClick={handleAnchorClick} sx={props.sx}>
           {props.label}
         </CraftSettingsResetTriggerFixedLabel>
         {renderPopper()}

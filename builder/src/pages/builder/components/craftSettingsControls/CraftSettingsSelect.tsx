@@ -1,4 +1,5 @@
 import { Box } from "@mui/material"
+import type { SxProps, Theme } from "@mui/material/styles"
 import type { ChangeEvent } from "react"
 import { COLORS } from "../../../../theme/colors.ts"
 import { ChevronRightIcon } from "../../../../icons/ChevronRightIcon.tsx"
@@ -36,6 +37,8 @@ interface Props {
   disableResetPopperPortal?: boolean;
   /** Fires on pointer down on the native `<select>` (e.g. commit implicit default before opening). */
   onNativeSelectPointerDown?: () => void;
+  /** Applied to the inline label next to the select (via {@link CraftSettingsResetLabelWithPopper}). */
+  labelSx?: SxProps<Theme>;
 }
 
 export const CraftSettingsSelect = ({
@@ -48,6 +51,7 @@ export const CraftSettingsSelect = ({
   labelReset,
   disableResetPopperPortal = false,
   onNativeSelectPointerDown,
+  labelSx,
 }: Props) => {
   const SelectShell = showInlineLabel ? CraftSettingsSelectShellInline : CraftSettingsSelectShellFullRow
 
@@ -57,7 +61,7 @@ export const CraftSettingsSelect = ({
         flex: 1,
         display: "flex",
         alignItems: "center",
-        justifyContent: "space-between",
+        justifyContent: "flex-start",
         columnGap: "8px",
         ...(showInlineLabel ? {} : { width: "100%", minWidth: 0 }),
       }}
@@ -69,6 +73,7 @@ export const CraftSettingsSelect = ({
         variant="fluid"
         labelReset={labelReset}
         disableResetPopperPortal={disableResetPopperPortal}
+        sx={labelSx}
       />
       <SelectShell>
         <Box

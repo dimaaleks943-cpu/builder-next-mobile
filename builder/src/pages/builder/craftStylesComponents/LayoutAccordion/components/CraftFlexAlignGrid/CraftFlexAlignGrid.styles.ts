@@ -4,8 +4,8 @@ import { COLORS } from "../../../../../../theme/colors.ts";
 
 export const FlexAlignGridRoot = styled(Box)(() => ({
   position: "relative",
-  width: 50,
-  height: 50,
+  width: 62,
+  height: 62,
   flexShrink: 0,
   display: "grid",
   gridTemplateColumns: "repeat(3, 1fr)",

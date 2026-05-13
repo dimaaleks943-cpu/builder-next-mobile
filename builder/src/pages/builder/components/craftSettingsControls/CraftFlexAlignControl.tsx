@@ -10,7 +10,9 @@ import type {
 } from "../../../../builder.enum"
 import { CraftSettingsFixedLabel } from "./styles.ts"
 import { isFlexFlowRowLike } from "../../../../utils/flexFlowDerived.ts"
-import { CraftFlexAlignGrid } from "../../craftStylesComponents/LayoutAccordion/components/CraftFlexAlignGrid/CraftFlexAlignGrid.tsx";
+import {
+  CraftFlexAlignGrid
+} from "../../craftStylesComponents/LayoutAccordion/components/CraftFlexAlignGrid/CraftFlexAlignGrid.tsx";
 
 const JUSTIFY_VALUES: FlexJustifyContent[] = [
   "flex-start",
@@ -180,14 +182,12 @@ export const CraftFlexAlignControl = ({
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: "46px 50px 150px",
+          gridTemplateColumns: "46px 62px 150px",
           gap: "12px",
         }}
       >
         {hasAlign ? (
           <Box
-            component="button"
-            type="button"
             onClick={handleReset}
             sx={{
               fontSize: "10px",
@@ -197,7 +197,7 @@ export const CraftFlexAlignControl = ({
               border: "none",
               background: "none",
               cursor: "pointer",
-              color: COLORS.blue400,
+              color: COLORS.purple400,
               textAlign: "left",
             }}
           >
@@ -225,12 +225,14 @@ export const CraftFlexAlignControl = ({
             value={xDisplayValue}
             onChange={handleXChange}
             options={xOptions.map((o) => ({ id: o.id, value: o.value }))}
+            labelSx={{ minWidth: "10px", width: "10px" }}
           />
           <CraftSettingsSelect
             label="Y"
             value={yDisplayValue}
             onChange={handleYChange}
             options={yOptions.map((o) => ({ id: o.id, value: o.value }))}
+            labelSx={{ minWidth: "10px", width: "10px" }}
           />
         </Box>
       </Box>
