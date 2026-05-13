@@ -79,42 +79,28 @@ export const ContentList = ({
     mergedCellStyle.flexFlow == null
       ? undefined
       : String(mergedCellStyle.flexFlow);
-  const cellFlexJustifyContent =
-    mergedCellStyle.flexJustifyContent == null
+  const cellJustifyContent =
+    mergedCellStyle.justifyContent == null
       ? undefined
-      : (mergedCellStyle.flexJustifyContent as
+      : (mergedCellStyle.justifyContent as
           | "flex-start"
           | "flex-end"
           | "center"
           | "space-between"
           | "space-around");
-  const cellFlexAlignItems =
-    mergedCellStyle.flexAlignItems == null
+  const cellAlignItems =
+    mergedCellStyle.alignItems == null
       ? undefined
-      : (mergedCellStyle.flexAlignItems as
+      : (mergedCellStyle.alignItems as
           | "flex-start"
           | "flex-end"
           | "center"
           | "stretch"
           | "baseline");
-  const cellPlaceItemsY =
-    mergedCellStyle.placeItemsY == null
+  const cellPlaceItems =
+    mergedCellStyle.placeItems == null
       ? undefined
-      : (mergedCellStyle.placeItemsY as
-          | "start"
-          | "center"
-          | "end"
-          | "stretch"
-          | "baseline");
-  const cellPlaceItemsX =
-    mergedCellStyle.placeItemsX == null
-      ? undefined
-      : (mergedCellStyle.placeItemsX as
-          | "start"
-          | "center"
-          | "end"
-          | "stretch"
-          | "baseline");
+      : String(mergedCellStyle.placeItems);
   const cellBackgroundColor =
     mergedCellStyle.backgroundColor == null
       ? undefined
@@ -390,10 +376,9 @@ export const ContentList = ({
                     display={cellDisplay}
                     gap={cellGap ?? undefined}
                     flexFlow={cellFlexFlow ?? undefined}
-                    flexJustifyContent={cellFlexJustifyContent ?? undefined}
-                    flexAlignItems={cellFlexAlignItems ?? undefined}
-                    placeItemsY={cellPlaceItemsY ?? undefined}
-                    placeItemsX={cellPlaceItemsX ?? undefined}
+                    justifyContent={cellJustifyContent ?? undefined}
+                    alignItems={cellAlignItems ?? undefined}
+                    placeItems={cellPlaceItems ?? undefined}
                     backgroundColor={cellBackgroundColor}
                     cellOpacityPercent={cellOpacityPercent}
                   >
@@ -427,20 +412,20 @@ interface ContentListItemProps {
   display?: string;
   gap?: number;
   flexFlow?: string;
-  flexJustifyContent?:
+  justifyContent?:
     | "flex-start"
     | "flex-end"
     | "center"
     | "space-between"
     | "space-around";
-  flexAlignItems?:
+  alignItems?:
     | "flex-start"
     | "flex-end"
     | "center"
     | "stretch"
     | "baseline";
-  placeItemsY?: "start" | "center" | "end" | "stretch" | "baseline";
-  placeItemsX?: "start" | "center" | "end" | "stretch" | "baseline";
+  /** CSS `place-items`: два токена через пробел, нап. `stretch start`. */
+  placeItems?: string;
   backgroundColor?: string;
   cellOpacityPercent?: number;
   children: ComponentNode[];
@@ -464,6 +449,17 @@ const toJustifyContent = (
   return v;
 };
 
+const parsePlaceItemsTokens = (
+  raw?: string,
+): { py?: "start" | "center" | "end" | "stretch" | "baseline"; px?: "start" | "center" | "end" | "stretch" | "baseline" } => {
+  if (!raw?.trim()) return {}
+  const parts = raw.trim().split(/\s+/)
+  return {
+    py: parts[0] as "start" | "center" | "end" | "stretch" | "baseline",
+    px: (parts[1] ?? parts[0]) as "start" | "center" | "end" | "stretch" | "baseline",
+  }
+}
+
 const ContentListItem = ({
   itemData,
   collectionKey,
@@ -472,10 +468,9 @@ const ContentListItem = ({
   display = "block",
   gap,
   flexFlow = "row",
-  flexJustifyContent,
-  flexAlignItems,
-  placeItemsY,
-  placeItemsX,
+  justifyContent: propJustifyContent,
+  alignItems: propAlignItems,
+  placeItems,
   backgroundColor: cellBg,
   cellOpacityPercent,
   children,
@@ -499,14 +494,15 @@ const ContentListItem = ({
     : isGridLayout
       ? "wrap"
       : ffWrap;
+  const { py: placeY, px: placeX } = parsePlaceItemsTokens(placeItems)
   const alignItems =
-    isFlexLayout && flexAlignItems != null
-      ? flexAlignItems
-      : (toAlignItems(placeItemsY) ?? undefined);
+    isFlexLayout && propAlignItems != null
+      ? propAlignItems
+      : (toAlignItems(placeY) ?? undefined);
   const justifyContent =
-    isFlexLayout && flexJustifyContent != null
-      ? flexJustifyContent
-      : (toJustifyContent(placeItemsX) ?? undefined);
+    isFlexLayout && propJustifyContent != null
+      ? propJustifyContent
+      : (toJustifyContent(placeX) ?? undefined);
 
   return (
     <ContentDataProvider collectionKey={collectionKey} itemData={itemData}>

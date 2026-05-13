@@ -93,20 +93,19 @@ export const FULL_TO_SHORT = {
 
   //-- LayoutAccordion --//
   display: "dsp",
+  gridTemplateColumns: "gtc",
+  gridTemplateRows: "gtr",
+  justifyContent: "juc",
+  alignItems: "ali",
+  placeItems: "pit",
+  gap: "gp",
 
   // layout
   /** Элементов в строке сетки списка (ContentList). */
   itemsPerRow: "ipr",
   fullSize: "fs",
-  gridColumns: "gcl",
-  gridRows: "grw",
   gridAutoFlow: "gaf",
-  gap: "gp",
   flexFlow: "ff",
-  flexJustifyContent: "fjc",
-  flexAlignItems: "fai",
-  placeItemsY: "piy",
-  placeItemsX: "pix",
 } as const
 
 export type FullStylePropKey = keyof typeof FULL_TO_SHORT;

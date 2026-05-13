@@ -20,21 +20,19 @@ type FlexAlignItems =
   | "baseline";
 
 interface BlockProps {
-  style?: any;
+  style?: unknown;
   children?: ReactNode;
 }
 
 export const Block = ({ children, style }: BlockProps) => {
   const { viewport } = useResponsiveViewport();
-  const rs = resolveResponsiveStyle(style, viewport);
+  const rs = resolveResponsiveStyle(style, viewport) as Record<string, unknown>;
 
   const fullSize = Boolean(rs.fullSize);
   const display = (rs.display as string | undefined) ?? "block";
   const flexFlow = (rs.flexFlow as string | undefined) ?? "row";
-  const flexJustifyContent = rs.flexJustifyContent as
-    | FlexJustifyContent
-    | undefined;
-  const flexAlignItems = rs.flexAlignItems as FlexAlignItems | undefined;
+  const justifyContent = rs.justifyContent as FlexJustifyContent
+  const alignItems = rs.alignItems as FlexAlignItems
   const gapRaw = rs.gap;
   const gap =
     gapRaw == null
@@ -86,8 +84,8 @@ export const Block = ({ children, style }: BlockProps) => {
           flexDirection,
           flexWrap,
           position,
-          ...(isFlexLayout && flexJustifyContent != null && { justifyContent: flexJustifyContent }),
-          ...(isFlexLayout && flexAlignItems != null && { alignItems: flexAlignItems }),
+          ...(isFlexLayout && justifyContent != null && { justifyContent }),
+          ...(isFlexLayout && alignItems != null && { alignItems }),
           ...gapStyle,
           backgroundColor,
           ...rs,
