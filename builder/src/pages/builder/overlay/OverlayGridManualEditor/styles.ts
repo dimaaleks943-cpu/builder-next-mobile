@@ -2,8 +2,8 @@ import { Box, Button, IconButton, Typography, styled } from "@mui/material"
 import { alpha } from "@mui/material/styles"
 import { COLORS } from "../../../../theme/colors.ts"
 
-export const GRID_MANUAL_ROW_RAIL_PX = 40
-export const GRID_MANUAL_COL_HEADER_PX = 28
+export const GRID_MANUAL_ROW_RAIL_PX = 20
+export const GRID_MANUAL_COL_HEADER_PX = 20
 /** Полоса справа от превью сетки: кнопка «+ колонка» не участвует в ширине дорожек заголовка. */
 export const GRID_MANUAL_ADD_COL_STRIP_PX = 28
 /** Полоса снизу от превью: кнопка «+ ряд» не участвует в высоте бокового рельса рядов. */
@@ -103,7 +103,6 @@ export const OverlayGridManualGridPreview = styled(Box)(() => ({
   position: "relative",
   boxSizing: "border-box",
   pointerEvents: "auto",
-  backgroundColor: COLORS.gray200,
 }))
 
 export const OverlayGridManualGridCell = styled(Box)(() => ({

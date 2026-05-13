@@ -35,7 +35,6 @@ import {
   GRID_MANUAL_COL_HEADER_PX,
   GRID_MANUAL_OVERLAY_FALLBACK_GAP_PX,
   GRID_MANUAL_PREVIEW_ROW_MIN_PX,
-  GRID_MANUAL_ROW_LABEL_MIN_HEIGHT_FOR_AUTO_PX,
   GRID_MANUAL_ROW_RAIL_PX,
   OverlayGridManualAddColumnAside,
   OverlayGridManualAddColumnWrap,
@@ -53,16 +52,14 @@ import {
   OverlayGridManualGridCell,
   OverlayGridManualGridPreview,
   OverlayGridManualRoot,
-  OverlayGridManualRowLabel,
-  OverlayGridManualRowLabelFull,
-  OverlayGridManualRowTrack,
-  OverlayGridManualRowTrackSingleRow,
   OverlayGridManualRowsRail,
   OverlayGridManualToolbar,
   OverlayGridManualToolbarActions,
   OverlayGridManualToolbarLeft,
   OverlayGridManualToolbarTitle,
 } from "./styles.ts"
+import { measureGridManualRowHeightsPx } from "./utils.ts";
+import { RowTrackWithAutoLabel } from "./components/RowTrackWithAutoLabel/RowTrackWithAutoLabel.tsx";
 
 /** Значение для MUI `columnGap` / `rowGap` / CSS grid `gap`: 0 или непустая строка (например «10px»). */
 const normalizeGridAxisGap = (prefer: unknown, fallback: unknown): string | number => {
@@ -104,60 +101,13 @@ const gapToPixelsForLayout = (v: string | number): number => {
   return Number.isFinite(n) ? n : 0
 }
 
-/** Учитываем уже заданный min-height/min-width (inline, CSS), чтобы не занижать пол при ручном режиме. */
-const readComputedMinSizePx = (el: HTMLElement, prop: "minHeight" | "minWidth"): number => {
-  const v = getComputedStyle(el)[prop] as string
-  if (!v || v === "none" || v === "auto" || v === "0px") {
-    return 0
-  }
-  const m = /^(\d+(?:\.\d+)?)px$/i.exec(v.trim())
-  return m ? Number(m[1]) : 0
-}
+const rowHeightArraysEqual = (a: number[], b: number[]): boolean =>
+  a.length === b.length && a.every((v, i) => v === b[i])
 
 interface Props {
   previewViewport: PreviewViewport
   overlayRootElement: HTMLElement | null
   canvasElement: HTMLElement | null
-}
-
-interface RowTrackWithAutoLabelProps {
-  /** При одном ряду всегда полное «AUTO» и достаточная высота дорожки. */
-  singleRowMode: boolean
-}
-
-const RowTrackWithAutoLabel = ({ singleRowMode }: RowTrackWithAutoLabelProps) => {
-  const trackRef = useRef<HTMLDivElement | null>(null)
-  const [compact, setCompact] = useState(false)
-
-  useLayoutEffect(() => {
-    const el = trackRef.current
-    if (!el) return
-    const sync = () => {
-      if (singleRowMode) {
-        setCompact(false)
-        return
-      }
-      setCompact(
-        el.getBoundingClientRect().height <
-          GRID_MANUAL_ROW_LABEL_MIN_HEIGHT_FOR_AUTO_PX,
-      )
-    }
-    sync()
-    const ro = new ResizeObserver(sync)
-    ro.observe(el)
-    return () => {
-      ro.disconnect()
-    }
-  }, [singleRowMode])
-
-  const Track = singleRowMode ? OverlayGridManualRowTrackSingleRow : OverlayGridManualRowTrack
-  const Label = singleRowMode ? OverlayGridManualRowLabelFull : OverlayGridManualRowLabel
-
-  return (
-    <Track ref={trackRef}>
-      <Label>{compact ? "..." : "AUTO"}</Label>
-    </Track>
-  )
 }
 
 export const OverlayGridManualEditor = ({
@@ -310,26 +260,58 @@ export const OverlayGridManualEditor = ({
     return p > 0 ? p : GRID_MANUAL_OVERLAY_FALLBACK_GAP_PX
   }, [effectiveRowGapCss])
 
-  const columnGapPxForMinChromeBody = useMemo(() => {
-    if (isGapUnsetLike(effectiveColumnGapCss)) {
-      return GRID_MANUAL_OVERLAY_FALLBACK_GAP_PX
-    }
-    const p = gapToPixelsForLayout(effectiveColumnGapCss)
-    return p > 0 ? p : GRID_MANUAL_OVERLAY_FALLBACK_GAP_PX
-  }, [effectiveColumnGapCss])
+  const [anchorMeasuredRowHeightsPx, setAnchorMeasuredRowHeightsPx] = useState<number[]>([])
 
-  const minChromeBodyHeightPx = useMemo(
-    () =>
-      rowCount * GRID_MANUAL_PREVIEW_ROW_MIN_PX +
-      Math.max(0, rowCount - 1) * rowGapPxForMinChromeBody,
-    [rowCount, rowGapPxForMinChromeBody],
-  )
+  const overlayManualRowHeightsPx = useMemo(() => {
+    if (anchorMeasuredRowHeightsPx.length === rowCount) {
+      return anchorMeasuredRowHeightsPx
+    }
+    return Array.from({ length: rowCount }, () => GRID_MANUAL_PREVIEW_ROW_MIN_PX)
+  }, [anchorMeasuredRowHeightsPx, rowCount])
+
+  useLayoutEffect(() => {
+    if (!anchorElement || rowCount < 1) {
+      setAnchorMeasuredRowHeightsPx([])
+      return
+    }
+    const sync = () => {
+      const next = measureGridManualRowHeightsPx(
+        anchorElement,
+        rowCount,
+        GRID_MANUAL_PREVIEW_ROW_MIN_PX,
+        rowGapPxForMinChromeBody,
+      )
+      setAnchorMeasuredRowHeightsPx((prev) =>
+        rowHeightArraysEqual(prev, next) ? prev : next,
+      )
+    }
+    sync()
+    const ro = new ResizeObserver(sync)
+    ro.observe(anchorElement)
+    const mo = new MutationObserver(sync)
+    mo.observe(anchorElement, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["style", "class"],
+    })
+    return () => {
+      ro.disconnect()
+      mo.disconnect()
+    }
+  }, [anchorElement, openSeq, previewViewport, rowCount, rowGapPxForMinChromeBody])
+
+  const minChromeBodyHeightPx = useMemo(() => {
+    const sumRows = overlayManualRowHeightsPx.reduce((acc, h) => acc + h, 0)
+    return sumRows + Math.max(0, rowCount - 1) * rowGapPxForMinChromeBody
+  }, [overlayManualRowHeightsPx, rowCount, rowGapPxForMinChromeBody])
 
   const geometry = useOverlayGeometryObserver({
     anchorElement,
     overlayRootElement,
     canvasElement,
     updateKey: `${previewViewport}:${openSeq}`,
+    geometryBox: "content",
   })
 
   const gridDraftCountsRef = useRef({ colCount, rowCount })
@@ -421,42 +403,6 @@ export const OverlayGridManualEditor = ({
     return Array.from({ length: colCount }, (_, i) => parsed[i] ?? "1fr")
   }, [activeNodeId, colCount, openSeq, previewViewport, query])
 
-  /** В стили узла Craft `grid-template-rows: auto` не пишет минимальную высоту ряда — якорь схлопывается. Временно поднимаем пол на DOM, чтобы соседние блоки не уезжали под оверлей; снимается в cleanup. */
-  useLayoutEffect(() => {
-    if (!activeNodeId || !anchorElement) {
-      return
-    }
-    const el = anchorElement
-    const prevMinHeight = el.style.minHeight
-    const prevMinWidth = el.style.minWidth
-    const usedMinH = readComputedMinSizePx(el, "minHeight")
-    const usedMinW = readComputedMinSizePx(el, "minWidth")
-    const nextMinH = Math.max(minChromeBodyHeightPx, usedMinH)
-    el.style.minHeight = `${nextMinH}px`
-
-    const autoColCount = manualColumnTracks.filter((t) => t === "auto").length
-    if (autoColCount > 0) {
-      const floorW =
-        autoColCount * GRID_MANUAL_AUTO_COLUMN_MIN_PX +
-        Math.max(0, colCount - 1) * columnGapPxForMinChromeBody
-      const nextMinW = Math.max(floorW, usedMinW)
-      el.style.minWidth = `${nextMinW}px`
-    }
-
-    return () => {
-      el.style.minHeight = prevMinHeight
-      el.style.minWidth = prevMinWidth
-    }
-  }, [
-    activeNodeId,
-    anchorElement,
-    colCount,
-    columnGapPxForMinChromeBody,
-    manualColumnTracks,
-    minChromeBodyHeightPx,
-    openSeq,
-  ])
-
   const manualGridTemplateColumnsCss = useMemo(
     () =>
       manualColumnTracks
@@ -470,10 +416,34 @@ export const OverlayGridManualEditor = ({
   )
 
   const manualGridTemplateRowsCss = useMemo(
-    () =>
-      `repeat(${rowCount}, minmax(${GRID_MANUAL_PREVIEW_ROW_MIN_PX}px, 1fr))`,
-    [rowCount],
+    () => overlayManualRowHeightsPx.map((h) => `${h}px`).join(" "),
+    [overlayManualRowHeightsPx],
   )
+
+  /**
+   * Временно выравниваем вёрстку якоря с превью оверлея: подставляем те же `grid-template-*`, что и у сетки в UI.
+   * Раньше использовали `min-height`/`min-width` — из-за рассинхрона с дорожками `auto` элементы визуально «уезжали» от пунктира.
+   */
+  useLayoutEffect(() => {
+    if (!activeNodeId || !anchorElement) {
+      return
+    }
+    const el = anchorElement
+    const prevGtc = el.style.gridTemplateColumns
+    const prevGtr = el.style.gridTemplateRows
+    el.style.gridTemplateColumns = manualGridTemplateColumnsCss
+    el.style.gridTemplateRows = manualGridTemplateRowsCss
+    return () => {
+      el.style.gridTemplateColumns = prevGtc
+      el.style.gridTemplateRows = prevGtr
+    }
+  }, [
+    activeNodeId,
+    anchorElement,
+    manualGridTemplateColumnsCss,
+    manualGridTemplateRowsCss,
+    openSeq,
+  ])
 
   const handleDone = () => {
     if (!activeNodeId) return
@@ -564,14 +534,23 @@ export const OverlayGridManualEditor = ({
               display: "flex",
               flexDirection: "column",
               alignItems: "stretch",
+              justifyContent: "flex-start",
               rowGap: previewRowGapCss,
             }}
           >
-            {Array.from({ length: rowCount }, (_, i) => (
-              <RowTrackWithAutoLabel
+            {overlayManualRowHeightsPx.map((rowTrackPx, i) => (
+              <Box
                 key={`row-${i}`}
-                singleRowMode={rowCount === 1}
-              />
+                sx={{
+                  flex: "none",
+                  height: rowTrackPx,
+                  minHeight: rowTrackPx,
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <RowTrackWithAutoLabel singleRowMode={rowCount === 1} />
+              </Box>
             ))}
           </Box>
         </OverlayGridManualRowsRail>
@@ -592,6 +571,7 @@ export const OverlayGridManualEditor = ({
         <OverlayGridManualGridPreview
           sx={{
             display: "grid",
+            alignContent: "start",
             gridTemplateColumns: manualGridTemplateColumnsCss,
             gridTemplateRows: manualGridTemplateRowsCss,
             columnGap: previewColumnGapCss,

@@ -1,11 +1,22 @@
 import { useEffect, useState } from "react"
 import type { OverlayGeometry } from "../interface.ts"
+import {
+  getAnchorRectForOverlay,
+  type OverlayGeometryBox,
+} from "../getAnchorRectForOverlay.ts"
+
+export type { OverlayGeometryBox }
 
 interface Props {
   anchorElement: HTMLElement | null
   overlayRootElement: HTMLElement | null
   canvasElement: HTMLElement | null
   updateKey?: string | number
+  /**
+   * `border` — как `getBoundingClientRect()` (рамка выделения).
+   * `content` — внутри border+padding, совпадает с областью размещения CSS Grid.
+   */
+  geometryBox?: OverlayGeometryBox
 }
 
 const HIDDEN_GEOMETRY: OverlayGeometry = {
@@ -76,6 +87,7 @@ export const useOverlayGeometryObserver = ({
   overlayRootElement,
   canvasElement,
   updateKey,
+  geometryBox = "border",
 }: Props): OverlayGeometry => {
   const [geometry, setGeometry] = useState<OverlayGeometry>(HIDDEN_GEOMETRY)
 
@@ -91,7 +103,7 @@ export const useOverlayGeometryObserver = ({
     let rafId = 0
 
     const recalculate = () => {
-      const anchorRect = anchorElement.getBoundingClientRect()
+      const anchorRect = getAnchorRectForOverlay(anchorElement, geometryBox)
       const overlayRect = overlayRootElement.getBoundingClientRect()
       const canvasRect = canvasElement.getBoundingClientRect()
 
@@ -178,7 +190,7 @@ export const useOverlayGeometryObserver = ({
       resizeObserver.disconnect()
       mutationObserver.disconnect()
     }
-  }, [anchorElement, overlayRootElement, canvasElement, updateKey])
+  }, [anchorElement, geometryBox, overlayRootElement, canvasElement, updateKey])
 
   return geometry
 }

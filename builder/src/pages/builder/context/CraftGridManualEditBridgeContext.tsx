@@ -52,5 +52,13 @@ export const CraftGridManualEditBridgeProvider = ({ children }: ProviderProps) =
   )
 }
 
-export const useCraftGridManualEditBridge = () => useContext(CraftGridManualEditBridgeContext)
+export const useCraftGridManualEditBridge = (): CraftGridManualEditBridgeContextValue => {
+  const ctx = useContext(CraftGridManualEditBridgeContext)
+  if (!ctx) {
+    throw new Error(
+      "useCraftGridManualEditBridge must be used within CraftGridManualEditBridgeProvider",
+    )
+  }
+  return ctx
+}
 
