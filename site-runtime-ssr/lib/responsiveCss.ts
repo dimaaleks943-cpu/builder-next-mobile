@@ -121,24 +121,20 @@ const styleBranchToCssDeclarations = (style: StyleRecord): Record<string, string
 
   if (typeof style.overflow === "string") set("overflow", style.overflow)
 
-  const gridColumns = asNumber(style.gridColumns)
-  if (gridColumns && gridColumns > 0) {
-    set("grid-template-columns", `repeat(${gridColumns}, minmax(0, 1fr))`)
+  if (typeof style.gridTemplateColumns === "string") {
+    set("grid-template-columns", style.gridTemplateColumns)
   }
-  const gridRows = asNumber(style.gridRows)
-  if (gridRows && gridRows > 0) {
-    set("grid-template-rows", `repeat(${gridRows}, auto)`)
+  if (typeof style.gridTemplateRows === "string") {
+    set("grid-template-rows", style.gridTemplateRows)
   }
   if (typeof style.gridAutoFlow === "string") set("grid-auto-flow", style.gridAutoFlow)
   set("gap", toCssLength(style.gap))
 
-  if (style.flexFlow === "string") {set("flex-flow", style.flexFlow)}
-  
-  if (typeof style.flexJustifyContent === "string") set("justify-content", style.flexJustifyContent)
-  if (typeof style.flexAlignItems === "string") set("align-items", style.flexAlignItems)
-  if (typeof style.placeItemsY === "string" && typeof style.placeItemsX === "string") {
-    set("place-items", `${style.placeItemsY} ${style.placeItemsX}`)
-  }
+  if (typeof style.flexFlow === "string") set("flex-flow", style.flexFlow)
+
+  if (typeof style.justifyContent === "string") set("justify-content", style.justifyContent)
+  if (typeof style.alignItems === "string") set("align-items", style.alignItems)
+  if (typeof style.placeItems === "string") set("place-items", style.placeItems)
 
   set("margin-top", toCssLength(style.marginTop))
   set("margin-right", toCssLength(style.marginRight))
