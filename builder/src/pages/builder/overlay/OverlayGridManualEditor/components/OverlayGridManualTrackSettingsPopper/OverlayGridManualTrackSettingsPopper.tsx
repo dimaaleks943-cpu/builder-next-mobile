@@ -9,23 +9,29 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "reac
 import { COLORS } from "../../../../../../theme/colors.ts"
 import type { CraftSizeMenuToken } from "../../../../../../utils/craftCssSizeProp.ts"
 import { CraftSettingsButtonGroup } from "../../../../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
+import { CraftSettingsFixedLabel } from "../../../../components/craftSettingsControls/styles.ts"
 import { CraftSettingsSliderWithUnit } from "../../../../components/craftSettingsControls/CraftSettingsSliderWithUnit.tsx"
 import { DeleteIcon } from "../../../../../../icons/DeleteIcon.tsx";
 import { ProblemIcon } from "../../../../../../icons/ProblemIcon.tsx";
 import {
   autoFitCheckboxDisabled,
   buildAutoFitTrackFromBasis,
+  buildInitialMinmaxTrackFromBasis,
+  buildMinmaxTrack,
   gridHasAnyAutoFit,
   inferSizingTabFromTrack,
-  isAutoFitRepeatTrack, parseAutoFitBasisTrack, sizingControlValueFromTrack
-} from "../../utils.ts";
+  isAutoFitRepeatTrack,
+  parseAutoFitBasisTrack,
+  parseMinmaxTrackPair,
+  sizingControlValueFromTrack,
+} from "../../utils.ts"
 import {
   OverlayGridManualTrackPopperDeleteButton,
   OverlayGridManualTrackPopperFooter,
+  OverlayGridManualTrackPopperLabeledSliderRow,
   OverlayGridManualTrackPopperPaper,
-  OverlayGridManualTrackPopperPlaceholder,
   OverlayGridManualTrackPopperSpacedBlock,
-  OverlayGridManualTrackPopperWarningBox
+  OverlayGridManualTrackPopperWarningBox,
 } from "./styles.ts"
 
 const GRID_TRACK_UNITS_FULL: readonly CraftSizeMenuToken[] = [
@@ -92,13 +98,14 @@ export const OverlayGridManualTrackSettingsPopper = ({
 
   const controlValue = useMemo(() => sizingControlValueFromTrack(track), [track])
 
+  const minmaxPair = useMemo(() => parseMinmaxTrackPair(controlValue), [controlValue])
+  const minTrackValue = minmaxPair?.min ?? "0px"
+  const maxTrackValue = minmaxPair?.max ?? "1fr"
+
   const autoFitGate = useMemo(
     () => autoFitCheckboxDisabled(axis, editIndex, columnTracks, rowTracks),
     [axis, editIndex, columnTracks, rowTracks],
   )
-
-  const defaultTabDisabled = inferredTab === "minmax"
-  const minMaxTabDisabled = isAutoFitRepeatTrack(track)
 
   const applySizingCommit = useCallback(
     (next: string | number | undefined) => {
@@ -116,6 +123,52 @@ export const OverlayGridManualTrackSettingsPopper = ({
       onCommitTrack(s)
     },
     [autoFitChecked, onCommitTrack],
+  )
+
+  const applyMinmaxPartCommit = useCallback(
+    (which: "min" | "max", next: string | number | undefined) => {
+      if (next === undefined) {
+        return
+      }
+      const s = typeof next === "number" ? `${next}px` : String(next).trim()
+      if (!s) {
+        return
+      }
+      const basisNow = sizingControlValueFromTrack(track)
+      const pair = parseMinmaxTrackPair(basisNow)
+      const curMin = pair?.min ?? "0px"
+      const curMax = pair?.max ?? "1fr"
+      const nextMin = which === "min" ? s : curMin
+      const nextMax = which === "max" ? s : curMax
+      const built = buildMinmaxTrack(nextMin, nextMax)
+      if (autoFitChecked) {
+        onCommitTrack(buildAutoFitTrackFromBasis(built))
+        return
+      }
+      onCommitTrack(built)
+    },
+    [autoFitChecked, onCommitTrack, track],
+  )
+
+  const handleSizingTabChange = useCallback(
+    (id: string) => {
+      const tab = id as "default" | "minmax"
+      if (tab === "minmax") {
+        setSizingTab("minmax")
+        const basis = sizingControlValueFromTrack(track)
+        if (!parseMinmaxTrackPair(basis)) {
+          const built = buildInitialMinmaxTrackFromBasis(basis)
+          if (isAutoFitRepeatTrack(track)) {
+            onCommitTrack(buildAutoFitTrackFromBasis(built))
+          } else {
+            onCommitTrack(built)
+          }
+        }
+        return
+      }
+      setSizingTab("default")
+    },
+    [onCommitTrack, track],
   )
 
   const handleAutoFitChange = useCallback(
@@ -190,15 +243,13 @@ export const OverlayGridManualTrackSettingsPopper = ({
                   {
                     id: "default",
                     content: "Default",
-                    disabled: defaultTabDisabled,
                   },
                   {
                     id: "minmax",
                     content: "Min/Max",
-                    disabled: minMaxTabDisabled,
                   },
                 ]}
-                onChange={(id) => setSizingTab(id as "default" | "minmax")}
+                onChange={handleSizingTabChange}
               />
               {sizingTab === "default" ? (
                 <>
@@ -215,52 +266,77 @@ export const OverlayGridManualTrackSettingsPopper = ({
                     gridTrackKeywordSlidersAtMin
                     disableUnitPopperPortal
                   />
-                  <FormControlLabel
-                    sx={{ margin: 0, alignItems: "center", marginBottom: "6px" }}
-                    control={
-                      <Checkbox
-                        size="small"
-                        disableRipple
-                        checked={autoFitChecked}
-                        disabled={autoFitGate.disabled && !autoFitChecked}
-                        onChange={handleAutoFitChange}
-                        sx={{padding: 0}}
-                      />
-                    }
-                    label={
-                      <Typography
-                        sx={{
-                          fontSize: "11px",
-                          lineHeight: "16px",
-                          color: COLORS.gray200,
-                          fontFamily: "Inter, Arial, sans-serif",
-                        }}
-                      >
-                        Auto-fit
-                      </Typography>
-                    }
-                  />
-                  {autoFitGate.disabled && !autoFitChecked ? (
-                    <OverlayGridManualTrackPopperWarningBox>
-                      <ProblemIcon/>
-                      <Typography
-                        sx={{
-                          fontSize: "10px",
-                          lineHeight: "14px",
-                          color: COLORS.yellow400,
-                          fontFamily: "Inter, Arial, sans-serif",
-                        }}
-                      >
-                        {autoFitGate.reason}
-                      </Typography>
-                    </OverlayGridManualTrackPopperWarningBox>
-                  ) : null}
                 </>
               ) : (
-                <OverlayGridManualTrackPopperPlaceholder>
-                  Min/Max track sizing will be available in a future update.
-                </OverlayGridManualTrackPopperPlaceholder>
+                <>
+                  <OverlayGridManualTrackPopperLabeledSliderRow>
+                    <CraftSettingsFixedLabel>Min</CraftSettingsFixedLabel>
+                    <CraftSettingsSliderWithUnit
+                      value={minTrackValue}
+                      onCommit={(next) => applyMinmaxPartCommit("min", next)}
+                      allowedUnits={allowedUnits}
+                      min={0}
+                      max={600}
+                      step={1}
+                      gridTrackKeywordSlidersAtMin
+                      disableUnitPopperPortal
+                    />
+                  </OverlayGridManualTrackPopperLabeledSliderRow>
+                  <OverlayGridManualTrackPopperLabeledSliderRow>
+                    <CraftSettingsFixedLabel>Max</CraftSettingsFixedLabel>
+                    <CraftSettingsSliderWithUnit
+                      value={maxTrackValue}
+                      onCommit={(next) => applyMinmaxPartCommit("max", next)}
+                      allowedUnits={allowedUnits}
+                      min={0}
+                      max={600}
+                      step={1}
+                      gridTrackKeywordSlidersAtMin
+                      disableUnitPopperPortal
+                    />
+                  </OverlayGridManualTrackPopperLabeledSliderRow>
+                </>
               )}
+              <FormControlLabel
+                sx={{ margin: 0, alignItems: "center", marginBottom: "6px" }}
+                control={
+                  <Checkbox
+                    size="small"
+                    disableRipple
+                    checked={autoFitChecked}
+                    disabled={autoFitGate.disabled && !autoFitChecked}
+                    onChange={handleAutoFitChange}
+                    sx={{ padding: 0 }}
+                  />
+                }
+                label={
+                  <Typography
+                    sx={{
+                      fontSize: "11px",
+                      lineHeight: "16px",
+                      color: COLORS.gray200,
+                      fontFamily: "Inter, Arial, sans-serif",
+                    }}
+                  >
+                    Auto-fit
+                  </Typography>
+                }
+              />
+              {autoFitGate.disabled && !autoFitChecked ? (
+                <OverlayGridManualTrackPopperWarningBox>
+                  <ProblemIcon />
+                  <Typography
+                    sx={{
+                      fontSize: "10px",
+                      lineHeight: "14px",
+                      color: COLORS.yellow400,
+                      fontFamily: "Inter, Arial, sans-serif",
+                    }}
+                  >
+                    {autoFitGate.reason}
+                  </Typography>
+                </OverlayGridManualTrackPopperWarningBox>
+              ) : null}
             </OverlayGridManualTrackPopperSpacedBlock>
             <OverlayGridManualTrackPopperFooter>
               <OverlayGridManualTrackPopperDeleteButton

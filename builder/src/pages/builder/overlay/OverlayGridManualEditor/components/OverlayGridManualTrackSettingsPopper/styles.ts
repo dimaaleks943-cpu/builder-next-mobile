@@ -20,6 +20,14 @@ export const OverlayGridManualTrackPopperSpacedBlock = styled(Box)(() => ({
   width: "100%",
 }))
 
+export const OverlayGridManualTrackPopperLabeledSliderRow = styled(Box)(() => ({
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  width: "100%",
+  minWidth: 0,
+}))
+
 export const OverlayGridManualTrackPopperPlaceholder = styled(Typography)(() => ({
   fontSize: "10px",
   lineHeight: "14px",

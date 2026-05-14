@@ -250,8 +250,8 @@ export const autoFitCheckboxDisabled = (
 }
 
 export const inferSizingTabFromTrack = (track: string): "default" | "minmax" => {
-  const t = track.trim()
-  if (/^minmax\s*\(/i.test(t)) {
+  const inner = (parseAutoFitBasisTrack(track) ?? track.trim()).trim()
+  if (/^minmax\s*\(/i.test(inner)) {
     return "minmax"
   }
   return "default"
@@ -396,6 +396,53 @@ export const sizingControlValueFromTrack = (track: string): string => {
     return basis
   }
   return track.trim()
+}
+
+/** Top-level comma split inside `minmax( … )` (supports nested parens). */
+export const parseMinmaxTrackPair = (trackOrBasis: string): { min: string; max: string } | undefined => {
+  const t = trackOrBasis.trim()
+  const openM = /^minmax\s*\(\s*(.*)\s*\)$/i.exec(t)
+  if (!openM) {
+    return undefined
+  }
+  const inner = openM[1]!
+  let depth = 0
+  for (let i = 0; i < inner.length; i++) {
+    const c = inner[i]!
+    if (c === "(") {
+      depth++
+    } else if (c === ")") {
+      depth--
+    } else if (c === "," && depth === 0) {
+      const min = inner.slice(0, i).trim()
+      const max = inner.slice(i + 1).trim()
+      if (min && max) {
+        return { min, max }
+      }
+      return undefined
+    }
+  }
+  return undefined
+}
+
+export const buildMinmaxTrack = (min: string, max: string): string =>
+  `minmax(${min.trim()}, ${max.trim()})`
+
+export const buildInitialMinmaxTrackFromBasis = (basis: string): string => {
+  const b = basis.trim()
+  if (!b) {
+    return buildMinmaxTrack("0px", "1fr")
+  }
+  if (/^minmax\s*\(/i.test(b)) {
+    return b
+  }
+  if (/^(\d+(?:\.\d+)?)\s*fr$/i.test(b)) {
+    return buildMinmaxTrack("0px", b)
+  }
+  if (/^[\d.]+\s*px$/i.test(b)) {
+    return buildMinmaxTrack(b, b)
+  }
+  return buildMinmaxTrack(b, "1fr")
 }
 
 export const defaultTrackToken = (axis: "column" | "row"): string =>
