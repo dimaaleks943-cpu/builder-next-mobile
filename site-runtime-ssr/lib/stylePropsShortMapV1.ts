@@ -93,19 +93,19 @@ export const FULL_TO_SHORT = {
 
   //-- LayoutAccordion --//
   display: "dsp",
-  gridTemplateColumns: "gtc",
-  gridTemplateRows: "gtr",
+  flexFlow: "ff",
   justifyContent: "juc",
   alignItems: "ali",
-  placeItems: "pit",
   gap: "gp",
-
-  // layout
-  /** Элементов в строке сетки списка (ContentList). */
-  itemsPerRow: "ipr",
-  fullSize: "fs",
+  gridTemplateColumns: "gtc",
+  gridTemplateRows: "gtr",
   gridAutoFlow: "gaf",
-  flexFlow: "ff",
+  placeItems: "pit",
+
+  // itemsPerRow — число колонок ContentList / синхрон с сеткой в UI.
+  itemsPerRow: "ipr",
+  // не css-длина: флаг полного размера в данных стиля (рантайм RN / SSR).
+  fullSize: "fs",
 } as const
 
 export type FullStylePropKey = keyof typeof FULL_TO_SHORT
