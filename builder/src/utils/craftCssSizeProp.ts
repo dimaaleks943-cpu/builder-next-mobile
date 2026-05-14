@@ -27,11 +27,20 @@ export type CssSizeUnit = (typeof CSS_SIZE_UNITS_WEB)[number]
 /** RN: only units StyleSheet can rely on; no vw/vh emulation. */
 export const CSS_SIZE_UNITS_RN = ["px", "%", "auto"] as const
 
-export type CraftSizeMenuToken = CssSizeUnit | "auto"
+/** Grid track sizing chips (`fr`, keywords) in addition to general CSS size units. */
+export type CraftSizeMenuToken =
+  | CssSizeUnit
+  | "auto"
+  | "fr"
+  | "min-content"
+  | "max-content"
 
 export const CRAFT_SIZE_MENU_UNITS_WEB: readonly CraftSizeMenuToken[] = [
   ...CSS_SIZE_UNITS_WEB,
   "auto",
+  "fr",
+  "min-content",
+  "max-content",
 ]
 
 /** Font-size style control: no `auto`; menu order matches UI. */
@@ -73,12 +82,16 @@ export const BACKGROUND_POSITION_UNIT_MENU: readonly CraftSizeMenuToken[] = [
 const LENGTH_RE =
   /^(-?(?:\d+\.?\d*|\.\d+))(px|%|em|rem|ch|vw|vh|svw|svh|pt|vmin|vmax)$/i
 
+const FR_RE = /^(-?(?:\d+\.?\d*|\.\d+))fr$/i
+
 const NUM_ONLY_RE = /^-?(?:\d+\.?\d*|\.\d+)$/
+
+export type CraftLengthUnit = CssSizeUnit | "fr"
 
 export type ParsedCraftSize =
   | { kind: "empty" }
   | { kind: "auto" }
-  | { kind: "length"; n: string; unit: CssSizeUnit }
+  | { kind: "length"; n: string; unit: CraftLengthUnit }
   | { kind: "raw"; text: string }
 
 export const parseSizeProp = (value: unknown): ParsedCraftSize => {
@@ -98,6 +111,15 @@ export const parseSizeProp = (value: unknown): ParsedCraftSize => {
   const t = value.trim()
   if (t === "") return { kind: "empty" }
   if (/^auto$/i.test(t)) return { kind: "auto" }
+
+  const frM = t.match(FR_RE)
+  if (frM) {
+    return {
+      kind: "length",
+      n: trimNumericString(frM[1]!),
+      unit: "fr",
+    }
+  }
 
   const m = t.match(LENGTH_RE)
   if (m) {
@@ -148,6 +170,10 @@ export const formatSizeProp = (
     return `${n}%`
   }
 
+  if (unit === "fr") {
+    return `${n}fr`
+  }
+
   return `${n}${unit}`
 }
 
@@ -162,8 +188,21 @@ export const parseInputWithUnit = (
     return { kind: "auto" }
   }
 
+  if (menuSelection === "min-content") {
+    return { kind: "raw", text: "min-content" }
+  }
+
+  if (menuSelection === "max-content") {
+    return { kind: "raw", text: "max-content" }
+  }
+
   const t = inputText.trim()
-  if (t === "") return { kind: "empty" }
+  if (t === "") {
+    if (menuSelection === "fr") {
+      return { kind: "length", n: "1", unit: "fr" }
+    }
+    return { kind: "empty" }
+  }
   if (/^auto$/i.test(t)) return { kind: "auto" }
 
   const lengthMatch = t.match(LENGTH_RE)
@@ -173,6 +212,15 @@ export const parseInputWithUnit = (
       kind: "length",
       n: trimNumericString(lengthMatch[1]),
       unit,
+    }
+  }
+
+  const frMatch = t.match(FR_RE)
+  if (frMatch) {
+    return {
+      kind: "length",
+      n: trimNumericString(frMatch[1]!),
+      unit: "fr",
     }
   }
 
@@ -187,7 +235,7 @@ export const parseInputWithUnit = (
   return {
     kind: "length",
     n: trimNumericString(t),
-    unit: menuSelection as CssSizeUnit,
+    unit: menuSelection as CraftLengthUnit,
   }
 }
 
@@ -219,6 +267,12 @@ export const unitTokenLabel = (token: CraftSizeMenuToken): string => {
       return "VMAX"
     case "auto":
       return "AUTO"
+    case "fr":
+      return "FR"
+    case "min-content":
+      return "MIN"
+    case "max-content":
+      return "MAX"
     default:
       return String(token).toUpperCase()
   }

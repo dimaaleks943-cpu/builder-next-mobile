@@ -22,13 +22,6 @@ import { useOverlayGeometryObserver } from "../hooks/useOverlayGeometryObserver.
 import { useSelectionHoverCollector } from "../hooks/useSelectionHoverCollector.ts"
 import { resolveCraftDomElement } from "../resolveCraftDomElement.ts"
 import {
-  buildGridTemplateColumns,
-  buildGridTemplateRows,
-  parseGridTemplateColumnTracksForManualOverlay,
-  parseGridTemplateColumnsCount,
-  parseGridTemplateRowsCount,
-} from "../../craftStylesComponents/LayoutAccordion/components/LayoutGridSection/utils.ts"
-import {
   GRID_MANUAL_ADD_COL_STRIP_PX,
   GRID_MANUAL_ADD_ROW_STRIP_PX,
   GRID_MANUAL_AUTO_COLUMN_MIN_PX,
@@ -41,7 +34,11 @@ import {
   OverlayGridManualAddIconButton,
   OverlayGridManualAddRowAside,
   OverlayGridManualAddRowWrap,
+  OverlayGridManualColumnAutoFitPrimaryCaption,
   OverlayGridManualColumnLabel,
+  OverlayGridManualColumnLabelAutoFitPrimary,
+  OverlayGridManualColumnLabelGhost,
+  OverlayGridManualColumnTrackGhost,
   OverlayGridManualColumnsHeader,
   OverlayGridManualColumnTrack,
   OverlayGridManualCorner,
@@ -58,8 +55,15 @@ import {
   OverlayGridManualToolbarLeft,
   OverlayGridManualToolbarTitle,
 } from "./styles.ts"
-import { measureGridManualRowHeightsPx } from "./utils.ts";
-import { RowTrackWithAutoLabel } from "./components/RowTrackWithAutoLabel/RowTrackWithAutoLabel.tsx";
+import {
+  buildManualGridVisualLabels,
+  isAutoFitRepeatTrack,
+  measureGridManualRowHeightsPx,
+  parseTracksOrFallback, readUsedGridTemplateTracksFromComputed
+} from "./utils.ts"
+import { RowTrackWithAutoLabel } from "./components/RowTrackWithAutoLabel/RowTrackWithAutoLabel.tsx"
+import { OverlayGridManualTrackSettingsPopper } from "./components/OverlayGridManualTrackSettingsPopper/OverlayGridManualTrackSettingsPopper.tsx"
+import { UpdateIcon } from "../../../../icons/UpdateIcon.tsx";
 
 /** Значение для MUI `columnGap` / `rowGap` / CSS grid `gap`: 0 или непустая строка (например «10px»). */
 const normalizeGridAxisGap = (prefer: unknown, fallback: unknown): string | number => {
@@ -103,6 +107,27 @@ const gapToPixelsForLayout = (v: string | number): number => {
 
 const rowHeightArraysEqual = (a: number[], b: number[]): boolean =>
   a.length === b.length && a.every((v, i) => v === b[i])
+
+const toOverlayColumnCss = (track: string): string => {
+  const t = track.trim()
+  if (/^auto$/i.test(t)) {
+    return `minmax(${GRID_MANUAL_AUTO_COLUMN_MIN_PX}px, 1fr)`
+  }
+  return t
+}
+
+const toOverlayRowCss = (track: string, measuredPx: number): string => {
+  if (/^auto$/i.test(track.trim())) {
+    return `${measuredPx}px`
+  }
+  return track.trim()
+}
+
+type TrackSettingsState = {
+  axis: "column" | "row"
+  index: number
+  anchorEl: HTMLElement
+}
 
 interface Props {
   previewViewport: PreviewViewport
@@ -233,8 +258,32 @@ export const OverlayGridManualEditor = ({
     return gridGapFromDom.row
   }, [gridRowGapCss, gridGapFromDom.row])
 
-  const [colCount, setColCount] = useState(1)
-  const [rowCount, setRowCount] = useState(1)
+  const [columnTracks, setColumnTracks] = useState<string[]>(["1fr"])
+  const [rowTracks, setRowTracks] = useState<string[]>(["auto"])
+  const [usedTemplateTracks, setUsedTemplateTracks] = useState<{
+    columns: string[]
+    rows: string[]
+  }>(() => ({ columns: [], rows: [] }))
+  const [trackSettings, setTrackSettings] = useState<TrackSettingsState | null>(null)
+
+  const rowCount = rowTracks.length
+
+  const effectiveMeasureRowCount =
+    rowTracks.some(isAutoFitRepeatTrack) && usedTemplateTracks.rows.length > 0
+      ? usedTemplateTracks.rows.length
+      : rowCount
+
+  const columnLabelPlan = useMemo(
+    () => buildManualGridVisualLabels(columnTracks, usedTemplateTracks.columns),
+    [columnTracks, usedTemplateTracks.columns],
+  )
+
+  const rowLabelPlan = useMemo(
+    () => buildManualGridVisualLabels(rowTracks, usedTemplateTracks.rows),
+    [rowTracks, usedTemplateTracks.rows],
+  )
+
+  const visualColCount = Math.max(1, columnLabelPlan.length)
 
   const previewColumnGapCss = useMemo(
     () =>
@@ -263,21 +312,21 @@ export const OverlayGridManualEditor = ({
   const [anchorMeasuredRowHeightsPx, setAnchorMeasuredRowHeightsPx] = useState<number[]>([])
 
   const overlayManualRowHeightsPx = useMemo(() => {
-    if (anchorMeasuredRowHeightsPx.length === rowCount) {
+    if (anchorMeasuredRowHeightsPx.length === effectiveMeasureRowCount) {
       return anchorMeasuredRowHeightsPx
     }
-    return Array.from({ length: rowCount }, () => GRID_MANUAL_PREVIEW_ROW_MIN_PX)
-  }, [anchorMeasuredRowHeightsPx, rowCount])
+    return Array.from({ length: effectiveMeasureRowCount }, () => GRID_MANUAL_PREVIEW_ROW_MIN_PX)
+  }, [anchorMeasuredRowHeightsPx, effectiveMeasureRowCount])
 
   useLayoutEffect(() => {
-    if (!anchorElement || rowCount < 1) {
+    if (!anchorElement || effectiveMeasureRowCount < 1) {
       setAnchorMeasuredRowHeightsPx([])
       return
     }
     const sync = () => {
       const next = measureGridManualRowHeightsPx(
         anchorElement,
-        rowCount,
+        effectiveMeasureRowCount,
         GRID_MANUAL_PREVIEW_ROW_MIN_PX,
         rowGapPxForMinChromeBody,
       )
@@ -299,12 +348,114 @@ export const OverlayGridManualEditor = ({
       ro.disconnect()
       mo.disconnect()
     }
-  }, [anchorElement, openSeq, previewViewport, rowCount, rowGapPxForMinChromeBody])
+  }, [
+    anchorElement,
+    openSeq,
+    previewViewport,
+    effectiveMeasureRowCount,
+    rowGapPxForMinChromeBody,
+  ])
 
   const minChromeBodyHeightPx = useMemo(() => {
-    const sumRows = overlayManualRowHeightsPx.reduce((acc, h) => acc + h, 0)
-    return sumRows + Math.max(0, rowCount - 1) * rowGapPxForMinChromeBody
-  }, [overlayManualRowHeightsPx, rowCount, rowGapPxForMinChromeBody])
+    const n = effectiveMeasureRowCount
+    const slice = overlayManualRowHeightsPx.slice(0, n)
+    const sumRows = slice.reduce((acc, h) => acc + h, 0)
+    return sumRows + Math.max(0, n - 1) * rowGapPxForMinChromeBody
+  }, [overlayManualRowHeightsPx, effectiveMeasureRowCount, rowGapPxForMinChromeBody])
+
+  useEffect(() => {
+    setTrackSettings(null)
+  }, [openSeq])
+
+  useEffect(() => {
+    if (!activeNodeId) return
+    const node = query.node(activeNodeId).get()
+    if (!node) return
+    const props = node.data.props as Record<string, unknown>
+    const colRaw = getResponsiveStyleProp(props, "gridTemplateColumns", previewViewport)
+    const rowRaw = getResponsiveStyleProp(props, "gridTemplateRows", previewViewport)
+    setColumnTracks(parseTracksOrFallback(colRaw, "column", 1))
+    setRowTracks(parseTracksOrFallback(rowRaw, "row", 1))
+  }, [activeNodeId, openSeq, previewViewport])
+
+  const commitColumnTrackAt = useCallback(
+    (index: number, nextTrack: string) => {
+      if (!activeNodeId) return
+      setColumnTracks((prev) => {
+        const next = prev.map((t, i) => (i === index ? nextTrack : t))
+        actions.setProp(activeNodeId, (props: Record<string, unknown>) => {
+          setResponsiveStyleProp(props, "gridTemplateColumns", next.join(" "), previewViewport)
+          setResponsiveStyleProp(props, "itemsPerRow", next.length, previewViewport)
+        })
+        return next
+      })
+    },
+    [activeNodeId, actions, previewViewport],
+  )
+
+  const commitRowTrackAt = useCallback(
+    (index: number, nextTrack: string) => {
+      if (!activeNodeId) return
+      setRowTracks((prev) => {
+        const next = prev.map((t, i) => (i === index ? nextTrack : t))
+        actions.setProp(activeNodeId, (props: Record<string, unknown>) => {
+          setResponsiveStyleProp(props, "gridTemplateRows", next.join(" "), previewViewport)
+        })
+        return next
+      })
+    },
+    [activeNodeId, actions, previewViewport],
+  )
+
+  const handleAddColumn = useCallback(() => {
+    if (!activeNodeId) return
+    setColumnTracks((prev) => {
+      const next = [...prev, "1fr"]
+      actions.setProp(activeNodeId, (props: Record<string, unknown>) => {
+        setResponsiveStyleProp(props, "gridTemplateColumns", next.join(" "), previewViewport)
+        setResponsiveStyleProp(props, "itemsPerRow", next.length, previewViewport)
+      })
+      return next
+    })
+  }, [activeNodeId, actions, previewViewport])
+
+  const handleAddRow = useCallback(() => {
+    if (!activeNodeId) return
+    setRowTracks((prev) => {
+      const next = [...prev, "auto"]
+      actions.setProp(activeNodeId, (props: Record<string, unknown>) => {
+        setResponsiveStyleProp(props, "gridTemplateRows", next.join(" "), previewViewport)
+      })
+      return next
+    })
+  }, [activeNodeId, actions, previewViewport])
+
+  const handleDeleteGridTrack = useCallback(
+    (axis: "column" | "row", index: number) => {
+      if (!activeNodeId) return
+      if (axis === "column") {
+        setColumnTracks((prev) => {
+          if (prev.length <= 1) return prev
+          const next = prev.filter((_, i) => i !== index)
+          actions.setProp(activeNodeId, (props: Record<string, unknown>) => {
+            setResponsiveStyleProp(props, "gridTemplateColumns", next.join(" "), previewViewport)
+            setResponsiveStyleProp(props, "itemsPerRow", next.length, previewViewport)
+          })
+          return next
+        })
+        return
+      }
+      setRowTracks((prev) => {
+        if (prev.length <= 1) return prev
+        const next = prev.filter((_, i) => i !== index)
+        actions.setProp(activeNodeId, (props: Record<string, unknown>) => {
+          setResponsiveStyleProp(props, "gridTemplateRows", next.join(" "), previewViewport)
+        })
+        return next
+      })
+    },
+    [activeNodeId, actions, previewViewport],
+  )
 
   const geometry = useOverlayGeometryObserver({
     anchorElement,
@@ -314,9 +465,6 @@ export const OverlayGridManualEditor = ({
     geometryBox: "content",
   })
 
-  const gridDraftCountsRef = useRef({ colCount, rowCount })
-  gridDraftCountsRef.current = { colCount, rowCount }
-
   useEffect(() => {
     if (!activeNodeId) return
     const node = query.node(activeNodeId).get()
@@ -324,51 +472,6 @@ export const OverlayGridManualEditor = ({
       closeGridManualEdit()
     }
   }, [activeNodeId, closeGridManualEdit, query])
-
-  useEffect(() => {
-    if (!activeNodeId) return
-    const node = query.node(activeNodeId).get()
-    if (!node) return
-    const props = node.data.props as Record<string, unknown>
-    const colRaw = getResponsiveStyleProp(props, "gridTemplateColumns", previewViewport)
-    const rowRaw = getResponsiveStyleProp(props, "gridTemplateRows", previewViewport)
-    setColCount(parseGridTemplateColumnsCount(colRaw) ?? 1)
-    setRowCount(parseGridTemplateRowsCount(rowRaw) ?? 1)
-  }, [activeNodeId, openSeq, query, previewViewport])
-
-  const flushGridPropsToNode = useCallback(
-    (nextColCount: number, nextRowCount: number) => {
-      if (!activeNodeId) return
-      const cols = buildGridTemplateColumns(nextColCount)
-      const rows = buildGridTemplateRows(nextRowCount)
-      actions.setProp(activeNodeId, (props: Record<string, unknown>) => {
-        if (cols != null) {
-          setResponsiveStyleProp(props, "gridTemplateColumns", cols, previewViewport)
-        }
-        if (rows != null) {
-          setResponsiveStyleProp(props, "gridTemplateRows", rows, previewViewport)
-        }
-        setResponsiveStyleProp(props, "itemsPerRow", nextColCount, previewViewport)
-      })
-    },
-    [activeNodeId, actions, previewViewport],
-  )
-
-  const handleAddColumn = useCallback(() => {
-    const { colCount: prevCol, rowCount: prevRow } = gridDraftCountsRef.current
-    const nextCol = prevCol + 1
-    gridDraftCountsRef.current = { colCount: nextCol, rowCount: prevRow }
-    setColCount(nextCol)
-    flushGridPropsToNode(nextCol, prevRow)
-  }, [flushGridPropsToNode])
-
-  const handleAddRow = useCallback(() => {
-    const { colCount: prevCol, rowCount: prevRow } = gridDraftCountsRef.current
-    const nextRow = prevRow + 1
-    gridDraftCountsRef.current = { colCount: prevCol, rowCount: nextRow }
-    setRowCount(nextRow)
-    flushGridPropsToNode(prevCol, nextRow)
-  }, [flushGridPropsToNode])
 
   const chromeLayout = useMemo(() => {
     if (!geometry.isVisible) {
@@ -383,59 +486,70 @@ export const OverlayGridManualEditor = ({
     }
   }, [geometry, minChromeBodyHeightPx])
 
-  const manualColumnTracks = useMemo((): ("1fr" | "auto")[] => {
-    if (!activeNodeId) {
-      return Array.from({ length: colCount }, () => "1fr")
-    }
-    const node = query.node(activeNodeId).get()
-    if (!node) {
-      return Array.from({ length: colCount }, () => "1fr")
-    }
-    const props = node.data.props as Record<string, unknown>
-    const colRaw = getResponsiveStyleProp(props, "gridTemplateColumns", previewViewport)
-    const parsed = parseGridTemplateColumnTracksForManualOverlay(colRaw)
-    if (!parsed || parsed.length === 0) {
-      return Array.from({ length: colCount }, () => "1fr")
-    }
-    if (parsed.length === colCount) {
-      return parsed
-    }
-    return Array.from({ length: colCount }, (_, i) => parsed[i] ?? "1fr")
-  }, [activeNodeId, colCount, openSeq, previewViewport, query])
-
   const manualGridTemplateColumnsCss = useMemo(
-    () =>
-      manualColumnTracks
-        .map((t) =>
-          t === "auto"
-            ? `minmax(${GRID_MANUAL_AUTO_COLUMN_MIN_PX}px, 1fr)`
-            : "minmax(0, 1fr)",
-        )
-        .join(" "),
-    [manualColumnTracks],
+    () => columnTracks.map(toOverlayColumnCss).join(" "),
+    [columnTracks],
   )
 
   const manualGridTemplateRowsCss = useMemo(
-    () => overlayManualRowHeightsPx.map((h) => `${h}px`).join(" "),
-    [overlayManualRowHeightsPx],
+    () =>
+      rowTracks
+        .map((t, i) =>
+          toOverlayRowCss(t, overlayManualRowHeightsPx[i] ?? GRID_MANUAL_PREVIEW_ROW_MIN_PX),
+        )
+        .join(" "),
+    [rowTracks, overlayManualRowHeightsPx],
   )
+
+  const manualGridAnchorSyncRef = useRef<{ el: HTMLElement; nodeId: string } | null>(null)
 
   /**
    * Временно выравниваем вёрстку якоря с превью оверлея: подставляем те же `grid-template-*`, что и у сетки в UI.
    * Раньше использовали `min-height`/`min-width` — из-за рассинхрона с дорожками `auto` элементы визуально «уезжали» от пунктира.
+   *
+   * Cleanup не снимает свойства «в ноль»: React может не вернуть inline-стили при тех же пропсах.
+   * Вместо снимка с начала прошлого запуска (рассинхрон при удалении дорожек) подставляем актуальные значения из стора Craft.
    */
   useLayoutEffect(() => {
     if (!activeNodeId || !anchorElement) {
+      setUsedTemplateTracks({ columns: [], rows: [] })
       return
     }
     const el = anchorElement
-    const prevGtc = el.style.gridTemplateColumns
-    const prevGtr = el.style.gridTemplateRows
+    manualGridAnchorSyncRef.current = { el, nodeId: activeNodeId }
     el.style.gridTemplateColumns = manualGridTemplateColumnsCss
     el.style.gridTemplateRows = manualGridTemplateRowsCss
+    setUsedTemplateTracks({
+      columns: readUsedGridTemplateTracksFromComputed(el, "columns"),
+      rows: readUsedGridTemplateTracksFromComputed(el, "rows"),
+    })
     return () => {
-      el.style.gridTemplateColumns = prevGtc
-      el.style.gridTemplateRows = prevGtr
+      const snap = manualGridAnchorSyncRef.current
+      if (!snap) {
+        return
+      }
+      const node = query.node(snap.nodeId).get()
+      if (!node) {
+        snap.el.style.removeProperty("grid-template-columns")
+        snap.el.style.removeProperty("grid-template-rows")
+        return
+      }
+      const props = node.data.props as Record<string, unknown>
+      const gtcRaw = getResponsiveStyleProp(props, "gridTemplateColumns", previewViewport)
+      const gtrRaw = getResponsiveStyleProp(props, "gridTemplateRows", previewViewport)
+      const c = typeof gtcRaw === "string" ? gtcRaw.trim() : ""
+      const r = typeof gtrRaw === "string" ? gtrRaw.trim() : ""
+      const { el: restoreEl } = snap
+      if (c) {
+        restoreEl.style.gridTemplateColumns = c
+      } else {
+        restoreEl.style.removeProperty("grid-template-columns")
+      }
+      if (r) {
+        restoreEl.style.gridTemplateRows = r
+      } else {
+        restoreEl.style.removeProperty("grid-template-rows")
+      }
     }
   }, [
     activeNodeId,
@@ -443,17 +557,24 @@ export const OverlayGridManualEditor = ({
     manualGridTemplateColumnsCss,
     manualGridTemplateRowsCss,
     openSeq,
+    previewViewport,
+    query,
   ])
 
   const handleDone = () => {
     if (!activeNodeId) return
-    flushGridPropsToNode(colCount, rowCount)
+    actions.setProp(activeNodeId, (props: Record<string, unknown>) => {
+      setResponsiveStyleProp(props, "gridTemplateColumns", columnTracks.join(" "), previewViewport)
+      setResponsiveStyleProp(props, "gridTemplateRows", rowTracks.join(" "), previewViewport)
+      setResponsiveStyleProp(props, "itemsPerRow", columnTracks.length, previewViewport)
+    })
     closeGridManualEdit()
   }
 
   const handleDimmerMouseDown = (event: MouseEvent) => {
     event.stopPropagation()
     event.preventDefault()
+    setTrackSettings(null)
   }
 
   if (!activeNodeId) {
@@ -482,31 +603,68 @@ export const OverlayGridManualEditor = ({
             sx={{
               flex: 1,
               minWidth: 0,
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "stretch",
+              width: "100%",
+              display: "grid",
+              gridTemplateColumns: manualGridTemplateColumnsCss,
               columnGap: previewColumnGapCss,
+              alignItems: "stretch",
             }}
           >
-            {Array.from({ length: colCount }, (_, i) => {
-              const track = manualColumnTracks[i] ?? "1fr"
-              const colIsAuto = track === "auto"
+            {columnLabelPlan.map((entry, visualIndex) => {
+              const isGhost = entry.kind === "autoFitGhost"
+              const isPrimaryAuto = entry.kind === "autoFitPrimary"
+              const Track = isGhost ? OverlayGridManualColumnTrackGhost : OverlayGridManualColumnTrack
               return (
                 <Box
-                  key={`col-${i}`}
+                  key={`col-${visualIndex}`}
                   sx={{
-                    flex: 1,
-                    minWidth: colIsAuto ? GRID_MANUAL_AUTO_COLUMN_MIN_PX : 0,
+                    minWidth: 0,
                     display: "flex",
                     flexDirection: "row",
                     alignItems: "stretch",
                   }}
                 >
-                  <OverlayGridManualColumnTrack sx={{ flex: 1, minWidth: 0 }}>
-                    <OverlayGridManualColumnLabel>
-                      {colIsAuto ? "AUTO" : "1FR"}
-                    </OverlayGridManualColumnLabel>
-                  </OverlayGridManualColumnTrack>
+                  <Track sx={{ flex: 1, minWidth: 0 }}>
+                    <Box
+                      component="button"
+                      type="button"
+                      onClick={(event: MouseEvent<HTMLButtonElement>) => {
+                        setTrackSettings({
+                          axis: "column",
+                          index: entry.logicalIndex,
+                          anchorEl: event.currentTarget,
+                        })
+                      }}
+                      sx={{
+                        flex: 1,
+                        minWidth: 0,
+                        border: "none",
+                        background: "none",
+                        padding: 0,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "stretch",
+                        "&:hover": { opacity: 0.92 },
+                      }}
+                    >
+                      {isPrimaryAuto ? (
+                        <OverlayGridManualColumnLabelAutoFitPrimary>
+                          <UpdateIcon size={12} fill={COLORS.white} />
+                          <OverlayGridManualColumnAutoFitPrimaryCaption>
+                            {entry.displayLabel}
+                          </OverlayGridManualColumnAutoFitPrimaryCaption>
+                        </OverlayGridManualColumnLabelAutoFitPrimary>
+                      ) : isGhost ? (
+                        <OverlayGridManualColumnLabelGhost>
+                          {entry.displayLabel}
+                        </OverlayGridManualColumnLabelGhost>
+                      ) : (
+                        <OverlayGridManualColumnLabel>
+                          {entry.displayLabel}
+                        </OverlayGridManualColumnLabel>
+                      )}
+                    </Box>
+                  </Track>
                 </Box>
               )
             })}
@@ -531,25 +689,36 @@ export const OverlayGridManualEditor = ({
             sx={{
               flex: 1,
               minHeight: 0,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "stretch",
-              justifyContent: "flex-start",
+              width: "100%",
+              display: "grid",
+              gridTemplateRows: manualGridTemplateRowsCss,
               rowGap: previewRowGapCss,
+              alignContent: "start",
             }}
           >
-            {overlayManualRowHeightsPx.map((rowTrackPx, i) => (
+            {rowLabelPlan.map((entry, i) => (
               <Box
                 key={`row-${i}`}
                 sx={{
-                  flex: "none",
-                  height: rowTrackPx,
-                  minHeight: rowTrackPx,
+                  minHeight: 0,
+                  minWidth: 0,
                   display: "flex",
                   flexDirection: "column",
                 }}
               >
-                <RowTrackWithAutoLabel singleRowMode={rowCount === 1} />
+                <RowTrackWithAutoLabel
+                  singleRowMode={effectiveMeasureRowCount === 1}
+                  label={entry.displayLabel}
+                  variant={entry.kind === "autoFitGhost" ? "ghost" : "solid"}
+                  showAutoFitIcon={entry.kind === "autoFitPrimary"}
+                  onLabelClick={(event: MouseEvent<HTMLButtonElement>) => {
+                    setTrackSettings({
+                      axis: "row",
+                      index: entry.logicalIndex,
+                      anchorEl: event.currentTarget,
+                    })
+                  }}
+                />
               </Box>
             ))}
           </Box>
@@ -578,13 +747,38 @@ export const OverlayGridManualEditor = ({
             rowGap: previewRowGapCss,
           }}
         >
-          {Array.from({ length: rowCount * colCount }, (_, idx) => {
-            const ri = Math.floor(idx / colCount)
-            const ci = idx % colCount
+          {Array.from({ length: effectiveMeasureRowCount * visualColCount }, (_, idx) => {
+            const ri = Math.floor(idx / visualColCount)
+            const ci = idx % visualColCount
             return <OverlayGridManualGridCell key={`cell-${ri}-${ci}`} />
           })}
         </OverlayGridManualGridPreview>
       </OverlayGridManualEditorChrome>
+      ) : null}
+
+      {trackSettings ? (
+        <OverlayGridManualTrackSettingsPopper
+          open
+          anchorEl={trackSettings.anchorEl}
+          axis={trackSettings.axis}
+          editIndex={trackSettings.index}
+          track={
+            trackSettings.axis === "column"
+              ? (columnTracks[trackSettings.index] ?? "1fr")
+              : (rowTracks[trackSettings.index] ?? "auto")
+          }
+          columnTracks={columnTracks}
+          rowTracks={rowTracks}
+          onClose={() => setTrackSettings(null)}
+          onCommitTrack={(nextTrack) => {
+            if (trackSettings.axis === "column") {
+              commitColumnTrackAt(trackSettings.index, nextTrack)
+            } else {
+              commitRowTrackAt(trackSettings.index, nextTrack)
+            }
+          }}
+          onDelete={() => handleDeleteGridTrack(trackSettings.axis, trackSettings.index)}
+        />
       ) : null}
 
       <OverlayGridManualToolbar

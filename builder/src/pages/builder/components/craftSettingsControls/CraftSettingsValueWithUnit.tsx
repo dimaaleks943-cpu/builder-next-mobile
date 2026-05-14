@@ -121,6 +121,13 @@ const viewStateFromProp = (
   }
 
   if (parsed.kind === "raw") {
+    const rawTrim = parsed.text.trim()
+    if (/^min-content$/i.test(rawTrim) && allowedSet.has("min-content")) {
+      return { inputText: "", menuSelection: "min-content" }
+    }
+    if (/^max-content$/i.test(rawTrim) && allowedSet.has("max-content")) {
+      return { inputText: "", menuSelection: "max-content" }
+    }
     return { inputText: parsed.text, menuSelection: "custom" }
   }
 
@@ -273,7 +280,13 @@ export const CraftSettingsValueWithUnit = ({
   useEffect(() => () => cancelBlurCommit(), [])
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    if (menuSelection === "auto") return
+    if (
+      menuSelection === "auto" ||
+      menuSelection === "min-content" ||
+      menuSelection === "max-content"
+    ) {
+      return
+    }
     setInputText(event.target.value)
   }
 
@@ -343,6 +356,18 @@ export const CraftSettingsValueWithUnit = ({
       onCommit("auto")
       return
     }
+    if (sizeToken === "min-content") {
+      setMenuSelection("min-content")
+      setInputText("")
+      onCommit("min-content")
+      return
+    }
+    if (sizeToken === "max-content") {
+      setMenuSelection("max-content")
+      setInputText("")
+      onCommit("max-content")
+      return
+    }
     const parsed = parseInputWithUnit(inputText, sizeToken)
     setMenuSelection(sizeToken)
     commitParsed(parsed)
@@ -366,8 +391,12 @@ export const CraftSettingsValueWithUnit = ({
         ? "auto"
         : String(menuSelection).toLowerCase()
 
-  const isAuto = !isGradientAngleMode && menuSelection === "auto"
-  const displayValue = isAuto ? "auto" : inputText
+  const isKeywordSizingUnit =
+    !isGradientAngleMode &&
+    (menuSelection === "auto" ||
+      menuSelection === "min-content" ||
+      menuSelection === "max-content")
+  const displayValue = isKeywordSizingUnit ? String(menuSelection) : inputText
 
   return (
     <Box
@@ -414,9 +443,9 @@ export const CraftSettingsValueWithUnit = ({
           onBlur={queueBlurCommit}
           onKeyDown={handleInputKeyDown}
           disabled={disabled}
-          readOnly={isAuto}
-          placeholder={isAuto ? "" : placeholder}
-          inputMode={isAuto ? undefined : "decimal"}
+          readOnly={isKeywordSizingUnit}
+          placeholder={isKeywordSizingUnit ? "" : placeholder}
+          inputMode={isKeywordSizingUnit ? undefined : "decimal"}
           autoComplete="off"
           aria-label={label}
           sx={{

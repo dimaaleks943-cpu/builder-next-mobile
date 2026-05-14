@@ -1,4 +1,8 @@
 import { getAnchorRectForOverlay } from "../getAnchorRectForOverlay.ts";
+import {
+  parseGridTemplateTracksExpanded,
+  sliceGridTemplateTrackList
+} from "../../craftStylesComponents/LayoutAccordion/components/LayoutGridSection/utils.ts";
 
 /** Разобранная линия оси grid-row/grid-column из `getComputedStyle` (число, span или auto). */
 const parseGridAxisPlacementToken = (
@@ -178,4 +182,234 @@ export const measureGridManualRowHeightsPx = (
     }
   }
   return heights
+}
+
+export const AUTO_FIT_DISABLED_MESSAGE =
+  "Auto-fit can't be enabled when another track on the same axis uses auto, min-content, max-content, flexible (fr), minmax(auto, …), or repeat(auto-fit, …)."
+
+const AUTO_FIT_TRACK_RE = /^repeat\s*\(\s*auto-fit\s*,\s*(.+)\)\s*$/i
+
+export const isAutoFitRepeatTrack = (track: string): boolean =>
+  AUTO_FIT_TRACK_RE.test(track.trim())
+
+export const parseAutoFitBasisTrack = (track: string): string | undefined => {
+  const m = track.trim().match(AUTO_FIT_TRACK_RE)
+  if (!m) {
+    return undefined
+  }
+  return m[1]!.trim()
+}
+
+export const buildAutoFitTrackFromBasis = (basis: string): string => {
+  const b = basis.trim()
+  return `repeat(auto-fit, ${b})`
+}
+
+/** Other tracks on the same axis that forbid turning auto-fit on for the edited track. */
+export const trackConflictsWithAutoFitPeerPolicy = (track: string): boolean => {
+  const t = track.trim()
+  if (!t) {
+    return false
+  }
+  if (/^auto$/i.test(t)) {
+    return true
+  }
+  if (/^min-content$/i.test(t)) {
+    return true
+  }
+  if (/^max-content$/i.test(t)) {
+    return true
+  }
+  if (/repeat\s*\(\s*auto-fit/i.test(t)) {
+    return true
+  }
+  if (/minmax\s*\(\s*auto\s*,/i.test(t)) {
+    return true
+  }
+  if (/\b\d*\.?\d+fr\b/i.test(t)) {
+    return true
+  }
+  return false
+}
+
+export const gridHasAnyAutoFit = (columns: string[], rows: string[]): boolean =>
+  columns.some(isAutoFitRepeatTrack) || rows.some(isAutoFitRepeatTrack)
+
+export const autoFitCheckboxDisabled = (
+  axis: "column" | "row",
+  editIndex: number,
+  columnTracks: string[],
+  rowTracks: string[],
+): { disabled: true; reason: string } | { disabled: false } => {
+  const peers = axis === "column" ? columnTracks : rowTracks
+  const otherPeers = peers.filter((_, i) => i !== editIndex)
+  if (otherPeers.some(trackConflictsWithAutoFitPeerPolicy)) {
+    return { disabled: true, reason: AUTO_FIT_DISABLED_MESSAGE }
+  }
+  return { disabled: false }
+}
+
+export const inferSizingTabFromTrack = (track: string): "default" | "minmax" => {
+  const t = track.trim()
+  if (/^minmax\s*\(/i.test(t)) {
+    return "minmax"
+  }
+  return "default"
+}
+
+export type ManualGridVisualLabelKind = "fixed" | "autoFitPrimary" | "autoFitGhost"
+
+export interface ManualGridVisualLabel {
+  kind: ManualGridVisualLabelKind
+  logicalIndex: number
+  sourceTrack: string
+  displayLabel: string
+}
+
+export const readUsedGridTemplateTracksFromComputed = (
+  el: HTMLElement,
+  axis: "columns" | "rows",
+): string[] => {
+  if (typeof window === "undefined") {
+    return []
+  }
+  const cs = getComputedStyle(el)
+  const raw = axis === "columns" ? cs.gridTemplateColumns : cs.gridTemplateRows
+  const s = raw.trim()
+  if (!s || s === "none") {
+    return []
+  }
+  return sliceGridTemplateTrackList(s)
+}
+
+/**
+ * Сопоставляет логические треки редактора с фактическим числом дорожек из computed style
+ * (нужно для `repeat(auto-fit, …)`): первая колонка/ряд auto-fit — «основная» с иконкой, остальные — ghost.
+ */
+export const buildManualGridVisualLabels = (
+  logical: string[],
+  used: string[],
+): ManualGridVisualLabel[] => {
+  if (logical.length === 0) {
+    return []
+  }
+
+  const fallback = (): ManualGridVisualLabel[] =>
+    logical.map((t, i) => ({
+      kind: "fixed" as const,
+      logicalIndex: i,
+      sourceTrack: t,
+      displayLabel: formatGridTrackLabelForOverlay(t),
+    }))
+
+  const hasAutoFit = logical.some(isAutoFitRepeatTrack)
+  const usedOk = used.length > 0 && (hasAutoFit || used.length === logical.length)
+  const u = usedOk ? used : []
+
+  if (!hasAutoFit) {
+    if (u.length === logical.length) {
+      return logical.map((t, i) => ({
+        kind: "fixed" as const,
+        logicalIndex: i,
+        sourceTrack: t,
+        displayLabel: formatGridTrackLabelForOverlay(t),
+      }))
+    }
+    return fallback()
+  }
+
+  if (u.length === 0) {
+    return fallback()
+  }
+
+  let vi = 0
+  const out: ManualGridVisualLabel[] = []
+
+  for (let li = 0; li < logical.length; li++) {
+    const L = logical[li]!
+    if (isAutoFitRepeatTrack(L)) {
+      const basis = parseAutoFitBasisTrack(L) ?? "1fr"
+      const displayLabel = formatGridTrackLabelForOverlay(basis)
+      const tailLogical = logical.length - li - 1
+      const n = Math.max(1, u.length - vi - tailLogical)
+      for (let k = 0; k < n; k++) {
+        out.push({
+          kind: k === 0 ? "autoFitPrimary" : "autoFitGhost",
+          logicalIndex: li,
+          sourceTrack: L,
+          displayLabel,
+        })
+      }
+      vi += n
+    } else {
+      out.push({
+        kind: "fixed",
+        logicalIndex: li,
+        sourceTrack: L,
+        displayLabel: formatGridTrackLabelForOverlay(L),
+      })
+      vi += 1
+    }
+  }
+
+  if (vi !== u.length) {
+    return fallback()
+  }
+  return out
+}
+
+export const formatGridTrackLabelForOverlay = (track: string): string => {
+  const t = track.trim()
+  if (isAutoFitRepeatTrack(t)) {
+    return "AUTO-FIT"
+  }
+  if (/^auto$/i.test(t)) {
+    return "AUTO"
+  }
+  if (/^min-content$/i.test(t)) {
+    return "MIN"
+  }
+  if (/^max-content$/i.test(t)) {
+    return "MAX"
+  }
+  const frM = /^(\d+(?:\.\d+)?)fr$/i.exec(t)
+  if (frM) {
+    return `${frM[1]}FR`
+  }
+  const pxM = /^(\d+(?:\.\d+)?)px$/i.exec(t)
+  if (pxM) {
+    return `${pxM[1]}PX`
+  }
+  if (/^minmax\(/i.test(t)) {
+    return "MINMAX"
+  }
+  if (/^1fr$/i.test(t)) {
+    return "1FR"
+  }
+  const up = t.toUpperCase()
+  return up.length <= 8 ? up : `${up.slice(0, 7)}…`
+}
+
+export const sizingControlValueFromTrack = (track: string): string => {
+  const basis = parseAutoFitBasisTrack(track)
+  if (basis) {
+    return basis
+  }
+  return track.trim()
+}
+
+export const defaultTrackToken = (axis: "column" | "row"): string =>
+  axis === "column" ? "1fr" : "auto"
+
+export const parseTracksOrFallback = (
+  raw: unknown,
+  axis: "column" | "row",
+  countFallback: number,
+): string[] => {
+  const expanded = parseGridTemplateTracksExpanded(raw)
+  if (expanded?.length) {
+    return expanded
+  }
+  const d = defaultTrackToken(axis)
+  return Array.from({ length: Math.max(1, countFallback) }, () => d)
 }

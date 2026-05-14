@@ -15,10 +15,17 @@ type Props = {
   step?: number
   disabled?: boolean
   disableUnitPopperPortal?: boolean
+  /**
+   * Grid track sizing: `auto` / `min-content` / `max-content` pin the thumb to {@link min};
+   * dragging always commits pixel lengths (switches off keyword sizing).
+   */
+  gridTrackKeywordSlidersAtMin?: boolean
 }
 
 const getDefaultUnit = (allowedUnits: readonly CraftSizeMenuToken[]): CraftSizeMenuToken => {
-  const firstNumericUnit = allowedUnits.find((unit) => unit !== "auto")
+  const firstNumericUnit = allowedUnits.find(
+    (unit) => unit !== "auto" && unit !== "min-content" && unit !== "max-content",
+  )
   return firstNumericUnit ?? "px"
 }
 
@@ -44,14 +51,31 @@ export const CraftSettingsSliderWithUnit = ({
   step = 1,
   disabled = false,
   disableUnitPopperPortal = false,
+  gridTrackKeywordSlidersAtMin = false,
 }: Props) => {
   const midpoint = getSliderMidpoint(min, max)
   const defaultUnit = getDefaultUnit(allowedUnits)
   const parsed = parseSizeProp(value)
 
+  const isGridKeywordTrack =
+    gridTrackKeywordSlidersAtMin &&
+    (parsed.kind === "auto" ||
+      (parsed.kind === "raw" &&
+        /^(min-content|max-content)$/i.test(parsed.text.trim())))
+
+  const frQuarterStep =
+    gridTrackKeywordSlidersAtMin &&
+    parsed.kind === "length" &&
+    parsed.unit === "fr"
+
+  const resolvedSliderStep = frQuarterStep ? 0.25 : step
+
   const sliderValue = () => {
-    if (parsed.kind === "auto") {
+    if (parsed.kind === "auto" && !gridTrackKeywordSlidersAtMin) {
       return midpoint
+    }
+    if (isGridKeywordTrack) {
+      return min
     }
     if (parsed.kind === "length") {
       const asNumber = Number(parsed.n)
@@ -63,7 +87,22 @@ export const CraftSettingsSliderWithUnit = ({
   const handleSliderChange = (_: Event, nextValue: number | number[]) => {
     const rawValue = typeof nextValue === "number" ? nextValue : nextValue[0] ?? midpoint
     const clampedValue = clamp(rawValue, min, max)
-    onCommit(`${toNumericString(clampedValue)}${defaultUnit}`)
+    const parsedNow = parseSizeProp(value)
+    const keywordNow =
+      gridTrackKeywordSlidersAtMin &&
+      (parsedNow.kind === "auto" ||
+        (parsedNow.kind === "raw" &&
+          /^(min-content|max-content)$/i.test(parsedNow.text.trim())))
+    const dragUnit: CraftSizeMenuToken = keywordNow
+      ? "px"
+      : parsedNow.kind === "length" && parsedNow.unit === "fr"
+        ? "fr"
+        : parsedNow.kind === "length" && parsedNow.unit === "px"
+          ? "px"
+          : defaultUnit
+    const numericOut =
+      dragUnit === "fr" ? Math.round(clampedValue * 4) / 4 : clampedValue
+    onCommit(`${toNumericString(numericOut)}${dragUnit}`)
   }
 
   return (
@@ -82,7 +121,7 @@ export const CraftSettingsSliderWithUnit = ({
         value={sliderValue()}
         min={min}
         max={max}
-        step={step}
+        step={resolvedSliderStep}
         disabled={disabled}
         onChange={handleSliderChange}
         sx={{

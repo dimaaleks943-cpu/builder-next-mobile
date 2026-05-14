@@ -136,6 +136,52 @@ export const OverlayGridManualColumnLabel = styled(Typography)(() => ({
   fontFamily: "Inter, Arial, sans-serif",
 }))
 
+/** Дополнительные визуальные колонки `repeat(auto-fit, …)` — как в Webflow. */
+export const OverlayGridManualColumnTrackGhost = styled(Box)(() => ({
+  flex: 1,
+  minWidth: 0,
+  display: "flex",
+  flexDirection: "row",
+  alignItems: "stretch",
+  borderRadius: "4px 4px 0 0",
+  border: `1px dashed ${COLORS.blue400}`,
+  boxSizing: "border-box",
+}))
+
+export const OverlayGridManualColumnLabelGhost = styled(Typography)(() => ({
+  flex: 1,
+  minWidth: 0,
+  alignSelf: "center",
+  textAlign: "center",
+  fontSize: "10px",
+  lineHeight: "14px",
+  fontWeight: 500,
+  letterSpacing: "0.04em",
+  color: COLORS.blue400,
+  fontFamily: "Inter, Arial, sans-serif",
+}))
+
+export const OverlayGridManualColumnLabelAutoFitPrimary = styled(Box)(() => ({
+  flex: 1,
+  minWidth: 0,
+  alignSelf: "center",
+  display: "flex",
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "4px",
+}))
+
+export const OverlayGridManualColumnAutoFitPrimaryCaption = styled(Typography)(() => ({
+  flex: "0 0 auto",
+  fontSize: "10px",
+  lineHeight: "14px",
+  fontWeight: 500,
+  letterSpacing: "0.04em",
+  color: COLORS.white,
+  fontFamily: "Inter, Arial, sans-serif",
+}))
+
 export const OverlayGridManualAddColumnWrap = styled(Box)(() => ({
   flexShrink: 0,
   display: "flex",
@@ -153,6 +199,26 @@ export const OverlayGridManualRowTrack = styled(Box)(() => ({
   backgroundColor: COLORS.blue300,
   borderRadius: "4px 0 0 4px",
   position: "relative",
+}))
+
+export const OverlayGridManualRowTrackGhost = styled(Box)(() => ({
+  flex: 1,
+  minHeight: 0,
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: COLORS.white,
+  borderRadius: "4px 0 0 4px",
+  border: `1px dashed ${COLORS.blue400}`,
+  boxSizing: "border-box",
+  position: "relative",
+}))
+
+export const OverlayGridManualRowTrackGhostSingleRow = styled(OverlayGridManualRowTrackGhost)(() => ({
+  flexShrink: 0,
+  minHeight: `${GRID_MANUAL_ROW_LABEL_MIN_HEIGHT_FOR_AUTO_PX}px`,
+  overflow: "visible",
 }))
 
 /** Один ряд: дорожка не сжимается ниже высоты подписи «AUTO», подпись не обрезается. */
@@ -179,6 +245,34 @@ export const OverlayGridManualRowLabel = styled(Typography)(() => ({
 export const OverlayGridManualRowLabelFull = styled(OverlayGridManualRowLabel)(() => ({
   overflow: "visible",
   maxHeight: "none",
+}))
+
+export const OverlayGridManualRowLabelGhost = styled(Typography)(() => ({
+  writingMode: "vertical-rl",
+  transform: "rotate(180deg)",
+  fontSize: "10px",
+  lineHeight: "14px",
+  fontWeight: 500,
+  letterSpacing: "0.06em",
+  color: COLORS.blue400,
+  fontFamily: "Inter, Arial, sans-serif",
+  overflow: "hidden",
+  maxHeight: "100%",
+  flexShrink: 0,
+}))
+
+export const OverlayGridManualRowLabelGhostFull = styled(OverlayGridManualRowLabelGhost)(() => ({
+  overflow: "visible",
+  maxHeight: "none",
+}))
+
+export const OverlayGridManualRowLabelAutoFitPrimary = styled(Box)(() => ({
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "3px",
+  flexShrink: 0,
 }))
 
 export const OverlayGridManualAddRowWrap = styled(Box)(() => ({

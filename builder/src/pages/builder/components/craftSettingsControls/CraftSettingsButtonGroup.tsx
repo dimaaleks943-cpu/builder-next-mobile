@@ -5,8 +5,9 @@ import { CraftSettingsResetLabelWithPopper } from "./CraftSettingsResetLabelWith
 import { CraftSettingsFixedLabel } from "./styles.ts"
 
 interface Option {
-  id: string;
-  content: ReactNode;
+  id: string
+  content: ReactNode
+  disabled?: boolean
 }
 
 interface Props {
@@ -74,7 +75,11 @@ export const CraftSettingsButtonGroup = ({
               key={option.id}
               component="button"
               type="button"
-              onClick={() => onChange(option.id)}
+              disabled={option.disabled}
+              onClick={() => {
+                if (option.disabled) return
+                onChange(option.id)
+              }}
               sx={{
                 flex: 1,
                 minWidth: 0,
@@ -84,11 +89,12 @@ export const CraftSettingsButtonGroup = ({
                 padding: "5px 7px",
                 borderRadius: "2px",
                 border: "none",
-                cursor: "pointer",
+                cursor: option.disabled ? "not-allowed" : "pointer",
                 fontSize: "10px",
                 lineHeight: "14px",
                 color: COLORS.purple400,
                 backgroundColor: isActive ? COLORS.white : COLORS.purple100,
+                opacity: option.disabled ? 0.45 : 1,
               }}
             >
               {option.content}
