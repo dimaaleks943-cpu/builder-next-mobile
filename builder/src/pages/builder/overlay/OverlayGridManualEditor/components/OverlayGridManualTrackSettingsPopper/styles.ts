@@ -1,4 +1,4 @@
-import { Box, Button, Paper, styled, Typography } from "@mui/material";
+import { Box, Button, Paper, styled } from "@mui/material";
 import { COLORS } from "../../../../../../theme/colors.ts";
 
 export const OverlayGridManualTrackPopperPaper = styled(Paper)(() => ({
@@ -26,13 +26,6 @@ export const OverlayGridManualTrackPopperLabeledSliderRow = styled(Box)(() => ({
   gap: "8px",
   width: "100%",
   minWidth: 0,
-}))
-
-export const OverlayGridManualTrackPopperPlaceholder = styled(Typography)(() => ({
-  fontSize: "10px",
-  lineHeight: "14px",
-  color: COLORS.gray500,
-  fontFamily: "Inter, Arial, sans-serif",
 }))
 
 export const OverlayGridManualTrackPopperWarningBox = styled(Box)(() => ({
