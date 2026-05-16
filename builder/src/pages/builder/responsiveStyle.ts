@@ -98,3 +98,45 @@ export const getResponsiveStyleProp = (
   )
   return resolved[key]
 }
+
+const branchValuesEqual = (a: unknown, b: unknown): boolean =>
+  JSON.stringify(a) === JSON.stringify(b)
+
+export const subtractResponsiveStyles = (
+  style: ResponsiveStyle | undefined,
+  base: ResponsiveStyle | undefined,
+): ResponsiveStyle => {
+  if (!style) return {}
+  const result: ResponsiveStyle = {}
+  for (const [branch, branchStyle] of Object.entries(style)) {
+    const viewport = branch as PreviewViewport
+    const baseBranch = base?.[viewport] ?? {}
+    const diff: ResponsiveStyleValue = {}
+    for (const [key, value] of Object.entries(branchStyle as ResponsiveStyleValue)) {
+      if (!branchValuesEqual(value, (baseBranch as ResponsiveStyleValue)[key])) {
+        diff[key] = value
+      }
+    }
+    if (Object.keys(diff).length > 0) {
+      result[viewport] = diff
+    }
+  }
+  return result
+}
+
+export const mergeResponsiveStyles = (
+  ...layers: (ResponsiveStyle | undefined)[]
+): ResponsiveStyle => {
+  const merged: ResponsiveStyle = {}
+  for (const layer of layers) {
+    if (!layer) continue
+    for (const [branch, branchStyle] of Object.entries(layer)) {
+      const viewport = branch as PreviewViewport
+      merged[viewport] = {
+        ...(merged[viewport] ?? {}),
+        ...(branchStyle as ResponsiveStyleValue),
+      }
+    }
+  }
+  return merged
+}
