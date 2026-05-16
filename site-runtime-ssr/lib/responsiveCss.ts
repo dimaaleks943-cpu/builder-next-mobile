@@ -45,37 +45,35 @@ const asNumber = (value: unknown): number | undefined => {
   return undefined
 }
 
-const withOpacity = (color: string, opacity: number): string => {
-  const normalizedOpacity = Math.max(0, Math.min(1, opacity))
-  const hex = color.trim()
-  const shortHexMatch = /^#([a-f\d]{3})$/i.exec(hex)
-  if (shortHexMatch) {
-    const [r, g, b] = shortHexMatch[1].split("").map((part) => `${part}${part}`)
-    return `rgba(${parseInt(r, 16)}, ${parseInt(g, 16)}, ${parseInt(b, 16)}, ${normalizedOpacity})`
-  }
-
-  const longHexMatch = /^#([a-f\d]{6})$/i.exec(hex)
-  if (longHexMatch) {
-    const parts = longHexMatch[1]
-    const r = parseInt(parts.slice(0, 2), 16)
-    const g = parseInt(parts.slice(2, 4), 16)
-    const b = parseInt(parts.slice(4, 6), 16)
-    return `rgba(${r}, ${g}, ${b}, ${normalizedOpacity})`
-  }
-
-  const rgbMatch = /^rgb\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)$/i.exec(hex)
-  if (rgbMatch) {
-    return `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${normalizedOpacity})`
-  }
-
-  return color
-}
-
 const toTextDecoration = (isUnderline: unknown, isStrike: unknown): string | undefined => {
   const tokens: string[] = []
   if (isUnderline === true) tokens.push("underline")
   if (isStrike === true) tokens.push("line-through")
   return tokens.length > 0 ? tokens.join(" ") : undefined
+}
+
+const toOpacity = (value: unknown): string | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) return String(value)
+  if (typeof value === "string" && value.trim().length > 0) return value.trim()
+  return undefined
+}
+
+const toAspectRatio = (value: unknown): string | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) return String(value)
+  if (typeof value === "string" && value.trim().length > 0) return value.trim()
+  return undefined
+}
+
+const toColumnCount = (value: unknown): string | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) return String(Math.trunc(value))
+  if (typeof value === "string" && value.trim().length > 0) return value.trim()
+  return undefined
+}
+
+const toFontWeight = (value: unknown): string | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) return String(value)
+  if (typeof value === "string" && value.trim().length > 0) return value.trim()
+  return undefined
 }
 
 const styleBranchToCssDeclarations = (style: StyleRecord): Record<string, string> => {
@@ -84,9 +82,6 @@ const styleBranchToCssDeclarations = (style: StyleRecord): Record<string, string
   const set = (property: string, value: string | undefined) => {
     if (value !== undefined) declarations[property] = value
   }
-
-  const display = typeof style.display === "string" ? style.display : undefined
-  if (display) set("display", display)
 
   // -- PositioningAccordion --//
   const zIndexValue = asNumber(style.zIndex ?? style["z-index"])
@@ -105,37 +100,80 @@ const styleBranchToCssDeclarations = (style: StyleRecord): Record<string, string
   if (typeof style.borderStyle === "string") set("border-style", style.borderStyle)
   if (typeof style.borderColor === "string") set("border-color", style.borderColor)
 
-  // -- EffectAccordion --//
+  // -- TypographyAccordion --//
+  if (typeof style.fontFamily === "string") set("font-family", style.fontFamily)
+  set("font-size", toCssLength(style.fontSize))
+  set("line-height", toCssLength(style.lineHeight))
+  set("font-weight", toFontWeight(style.fontWeight))
+  if (typeof style.textAlign === "string") set("text-align", style.textAlign)
+  if (typeof style.color === "string") set("color", style.color)
+  if (typeof style.textTransform === "string") set("text-transform", style.textTransform)
+  if (typeof style.strokeColor === "string") set("-webkit-text-stroke-color", style.strokeColor)
+  set("-webkit-text-stroke-width", toCssLength(style.strokeWidth))
+  const textDecorationFromFlags = toTextDecoration(style.isUnderline, style.isStrikethrough)
+  if (typeof style.textDecoration === "string") {
+    set("text-decoration", style.textDecoration)
+  } else if (textDecorationFromFlags) {
+    set("text-decoration", textDecorationFromFlags)
+  }
+  if (typeof style.textDecorationSkipInk === "string") {
+    set("text-decoration-skip-ink", style.textDecorationSkipInk)
+  }
+  if (typeof style.fontStyle === "string") {
+    set("font-style", style.fontStyle)
+  } else if (style.isItalic === true) {
+    set("font-style", "italic")
+  }
+  set("letter-spacing", toCssLength(style.letterSpacing))
+  set("text-indent", toCssLength(style.textIndent))
+  if (typeof style.textShadow === "string") set("text-shadow", style.textShadow)
+  set("column-count", toColumnCount(style.columnCount))
+  set("column-gap", toCssLength(style.columnGap))
+  if (typeof style.columnRule === "string") set("column-rule", style.columnRule)
+  if (typeof style.columnRuleStyle === "string") set("column-rule-style", style.columnRuleStyle)
+  set("column-rule-width", toCssLength(style.columnRuleWidth))
+  if (typeof style.columnRuleColor === "string") set("column-rule-color", style.columnRuleColor)
+  if (typeof style.columnSpan === "string") set("column-span", style.columnSpan)
+  if (typeof style.wordBreak === "string") set("word-break", style.wordBreak)
+  if (typeof style.whiteSpace === "string") set("white-space", style.whiteSpace)
+  if (typeof style.overflowWrap === "string") set("overflow-wrap", style.overflowWrap)
+  if (typeof style.textOverflow === "string") set("text-overflow", style.textOverflow)
+
+  // -- EffectsAccordion --//
   if (typeof style.mixBlendMode === "string") set("mix-blend-mode", style.mixBlendMode)
-  if (typeof style.opacity === "string") set("opacity", style.opacity)
+  set("opacity", toOpacity(style.opacity))
   if (typeof style.outline === "string") set("outline", style.outline)
   if (typeof style.outlineOffset === "string") set("outline-offset", style.outlineOffset)
   if (typeof style.boxShadow === "string") set("box-shadow", style.boxShadow)
 
+  // -- BackgroundAccordion --//
+  if (typeof style.backgroundColor === "string") set("background-color", style.backgroundColor)
+  if (typeof style.backgroundImage === "string") set("background-image", style.backgroundImage)
+  if (typeof style.backgroundSize === "string") set("background-size", style.backgroundSize)
+  if (typeof style.backgroundPosition === "string") set("background-position", style.backgroundPosition)
+  if (typeof style.backgroundRepeat === "string") set("background-repeat", style.backgroundRepeat)
+  if (typeof style.backgroundAttachment === "string") {
+    set("background-attachment", style.backgroundAttachment)
+  }
+  if (typeof style.backgroundClip === "string") set("background-clip", style.backgroundClip)
+  if (typeof style.WebkitTextFillColor === "string") {
+    set("-webkit-text-fill-color", style.WebkitTextFillColor)
+  }
+
+  // -- SizeAccordion --//
   set("width", style.fullSize === true ? "100%" : toCssLength(style.width))
   set("height", style.fullSize === true ? "100%" : toCssLength(style.height))
   set("min-width", toCssLength(style.minWidth))
   set("min-height", toCssLength(style.minHeight))
   set("max-width", toCssLength(style.maxWidth))
   set("max-height", toCssLength(style.maxHeight))
-
   if (typeof style.overflow === "string") set("overflow", style.overflow)
+  set("aspect-ratio", toAspectRatio(style.aspectRatio))
+  if (typeof style.boxSizing === "string") set("box-sizing", style.boxSizing)
+  if (typeof style.objectFit === "string") set("object-fit", style.objectFit)
+  if (typeof style.objectPosition === "string") set("object-position", style.objectPosition)
 
-  if (typeof style.gridTemplateColumns === "string") {
-    set("grid-template-columns", style.gridTemplateColumns)
-  }
-  if (typeof style.gridTemplateRows === "string") {
-    set("grid-template-rows", style.gridTemplateRows)
-  }
-  if (typeof style.gridAutoFlow === "string") set("grid-auto-flow", style.gridAutoFlow)
-  set("gap", toCssLength(style.gap))
-
-  if (typeof style.flexFlow === "string") set("flex-flow", style.flexFlow)
-
-  if (typeof style.justifyContent === "string") set("justify-content", style.justifyContent)
-  if (typeof style.alignItems === "string") set("align-items", style.alignItems)
-  if (typeof style.placeItems === "string") set("place-items", style.placeItems)
-
+  // -- SpacingAccordion --//
   set("margin-top", toCssLength(style.marginTop))
   set("margin-right", toCssLength(style.marginRight))
   set("margin-bottom", toCssLength(style.marginBottom))
@@ -145,24 +183,25 @@ const styleBranchToCssDeclarations = (style: StyleRecord): Record<string, string
   set("padding-bottom", toCssLength(style.paddingBottom))
   set("padding-left", toCssLength(style.paddingLeft))
 
-  if (typeof style.backgroundColor === "string") set("background-color", style.backgroundColor)
-  if (typeof style.backgroundClip === "string") set("background-clip", style.backgroundClip)
-  if (typeof style.WebkitTextFillColor === "string") {
-    set("-webkit-text-fill-color", style.WebkitTextFillColor)
+  // -- LayoutAccordion --//
+  if (typeof style.display === "string") set("display", style.display)
+  if (typeof style.flexFlow === "string") set("flex-flow", style.flexFlow)
+  if (typeof style.justifyContent === "string") set("justify-content", style.justifyContent)
+  if (typeof style.alignItems === "string") set("align-items", style.alignItems)
+  set("gap", toCssLength(style.gap))
+  if (typeof style.gridTemplateColumns === "string") {
+    set("grid-template-columns", style.gridTemplateColumns)
   }
+  if (typeof style.gridTemplateRows === "string") {
+    set("grid-template-rows", style.gridTemplateRows)
+  }
+  if (typeof style.gridAutoFlow === "string") set("grid-auto-flow", style.gridAutoFlow)
+  if (typeof style.placeItems === "string") set("place-items", style.placeItems)
 
-  set("font-size", toCssLength(style.fontSize))
-  if (typeof style.fontWeight === "string") set("font-weight", style.fontWeight)
-  if (typeof style.textAlign === "string") set("text-align", style.textAlign)
-  if (typeof style.color === "string") set("color", style.color)
-  if (typeof style.fontFamily === "string") set("font-family", style.fontFamily)
-  set("line-height", toCssLength(style.lineHeight))
-  if (typeof style.textTransform === "string") set("text-transform", style.textTransform)
-  const textDecoration = toTextDecoration(style.isUnderline, style.isStrikethrough)
-  if (textDecoration) set("text-decoration", textDecoration)
-  if (style.isItalic === true) set("font-style", "italic")
-  if (typeof style.strokeColor === "string") set("-webkit-text-stroke-color", style.strokeColor)
-  set("-webkit-text-stroke-width", toCssLength(style.strokeWidth))
+  // -- Non-css / consumed elsewhere (stylePropsShortMapV1: itemsPerRow, fullSize) --//
+  // itemsPerRow — только для ContentList в данных узла, не объявление CSS селектора.
+  // fullSize — учтён выше в width/height (100%).
+  // isItalic / isUnderline / isStrikethrough — legacy-флаги; при наличии fontStyle / textDecoration в данных они не дублируют CSS.
 
   return declarations
 }
