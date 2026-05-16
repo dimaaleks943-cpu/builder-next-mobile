@@ -6,16 +6,13 @@ import {
   Box,
   Typography,
 } from "@mui/material"
-import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../../theme/colors.ts"
 import { LayoutGapControl } from "./components/LayoutGapControl/LayoutGapControl.tsx"
 import { useBuilderModeContext } from "../../context/BuilderModeContext.tsx"
 import { MODE_TYPE } from "../../builder.enum.ts"
 import { usePreviewViewport } from "../../context/PreviewViewportContext.tsx"
-import {
-  getResponsiveStyleProp,
-  setResponsiveStyleProp,
-} from "../../responsiveStyle.ts"
+import { setResponsiveStyleProp } from "../../responsiveStyle.ts"
+import { useStyleEditing } from "../../hooks/useStyleEditing.ts"
 import type {
   PlaceItemsValue,
   FlexFlowOption,
@@ -72,30 +69,20 @@ export const LayoutAccordion = () => {
   const viewport = usePreviewViewport()
   const { openGridManualEdit } = useCraftGridManualEditBridge()
 
-  const { actions } = useEditor()
-  const { selectedId, selectedProps } = useEditor((state) => {
-    const [id] = Array.from(state.events.selected)
-    const node = id ? state.nodes[id] : null
-    return {
-      selectedId: id ?? null,
-      selectedProps: node?.data.props ?? null,
-    }
-  }) as any
+  const { selectedId, getStyleProp, setStyleProp, mutateClassStyle } = useStyleEditing()
 
   if (!selectedId) {
     return null
   }
 
-  const rawDisplay = getResponsiveStyleProp(selectedProps, "display", viewport) as
+  const rawDisplay = getStyleProp("display") as
     | string
     | undefined
   const displayStr =
     typeof rawDisplay === "string" ? rawDisplay.trim() : ""
 
   const setDisplayValue = (next: string | undefined) => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "display", next, viewport)
-    })
+    setStyleProp("display", next)
   }
 
   const handleDisplayChange = (next: string | undefined) => {
@@ -114,76 +101,62 @@ export const LayoutAccordion = () => {
   const handleGridColumnsChange = (event: ChangeEvent<HTMLInputElement>) => {
     const next = Number(event.target.value)
     const safe = Number.isNaN(next) ? undefined : next
-    actions.setProp(selectedId, (props: any) => {
-      const tpl =
-        safe != null && safe > 0 ? buildGridTemplateColumns(safe) : undefined
-      setResponsiveStyleProp(props, "gridTemplateColumns", tpl, viewport)
-      setResponsiveStyleProp(props, "itemsPerRow", safe, viewport)
+    const tpl = safe != null && safe > 0 ? buildGridTemplateColumns(safe) : undefined
+    mutateClassStyle((draft) => {
+      setResponsiveStyleProp(draft, "gridTemplateColumns", tpl, viewport)
+      setResponsiveStyleProp(draft, "itemsPerRow", safe, viewport)
     })
   }
 
   const handleGridRowsChange = (event: ChangeEvent<HTMLInputElement>) => {
     const next = Number(event.target.value)
     const safe = Number.isNaN(next) ? undefined : next
-    actions.setProp(selectedId, (props: any) => {
-      const tpl =
-        safe != null && safe > 0 ? buildGridTemplateRows(safe) : undefined
-      setResponsiveStyleProp(props, "gridTemplateRows", tpl, viewport)
-    })
+    const tpl = safe != null && safe > 0 ? buildGridTemplateRows(safe) : undefined
+    setStyleProp("gridTemplateRows", tpl)
   }
 
   const handleGridReset = () => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "gridTemplateColumns", undefined, viewport)
-      setResponsiveStyleProp(props, "gridTemplateRows", undefined, viewport)
-      setResponsiveStyleProp(props, "itemsPerRow", undefined, viewport)
+    mutateClassStyle((draft) => {
+      setResponsiveStyleProp(draft, "gridTemplateColumns", undefined, viewport)
+      setResponsiveStyleProp(draft, "gridTemplateRows", undefined, viewport)
+      setResponsiveStyleProp(draft, "itemsPerRow", undefined, viewport)
     })
   }
 
   const handleGridAutoFlowChange = (value: GridAutoFlow) => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "gridAutoFlow", value, viewport)
-    })
+    setStyleProp("gridAutoFlow", value)
   }
 
   const handleGridAutoFlowReset = () => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "gridAutoFlow", undefined, viewport)
-    })
+    setStyleProp("gridAutoFlow", undefined)
   }
 
   const handleGapCommit = (next: string | number | undefined) => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "gap", next, viewport)
-    })
+    setStyleProp("gap", next)
   }
 
   const handleFlexFlowChange = (value: FlexFlowOption) => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "flexFlow", value, viewport)
-    })
+    setStyleProp("flexFlow", value)
   }
 
   const handleFlexFlowReset = () => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "flexFlow", undefined, viewport)
-    })
+    setStyleProp("flexFlow", undefined)
   }
 
   const handleFlexAlignChange = (
     justifyContent: FlexJustifyContent | undefined,
     alignItems: FlexAlignItems | undefined,
   ) => {
-    actions.setProp(selectedId, (props: any) => {
+    mutateClassStyle((draft) => {
       if (justifyContent === undefined && alignItems === undefined) {
-        setResponsiveStyleProp(props, "justifyContent", undefined, viewport)
-        setResponsiveStyleProp(props, "alignItems", undefined, viewport)
+        setResponsiveStyleProp(draft, "justifyContent", undefined, viewport)
+        setResponsiveStyleProp(draft, "alignItems", undefined, viewport)
       } else {
         if (justifyContent != null) {
-          setResponsiveStyleProp(props, "justifyContent", justifyContent, viewport)
+          setResponsiveStyleProp(draft, "justifyContent", justifyContent, viewport)
         }
         if (alignItems != null) {
-          setResponsiveStyleProp(props, "alignItems", alignItems, viewport)
+          setResponsiveStyleProp(draft, "alignItems", alignItems, viewport)
         }
       }
     })
@@ -193,20 +166,14 @@ export const LayoutAccordion = () => {
     alignY: PlaceItemsValue | undefined,
     alignX: PlaceItemsValue | undefined,
   ) => {
-    actions.setProp(selectedId, (props: any) => {
-      if (alignY === undefined && alignX === undefined) {
-        setResponsiveStyleProp(props, "placeItems", undefined, viewport)
-      } else if (alignY != null && alignX != null) {
-        setResponsiveStyleProp(props, "placeItems", `${alignY} ${alignX}`, viewport)
-      }
-    })
+    if (alignY === undefined && alignX === undefined) {
+      setStyleProp("placeItems", undefined)
+    } else if (alignY != null && alignX != null) {
+      setStyleProp("placeItems", `${alignY} ${alignX}`)
+    }
   }
 
-  const rawGridAutoFlow = getResponsiveStyleProp(
-    selectedProps,
-    "gridAutoFlow",
-    viewport,
-  ) as GridAutoFlow | undefined
+  const rawGridAutoFlow = getStyleProp("gridAutoFlow") as GridAutoFlow | undefined
   const rawGridAutoFlowStr =
     rawGridAutoFlow != null && String(rawGridAutoFlow).trim() !== ""
       ? (String(rawGridAutoFlow).trim() as GridAutoFlow)
@@ -214,11 +181,7 @@ export const LayoutAccordion = () => {
   const gridAutoFlowHasExplicitStyle = rawGridAutoFlowStr != null
   const effectiveGridAutoFlow: GridAutoFlow = rawGridAutoFlowStr ?? "row"
 
-  const rawFlexFlow = getResponsiveStyleProp(
-    selectedProps,
-    "flexFlow",
-    viewport,
-  ) as FlexFlowOption | undefined
+  const rawFlexFlow = getStyleProp("flexFlow") as FlexFlowOption | undefined
   const rawFlexFlowStr =
     rawFlexFlow != null && String(rawFlexFlow).trim() !== ""
       ? (String(rawFlexFlow).trim() as FlexFlowOption)
@@ -226,18 +189,12 @@ export const LayoutAccordion = () => {
   const effectiveFlexFlow: FlexFlowOption = rawFlexFlowStr ?? "row"
   const flexFlowHasExplicitStyle = rawFlexFlowStr != null
 
-  const effectiveFlexJustify = getResponsiveStyleProp(
-    selectedProps,
-    "justifyContent",
-    viewport,
-  ) as FlexJustifyContent | undefined
-  const effectiveFlexAlign = getResponsiveStyleProp(
-    selectedProps,
-    "alignItems",
-    viewport,
-  ) as FlexAlignItems | undefined
+  const effectiveFlexJustify = getStyleProp("justifyContent") as
+    | FlexJustifyContent
+    | undefined
+  const effectiveFlexAlign = getStyleProp("alignItems") as FlexAlignItems | undefined
 
-  const rawPlaceItems = getResponsiveStyleProp(selectedProps, "placeItems", viewport,)
+  const rawPlaceItems = getStyleProp("placeItems")
 
   const placeItemsHasExplicitStyle =
     typeof rawPlaceItems === "string" && rawPlaceItems.trim() !== ""
@@ -291,7 +248,7 @@ export const LayoutAccordion = () => {
                 onChange={handleFlexAlignChange}
               />
               <LayoutGapControl
-                value={getResponsiveStyleProp(selectedProps, "gap", viewport)}
+                value={getStyleProp("gap")}
                 onCommit={handleGapCommit}
               />
             </Box>
@@ -299,16 +256,8 @@ export const LayoutAccordion = () => {
 
           {showGridSection && (
             <LayoutGridSection
-              gridTemplateColumnsRaw={getResponsiveStyleProp(
-                selectedProps,
-                "gridTemplateColumns",
-                viewport,
-              )}
-              gridTemplateRowsRaw={getResponsiveStyleProp(
-                selectedProps,
-                "gridTemplateRows",
-                viewport,
-              )}
+              gridTemplateColumnsRaw={getStyleProp("gridTemplateColumns")}
+              gridTemplateRowsRaw={getStyleProp("gridTemplateRows")}
               onGridColumnsChange={handleGridColumnsChange}
               onGridRowsChange={handleGridRowsChange}
               onGridReset={handleGridReset}
@@ -321,7 +270,7 @@ export const LayoutAccordion = () => {
               onAlignChange={handleAlignChange}
               placeItemsHasExplicitStyle={placeItemsHasExplicitStyle}
               onAlignReset={handleAlignReset}
-              gapValue={getResponsiveStyleProp(selectedProps, "gap", viewport)}
+              gapValue={getStyleProp("gap")}
               onGapCommit={handleGapCommit}
               onGridManualEditOpen={() => {
                 openGridManualEdit(selectedId)

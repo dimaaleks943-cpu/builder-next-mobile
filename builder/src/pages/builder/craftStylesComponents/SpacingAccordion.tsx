@@ -5,24 +5,14 @@ import {
   Box,
   Typography,
 } from "@mui/material"
-import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors.ts"
-import { EdgeInput } from "../components/EdgeInput.tsx";
-import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
-import { getResponsiveStyleProp } from "../responsiveStyle.ts"
+import { EdgeInput } from "../components/EdgeInput.tsx"
+import { useStyleEditing } from "../hooks/useStyleEditing.ts"
 
 export const SpacingAccordion = () => {
-  const viewport = usePreviewViewport()
-  const { selectedId, selectedProps } = useEditor((state) => {
-    const [id] = Array.from(state.events.selected)
-    const node = id ? state.nodes[id] : null
-    return {
-      selectedId: id ?? null,
-      selectedProps: node?.data.props ?? null,
-    }
-  }) as any
+  const { selectedId, getStyleProp } = useStyleEditing()
 
-  if (!selectedId || !selectedProps) {
+  if (!selectedId) {
     return null
   }
 
@@ -70,10 +60,9 @@ export const SpacingAccordion = () => {
             </Typography>
             {/* top margin */}
             <EdgeInput
-              nodeId={selectedId}
               kind="margin"
               side="Top"
-              value={(getResponsiveStyleProp(selectedProps, "marginTop", viewport) as number | undefined) ?? 0}
+              value={(getStyleProp("marginTop") as number | undefined) ?? 0}
               sx={{
                 position: "absolute",
                 top: 0,
@@ -82,10 +71,9 @@ export const SpacingAccordion = () => {
 
             {/* bottom margin */}
             <EdgeInput
-              nodeId={selectedId}
               kind="margin"
               side="Bottom"
-              value={(getResponsiveStyleProp(selectedProps, "marginBottom", viewport) as number | undefined) ?? 0}
+              value={(getStyleProp("marginBottom") as number | undefined) ?? 0}
               sx={{
                 position: "absolute",
                 bottom: 0,
@@ -94,10 +82,9 @@ export const SpacingAccordion = () => {
 
             {/* left margin */}
             <EdgeInput
-              nodeId={selectedId}
               kind="margin"
               side="Left"
-              value={(getResponsiveStyleProp(selectedProps, "marginLeft", viewport) as number | undefined) ?? 0}
+              value={(getStyleProp("marginLeft") as number | undefined) ?? 0}
               sx={{
                 position: "absolute",
                 top: "50%",
@@ -109,10 +96,9 @@ export const SpacingAccordion = () => {
 
             {/* right margin */}
             <EdgeInput
-              nodeId={selectedId}
               kind="margin"
               side="Right"
-              value={(getResponsiveStyleProp(selectedProps, "marginRight", viewport) as number | undefined) ?? 0}
+              value={(getStyleProp("marginRight") as number | undefined) ?? 0}
               sx={{
                 position: "absolute",
                 top: "50%",
@@ -152,10 +138,9 @@ export const SpacingAccordion = () => {
 
               {/* top padding */}
               <EdgeInput
-                nodeId={selectedId}
                 kind="padding"
                 side="Top"
-              value={(getResponsiveStyleProp(selectedProps, "paddingTop", viewport) as number | undefined) ?? 0}
+                value={(getStyleProp("paddingTop") as number | undefined) ?? 0}
                 sx={{
                   position: "absolute",
                   top: 0,
@@ -164,10 +149,9 @@ export const SpacingAccordion = () => {
 
               {/* bottom padding */}
               <EdgeInput
-                nodeId={selectedId}
                 kind="padding"
                 side="Bottom"
-              value={(getResponsiveStyleProp(selectedProps, "paddingBottom", viewport) as number | undefined) ?? 0}
+                value={(getStyleProp("paddingBottom") as number | undefined) ?? 0}
                 sx={{
                   position: "absolute",
                   bottom: 0,
@@ -176,10 +160,9 @@ export const SpacingAccordion = () => {
 
               {/* left padding */}
               <EdgeInput
-                nodeId={selectedId}
                 kind="padding"
                 side="Left"
-              value={(getResponsiveStyleProp(selectedProps, "paddingLeft", viewport) as number | undefined) ?? 0}
+                value={(getStyleProp("paddingLeft") as number | undefined) ?? 0}
                 sx={{
                   position: "absolute",
                   top: "50%",
@@ -191,10 +174,9 @@ export const SpacingAccordion = () => {
 
               {/* right padding */}
               <EdgeInput
-                nodeId={selectedId}
                 kind="padding"
                 side="Right"
-              value={(getResponsiveStyleProp(selectedProps, "paddingRight", viewport) as number | undefined) ?? 0}
+                value={(getStyleProp("paddingRight") as number | undefined) ?? 0}
                 sx={{
                   position: "absolute",
                   top: "50%",

@@ -8,7 +8,6 @@ import {
   IconButton,
   Typography,
 } from "@mui/material"
-import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors.ts"
 import { CraftSettingsPercentSliderRow } from "../components/craftSettingsControls/CraftSettingsPercentSliderRow.tsx"
 import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
@@ -20,6 +19,7 @@ import {
 } from "./BorderSidesFrame.tsx"
 import { useBorderSidesControl } from "../hooks/useBorderSidesControl.tsx";
 import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
+import { useStyleEditing } from "../hooks/useStyleEditing.ts"
 import {
   getResponsiveStyleProp,
   setResponsiveStyleProp,
@@ -117,28 +117,14 @@ const borderStyleForButtonGroup = (value: string | undefined): BorderStyleUi => 
 }
 
 export const BordersAccordion = () => {
-  const { actions } = useEditor()
   const viewport = usePreviewViewport()
-  const { selectedId, selectedProps } = useEditor((state) => {
-    const [id] = Array.from(state.events.selected)
-    const node = id ? state.nodes[id] : null
-    return {
-      selectedId: id ?? null,
-      selectedProps: node?.data.props ?? null,
-    }
-  }) as any
+  const { selectedId, getStyleProp, setStyleProp, mutateClassStyle } = useStyleEditing()
+  const { activeSides, toggleSide, toggleAllSides, isSideActive } = useBorderSidesControl()
 
-  const { activeSides, toggleSide, toggleAllSides, isSideActive } = useBorderSidesControl(
-    selectedId,
-    selectedProps,
-    actions,
-    viewport,
+  const borderColorFromProps = useMemo(
+    () => getStyleProp("borderColor") as string | undefined,
+    [getStyleProp],
   )
-
-  const borderColorFromProps = useMemo(() => {
-    if (!selectedProps) return undefined
-    return getResponsiveStyleProp(selectedProps, "borderColor", viewport) as string | undefined
-  }, [selectedProps, viewport])
 
   const parsedBorderColor = useMemo(
     () => parseBorderColorForUi(borderColorFromProps),
@@ -189,11 +175,9 @@ export const BordersAccordion = () => {
       if (!selectedId) return
       const stored = formatBorderColorWithAlpha(hex, alpha01)
       if (!stored) return
-      actions.setProp(selectedId, (props: any) => {
-        setResponsiveStyleProp(props, "borderColor", stored, viewport)
-      })
+      setStyleProp("borderColor", stored)
     },
-    [selectedId, actions, viewport],
+    [selectedId, setStyleProp],
   )
 
   const scheduleBorderColorCommit = useCallback(() => {
@@ -230,58 +214,52 @@ export const BordersAccordion = () => {
     commitBorderColorToProps(pendingBorderHexRef.current, safe / 100)
   }
 
-  if (!selectedId || !selectedProps) {
+  if (!selectedId) {
     return null
   }
 
-  const rawBorderRadius = getResponsiveStyleProp(selectedProps, "borderRadius", viewport)
+  const rawBorderRadius = getStyleProp("borderRadius")
   const radiusUiMode: BORDER_RADIUS_MODE = isCornersRadiusStored(rawBorderRadius) ? BORDER_RADIUS_MODE.CORNERS : BORDER_RADIUS_MODE.UNIFORM
   const cornersPx = expandBorderRadiusToCorners(rawBorderRadius)
   const radiusPercent = borderRadiusToPercent(cornersPx[0])
 
   const handleRadiusModeUniform = () => {
-    actions.setProp(selectedId, (props: any) => {
-      const raw = getResponsiveStyleProp(props, "borderRadius", viewport)
-      const c = expandBorderRadiusToCorners(raw)
-      const px = cornersToUniformPx(c)
-      setResponsiveStyleProp(props, "borderRadius", px, viewport)
-    })
+    const c = expandBorderRadiusToCorners(getStyleProp("borderRadius"))
+    setStyleProp("borderRadius", cornersToUniformPx(c))
   }
 
   const handleRadiusModeCorners = () => {
-    actions.setProp(selectedId, (props: any) => {
-      const raw = getResponsiveStyleProp(props, "borderRadius", viewport)
-      const c = expandBorderRadiusToCorners(raw)
-      setResponsiveStyleProp(props, "borderRadius", formatCornersRadiusShorthand(c), viewport)
-    })
+    const c = expandBorderRadiusToCorners(getStyleProp("borderRadius"))
+    setStyleProp("borderRadius", formatCornersRadiusShorthand(c))
   }
 
   const handleUniformPercentChange = (value: number) => {
     const px = percentToBorderRadius(value)
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "borderRadius", px, viewport)
-    })
+    setStyleProp("borderRadius", px)
   }
 
   const handleCornerPxChange = (cornerIndex: 0 | 1 | 2 | 3, nextPx: number) => {
     const safe = Math.max(0, Math.round(Number.isFinite(nextPx) ? nextPx : 0))
-    actions.setProp(selectedId, (props: any) => {
-      const raw = getResponsiveStyleProp(props, "borderRadius", viewport)
+    mutateClassStyle((draft) => {
+      const raw = getResponsiveStyleProp(draft, "borderRadius", viewport)
       const c = expandBorderRadiusToCorners(raw)
       const nextCorners: [number, number, number, number] = [...c]
       nextCorners[cornerIndex] = safe
-      setResponsiveStyleProp(props, "borderRadius", formatCornersRadiusShorthand(nextCorners), viewport)
+      setResponsiveStyleProp(
+        draft,
+        "borderRadius",
+        formatCornersRadiusShorthand(nextCorners),
+        viewport,
+      )
     })
   }
 
   const styleGroupValue = borderStyleForButtonGroup(
-    getResponsiveStyleProp(selectedProps, "borderStyle", viewport) as string | undefined,
+    getStyleProp("borderStyle") as string | undefined,
   )
 
   const handleBorderStyleChange = (id: string) => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "borderStyle", id, viewport)
-    })
+    setStyleProp("borderStyle", id)
   }
 
   const sidesForWidth: BorderSide[] =
@@ -518,24 +496,16 @@ export const BordersAccordion = () => {
                 <CraftSettingsInput
                   label="Width"
                   type="number"
-                  value={(getResponsiveStyleProp(selectedProps, "borderTopWidth", viewport) as number | undefined) ?? 0}
+                  value={(getStyleProp("borderTopWidth") as number | undefined) ?? 0}
                   onChange={(event: ChangeEvent<HTMLInputElement>) => {
                     const next = Number(event.target.value)
                     const safe = Number.isNaN(next) ? 0 : next
 
-                    actions.setProp(selectedId, (props: any) => {
-                      if (sidesForWidth.includes("top")) {
-                        setResponsiveStyleProp(props, "borderTopWidth", safe, viewport)
-                      }
-                      if (sidesForWidth.includes("right")) {
-                        setResponsiveStyleProp(props, "borderRightWidth", safe, viewport)
-                      }
-                      if (sidesForWidth.includes("bottom")) {
-                        setResponsiveStyleProp(props, "borderBottomWidth", safe, viewport)
-                      }
-                      if (sidesForWidth.includes("left")) {
-                        setResponsiveStyleProp(props, "borderLeftWidth", safe, viewport)
-                      }
+                    mutateClassStyle((draft) => {
+                      if (sidesForWidth.includes("top")) setResponsiveStyleProp(draft, "borderTopWidth", safe, viewport)
+                      if (sidesForWidth.includes("right")) setResponsiveStyleProp(draft, "borderRightWidth", safe, viewport)
+                      if (sidesForWidth.includes("bottom")) setResponsiveStyleProp(draft, "borderBottomWidth", safe, viewport)
+                      if (sidesForWidth.includes("left")) setResponsiveStyleProp(draft, "borderLeftWidth", safe, viewport)
                     })
                   }}
                 />

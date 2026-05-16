@@ -32,14 +32,13 @@ import {
   useRef,
   useState,
 } from "react"
-import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../../theme/colors.ts"
 import { AddIcon } from "../../../../icons/AddIcon.tsx"
 import { CraftSettingsColorField } from "../../components/craftSettingsControls/CraftSettingsColorField.tsx"
 import { CraftSettingsSelect } from "../../components/craftSettingsControls/CraftSettingsSelect.tsx"
 import { usePreviewViewport } from "../../context/PreviewViewportContext.tsx"
+import { useStyleEditing } from "../../hooks/useStyleEditing.ts"
 import {
-  getResponsiveStyleProp,
   setResponsiveStyleProp,
 } from "../../responsiveStyle.ts"
 import {
@@ -109,17 +108,8 @@ type ImageGradientMenuState = {
 }
 
 export const BackgroundAccordion = () => {
-  const { actions } = useEditor()
   const viewport = usePreviewViewport()
-  const { selectedId, selectedProps } = useEditor((state) => {
-    const [id] = Array.from(state.events.selected)
-    const node = id ? state.nodes[id] : null
-    return {
-      selectedId: id ?? null,
-      selectedProps: node?.data.props ?? null,
-    }
-  }) as any
-
+  const { selectedId, selectedProps, getStyleProp, setStyleProp, mutateClassStyle } = useStyleEditing()
   const [colorDraft, setColorDraft] = useState<string>(DEFAULT_BG_DISPLAY)
   const colorTimeoutRef = useRef<number | undefined>(undefined)
   const [imageGradientMenu, setImageGradientMenu] =
@@ -153,7 +143,7 @@ export const BackgroundAccordion = () => {
 
   useEffect(() => {
     setColorDraft(
-      (getResponsiveStyleProp(selectedProps, "backgroundColor", viewport) as string | undefined) ??
+      (getStyleProp("backgroundColor") as string | undefined) ??
         DEFAULT_BG_DISPLAY,
     )
   }, [selectedProps, selectedId, viewport])
@@ -198,20 +188,20 @@ export const BackgroundAccordion = () => {
 
     if (idsOk && visOk && slotsOk) return
 
-    actions.setProp(selectedId, (props: any) => {
+    mutateClassStyle((draft) => {
       if (!idsOk || !visOk) {
-        persistBackgroundLayersModel(props, viewport, {
+        persistBackgroundLayersModel(draft, viewport, {
           layers,
           visible: visOk ? visRaw.map(Boolean) : layers.map(() => true),
           layerIds: idsOk ? idsRaw.map(String) : layers.map(() => newBackgroundLayerId()),
         })
         return
       }
-      const model = getBackgroundLayersModel(props, viewport)
-      ensureCanonicalStyleSlots(props, viewport, model.layers.length)
-      syncPaintedBackgroundStack(props, viewport, model)
+      const model = getBackgroundLayersModel(draft, viewport)
+      ensureCanonicalStyleSlots(draft, viewport, model.layers.length)
+      syncPaintedBackgroundStack(draft, viewport, model)
     })
-  }, [actions, selectedId, selectedProps, viewport])
+  }, [mutateClassStyle, selectedId, selectedProps, viewport])
 
   useEffect(() => {
     if (!selectedId || !selectedProps) return
@@ -238,9 +228,7 @@ export const BackgroundAccordion = () => {
       window.clearTimeout(colorTimeoutRef.current)
     }
     colorTimeoutRef.current = window.setTimeout(() => {
-      actions.setProp(selectedId, (props: any) => {
-        setResponsiveStyleProp(props, "backgroundColor", value, viewport)
-      })
+      setStyleProp("backgroundColor", value)
     }, 200)
   }
 
@@ -249,16 +237,8 @@ export const BackgroundAccordion = () => {
     scheduleBackgroundColorUpdate(value)
   }
 
-  const backgroundClipRaw = getResponsiveStyleProp(
-    selectedProps,
-    "backgroundClip",
-    viewport,
-  ) as string | undefined
-  const webkitTextFillColorRaw = getResponsiveStyleProp(
-    selectedProps,
-    "WebkitTextFillColor",
-    viewport,
-  ) as string | undefined
+  const backgroundClipRaw = getStyleProp("backgroundClip") as string | undefined
+  const webkitTextFillColorRaw = getStyleProp("WebkitTextFillColor") as string | undefined
   const clippingSelectId = getBackgroundClippingSelectId(
     backgroundClipRaw,
     webkitTextFillColorRaw,
@@ -270,16 +250,16 @@ export const BackgroundAccordion = () => {
     const selectId = event.target.value as keyof typeof CLIPPING_PRESETS
     const preset = CLIPPING_PRESETS[selectId]
     if (!preset) return
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "backgroundClip", preset.backgroundClip, viewport)
-      setResponsiveStyleProp(props, "WebkitTextFillColor", preset.WebkitTextFillColor, viewport)
+    mutateClassStyle((draft) => {
+      setResponsiveStyleProp(draft, "backgroundClip", preset.backgroundClip, viewport)
+      setResponsiveStyleProp(draft, "WebkitTextFillColor", preset.WebkitTextFillColor, viewport)
     })
   }
 
   const handleClipReset = () => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "backgroundClip", undefined, viewport)
-      setResponsiveStyleProp(props, "WebkitTextFillColor", undefined, viewport)
+    mutateClassStyle((draft) => {
+      setResponsiveStyleProp(draft, "backgroundClip", undefined, viewport)
+      setResponsiveStyleProp(draft, "WebkitTextFillColor", undefined, viewport)
     })
   }
 
@@ -393,12 +373,12 @@ export const BackgroundAccordion = () => {
     options?: BackgroundImageCommitOptions,
   ) => {
     const menuSnap = imageGradientMenuRef.current
-    actions.setProp(selectedId, (props: any) => {
+    mutateClassStyle((draft) => {
       if (next === undefined || String(next).trim() === "") {
         if (menuSnap?.target?.kind === "add") {
           return
         }
-        clearAllBackgroundLayers(props, viewport)
+        clearAllBackgroundLayers(draft, viewport)
         queueMicrotask(() => {
           menuAnchorElementRef.current = null
           setImageGradientMenu(null)
@@ -407,7 +387,7 @@ export const BackgroundAccordion = () => {
       }
 
       const trimmed = String(next).trim()
-      const model = getBackgroundLayersModel(props, viewport)
+      const model = getBackgroundLayersModel(draft, viewport)
       const target = menuSnap?.target
 
       if (!target) {
@@ -420,12 +400,12 @@ export const BackgroundAccordion = () => {
         const newIds = [newBackgroundLayerId(), ...model.layerIds]
         const nextModel = { layers: newLayers, visible: newVisible, layerIds: newIds }
         const prevLen = model.layers.length
-        prependSlotToCommaProp(props, viewport, "backgroundSize", prevLen, "auto")
-        prependSlotToCommaProp(props, viewport, "backgroundPosition", prevLen, "0px 0px")
-        prependSlotToCommaProp(props, viewport, "backgroundRepeat", prevLen, "repeat")
-        prependSlotToCommaProp(props, viewport, "backgroundAttachment", prevLen, "scroll")
-        persistBackgroundLayersModel(props, viewport, nextModel)
-        applyUrlDefaultsForLayer(props, 0, newLayers.length, options?.urlFillDefaults)
+        prependSlotToCommaProp(draft, viewport, "backgroundSize", prevLen, "auto")
+        prependSlotToCommaProp(draft, viewport, "backgroundPosition", prevLen, "0px 0px")
+        prependSlotToCommaProp(draft, viewport, "backgroundRepeat", prevLen, "repeat")
+        prependSlotToCommaProp(draft, viewport, "backgroundAttachment", prevLen, "scroll")
+        persistBackgroundLayersModel(draft, viewport, nextModel)
+        applyUrlDefaultsForLayer(draft, 0, newLayers.length, options?.urlFillDefaults)
         queueMicrotask(() => {
           setImageGradientMenu((prev) =>
             prev?.target.kind === "add"
@@ -441,12 +421,12 @@ export const BackgroundAccordion = () => {
         if (idx < 0 || idx >= model.layers.length) return
         const nextLayers = model.layers.slice()
         nextLayers[idx] = trimmed
-        persistBackgroundLayersModel(props, viewport, {
+        persistBackgroundLayersModel(draft, viewport, {
           layers: nextLayers,
           visible: model.visible,
           layerIds: model.layerIds,
         })
-        applyUrlDefaultsForLayer(props, idx, model.layers.length, options?.urlFillDefaults)
+        applyUrlDefaultsForLayer(draft, idx, model.layers.length, options?.urlFillDefaults)
       }
     })
   }
@@ -454,22 +434,22 @@ export const BackgroundAccordion = () => {
   commitBackgroundImageRef.current = commitBackgroundImage
 
   const clearLayer = (layerIndex: number) => {
-    actions.setProp(selectedId, (props: any) => {
-      const model = getBackgroundLayersModel(props, viewport)
+    mutateClassStyle((draft) => {
+      const model = getBackgroundLayersModel(draft, viewport)
       if (layerIndex < 0 || layerIndex >= model.layers.length) return
       const oldLen = model.layers.length
-      removeCommaPropLayerAt(props, viewport, "backgroundSize", oldLen, layerIndex)
-      removeCommaPropLayerAt(props, viewport, "backgroundPosition", oldLen, layerIndex)
-      removeCommaPropLayerAt(props, viewport, "backgroundRepeat", oldLen, layerIndex)
-      removeCommaPropLayerAt(props, viewport, "backgroundAttachment", oldLen, layerIndex)
+      removeCommaPropLayerAt(draft, viewport, "backgroundSize", oldLen, layerIndex)
+      removeCommaPropLayerAt(draft, viewport, "backgroundPosition", oldLen, layerIndex)
+      removeCommaPropLayerAt(draft, viewport, "backgroundRepeat", oldLen, layerIndex)
+      removeCommaPropLayerAt(draft, viewport, "backgroundAttachment", oldLen, layerIndex)
       const newLayers = model.layers.filter((_, j) => j !== layerIndex)
       const newVisible = model.visible.filter((_, j) => j !== layerIndex)
       const newIds = model.layerIds.filter((_, j) => j !== layerIndex)
       if (newLayers.length === 0) {
-        clearAllBackgroundLayers(props, viewport)
+        clearAllBackgroundLayers(draft, viewport)
         return
       }
-      persistBackgroundLayersModel(props, viewport, {
+      persistBackgroundLayersModel(draft, viewport, {
         layers: newLayers,
         visible: newVisible,
         layerIds: newIds,
@@ -491,12 +471,12 @@ export const BackgroundAccordion = () => {
   }
 
   const toggleLayerVisible = (layerIndex: number) => {
-    actions.setProp(selectedId, (props: any) => {
-      const model = getBackgroundLayersModel(props, viewport)
+    mutateClassStyle((draft) => {
+      const model = getBackgroundLayersModel(draft, viewport)
       if (layerIndex < 0 || layerIndex >= model.visible.length) return
       const nextVisible = model.visible.slice()
       nextVisible[layerIndex] = !nextVisible[layerIndex]
-      persistBackgroundLayersModel(props, viewport, {
+      persistBackgroundLayersModel(draft, viewport, {
         ...model,
         visible: nextVisible,
       })
@@ -506,20 +486,20 @@ export const BackgroundAccordion = () => {
   const onLayersDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (!over || active.id === over.id) return
-    actions.setProp(selectedId, (props: any) => {
-      const model = getBackgroundLayersModel(props, viewport)
+    mutateClassStyle((draft) => {
+      const model = getBackgroundLayersModel(draft, viewport)
       const oldIndex = model.layerIds.indexOf(String(active.id))
       const newIndex = model.layerIds.indexOf(String(over.id))
       if (oldIndex < 0 || newIndex < 0) return
       const len = model.layers.length
-      reorderCommaPropLayers(props, viewport, "backgroundSize", len, oldIndex, newIndex)
-      reorderCommaPropLayers(props, viewport, "backgroundPosition", len, oldIndex, newIndex)
-      reorderCommaPropLayers(props, viewport, "backgroundRepeat", len, oldIndex, newIndex)
-      reorderCommaPropLayers(props, viewport, "backgroundAttachment", len, oldIndex, newIndex)
+      reorderCommaPropLayers(draft, viewport, "backgroundSize", len, oldIndex, newIndex)
+      reorderCommaPropLayers(draft, viewport, "backgroundPosition", len, oldIndex, newIndex)
+      reorderCommaPropLayers(draft, viewport, "backgroundRepeat", len, oldIndex, newIndex)
+      reorderCommaPropLayers(draft, viewport, "backgroundAttachment", len, oldIndex, newIndex)
       const layers = arrayMove(model.layers, oldIndex, newIndex)
       const visible = arrayMove(model.visible, oldIndex, newIndex)
       const layerIds = arrayMove(model.layerIds, oldIndex, newIndex)
-      persistBackgroundLayersModel(props, viewport, { layers, visible, layerIds })
+      persistBackgroundLayersModel(draft, viewport, { layers, visible, layerIds })
     })
     closeImageGradientMenu()
   }
@@ -529,32 +509,28 @@ export const BackgroundAccordion = () => {
     next: string | undefined,
     filler: string,
   ) => {
-    actions.setProp(selectedId, (props: any) => {
-      const model = getBackgroundLayersModel(props, viewport)
+    mutateClassStyle((draft) => {
+      const model = getBackgroundLayersModel(draft, viewport)
       const target = imageGradientMenuRef.current?.target
       if (target?.kind === "add") return
       if (target?.kind !== "layer") return
       const idx = target.index
       if (idx < 0 || idx >= model.layers.length) return
-      replaceCommaPropLayer(props, viewport, key, model.layers.length, idx, next, filler)
+      replaceCommaPropLayer(draft, viewport, key, model.layers.length, idx, next, filler)
     })
   }
 
-  const commitBackgroundSize = (next: string | undefined) => {
+  const commitBackgroundSize = (next: string | undefined) =>
     commitCommaLayer("backgroundSize", next, "auto")
-  }
 
-  const commitBackgroundPosition = (next: string | undefined) => {
+  const commitBackgroundPosition = (next: string | undefined) =>
     commitCommaLayer("backgroundPosition", next, "0px 0px")
-  }
 
-  const commitBackgroundRepeat = (next: string | undefined) => {
+  const commitBackgroundRepeat = (next: string | undefined) =>
     commitCommaLayer("backgroundRepeat", next, "repeat")
-  }
 
-  const commitBackgroundAttachment = (next: string | undefined) => {
+  const commitBackgroundAttachment = (next: string | undefined) =>
     commitCommaLayer("backgroundAttachment", next, "scroll")
-  }
 
   const addMenuHighlight = imageGradientMenu?.target.kind === "add"
 

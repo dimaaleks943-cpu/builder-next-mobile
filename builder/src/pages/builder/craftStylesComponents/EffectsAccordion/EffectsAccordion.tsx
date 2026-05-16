@@ -3,6 +3,7 @@ import {
   type ChangeEvent,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react"
@@ -27,6 +28,7 @@ import { MoreHorizontalIcon } from "../../../../icons/MoreHorizontalIcon.tsx"
 import { useBuilderModeContext } from "../../context/BuilderModeContext.tsx"
 import { MODE_TYPE, type PreviewViewport } from "../../builder.enum.ts"
 import { usePreviewViewport } from "../../context/PreviewViewportContext.tsx"
+import { useStyleEditing } from "../../hooks/useStyleEditing.ts"
 import {
   getResponsiveStyleProp,
   setResponsiveStyleProp,
@@ -143,14 +145,12 @@ export const EffectsAccordion = () => {
   const isRn = modeContext?.mode === MODE_TYPE.RN
   const viewport = usePreviewViewport()
   const { actions } = useEditor()
-  const { selectedId, selectedProps } = useEditor((state) => {
-    const [id] = Array.from(state.events.selected)
-    const node = id ? state.nodes[id] : null
-    return {
-      selectedId: id ?? null,
-      selectedProps: node?.data.props ?? null,
-    }
-  }) as any
+  const { selectedId, getStyleProp, setStyleProp, mutateClassStyle, mergedStyleForRead } =
+    useStyleEditing()
+  const selectedProps = useMemo(
+    () => ({ style: mergedStyleForRead }) as Record<string, unknown>,
+    [mergedStyleForRead],
+  )
 
   const [boxShadowAnchorEl, setBoxShadowAnchorEl] = useState<HTMLElement | null>(null)
   const boxShadowPopperRef = useRef<HTMLDivElement | null>(null)
@@ -168,7 +168,7 @@ export const EffectsAccordion = () => {
     return () => document.removeEventListener("mousedown", onDocMouseDown, true)
   }, [boxShadowAnchorEl])
 
-  if (!selectedId || !selectedProps) {
+  if (!selectedId) {
     return null
   }
 
@@ -187,37 +187,25 @@ export const EffectsAccordion = () => {
 
   const handleBlendChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value
-    actions.setProp(selectedId, (props: any) => {
-      if (value === "normal") {
-        setResponsiveStyleProp(props, "mixBlendMode", undefined, viewport)
-      } else {
-        setResponsiveStyleProp(props, "mixBlendMode", value, viewport)
-      }
-    })
+    setStyleProp("mixBlendMode", value === "normal" ? undefined : value)
   }
 
   const handleOpacityChange = (percent: number) => {
     const clamped = Math.min(100, Math.max(0, Number.isNaN(percent) ? 0 : percent))
-    actions.setProp(selectedId, (props: any) => {
-      if (clamped >= 100) {
-        setResponsiveStyleProp(props, "opacity", undefined, viewport)
-      } else {
-        setResponsiveStyleProp(props, "opacity", clamped / 100, viewport)
-      }
-    })
+    setStyleProp("opacity", clamped >= 100 ? undefined : clamped / 100)
   }
 
   const handleOutlineModeChange = (id: string) => {
-    actions.setProp(selectedId, (props: any) => {
-      clearLegacyOutlineSplitProps(props, viewport)
+    mutateClassStyle((draft) => {
+      clearLegacyOutlineSplitProps(draft, viewport)
       if (id === "none") {
-        setResponsiveStyleProp(props, "outline", undefined, viewport)
-        setResponsiveStyleProp(props, "outlineOffset", undefined, viewport)
+        setResponsiveStyleProp(draft, "outline", undefined, viewport)
+        setResponsiveStyleProp(draft, "outlineOffset", undefined, viewport)
         return
       }
       const style = id as Exclude<OutlineToolbarMode, "none">
       setResponsiveStyleProp(
-        props,
+        draft,
         "outline",
         `${DEFAULT_OUTLINE_COLOR} ${style} ${DEFAULT_OUTLINE_WIDTH_PX}px`,
         viewport,
@@ -229,81 +217,76 @@ export const EffectsAccordion = () => {
     const next = Number(event.target.value)
     const safe = Number.isNaN(next) ? 0 : next
     if (outlineMode === "none") return
-    actions.setProp(selectedId, (props: any) => {
-      clearLegacyOutlineSplitProps(props, viewport)
+    mutateClassStyle((draft) => {
+      clearLegacyOutlineSplitProps(draft, viewport)
       const color = getOutlineColorUi(selectedProps, viewport)
-      setResponsiveStyleProp(
-        props,
-        "outline",
-        `${color} ${outlineMode} ${safe}px`,
-        viewport,
-      )
+      setResponsiveStyleProp(draft, "outline", `${color} ${outlineMode} ${safe}px`, viewport)
     })
   }
 
   const handleOutlineColorChange = (value: string) => {
     if (outlineMode === "none") return
-    actions.setProp(selectedId, (props: any) => {
-      clearLegacyOutlineSplitProps(props, viewport)
+    mutateClassStyle((draft) => {
+      clearLegacyOutlineSplitProps(draft, viewport)
       const width = getOutlineWidthUi(selectedProps, viewport)
-      setResponsiveStyleProp(props, "outline", `${value} ${outlineMode} ${width}px`, viewport)
+      setResponsiveStyleProp(draft, "outline", `${value} ${outlineMode} ${width}px`, viewport)
     })
   }
 
   const handleOutlineOffsetChange = (event: ChangeEvent<HTMLInputElement>) => {
     const next = Number(event.target.value)
     const safe = Number.isNaN(next) ? 0 : next
-    actions.setProp(selectedId, (props: any) => {
-      if (safe === 0) {
-        setResponsiveStyleProp(props, "outlineOffset", undefined, viewport)
-      } else {
-        setResponsiveStyleProp(props, "outlineOffset", `${safe}px`, viewport)
-      }
-    })
+    setStyleProp("outlineOffset", safe === 0 ? undefined : `${safe}px`)
   }
 
   const applyBoxShadowPatch = useCallback(
     (patch: Partial<BoxShadowParts>) => {
-      actions.setProp(selectedId, (props: any) => {
-        const raw = getEffectiveBoxShadowRaw(props, viewport)
-        const cur = parseBoxShadowFromProp(raw.length > 0 ? raw : undefined)
-        const built = buildBoxShadow({ ...cur, ...patch })
-        if (isBoxShadowOnCanvas(props, viewport)) {
-          setResponsiveStyleProp(props, "boxShadow", built, viewport)
-        } else {
+      const raw = getEffectiveBoxShadowRaw(selectedProps, viewport)
+      const cur = parseBoxShadowFromProp(raw.length > 0 ? raw : undefined)
+      const built = buildBoxShadow({ ...cur, ...patch })
+      if (isBoxShadowOnCanvas(selectedProps, viewport)) {
+        setStyleProp("boxShadow", built)
+      } else {
+        actions.setProp(selectedId, (props: Record<string, unknown>) => {
           props[BOX_SHADOW_DRAFT_KEY] = built
-        }
-      })
+        })
+      }
     },
-    [actions, selectedId, viewport],
+    [actions, selectedId, selectedProps, viewport, setStyleProp],
   )
 
   const handleClearBoxShadow = () => {
-    actions.setProp(selectedId, (props: any) => {
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
       delete props[BOX_SHADOW_DRAFT_KEY]
-      setResponsiveStyleProp(props, "boxShadow", undefined, viewport)
     })
+    setStyleProp("boxShadow", undefined)
     setBoxShadowAnchorEl(null)
   }
 
   const handleToggleBoxShadowCanvas = () => {
-    actions.setProp(selectedId, (props: any) => {
-      const applied = isBoxShadowOnCanvas(props, viewport)
-      const styleVal = getResponsiveStyleProp(props, "boxShadow", viewport)
-      const styleStr = typeof styleVal === "string" ? styleVal.trim() : ""
+    const applied = isBoxShadowOnCanvas(selectedProps, viewport)
+    const styleVal = getStyleProp("boxShadow")
+    const styleStr = typeof styleVal === "string" ? styleVal.trim() : ""
 
-      if (applied && styleStr.length > 0) {
+    if (applied && styleStr.length > 0) {
+      actions.setProp(selectedId, (props: Record<string, unknown>) => {
         props[BOX_SHADOW_DRAFT_KEY] = styleStr
-        setResponsiveStyleProp(props, "boxShadow", undefined, viewport)
-        return
-      }
+      })
+      setStyleProp("boxShadow", undefined)
+      return
+    }
 
+    let draftTrimmed: string | null = null
+    actions.setProp(selectedId, (props: Record<string, unknown>) => {
       const draft = props[BOX_SHADOW_DRAFT_KEY]
       if (typeof draft === "string" && draft.trim().length > 0) {
-        setResponsiveStyleProp(props, "boxShadow", draft.trim(), viewport)
+        draftTrimmed = draft.trim()
         delete props[BOX_SHADOW_DRAFT_KEY]
       }
     })
+    if (draftTrimmed) {
+      setStyleProp("boxShadow", draftTrimmed)
+    }
   }
 
   const toggleBoxShadowPopper = () => {
@@ -315,10 +298,10 @@ export const EffectsAccordion = () => {
     if (!el) return
     setBoxShadowAnchorEl(el)
     if (!hasBoxShadowConfig) {
-      actions.setProp(selectedId, (props: any) => {
+      actions.setProp(selectedId, (props: Record<string, unknown>) => {
         delete props[BOX_SHADOW_DRAFT_KEY]
-        setResponsiveStyleProp(props, "boxShadow", buildBoxShadow(DEFAULT_BOX_SHADOW), viewport)
       })
+      setStyleProp("boxShadow", buildBoxShadow(DEFAULT_BOX_SHADOW))
     }
   }
 
@@ -346,7 +329,7 @@ export const EffectsAccordion = () => {
           {!isRn ? (
             <CraftSettingsSelect
               label="Blending"
-              value={(getResponsiveStyleProp(selectedProps, "mixBlendMode", viewport) as string | undefined) ?? "normal"}
+              value={(getStyleProp("mixBlendMode") as string | undefined) ?? "normal"}
               onChange={handleBlendChange}
               options={CRAFT_MIX_BLEND_MODE_OPTIONS}
             />
@@ -354,7 +337,7 @@ export const EffectsAccordion = () => {
 
           <CraftSettingsPercentSliderRow
             label="Opacity"
-            value={opacityStoredToUiPercent(getResponsiveStyleProp(selectedProps, "opacity", viewport))}
+            value={opacityStoredToUiPercent(getStyleProp("opacity"))}
             onChange={handleOpacityChange}
           />
 

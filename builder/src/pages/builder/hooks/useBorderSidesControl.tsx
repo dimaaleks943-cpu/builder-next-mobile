@@ -1,33 +1,28 @@
-import { useEffect, useMemo, useState } from "react";
-import type { BorderSide, BorderSidesSelection } from "../craftStylesComponents/BorderSidesFrame.tsx";
-import type { PreviewViewport } from "../builder.enum.ts"
+import { useEffect, useMemo, useState } from "react"
+import type { BorderSide, BorderSidesSelection } from "../craftStylesComponents/BorderSidesFrame.tsx"
+import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
 import {
   getResponsiveStyleProp,
   setResponsiveStyleProp,
 } from "../responsiveStyle.ts"
+import { useStyleEditing } from "./useStyleEditing.ts"
 
 const ALL_SIDES: BorderSide[] = ["top", "right", "bottom", "left"]
 
-interface SetPropActions {
-  setProp: (id: string, cb: (props: Record<string, unknown>) => void) => void
-}
+export const useBorderSidesControl = () => {
+  const viewport = usePreviewViewport()
+  const { selectedId, getStyleProp, mutateClassStyle } = useStyleEditing()
 
-export const useBorderSidesControl = (
-  selectedId: string | null,
-  selectedProps: Record<string, unknown> | null,
-  actions: SetPropActions,
-  viewport: PreviewViewport,
-) => {
   const initialSides = useMemo<BorderSidesSelection>(() => {
-    if (!selectedProps) return "all"
+    if (!selectedId) return "all"
     const enabled: BorderSide[] = []
-    if ((getResponsiveStyleProp(selectedProps, "borderTopWidth", viewport) as number) > 0) enabled.push("top")
-    if ((getResponsiveStyleProp(selectedProps, "borderRightWidth", viewport) as number) > 0) enabled.push("right")
-    if ((getResponsiveStyleProp(selectedProps, "borderBottomWidth", viewport) as number) > 0) enabled.push("bottom")
-    if ((getResponsiveStyleProp(selectedProps, "borderLeftWidth", viewport) as number) > 0) enabled.push("left")
+    if ((getStyleProp("borderTopWidth") as number) > 0) enabled.push("top")
+    if ((getStyleProp("borderRightWidth") as number) > 0) enabled.push("right")
+    if ((getStyleProp("borderBottomWidth") as number) > 0) enabled.push("bottom")
+    if ((getStyleProp("borderLeftWidth") as number) > 0) enabled.push("left")
     if (enabled.length === 0 || enabled.length === 4) return "all"
     return enabled
-  }, [selectedProps, viewport])
+  }, [selectedId, getStyleProp])
 
   const [activeSides, setActiveSides] = useState<BorderSidesSelection>(initialSides)
 
@@ -39,15 +34,36 @@ export const useBorderSidesControl = (
     if (!selectedId) return
     const enabled = sides === "all" ? ALL_SIDES : sides
 
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+    mutateClassStyle((draft) => {
       const currentWidth =
-        (getResponsiveStyleProp(props, "borderTopWidth", viewport) as number | undefined) ?? 0
+        (getResponsiveStyleProp(draft, "borderTopWidth", viewport) as number | undefined) ??
+        0
       const width = currentWidth > 0 ? currentWidth : 1
 
-      setResponsiveStyleProp(props, "borderTopWidth", enabled.includes("top") ? width : 0, viewport)
-      setResponsiveStyleProp(props, "borderRightWidth", enabled.includes("right") ? width : 0, viewport)
-      setResponsiveStyleProp(props, "borderBottomWidth", enabled.includes("bottom") ? width : 0, viewport)
-      setResponsiveStyleProp(props, "borderLeftWidth", enabled.includes("left") ? width : 0, viewport)
+      setResponsiveStyleProp(
+        draft,
+        "borderTopWidth",
+        enabled.includes("top") ? width : 0,
+        viewport,
+      )
+      setResponsiveStyleProp(
+        draft,
+        "borderRightWidth",
+        enabled.includes("right") ? width : 0,
+        viewport,
+      )
+      setResponsiveStyleProp(
+        draft,
+        "borderBottomWidth",
+        enabled.includes("bottom") ? width : 0,
+        viewport,
+      )
+      setResponsiveStyleProp(
+        draft,
+        "borderLeftWidth",
+        enabled.includes("left") ? width : 0,
+        viewport,
+      )
     })
   }
 

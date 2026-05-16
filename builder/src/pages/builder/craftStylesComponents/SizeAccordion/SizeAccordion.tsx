@@ -9,7 +9,6 @@ import {
   Popper,
   Typography,
 } from "@mui/material"
-import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../../theme/colors.ts"
 import { ChevronDownIcon } from "../../../../icons/ChevronDownIcon.tsx"
 import { CraftSettingsValueWithUnit } from "../../components/craftSettingsControls/CraftSettingsValueWithUnit.tsx"
@@ -23,12 +22,8 @@ import { EyeHideIcon } from "../../../../icons/EyeHideIcon.tsx"
 import { EyeIcon } from "../../../../icons/EyeIcon.tsx"
 import { useBuilderModeContext } from "../../context/BuilderModeContext.tsx"
 import { MODE_TYPE } from "../../builder.enum.ts"
-import { usePreviewViewport } from "../../context/PreviewViewportContext.tsx"
+import { useStyleEditing } from "../../hooks/useStyleEditing.ts"
 import { CSS_SIZE_UNITS_RN } from "../../../../utils/craftCssSizeProp.ts"
-import {
-  getResponsiveStyleProp,
-  setResponsiveStyleProp,
-} from "../../responsiveStyle.ts"
 import { BorderBoxIcon } from "../../../../icons/BorderBoxIcon.tsx"
 import { ContentBoxIcon } from "../../../../icons/ContentBoxIcon.tsx"
 import { MoreHorizontalIcon } from "../../../../icons/MoreHorizontalIcon.tsx"
@@ -98,31 +93,20 @@ const SIZE_VALUE_INPUT_WIDTH_PX = "80px";
 export const SizeAccordion = () => {
   const modeContext = useBuilderModeContext()
   const isRn = modeContext?.mode === MODE_TYPE.RN
-  const viewport = usePreviewViewport()
-  const { actions } = useEditor()
-  const { selectedId, selectedProps } = useEditor((state) => {
-    const [id] = Array.from(state.events.selected)
-    const node = id ? state.nodes[id] : null
-    return {
-      selectedId: id ?? null,
-      selectedProps: node?.data.props ?? null,
-    }
-  }) as any
+  const { selectedId, getStyleProp, setStyleProp } = useStyleEditing()
 
-  if (!selectedId || !selectedProps) {
+  if (!selectedId) {
     return null
   }
 
   const handleSizeCommit =
     (key: SizeFieldKey) => (next: string | number | undefined) => {
-      actions.setProp(selectedId, (props: any) => {
-        setResponsiveStyleProp(props, key, next, viewport)
-      })
+      setStyleProp(key, next)
     }
 
   const overflowIconFill = COLORS.purple400
 
-  const overflowRaw = getResponsiveStyleProp(selectedProps, "overflow", viewport)
+  const overflowRaw = getStyleProp("overflow")
   const overflowStr =
     overflowRaw !== undefined && overflowRaw !== null
       ? String(overflowRaw).trim()
@@ -131,24 +115,16 @@ export const SizeAccordion = () => {
   const hasOverflowExplicit = overflowStr !== ""
 
   const handleOverflowChange = (next: string) => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "overflow", next, viewport)
-    })
+    setStyleProp("overflow", next)
   }
 
   const resetOverflow = () => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "overflow", undefined, viewport)
-    })
+    setStyleProp("overflow", undefined)
   }
 
   const [moreSizeOptionsOpen, setMoreSizeOptionsOpen] = useState(false)
 
-  const aspectRatioRaw = getResponsiveStyleProp(
-    selectedProps,
-    "aspectRatio",
-    viewport,
-  )
+  const aspectRatioRaw = getStyleProp("aspectRatio")
   const aspectRatioStr =
     aspectRatioRaw !== undefined && aspectRatioRaw !== null
       ? String(aspectRatioRaw).trim()
@@ -158,37 +134,28 @@ export const SizeAccordion = () => {
 
   const handleRatioSelectChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const next = event.target.value
-    actions.setProp(selectedId, (props: any) => {
-      if (next === "__custom__") {
-        const cur = aspectRatioStr.trim()
-        if (cur && cur !== "auto") {
-          const normalized = normalizeAspectRatioKey(cur)
-          const forCustomUi = aspectRatioKeyMatchesPreset(normalized)
-            ? bumpAspectRatioOffPresets(normalized)
-            : normalized
-          setResponsiveStyleProp(props, "aspectRatio", forCustomUi, viewport)
-        } else {
-          setResponsiveStyleProp(
-            props,
-            "aspectRatio",
-            ASPECT_RATIO_CUSTOM_FALLBACK,
-            viewport,
-          )
-        }
-        return
+    if (next === "__custom__") {
+      const cur = aspectRatioStr.trim()
+      if (cur && cur !== "auto") {
+        const normalized = normalizeAspectRatioKey(cur)
+        const forCustomUi = aspectRatioKeyMatchesPreset(normalized)
+          ? bumpAspectRatioOffPresets(normalized)
+          : normalized
+        setStyleProp("aspectRatio", forCustomUi)
+      } else {
+        setStyleProp("aspectRatio", ASPECT_RATIO_CUSTOM_FALLBACK)
       }
-      if (next === "auto") {
-        setResponsiveStyleProp(props, "aspectRatio", "auto", viewport)
-        return
-      }
-      setResponsiveStyleProp(props, "aspectRatio", next, viewport)
-    })
+      return
+    }
+    if (next === "auto") {
+      setStyleProp("aspectRatio", "auto")
+      return
+    }
+    setStyleProp("aspectRatio", next)
   }
 
   const resetAspectRatio = () => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "aspectRatio", undefined, viewport)
-    })
+    setStyleProp("aspectRatio", undefined)
   }
 
   const handleCustomRatioPartChange =
@@ -197,23 +164,12 @@ export const SizeAccordion = () => {
       const { w, h } = parseAspectRatioParts(aspectRatioStr)
       const nw = part === "w" ? nextVal : w
       const nh = part === "h" ? nextVal : h
-      actions.setProp(selectedId, (props: any) => {
-        const safeW = nw.trim() || "1"
-        const safeH = nh.trim() || "1"
-        setResponsiveStyleProp(
-          props,
-          "aspectRatio",
-          `${safeW} / ${safeH}`,
-          viewport,
-        )
-      })
+      const safeW = nw.trim() || "1"
+      const safeH = nh.trim() || "1"
+      setStyleProp("aspectRatio", `${safeW} / ${safeH}`)
     }
 
-  const boxSizingRaw = getResponsiveStyleProp(
-    selectedProps,
-    "boxSizing",
-    viewport,
-  )
+  const boxSizingRaw = getStyleProp("boxSizing")
   const boxSizingStr =
     boxSizingRaw !== undefined && boxSizingRaw !== null
       ? String(boxSizingRaw).trim()
@@ -224,22 +180,18 @@ export const SizeAccordion = () => {
   const hasBoxSizingExplicit = boxSizingStr !== ""
 
   const handleBoxSizingChange = (next: string) => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "boxSizing", next, viewport)
-    })
+    setStyleProp("boxSizing", next)
   }
 
   const resetBoxSizing = () => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "boxSizing", undefined, viewport)
-    })
+    setStyleProp("boxSizing", undefined)
   }
 
   const [objectPositionAnchorEl, setObjectPositionAnchorEl] =
     useState<HTMLElement | null>(null)
   const objectPositionPopperOpen = Boolean(objectPositionAnchorEl)
 
-  const objectFitRaw = getResponsiveStyleProp(selectedProps, "objectFit", viewport)
+  const objectFitRaw = getStyleProp("objectFit")
   const objectFitStr =
     objectFitRaw !== undefined && objectFitRaw !== null
       ? String(objectFitRaw).trim()
@@ -251,29 +203,19 @@ export const SizeAccordion = () => {
 
   const handleObjectFitChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const next = event.target.value
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "objectFit", next, viewport)
-    })
+    setStyleProp("objectFit", next)
   }
 
   const handleObjectFitSelectPointerDown = () => {
     if (hasObjectFitExplicit) return
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "objectFit", "fill", viewport)
-    })
+    setStyleProp("objectFit", "fill")
   }
 
   const resetObjectFit = () => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "objectFit", undefined, viewport)
-    })
+    setStyleProp("objectFit", undefined)
   }
 
-  const objectPositionValueRaw = getResponsiveStyleProp(
-    selectedProps,
-    "objectPosition",
-    viewport,
-  )
+  const objectPositionValueRaw = getStyleProp("objectPosition")
   const objectPositionValue =
     objectPositionValueRaw !== undefined && objectPositionValueRaw !== null
       ? String(objectPositionValueRaw).trim()
@@ -285,9 +227,7 @@ export const SizeAccordion = () => {
   )
 
   const commitObjectPosition = (next: string | undefined) => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "objectPosition", next, viewport)
-    })
+    setStyleProp("objectPosition", next)
   }
 
   const resetObjectPosition = () => {
@@ -346,7 +286,7 @@ export const SizeAccordion = () => {
             >
               <CraftSettingsValueWithUnit
                 label="Width"
-                value={getResponsiveStyleProp(selectedProps, "width", viewport)}
+                value={getStyleProp("width")}
                 onCommit={handleSizeCommit("width")}
                 allowedUnits={CSS_SIZE_UNITS_RN}
                 mode="rn"
@@ -354,7 +294,7 @@ export const SizeAccordion = () => {
               />
               <CraftSettingsValueWithUnit
                 label="Height"
-                value={getResponsiveStyleProp(selectedProps, "height", viewport)}
+                value={getStyleProp("height")}
                 onCommit={handleSizeCommit("height")}
                 allowedUnits={CSS_SIZE_UNITS_RN}
                 mode="rn"
@@ -363,7 +303,7 @@ export const SizeAccordion = () => {
               <Box sx={{ gridColumn: "1 / -1" }}>
                 <CraftSettingsValueWithUnit
                   label="Min H"
-                  value={getResponsiveStyleProp(selectedProps, "minHeight", viewport)}
+                  value={getStyleProp("minHeight")}
                   onCommit={handleSizeCommit("minHeight")}
                   allowedUnits={CSS_SIZE_UNITS_RN}
                   mode="rn"
@@ -382,35 +322,35 @@ export const SizeAccordion = () => {
             >
               <CraftSettingsValueWithUnit
                 label="Width"
-                value={getResponsiveStyleProp(selectedProps, "width", viewport)}
+                value={getStyleProp("width")}
                 onCommit={handleSizeCommit("width")}
                 mode="web"
                 inputWidth={inputWidth}
               />
               <CraftSettingsValueWithUnit
                 label="Height"
-                value={getResponsiveStyleProp(selectedProps, "height", viewport)}
+                value={getStyleProp("height")}
                 onCommit={handleSizeCommit("height")}
                 mode="web"
                 inputWidth={inputWidth}
               />
               <CraftSettingsValueWithUnit
                 label="Min W"
-                value={getResponsiveStyleProp(selectedProps, "minWidth", viewport)}
+                value={getStyleProp("minWidth")}
                 onCommit={handleSizeCommit("minWidth")}
                 mode="web"
                 inputWidth={inputWidth}
               />
               <CraftSettingsValueWithUnit
                 label="Min H"
-                value={getResponsiveStyleProp(selectedProps, "minHeight", viewport)}
+                value={getStyleProp("minHeight")}
                 onCommit={handleSizeCommit("minHeight")}
                 mode="web"
                 inputWidth={inputWidth}
               />
               <CraftSettingsValueWithUnit
                 label="Max W"
-                value={getResponsiveStyleProp(selectedProps, "maxWidth", viewport)}
+                value={getStyleProp("maxWidth")}
                 onCommit={handleSizeCommit("maxWidth")}
                 mode="web"
                 placeholder="None"
@@ -418,7 +358,7 @@ export const SizeAccordion = () => {
               />
               <CraftSettingsValueWithUnit
                 label="Max H"
-                value={getResponsiveStyleProp(selectedProps, "maxHeight", viewport)}
+                value={getStyleProp("maxHeight")}
                 onCommit={handleSizeCommit("maxHeight")}
                 mode="web"
                 placeholder="None"

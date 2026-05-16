@@ -18,6 +18,7 @@ import {
   getResponsiveStyleProp,
   setResponsiveStyleProp,
 } from "../../responsiveStyle.ts"
+import { useStyleEditing } from "../../hooks/useStyleEditing.ts"
 import { useOverlayGeometryObserver } from "../hooks/useOverlayGeometryObserver.ts"
 import { useSelectionHoverCollector } from "../hooks/useSelectionHoverCollector.ts"
 import { resolveCraftDomElement } from "../resolveCraftDomElement.ts"
@@ -141,11 +142,11 @@ export const OverlayGridManualEditor = ({
   canvasElement,
 }: Props) => {
   const { activeNodeId, openSeq, closeGridManualEdit } = useCraftGridManualEditBridge()
+  const { mutateClassStyle } = useStyleEditing()
 
   const selection = useSelectionHoverCollector()
 
   const {
-    actions,
     query,
     gridColumnGapCss,
     gridRowGapCss,
@@ -383,14 +384,14 @@ export const OverlayGridManualEditor = ({
       if (!activeNodeId) return
       setColumnTracks((prev) => {
         const next = prev.map((t, i) => (i === index ? nextTrack : t))
-        actions.setProp(activeNodeId, (props: Record<string, unknown>) => {
-          setResponsiveStyleProp(props, "gridTemplateColumns", next.join(" "), previewViewport)
-          setResponsiveStyleProp(props, "itemsPerRow", next.length, previewViewport)
+        mutateClassStyle((draft) => {
+          setResponsiveStyleProp(draft, "gridTemplateColumns", next.join(" "), previewViewport)
+          setResponsiveStyleProp(draft, "itemsPerRow", next.length, previewViewport)
         })
         return next
       })
     },
-    [activeNodeId, actions, previewViewport],
+    [activeNodeId, mutateClassStyle, previewViewport],
   )
 
   const commitRowTrackAt = useCallback(
@@ -398,37 +399,37 @@ export const OverlayGridManualEditor = ({
       if (!activeNodeId) return
       setRowTracks((prev) => {
         const next = prev.map((t, i) => (i === index ? nextTrack : t))
-        actions.setProp(activeNodeId, (props: Record<string, unknown>) => {
-          setResponsiveStyleProp(props, "gridTemplateRows", next.join(" "), previewViewport)
+        mutateClassStyle((draft) => {
+          setResponsiveStyleProp(draft, "gridTemplateRows", next.join(" "), previewViewport)
         })
         return next
       })
     },
-    [activeNodeId, actions, previewViewport],
+    [activeNodeId, mutateClassStyle, previewViewport],
   )
 
   const handleAddColumn = useCallback(() => {
     if (!activeNodeId) return
     setColumnTracks((prev) => {
       const next = [...prev, "1fr"]
-      actions.setProp(activeNodeId, (props: Record<string, unknown>) => {
-        setResponsiveStyleProp(props, "gridTemplateColumns", next.join(" "), previewViewport)
-        setResponsiveStyleProp(props, "itemsPerRow", next.length, previewViewport)
+      mutateClassStyle((draft) => {
+        setResponsiveStyleProp(draft, "gridTemplateColumns", next.join(" "), previewViewport)
+        setResponsiveStyleProp(draft, "itemsPerRow", next.length, previewViewport)
       })
       return next
     })
-  }, [activeNodeId, actions, previewViewport])
+  }, [activeNodeId, mutateClassStyle, previewViewport])
 
   const handleAddRow = useCallback(() => {
     if (!activeNodeId) return
     setRowTracks((prev) => {
       const next = [...prev, "auto"]
-      actions.setProp(activeNodeId, (props: Record<string, unknown>) => {
-        setResponsiveStyleProp(props, "gridTemplateRows", next.join(" "), previewViewport)
+      mutateClassStyle((draft) => {
+        setResponsiveStyleProp(draft, "gridTemplateRows", next.join(" "), previewViewport)
       })
       return next
     })
-  }, [activeNodeId, actions, previewViewport])
+  }, [activeNodeId, mutateClassStyle, previewViewport])
 
   const handleDeleteGridTrack = useCallback(
     (axis: "column" | "row", index: number) => {
@@ -437,9 +438,9 @@ export const OverlayGridManualEditor = ({
         setColumnTracks((prev) => {
           if (prev.length <= 1) return prev
           const next = prev.filter((_, i) => i !== index)
-          actions.setProp(activeNodeId, (props: Record<string, unknown>) => {
-            setResponsiveStyleProp(props, "gridTemplateColumns", next.join(" "), previewViewport)
-            setResponsiveStyleProp(props, "itemsPerRow", next.length, previewViewport)
+          mutateClassStyle((draft) => {
+            setResponsiveStyleProp(draft, "gridTemplateColumns", next.join(" "), previewViewport)
+            setResponsiveStyleProp(draft, "itemsPerRow", next.length, previewViewport)
           })
           return next
         })
@@ -448,13 +449,13 @@ export const OverlayGridManualEditor = ({
       setRowTracks((prev) => {
         if (prev.length <= 1) return prev
         const next = prev.filter((_, i) => i !== index)
-        actions.setProp(activeNodeId, (props: Record<string, unknown>) => {
-          setResponsiveStyleProp(props, "gridTemplateRows", next.join(" "), previewViewport)
+        mutateClassStyle((draft) => {
+          setResponsiveStyleProp(draft, "gridTemplateRows", next.join(" "), previewViewport)
         })
         return next
       })
     },
-    [activeNodeId, actions, previewViewport],
+    [activeNodeId, mutateClassStyle, previewViewport],
   )
 
   const geometry = useOverlayGeometryObserver({
@@ -563,10 +564,10 @@ export const OverlayGridManualEditor = ({
 
   const handleDone = () => {
     if (!activeNodeId) return
-    actions.setProp(activeNodeId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "gridTemplateColumns", columnTracks.join(" "), previewViewport)
-      setResponsiveStyleProp(props, "gridTemplateRows", rowTracks.join(" "), previewViewport)
-      setResponsiveStyleProp(props, "itemsPerRow", columnTracks.length, previewViewport)
+    mutateClassStyle((draft) => {
+      setResponsiveStyleProp(draft, "gridTemplateColumns", columnTracks.join(" "), previewViewport)
+      setResponsiveStyleProp(draft, "gridTemplateRows", rowTracks.join(" "), previewViewport)
+      setResponsiveStyleProp(draft, "itemsPerRow", columnTracks.length, previewViewport)
     })
     closeGridManualEdit()
   }

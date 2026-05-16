@@ -2,11 +2,7 @@ import { Box } from "@mui/material"
 import type { ChangeEvent } from "react"
 import { CraftSettingsSelect } from "../../../components/craftSettingsControls/CraftSettingsSelect.tsx"
 import { CraftSettingsButtonGroup } from "../../../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
-import {
-  getResponsiveStyleProp,
-  setResponsiveStyleProp,
-} from "../../../responsiveStyle.ts"
-import type { PreviewViewport } from "../../../builder.enum.ts"
+import { useStyleEditing } from "../../../hooks/useStyleEditing.ts"
 
 const OVERFLOW_WRAP_OPTIONS = [
   { id: "normal", value: "Normal" },
@@ -20,29 +16,9 @@ const OVERFLOW_WRAP_IDS = new Set<string>(
 
 const TRUNCATE_IDS = new Set(["clip", "ellipsis"])
 
-interface Props {
-  actions: {
-    setProp: (
-      id: string,
-      updater: (props: Record<string, unknown>) => void,
-    ) => void
-  };
-  selectedId: string;
-  selectedProps: Record<string, unknown>;
-  viewport: PreviewViewport;
-}
-
-export const TypographyWrapTruncateSection = ({
-  actions,
-  selectedId,
-  selectedProps,
-  viewport,
-}: Props) => {
-  const overflowWrapRaw = getResponsiveStyleProp(
-    selectedProps,
-    "overflowWrap",
-    viewport,
-  )
+export const TypographyWrapTruncateSection = () => {
+  const { getStyleProp, setStyleProp } = useStyleEditing()
+  const overflowWrapRaw = getStyleProp("overflowWrap")
   const overflowWrapStr =
     overflowWrapRaw !== undefined && overflowWrapRaw !== null
       ? String(overflowWrapRaw).trim()
@@ -54,26 +30,12 @@ export const TypographyWrapTruncateSection = ({
 
   const handleOverflowWrapChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const next = event.target.value
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      if (next === "normal") {
-        setResponsiveStyleProp(props, "overflowWrap", undefined, viewport)
-        return
-      }
-      setResponsiveStyleProp(props, "overflowWrap", next, viewport)
-    })
+    setStyleProp("overflowWrap", next === "normal" ? undefined : next)
   }
 
-  const resetOverflowWrap = () => {
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "overflowWrap", undefined, viewport)
-    })
-  }
+  const resetOverflowWrap = () => setStyleProp("overflowWrap", undefined)
 
-  const textOverflowRaw = getResponsiveStyleProp(
-    selectedProps,
-    "textOverflow",
-    viewport,
-  )
+  const textOverflowRaw = getStyleProp("textOverflow")
   const textOverflowStr =
     textOverflowRaw !== undefined && textOverflowRaw !== null
       ? String(textOverflowRaw).trim()
@@ -84,17 +46,8 @@ export const TypographyWrapTruncateSection = ({
     : undefined
   const hasTextOverflowExplicit = textOverflowStr !== ""
 
-  const handleTruncateChange = (id: string) => {
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "textOverflow", id, viewport)
-    })
-  }
-
-  const resetTruncate = () => {
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "textOverflow", undefined, viewport)
-    })
-  }
+  const handleTruncateChange = (id: string) => setStyleProp("textOverflow", id)
+  const resetTruncate = () => setStyleProp("textOverflow", undefined)
 
   return (
     <Box

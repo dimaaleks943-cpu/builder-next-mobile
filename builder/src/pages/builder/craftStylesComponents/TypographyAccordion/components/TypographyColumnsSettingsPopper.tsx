@@ -24,6 +24,7 @@ import {
   CraftSettingsResetLabelWithPopper
 } from "../../../components/craftSettingsControls/CraftSettingsResetLabelWithPopper.tsx"
 import type { PreviewViewport } from "../../../builder.enum.ts"
+import { useStyleEditing } from "../../../hooks/useStyleEditing.ts"
 import {
   getResponsiveStyleProp,
   setResponsiveStyleProp,
@@ -106,18 +107,11 @@ const ruleWidthPercentToPx = (pct: number) =>
   Math.max(0, Math.round((clampPct(pct) / 100) * RULE_WIDTH_MAX_PX))
 
 interface Props {
-  open: boolean;
-  anchorEl: HTMLElement | null;
-  popperRef: Ref<HTMLDivElement>;
-  viewport: PreviewViewport;
-  selectedId: string;
-  selectedProps: Record<string, unknown>;
-  actions: {
-    setProp: (
-      id: string,
-      updater: (props: Record<string, unknown>) => void,
-    ) => void
-  };
+  open: boolean
+  anchorEl: HTMLElement | null
+  popperRef: Ref<HTMLDivElement>
+  viewport: PreviewViewport
+  selectedId: string
 }
 
 //TODO проверить корректность настроек посел layout
@@ -127,25 +121,17 @@ export const TypographyColumnsSettingsPopper = ({
   popperRef,
   viewport,
   selectedId,
-  selectedProps,
-  actions,
 }: Props) => {
-  const columnCountRaw = getResponsiveStyleProp(
-    selectedProps,
-    "columnCount",
-    viewport,
-  )
+  const { getStyleProp, setStyleProp, mutateClassStyle } = useStyleEditing()
+
+  const columnCountRaw = getStyleProp("columnCount")
+  const columnGapRaw = getStyleProp("columnGap")
+
   const hasColumnCount =
     columnCountRaw !== undefined &&
     columnCountRaw !== null &&
     columnCountRaw !== "" &&
     !(typeof columnCountRaw === "number" && columnCountRaw === 0)
-
-  const columnGapRaw = getResponsiveStyleProp(
-    selectedProps,
-    "columnGap",
-    viewport,
-  )
 
   const parentHasExplicitColumnGap = useEditor((state) => {
     const node = state.nodes[selectedId]
@@ -158,26 +144,10 @@ export const TypographyColumnsSettingsPopper = ({
     const g = getResponsiveStyleProp(parentProps, "columnGap", viewport)
     return g !== undefined && g !== null && String(g).trim() !== ""
   })
-  const columnRuleWidthRaw = getResponsiveStyleProp(
-    selectedProps,
-    "columnRuleWidth",
-    viewport,
-  )
-  const columnRuleStyleRaw = getResponsiveStyleProp(
-    selectedProps,
-    "columnRuleStyle",
-    viewport,
-  )
-  const columnRuleColorRaw = getResponsiveStyleProp(
-    selectedProps,
-    "columnRuleColor",
-    viewport,
-  )
-  const columnRuleShorthandRaw = getResponsiveStyleProp(
-    selectedProps,
-    "columnRule",
-    viewport,
-  )
+  const columnRuleWidthRaw = getStyleProp("columnRuleWidth")
+  const columnRuleStyleRaw = getStyleProp("columnRuleStyle")
+  const columnRuleColorRaw = getStyleProp("columnRuleColor")
+  const columnRuleShorthandRaw = getStyleProp("columnRule")
 
   const parsedShorthand =
     typeof columnRuleShorthandRaw === "string"
@@ -210,11 +180,7 @@ export const TypographyColumnsSettingsPopper = ({
       ? effectiveRuleStyleStr
       : undefined
 
-  const columnSpanRaw = getResponsiveStyleProp(
-    selectedProps,
-    "columnSpan",
-    viewport,
-  )
+  const columnSpanRaw = getStyleProp("columnSpan")
   const columnSpanStr =
     columnSpanRaw !== undefined && columnSpanRaw !== null
       ? String(columnSpanRaw).trim()
@@ -263,12 +229,12 @@ export const TypographyColumnsSettingsPopper = ({
   const debouncedCommitColor = useMemo(
     () =>
       debounce((color: string) => {
-        actions.setProp(selectedId, (props) => {
-          setResponsiveStyleProp(props, "columnRule", undefined, viewport)
-          setResponsiveStyleProp(props, "columnRuleColor", color, viewport)
+        mutateClassStyle((draft) => {
+          setResponsiveStyleProp(draft, "columnRule", undefined, viewport)
+          setResponsiveStyleProp(draft, "columnRuleColor", color, viewport)
         })
       }, COLOR_COMMIT_DEBOUNCE_MS),
-    [actions, selectedId, viewport],
+    [mutateClassStyle, viewport],
   )
 
   useEffect(() => () => debouncedCommitColor.cancel(), [debouncedCommitColor])
@@ -308,45 +274,36 @@ export const TypographyColumnsSettingsPopper = ({
 
   const handleGapChange = (pct: number) => {
     if (!hasColumnCount) return
-    actions.setProp(selectedId, (props) => {
-      const v = clampPct(pct)
-      setResponsiveStyleProp(
-        props,
-        "columnGap",
-        v === 0 ? undefined : `${v}%`,
-        viewport,
-      )
-    })
+    const v = clampPct(pct)
+    setStyleProp("columnGap", v === 0 ? undefined : `${v}%`)
   }
 
   const resetColumnGap = () => {
-    actions.setProp(selectedId, (props) => {
-      setResponsiveStyleProp(props, "columnGap", undefined, viewport)
-    })
+    setStyleProp("columnGap", undefined)
   }
 
   const handleRuleStyleChange = (id: string) => {
     if (dividerControlsDisabled) return
-    actions.setProp(selectedId, (props) => {
-      clearColumnRuleShorthand(props)
-      setResponsiveStyleProp(props, "columnRuleStyle", id, viewport)
+    mutateClassStyle((draft) => {
+      clearColumnRuleShorthand(draft)
+      setResponsiveStyleProp(draft, "columnRuleStyle", id, viewport)
     })
   }
 
   const resetRuleStyle = () => {
-    actions.setProp(selectedId, (props) => {
-      setResponsiveStyleProp(props, "columnRuleStyle", undefined, viewport)
-      patchColumnRuleShorthand(props, { style: true })
+    mutateClassStyle((draft) => {
+      setResponsiveStyleProp(draft, "columnRuleStyle", undefined, viewport)
+      patchColumnRuleShorthand(draft, { style: true })
     })
   }
 
   const handleRuleWidthChange = (pct: number) => {
     if (dividerControlsDisabled) return
-    actions.setProp(selectedId, (props) => {
-      clearColumnRuleShorthand(props)
-      const px = ruleWidthPercentToPx(pct)
+    const px = ruleWidthPercentToPx(pct)
+    mutateClassStyle((draft) => {
+      clearColumnRuleShorthand(draft)
       setResponsiveStyleProp(
-        props,
+        draft,
         "columnRuleWidth",
         px === 0 ? undefined : `${px}px`,
         viewport,
@@ -355,9 +312,9 @@ export const TypographyColumnsSettingsPopper = ({
   }
 
   const resetRuleWidth = () => {
-    actions.setProp(selectedId, (props) => {
-      setResponsiveStyleProp(props, "columnRuleWidth", undefined, viewport)
-      patchColumnRuleShorthand(props, { width: true })
+    mutateClassStyle((draft) => {
+      setResponsiveStyleProp(draft, "columnRuleWidth", undefined, viewport)
+      patchColumnRuleShorthand(draft, { width: true })
     })
   }
 
@@ -370,23 +327,19 @@ export const TypographyColumnsSettingsPopper = ({
   const resetRuleColor = () => {
     debouncedCommitColor.cancel()
     setColorDraft("")
-    actions.setProp(selectedId, (props) => {
-      setResponsiveStyleProp(props, "columnRuleColor", undefined, viewport)
-      patchColumnRuleShorthand(props, { color: true })
+    mutateClassStyle((draft) => {
+      setResponsiveStyleProp(draft, "columnRuleColor", undefined, viewport)
+      patchColumnRuleShorthand(draft, { color: true })
     })
   }
 
   const handleSpanChange = (id: string) => {
     if (spanSectionDisabled) return
-    actions.setProp(selectedId, (props) => {
-      setResponsiveStyleProp(props, "columnSpan", id, viewport)
-    })
+    setStyleProp("columnSpan", id)
   }
 
   const resetSpan = () => {
-    actions.setProp(selectedId, (props) => {
-      setResponsiveStyleProp(props, "columnSpan", undefined, viewport)
-    })
+    setStyleProp("columnSpan", undefined)
   }
 
   const iconFill = COLORS.purple400

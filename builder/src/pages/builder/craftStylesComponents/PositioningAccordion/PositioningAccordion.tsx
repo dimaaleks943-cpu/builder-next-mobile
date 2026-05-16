@@ -18,6 +18,7 @@ import { CraftSettingsButtonGroup } from "../../components/craftSettingsControls
 import { CRAFT_DISPLAY_NAME } from "../../../../craft/craftDisplayNames.ts"
 import { resolveNodeDisplayName } from "../../../../utils/resolveNodeDisplayName.ts"
 import { usePreviewViewport } from "../../context/PreviewViewportContext.tsx"
+import { useStyleEditing } from "../../hooks/useStyleEditing.ts"
 import {
   getResponsiveStyleProp,
   setResponsiveStyleProp,
@@ -136,7 +137,7 @@ const uiClear = (raw: unknown): ClearValue => {
 
 export const PositioningAccordion = () => {
   const viewport = usePreviewViewport()
-  const { actions, selectedId, selectedProps, nearestRelativeParentId, nearestRelativeParentName } =
+  const { actions, selectedId, nearestRelativeParentId, nearestRelativeParentName } =
     useEditor((state, query) => {
       const [id] = Array.from(state.events.selected)
       const node = id ? state.nodes[id] : null
@@ -167,19 +168,13 @@ export const PositioningAccordion = () => {
       }
     })
 
+  const { getStyleProp, setStyleProp } = useStyleEditing()
   const [floatClearOpen, setFloatClearOpen] = useState(false)
-
-  const position = uiPosition(
-    getResponsiveStyleProp(selectedProps, "position", viewport),
-  )
-  const floatValue = uiFloat(
-    getResponsiveStyleProp(selectedProps, "float", viewport),
-  )
-  const clearValue = uiClear(
-    getResponsiveStyleProp(selectedProps, "clear", viewport),
-  )
-  const insetValue = getResponsiveStyleProp(selectedProps, "inset", viewport)
-  const zIndexValue = getResponsiveStyleProp(selectedProps, "zIndex", viewport)
+  const position = uiPosition(getStyleProp("position"))
+  const floatValue = uiFloat(getStyleProp("float"))
+  const clearValue = uiClear(getStyleProp("clear"))
+  const insetValue = getStyleProp("inset")
+  const zIndexValue = getStyleProp("zIndex")
   const isInsetAvailable = position !== "static"
   const insetSides = useMemo(() => expandInsetToSides(insetValue), [insetValue])
   const activeInsetId = INSET_VALUE_TO_ID[normalizeInsetValue(insetValue)] ?? ""
@@ -228,9 +223,7 @@ export const PositioningAccordion = () => {
     if (!option) {
       return
     }
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "inset", option.value, viewport)
-    })
+    setStyleProp("inset", option.value)
   }
 
   const handleInsetSideCommit = (side: InsetSide, next: string | number | undefined) => {
@@ -241,9 +234,7 @@ export const PositioningAccordion = () => {
 
     const nextSides = { ...insetSides, [side]: nextToken }
 
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "inset", insetSidesToValue(nextSides), viewport)
-    })
+    setStyleProp("inset", insetSidesToValue(nextSides))
   }
 
   const handleInsetPresetClick = (side: InsetSide, preset: string) => {
@@ -255,16 +246,12 @@ export const PositioningAccordion = () => {
   }
 
   const handleZIndexCommit = (next: string | number | undefined) => {
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "zIndex", next, viewport)
-    })
+    setStyleProp("zIndex", next)
   }
 
   useEffect(() => {
     if (!isInsetAvailable && insetValue !== undefined) {
-      actions.setProp(selectedId, (props: Record<string, unknown>) => {
-        setResponsiveStyleProp(props, "inset", undefined, viewport)
-      })
+      setStyleProp("inset", undefined)
     }
   }, [actions, insetValue, isInsetAvailable, selectedId, viewport])
 
