@@ -2,15 +2,13 @@ import { useNode } from "@craftjs/core"
 import type { CSSProperties, ReactNode } from "react"
 import { ContentListCellContext } from "../pages/builder/context/ContentListCellContext.tsx"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
-import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
-import {
-  resolveResponsiveStyle,
-  type ResponsiveStyle,
-} from "../pages/builder/responsiveStyle.ts"
+import { useCraftResolvedStyle } from "../pages/builder/hooks/useCraftResolvedStyle.ts"
+import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 
 export type ContentListCellProps = {
   children?: ReactNode
+  styleClassId?: string | null
   style?: ResponsiveStyle
 }
 
@@ -21,8 +19,11 @@ export type ContentListCellProps = {
  * display, flexFlow, justifyContent, alignItems, gridTemplate*, placeItems, gap — в `responsiveStyle` в виде имён React/CSS.
  */
 export const CraftContentListCell = (props: ContentListCellProps) => {
-  const viewport = usePreviewViewport()
-  const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
+  const responsiveStyle = useCraftResolvedStyle(
+    CRAFT_DISPLAY_NAME.ContentListCell,
+    props.styleClassId,
+    props.style,
+  )
   const {
     connectors: { connect, drag },
   } = useNode((node) => ({
@@ -46,9 +47,9 @@ export const CraftContentListCell = (props: ContentListCellProps) => {
       </ContentListCellContext.Provider>
     </div>
   )
-}
+};
 
-;(CraftContentListCell as any).craft = {
+(CraftContentListCell as any).craft = {
   displayName: CRAFT_DISPLAY_NAME.ContentListCell,
   props: {
     style: {

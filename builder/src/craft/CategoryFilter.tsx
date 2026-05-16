@@ -11,9 +11,9 @@ import {
   useReactToInlineSettingsOpenRequest,
   type InlineSettingsViewportAnchor,
 } from "../pages/builder/context/CraftInlineSettingsBridgeContext.tsx"
-import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
-import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
+import { useCraftResolvedStyle } from "../pages/builder/hooks/useCraftResolvedStyle.ts"
+import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 
 /**
  * Пропсы блока «Фильтр категорий». Выбор пользователя хранится в {@link useCollectionFilterScope}
@@ -28,6 +28,7 @@ type CategoryFilterProps = {
   direction?: "row" | "column"
   /** Подпись пункта «все категории» (`categoryId === null` в контексте). */
   showAllLabel?: string
+  styleClassId?: string | null
   style?: ResponsiveStyle
 }
 
@@ -54,8 +55,11 @@ export const CraftCategoryFilter = () => {
     useCollectionFilterScope()
   const [fetchCategories, { data: categoriesResponse, isFetching }] =
     useLazyGetContentCategoriesQuery()
-  const viewport = usePreviewViewport()
-  const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
+  const responsiveStyle = useCraftResolvedStyle(
+    CRAFT_DISPLAY_NAME.CategoryFilter,
+    props.styleClassId,
+    props.style,
+  )
 
   const filterScope = props.filterScope ?? ""
   const contentCategoryRootId = props.contentCategoryRootId ?? ""

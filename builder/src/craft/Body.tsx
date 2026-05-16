@@ -1,22 +1,26 @@
 import { useNode } from "@craftjs/core"
 import type { ReactNode } from "react"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
-import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
-import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
+import { useCraftResolvedStyle } from "../pages/builder/hooks/useCraftResolvedStyle.ts"
+import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 
 export type BodyProps = {
   children?: ReactNode
+  styleClassId?: string | null
   style?: ResponsiveStyle
 }
 
 // Root component используется только как стартовый элемент холста, не удаляется
 export const CraftBody = (props: BodyProps) => {
-  const viewport = usePreviewViewport()
-  const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
+  const responsiveStyle = useCraftResolvedStyle(
+    CRAFT_DISPLAY_NAME.Body,
+    props.styleClassId,
+    props.style,
+  )
 
-const {
-    connectors: { connect, drag }
+  const {
+    connectors: { connect, drag },
   } = useNode((node) => ({
     selected: node.events.selected,
   }))
@@ -35,9 +39,9 @@ const {
       {props.children}
     </div>
   )
-}
+};
 
-;(CraftBody as any).craft = {
+(CraftBody as any).craft = {
   displayName: CRAFT_DISPLAY_NAME.Body,
   props: {
     style: {
@@ -46,14 +50,6 @@ const {
         boxSizing: "border-box",
         position: "relative",
         width: "100%",
-        // marginTop: 0,
-        // marginRight: 0,
-        // marginBottom: 0,
-        // marginLeft: 0,
-        // paddingTop: 0,
-        // paddingRight: 0,
-        // paddingBottom: 0,
-        // paddingLeft: 0,
       },
     },
   },

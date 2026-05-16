@@ -10,9 +10,9 @@ import {
 import { COLORS } from "../theme/colors"
 import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
-import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
-import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
+import { useCraftResolvedStyle } from "../pages/builder/hooks/useCraftResolvedStyle.ts"
+import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 import { useBuilderModeContext } from "../pages/builder/context/BuilderModeContext.tsx"
 import {
   commitCraftTextDraft,
@@ -28,12 +28,16 @@ export interface LinkTextProps {
   collectionItemLinkTarget?: "none" | "template"
   collectionItemTemplatePageId?: string | null
   openInNewTab?: boolean
+  styleClassId?: string | null
   style?: ResponsiveStyle
 }
 
 export const CraftLinkText = (props: LinkTextProps) => {
-  const viewport = usePreviewViewport()
-  const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
+  const responsiveStyle = useCraftResolvedStyle(
+    CRAFT_DISPLAY_NAME.LinkText,
+    props.styleClassId,
+    props.style,
+  )
   const text = props.text ?? "Ссылка"
   const i18nKey = props.i18nKey ?? null
   const collectionField = props.collectionField ?? null

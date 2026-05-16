@@ -9,9 +9,9 @@ import {
 } from "../pages/builder/context/CraftInlineSettingsBridgeContext.tsx"
 import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
-import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
-import { resolveResponsiveStyle, type ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
+import { useCraftResolvedStyle } from "../pages/builder/hooks/useCraftResolvedStyle.ts"
+import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 import backgroundImage from "../assets/background-image.svg"
 
 export interface CraftImageProps {
@@ -19,12 +19,16 @@ export interface CraftImageProps {
   alt?: string
   /** Поле коллекции, содержащее URL изображения (если компонент внутри ContentList). */
   collectionField?: string | null
+  styleClassId?: string | null
   style?: ResponsiveStyle
 }
 
 export const CraftImage = (props: CraftImageProps) => {
-  const viewport = usePreviewViewport()
-  const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
+  const responsiveStyle = useCraftResolvedStyle(
+    CRAFT_DISPLAY_NAME.Image,
+    props.styleClassId,
+    props.style,
+  )
   const src = props.src
   const alt = props.alt ?? "Изображение"
   const collectionField = props.collectionField ?? null

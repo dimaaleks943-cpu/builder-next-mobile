@@ -26,8 +26,8 @@ import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import { getCollectionItemsCacheKey } from "../utils/collectionItemsCacheKey"
 import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
+import { useCraftResolvedStyle } from "../pages/builder/hooks/useCraftResolvedStyle.ts"
 import {
-  resolveResponsiveStyle,
   setResponsiveStyleProp,
   type ResponsiveStyle,
 } from "../pages/builder/responsiveStyle.ts"
@@ -39,6 +39,7 @@ export type ContentListProps = {
    * и включает передачу `categoryIds` в запрос элементов при смене категории в контексте.
    */
   filterScope?: string
+  styleClassId?: string | null
   style?: ResponsiveStyle
 }
 
@@ -74,7 +75,11 @@ export const CraftContentList = ({}: ContentListProps) => {
   const { selectedCategoryIdByScope } = useCollectionFilterScope()
   const [fetchContentItems] = useLazyGetContentItemsQuery()
   const viewport = usePreviewViewport()
-  const responsiveStyle = resolveResponsiveStyle(props.style, viewport)
+  const responsiveStyle = useCraftResolvedStyle(
+    CRAFT_DISPLAY_NAME.ContentList,
+    props.styleClassId,
+    props.style,
+  )
 
   const openInlineSettingsModal = useCallback(
     (viewportAnchor?: InlineSettingsViewportAnchor | null) => {
