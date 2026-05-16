@@ -42,6 +42,7 @@ import {
 import { TypographyBreakingRow } from "./components/TypographyBreakingRow.tsx"
 import { TypographyWrapTruncateSection } from "./components/TypographyWrapTruncateSection.tsx"
 import { usePreviewViewport } from "../../context/PreviewViewportContext.tsx"
+import { useStyleEditing } from "../../hooks/useStyleEditing.ts"
 import {
   getResponsiveStyleProp,
   resolveResponsiveStyle,
@@ -146,6 +147,7 @@ const renderTextAlignIcon = (
 export const TypographyAccordion = () => {
   const { actions } = useEditor()
   const viewport = usePreviewViewport()
+  const { getStyleProp, setStyleProp } = useStyleEditing()
   const { selectedId, selectedProps } = useEditor(
     (state): EditorSelection => {
       const [id] = Array.from(state.events.selected)
@@ -186,14 +188,14 @@ export const TypographyAccordion = () => {
 
   useEffect(() => {
     setColorDraft(
-      (getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "color", viewport) as string | undefined) ??
+      (getStyleProp("color") as string | undefined) ??
       COLORS.black,
     )
   }, [selectedProps, selectedId, viewport])
 
   useEffect(() => {
     setStrokeColorDraft(
-      (getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "strokeColor", viewport) as string | undefined) ??
+      (getStyleProp("strokeColor") as string | undefined) ??
       COLORS.black,
     )
   }, [selectedProps, selectedId, viewport])
@@ -201,11 +203,7 @@ export const TypographyAccordion = () => {
   useEffect(() => {
     setTextIndentDraft(
       parseTextIndentDraftFromProp(
-        getResponsiveStyleProp(
-          selectedProps as unknown as Record<string, unknown>,
-          "textIndent",
-          viewport,
-        ),
+        getStyleProp("textIndent"),
       ),
     )
   }, [selectedProps, selectedId, viewport])
@@ -253,9 +251,7 @@ export const TypographyAccordion = () => {
       window.clearTimeout(colorTimeoutRef.current)
     }
     colorTimeoutRef.current = window.setTimeout(() => {
-      actions.setProp(selectedId, (props: any) => {
-        setResponsiveStyleProp(props, "color", value, viewport)
-      })
+      setStyleProp("color", value)
     }, 200)
   }
 
@@ -265,9 +261,7 @@ export const TypographyAccordion = () => {
       window.clearTimeout(strokeColorTimeoutRef.current)
     }
     strokeColorTimeoutRef.current = window.setTimeout(() => {
-      actions.setProp(selectedId, (props: any) => {
-        setResponsiveStyleProp(props, "strokeColor", value, viewport)
-      })
+      setStyleProp("strokeColor", value)
     }, 200)
   }
 
@@ -285,21 +279,15 @@ export const TypographyAccordion = () => {
 
   const handleFontWeightChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value === "bold" ? "bold" : "normal"
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "fontWeight", value, viewport)
-    })
+    setStyleProp("fontWeight", value)
   }
 
   const handleFontSizeCommit = (next: string | number | undefined) => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "fontSize", next, viewport)
-    })
+    setStyleProp("fontSize", next)
   }
 
   const handleLineHeightCommit = (next: string | number | undefined) => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "lineHeight", next, viewport)
-    })
+    setStyleProp("lineHeight", next)
   }
 
   const handleColorChange = (value: string) => {
@@ -308,31 +296,23 @@ export const TypographyAccordion = () => {
   }
 
   const handleAlignChange = (align: "left" | "center" | "right" | "justify") => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "textAlign", align, viewport)
-    })
+    setStyleProp("textAlign", align)
   }
 
   const handleAlignReset = () => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "textAlign", undefined, viewport)
-    })
+    setStyleProp("textAlign", undefined)
   }
 
   const handleCapitalizeChange = (
     transform: "none" | "uppercase" | "lowercase" | "capitalize",
   ) => {
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "textTransform", transform, viewport)
-    })
+    setStyleProp("textTransform", transform)
   }
 
   const handleStrokeWidthChange = (event: ChangeEvent<HTMLInputElement>) => {
     const next = Number(event.target.value)
     const safe = Number.isNaN(next) ? 0 : next
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(props, "strokeWidth", safe, viewport)
-    })
+    setStyleProp("strokeWidth", safe)
   }
 
   const handleStrokeColorChange = (value: string) => {
@@ -341,9 +321,7 @@ export const TypographyAccordion = () => {
   }
 
   const resetStrokeWidth = () => {
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "strokeWidth", undefined, viewport)
-    })
+    setStyleProp("strokeWidth", undefined)
   }
 
   const resetStrokeColor = () => {
@@ -352,9 +330,7 @@ export const TypographyAccordion = () => {
       strokeColorTimeoutRef.current = undefined
     }
     setStrokeColorDraft(COLORS.black)
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "strokeColor", undefined, viewport)
-    })
+    setStyleProp("strokeColor", undefined)
   }
 
   const applyTextShadowPatch = (patch: Partial<TextShadowParts>) => {
@@ -435,11 +411,7 @@ export const TypographyAccordion = () => {
     }
   }
 
-  const textAlignProp = getResponsiveStyleProp(
-    selectedProps as unknown as Record<string, unknown>,
-    "textAlign",
-    viewport,
-  ) as string | undefined
+  const textAlignProp = getStyleProp("textAlign") as string | undefined
 
   const resolvedForFormat = resolveResponsiveStyle(
     selectedProps.style,
@@ -448,39 +420,19 @@ export const TypographyAccordion = () => {
   const formatDecoration = parseDecorationFromResolved(resolvedForFormat)
   const formatItalic = parseItalicFromResolved(resolvedForFormat)
 
-  const decorationTdRaw = getResponsiveStyleProp(
-    selectedProps as unknown as Record<string, unknown>,
-    "textDecoration",
-    viewport,
-  ) as string | undefined
+  const decorationTdRaw = getStyleProp("textDecoration") as string | undefined
   const decorationTdParts = parseTextDecorationAdvanced(decorationTdRaw)
-  const decorationSkipInkRaw = getResponsiveStyleProp(
-    selectedProps as unknown as Record<string, unknown>,
-    "textDecorationSkipInk",
-    viewport,
-  )
+  const decorationSkipInkRaw = getStyleProp("textDecorationSkipInk")
   const decorationSkipInk =
     typeof decorationSkipInkRaw === "string" ? decorationSkipInkRaw : undefined
 
   const isGridDisplay = resolvedForFormat.display === "grid"
 
-  const letterSpacingProp = getResponsiveStyleProp(
-    selectedProps as unknown as Record<string, unknown>,
-    "letterSpacing",
-    viewport,
-  )
+  const letterSpacingProp = getStyleProp("letterSpacing")
 
-  const textIndentProp = getResponsiveStyleProp(
-    selectedProps as unknown as Record<string, unknown>,
-    "textIndent",
-    viewport,
-  )
+  const textIndentProp = getStyleProp("textIndent")
 
-  const columnCountProp = getResponsiveStyleProp(
-    selectedProps as unknown as Record<string, unknown>,
-    "columnCount",
-    viewport,
-  )
+  const columnCountProp = getStyleProp("columnCount")
 
   const hasLetterSpacingValue =
     letterSpacingProp !== undefined &&
@@ -496,22 +448,14 @@ export const TypographyAccordion = () => {
     columnCountProp !== "" &&
     !(typeof columnCountProp === "number" && columnCountProp === 0)
 
-  const responsiveStrokeWidth = getResponsiveStyleProp(
-    selectedProps as unknown as Record<string, unknown>,
-    "strokeWidth",
-    viewport,
-  ) as number | undefined
+  const responsiveStrokeWidth = getStyleProp("strokeWidth") as number | undefined
 
   const hasStrokeWidthResetValue =
     responsiveStrokeWidth !== undefined &&
     responsiveStrokeWidth !== null &&
     Number(responsiveStrokeWidth) !== 0
 
-  const responsiveStrokeColor = getResponsiveStyleProp(
-    selectedProps as unknown as Record<string, unknown>,
-    "strokeColor",
-    viewport,
-  ) as string | undefined
+  const responsiveStrokeColor = getStyleProp("strokeColor") as string | undefined
 
   const hasStrokeColorResetValue =
     responsiveStrokeColor !== undefined &&
@@ -545,9 +489,7 @@ export const TypographyAccordion = () => {
   }
 
   const resetLetterSpacing = () => {
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "letterSpacing", undefined, viewport)
-    })
+    setStyleProp("letterSpacing", undefined)
   }
 
   const handleTextIndentDraftChange = (
@@ -565,28 +507,20 @@ export const TypographyAccordion = () => {
   const commitTextIndentDraft = () => {
     const t = textIndentDraft.trim()
     if (t === "") {
-      actions.setProp(selectedId, (props: Record<string, unknown>) => {
-        setResponsiveStyleProp(props, "textIndent", undefined, viewport)
-      })
+      setStyleProp("textIndent", undefined)
       return
     }
     const n = Number(t)
     if (!Number.isFinite(n) || n === 0) {
-      actions.setProp(selectedId, (props: Record<string, unknown>) => {
-        setResponsiveStyleProp(props, "textIndent", undefined, viewport)
-      })
+      setStyleProp("textIndent", undefined)
       return
     }
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "textIndent", `${n}px`, viewport)
-    })
+    setStyleProp("textIndent", `${n}px`)
   }
 
   const resetTextIndent = () => {
     setTextIndentDraft("")
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "textIndent", undefined, viewport)
-    })
+    setStyleProp("textIndent", undefined)
   }
 
   const handleTextIndentKeyDown = (
@@ -626,24 +560,18 @@ export const TypographyAccordion = () => {
   }
 
   const resetColumnCount = () => {
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "columnCount", undefined, viewport)
-    })
+    setStyleProp("columnCount", undefined)
   }
 
   const handleFormatClear = () => {
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "textDecoration", undefined, viewport)
-      setResponsiveStyleProp(props, "textDecorationSkipInk", undefined, viewport)
-      setResponsiveStyleProp(props, "fontStyle", undefined, viewport)
-    })
+    setStyleProp("textDecoration", undefined, viewport)
+    setStyleProp("textDecorationSkipInk", undefined, viewport)
+    setStyleProp("fontStyle", undefined, viewport)
   }
 
   const handleFormatDecorationPress = (kind: TextDecorationKind) => {
     const next = formatDecoration === kind ? undefined : kind
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "textDecoration", next, viewport)
-    })
+    setStyleProp("textDecoration", next)
   }
 
   const handleFormatItalicPress = () => {
@@ -694,9 +622,7 @@ export const TypographyAccordion = () => {
   }
 
   const applyTextDecorationSkipInk = (next: string | undefined) => {
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "textDecorationSkipInk", next, viewport)
-    })
+    setStyleProp("textDecorationSkipInk", next)
   }
 
   return (
@@ -716,7 +642,7 @@ export const TypographyAccordion = () => {
         <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <CraftSettingsSelect
             label="Font"
-            value={(getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "fontFamily", viewport) as string | undefined) ?? "system"}
+            value={(getStyleProp("fontFamily") as string | undefined) ?? "system"}
             onChange={handleFontFamilyChange}
             options={[
               { id: "system", value: "System" },
@@ -727,7 +653,7 @@ export const TypographyAccordion = () => {
 
           <CraftSettingsSelect
             label="Weight"
-            value={(getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "fontWeight", viewport) as string | undefined) ?? "normal"}
+            value={(getStyleProp("fontWeight") as string | undefined) ?? "normal"}
             onChange={handleFontWeightChange}
             options={[
               { id: "normal", value: "400 - Normal" },
@@ -763,11 +689,7 @@ export const TypographyAccordion = () => {
                   label="Size"
                   withoutLabel
                   unitAffixVariant="mutedLowercase"
-                  value={getResponsiveStyleProp(
-                    selectedProps as unknown as Record<string, unknown>,
-                    "fontSize",
-                    viewport,
-                  )}
+                  value={getStyleProp("fontSize")}
                   onCommit={handleFontSizeCommit}
                   allowedUnits={FONT_SIZE_UNIT_MENU}
                   placeholder=""
@@ -783,11 +705,7 @@ export const TypographyAccordion = () => {
                   label="Height"
                   withoutLabel
                   unitAffixVariant="mutedLowercase"
-                  value={getResponsiveStyleProp(
-                    selectedProps as unknown as Record<string, unknown>,
-                    "lineHeight",
-                    viewport,
-                  )}
+                  value={getStyleProp("lineHeight")}
                   onCommit={handleLineHeightCommit}
                   allowedUnits={FONT_SIZE_UNIT_MENU}
                   placeholder=""
@@ -861,8 +779,6 @@ export const TypographyAccordion = () => {
             popperRef={columnsSettingsPopperRef}
             viewport={viewport}
             selectedId={selectedId}
-            selectedProps={selectedProps as unknown as Record<string, unknown>}
-            actions={actions}
           />
 
           <Button
@@ -1091,7 +1007,7 @@ export const TypographyAccordion = () => {
 
               <CraftSettingsButtonGroup
                 label="Capitalize"
-                value={(getResponsiveStyleProp(selectedProps as unknown as Record<string, unknown>, "textTransform", viewport) as string | undefined) ?? "none"}
+                value={(getStyleProp("textTransform") as string | undefined) ?? "none"}
                 options={[
                   { id: "none", content: <CloseIcon size={16}/> },
                   { id: "uppercase", content: "AA" },
@@ -1105,19 +1021,9 @@ export const TypographyAccordion = () => {
                 }
               />
 
-              <TypographyBreakingRow
-                actions={actions}
-                selectedId={selectedId}
-                selectedProps={selectedProps as unknown as Record<string, unknown>}
-                viewport={viewport}
-              />
+              <TypographyBreakingRow />
 
-              <TypographyWrapTruncateSection
-                actions={actions}
-                selectedId={selectedId}
-                selectedProps={selectedProps as unknown as Record<string, unknown>}
-                viewport={viewport}
-              />
+              <TypographyWrapTruncateSection />
 
               <Box
                 sx={{
