@@ -1,3 +1,5 @@
+import { parsePageCraftContent } from "./pageCraftContent";
+
 /**
  * Обход сериализованного Craft JSON: уникальные `selectedSource` (content_type_id) у узлов ContentList.
  */
@@ -31,12 +33,8 @@ export const extractContentListPrefetchPairsFromCraftContent = (
 ): ContentListPrefetchPair[] => {
   if (!content.trim()) return [];
 
-  let nodes: SerializedNodes;
-  try {
-    nodes = JSON.parse(content) as SerializedNodes;
-  } catch {
-    return [];
-  }
+  const { nodes: parsedNodes } = parsePageCraftContent(content);
+  const nodes = parsedNodes as SerializedNodes;
 
   const byDedupeKey = new Map<string, ContentListPrefetchPair>();
   for (const nodeId of Object.keys(nodes)) {

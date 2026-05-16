@@ -3,7 +3,7 @@ import { Text as RNText, type TextStyle, StyleProp } from "react-native";
 import { useContentData } from "../contexts/ContentDataContext";
 import { useResponsiveViewport } from "../contexts/ResponsiveViewportContext";
 import {
-  pickResolvedNumber,
+  buildCraftTextRnStyle,
   resolveResponsiveStyle,
 } from "../content/responsiveStyle";
 import {
@@ -65,13 +65,15 @@ export const Text = ({
       : {};
 
   const textStyle: StyleProp<TextStyle> = {
-    ...rs,
+    ...buildCraftTextRnStyle(rs),
     fontStyle: isItalic ? "italic" : "normal",
     textDecorationLine:
-      textDecorationParts.length > 0 ? textDecorationParts.join(" ") : "none",
+      (textDecorationParts.length > 0
+        ? textDecorationParts.join(" ")
+        : "none") as TextStyle["textDecorationLine"],
     textTransform,
     ...opacityEffects,
-  } as TextStyle;
+  };
 
   return <RNText style={textStyle}>{displayText}</RNText>;
 };

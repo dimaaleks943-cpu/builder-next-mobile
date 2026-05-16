@@ -15,7 +15,7 @@ import { useStorefrontPage } from "../contexts/StorefrontPageContext";
 import { useSiteCollections } from "../contexts/SiteCollectionsContext";
 import { useResponsiveViewport } from "../contexts/ResponsiveViewportContext";
 import {
-  pickResolvedNumber,
+  buildCraftTextRnStyle,
   resolveResponsiveStyle,
 } from "../content/responsiveStyle";
 import { buildStorefrontTemplateHref } from "../lib/catalogPathResolve";
@@ -171,12 +171,14 @@ export const LinkText = ({
       : {};
 
   const linkTextStyle: StyleProp<TextStyle> = {
-    ...rs,
+    ...buildCraftTextRnStyle(rs),
     fontStyle: isItalic ? "italic" : "normal",
-    textDecorationLine: textDecorationParts.join(" "),
+    textDecorationLine: textDecorationParts.join(
+      " ",
+    ) as TextStyle["textDecorationLine"],
     textTransform,
     ...opacityEffects,
-  } as TextStyle;
+  };
 
   return (
     <Pressable onPress={handlePress}>

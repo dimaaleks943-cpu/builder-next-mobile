@@ -1,29 +1,31 @@
 import type { ComponentNode } from "./interface";
-import { decodeSerializedNodesStyleProps } from "./stylePropsCodec";
+import { parsePageCraftContent } from "../lib/pageCraftContent";
+import { decodeStyleProps } from "./stylePropsCodec";
+import type { StyleClassesRegistry } from "../lib/styleClasses/types";
+import { propsForRuntime } from "../lib/styleClasses/resolveNodeStyle";
 
-
-/** сериализованый формат дерева craft.js, который мы сохраняем в поле content  */
 type SerializedNodes = Record<
   string,
   {
-    type: any;
+    type: unknown;
     isCanvas: boolean;
-    props: Record<string, any>;
+    props: Record<string, unknown>;
     displayName?: string;
     hidden?: boolean;
     nodes?: string[];
     linkedNodes?: Record<string, string>;
     parent?: string;
-    custom?: Record<string, any>;
+    custom?: Record<string, unknown>;
   }
 >;
 
-/**
- * Преобразуем тип Craft-узла в строковое имя компонента (Body, Block, Text, LinkText)
- * в JSON тип всегда представлен как строка или как объект с resolvedName/displayName
- * */
-const resolveTypeName = (type: any, nodeId?: string): string => {
+const resolveTypeName = (type: unknown, nodeId?: string): string => {
   if (!type) {
+    if (nodeId) {
+      console.warn(
+        `[craftContentToComponents] resolveTypeName: type is null for node ${nodeId}`,
+      );
+    }
     return "div";
   }
 
@@ -44,24 +46,18 @@ const resolveTypeName = (type: any, nodeId?: string): string => {
   return "div";
 };
 
-/** рекурсивно строим дерево ComponentNode из сериализованных узлов Craft, начиная с указанного id  */
 const buildNodeTree = (
   nodes: SerializedNodes,
   id: string,
+  styleClasses: StyleClassesRegistry,
 ): ComponentNode | null => {
   const node = nodes[id];
   if (!node) return null;
 
   const componentType = resolveTypeName(node.type, id);
 
-  /**
-   * Для ContentList берём только первую ячейку (шаблон) из всех ячеек.
-   * В сериализованном дереве Craft.js дети ContentList — это ячейки (ContentListCell),
-   * каждая из которых содержит своих детей-шаблонов.
-   * */
   if (componentType === "ContentList") {
     const linkedNodes = node.linkedNodes ?? {};
-    /** дети ContentList это ячейки; могут быть в node.nodes или только в linkedNodes  */
     const pickTemplateCellId = (): string | null => {
       const dataNodes = node.nodes ?? [];
       if (dataNodes.length > 0) return dataNodes[0];
@@ -80,12 +76,28 @@ const buildNodeTree = (
 
     const actualFirstCellId = pickTemplateCellId();
     if (!actualFirstCellId) {
-      return { type: "ContentList", props: node.props ?? {} };
+      return {
+        type: "ContentList",
+        props: propsForRuntime(
+          (node.props ?? {}) as Record<string, unknown>,
+          "ContentList",
+          node.displayName,
+          styleClasses,
+        ),
+      };
     }
     const cellNode = nodes[actualFirstCellId];
 
     if (!cellNode) {
-      return { type: "ContentList", props: node.props ?? {} };
+      return {
+        type: "ContentList",
+        props: propsForRuntime(
+          (node.props ?? {}) as Record<string, unknown>,
+          "ContentList",
+          node.displayName,
+          styleClasses,
+        ),
+      };
     }
 
     const templateChildren: ComponentNode[] = [];
@@ -103,11 +115,10 @@ const buildNodeTree = (
       const ids = childIds.length ? childIds : Object.keys(ln);
       for (const key of ids) {
         const actualId = ln[key] || key;
-        const child = buildNodeTree(nodes, actualId);
+        const child = buildNodeTree(nodes, actualId, styleClasses);
         if (child) {
           templateChildren.push(child);
         } else {
-          /** узел не рендерится (например ContentListCell) — разворачиваем его детей  */
           collectTemplateFromNode(actualId);
         }
       }
@@ -115,8 +126,7 @@ const buildNodeTree = (
 
     for (const templateChildId of templateChildIds) {
       const actualChildId = cellLinkedNodes[templateChildId] || templateChildId;
-
-      const child = buildNodeTree(nodes, actualChildId);
+      const child = buildNodeTree(nodes, actualChildId, styleClasses);
       if (child) {
         templateChildren.push(child);
       } else {
@@ -124,16 +134,29 @@ const buildNodeTree = (
       }
     }
 
-    /** гарантируем, что все children имеют строковый type  */
     const safeChildren = templateChildren.map((child) => ({
       ...child,
       type: String(child.type),
     }));
 
-    /** Вложенный `style` шаблонной ячейки: layout/gap/flex и т.д. сливаются в `ContentList` по viewport (см. `resolveResponsiveStyle`). */
+    const normalizedCell = decodeStyleProps(
+      (cellNode.props ?? {}) as Record<string, unknown>,
+    );
+    const cellRuntimeProps = propsForRuntime(
+      normalizedCell,
+      "ContentListCell",
+      cellNode.displayName,
+      styleClasses,
+    );
+
     const contentListProps = {
-      ...(node.props ?? {}),
-      cellTemplateStyle: (cellNode.props ?? {}).style,
+      ...propsForRuntime(
+        (node.props ?? {}) as Record<string, unknown>,
+        "ContentList",
+        node.displayName,
+        styleClasses,
+      ),
+      cellTemplateStyle: cellRuntimeProps.style,
     };
 
     return {
@@ -143,18 +166,15 @@ const buildNodeTree = (
     };
   }
 
-  /** ContentListCell — обёртка в конструкторе для редактирования; здесь не рендерим, дети обрабатываются в ContentList */
   if (componentType === "ContentListCell") return null;
 
-  /** для остальных компонентов строим дерево как обычно */
   const childrenIds = node.nodes ?? [];
   const children: ComponentNode[] = [];
 
   for (const childId of childrenIds) {
-    /** проверяем linkedNodes для правильного разрешения id */
     const linkedNodes = node.linkedNodes ?? {};
     const actualChildId = linkedNodes[childId] || childId;
-    const child = buildNodeTree(nodes, actualChildId);
+    const child = buildNodeTree(nodes, actualChildId, styleClasses);
     if (child) {
       children.push(child);
     }
@@ -162,7 +182,12 @@ const buildNodeTree = (
 
   const component: ComponentNode = {
     type: String(componentType),
-    props: node.props ?? {},
+    props: propsForRuntime(
+      (node.props ?? {}) as Record<string, unknown>,
+      componentType,
+      node.displayName,
+      styleClasses,
+    ),
   };
 
   if (children.length > 0) {
@@ -173,34 +198,26 @@ const buildNodeTree = (
 };
 
 /**
- * Преобразует строку content (JSON из конструктора, формат Craft.js) в массив ComponentNode
- * для рендера страницы нативными компонентами.
+ * Преобразует строку content (JSON из конструктора, `{ nodes, styleClasses }`) в ComponentNode[].
  */
 export const craftContentToComponents = (content: string): ComponentNode[] => {
   if (!content) return [];
 
-  let nodes: SerializedNodes;
-  try {
-    nodes = JSON.parse(content) as SerializedNodes;
-  } catch (error) {
-    console.error("Не удалось распарсить Craft content как JSON:", error);
-    return [];
-  }
-  nodes = decodeSerializedNodesStyleProps(nodes);
+  const { nodes, styleClasses } = parsePageCraftContent(content);
 
-  const root = nodes.ROOT;
+  const root = nodes.ROOT as SerializedNodes[string] | undefined;
   if (!root || !Array.isArray(root.nodes)) {
     console.error("Некорректный Craft content: нет ROOT.nodes");
     return [];
   }
 
+  const serializedNodes = nodes as SerializedNodes;
   const result: ComponentNode[] = [];
   const rootLinkedNodes = root.linkedNodes ?? {};
 
-  /** берём детей ROOT и строим из них верхний уровень страницы (разрешаем linkedNodes) */
   for (const childKey of root.nodes) {
     const actualChildId = rootLinkedNodes[childKey] || childKey;
-    const child = buildNodeTree(nodes, actualChildId);
+    const child = buildNodeTree(serializedNodes, actualChildId, styleClasses);
     if (child) {
       result.push(child);
     }
@@ -217,7 +234,12 @@ export const craftContentToComponents = (content: string): ComponentNode[] => {
     return [
       {
         type: "Body",
-        props: root.props ?? {},
+        props: propsForRuntime(
+          (root.props ?? {}) as Record<string, unknown>,
+          "Body",
+          root.displayName,
+          styleClasses,
+        ),
         children: result,
       },
     ];

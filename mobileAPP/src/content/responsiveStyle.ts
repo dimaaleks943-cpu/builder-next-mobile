@@ -1,3 +1,5 @@
+import type { TextStyle } from "react-native";
+
 export type Viewport =
   | "tablet_landscape"
   | "tablet"
@@ -21,6 +23,12 @@ export const RESPONSIVE_STYLE_BRANCHES = [
   "phone_landscape",
   "phone",
 ] as const;
+
+export type ResponsiveStyleBranch = (typeof RESPONSIVE_STYLE_BRANCHES)[number];
+
+export type ResponsiveStyle = Partial<
+  Record<ResponsiveStyleBranch, Record<string, unknown>>
+>;
 
 /**
  * Viewport branches used when mapping window size to a branch (no separate `desktop` viewport on device).
@@ -82,15 +90,110 @@ export const resolveResponsiveStyle = (
   return merged;
 };
 
+/** Parse Craft/CSS size values (`14`, `"14"`, `"14px"`) to a finite number for RN. */
+export const parseCssPx = (value: unknown): number | undefined => {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const match = trimmed.match(/^(-?\d+(?:\.\d+)?)\s*px?$/i);
+    if (match) {
+      const n = Number(match[1]);
+      return Number.isFinite(n) ? n : undefined;
+    }
+    const n = Number(trimmed);
+    return Number.isFinite(n) ? n : undefined;
+  }
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+};
+
+const SPACING_KEYS = [
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+] as const;
+
+const pickResolvedColor = (
+  rs: Record<string, unknown>,
+  key: string,
+): string | undefined => {
+  const v = rs[key];
+  if (v === undefined || v === null || v === "") return undefined;
+  return String(v);
+};
+
+const pickResolvedFontWeight = (
+  rs: Record<string, unknown>,
+): TextStyle["fontWeight"] | undefined => {
+  const v = rs.fontWeight;
+  if (v === undefined || v === null || v === "") return undefined;
+  if (typeof v === "number" && Number.isFinite(v)) {
+    return v as TextStyle["fontWeight"];
+  }
+  const s = String(v).trim();
+  if (s === "normal" || s === "bold") return s;
+  const n = Number(s);
+  if (Number.isFinite(n)) return String(n) as TextStyle["fontWeight"];
+  return s as TextStyle["fontWeight"];
+};
+
+/** Craft responsive-style fields safe for RN Text (no CSS-only / Craft-only keys). */
+export const buildCraftTextRnStyle = (rs: Record<string, unknown>): TextStyle => {
+  const style: TextStyle = {};
+
+  const fontSize = parseCssPx(rs.fontSize);
+  if (fontSize !== undefined) style.fontSize = fontSize;
+
+  const lineHeight = parseCssPx(rs.lineHeight);
+  if (lineHeight !== undefined) style.lineHeight = lineHeight;
+
+  const color = pickResolvedColor(rs, "color");
+  if (color) style.color = color;
+
+  const fontWeight = pickResolvedFontWeight(rs);
+  if (fontWeight !== undefined) style.fontWeight = fontWeight;
+
+  const letterSpacing = parseCssPx(rs.letterSpacing);
+  if (letterSpacing !== undefined) style.letterSpacing = letterSpacing;
+
+  const textAlign = rs.textAlign;
+  if (
+    textAlign === "auto" ||
+    textAlign === "left" ||
+    textAlign === "right" ||
+    textAlign === "center" ||
+    textAlign === "justify"
+  ) {
+    style.textAlign = textAlign;
+  }
+
+  for (const key of SPACING_KEYS) {
+    const n = parseCssPx(rs[key]);
+    if (n !== undefined) style[key] = n;
+  }
+
+  const padding = parseCssPx(rs.padding);
+  if (padding !== undefined) style.padding = padding;
+
+  const margin = parseCssPx(rs.margin);
+  if (margin !== undefined) style.margin = margin;
+
+  return style;
+};
+
 /** Read a finite number from a merged responsive-style record (Craft JSON → RN). */
 export const pickResolvedNumber = (
   rs: Record<string, unknown>,
   key: string,
   fallback: number,
 ): number => {
-  const v = rs[key];
-  if (v === undefined || v === null) return fallback;
-  if (typeof v === "number" && Number.isFinite(v)) return v;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
+  const parsed = parseCssPx(rs[key]);
+  return parsed !== undefined ? parsed : fallback;
 };
