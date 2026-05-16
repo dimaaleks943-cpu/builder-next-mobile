@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Box } from "@mui/material"
-import { Editor, type SerializedNodes } from "@craftjs/core"
+import { Editor } from "@craftjs/core"
 import { useParams } from "react-router-dom"
 import { BuilderHeader } from "./components/BuilderHeader"
 import { BuilderLeftPanel } from "./components/BuilderLeftPanel/BuilderLeftPanel.tsx"
@@ -16,6 +16,7 @@ import { BuilderTemplatePageContext } from "./context/BuilderTemplatePageContext
 import { BuilderModeContext } from "./context/BuilderModeContext.tsx"
 import { PreviewViewportContext } from "./context/PreviewViewportContext.tsx"
 import { CraftGridManualEditBridgeProvider } from "./context/CraftGridManualEditBridgeContext.tsx"
+import { StyleClassProvider } from "./context/StyleClassContext.tsx"
 import { CraftInlineSettingsBridgeProvider } from "./context/CraftInlineSettingsBridgeContext.tsx"
 import { COLORS } from "../../theme/colors"
 import { CraftBlock } from "../../craft/Block.tsx"
@@ -37,8 +38,7 @@ import {
   keyToPreviewViewport, PREVIEW_HOTKEY_KEYS_RN, PREVIEW_HOTKEY_KEYS_WEB,
   suppressPreviewHotkey,
 } from "./utils/previewViewportHotkeys"
-import { decodeSerializedNodesStyleProps } from "../../utils/stylePropsCodec"
-import { CRAFT_DISPLAY_NAME } from "../../craft/craftDisplayNames.ts"
+import { parsePageCraftContent } from "./utils/craftPageContent.ts"
 import { normalizeItemPathPrefix } from "../../utils/normalizeItemPathPrefix.ts"
 import {
   createEmptyTranslations,
@@ -47,6 +47,7 @@ import {
   normalizeTranslations,
 } from "../../utils/i18nTranslations.ts"
 import type { Locale, TranslationsByLocale } from "../../api/extranet.ts"
+import type { StyleClassesRegistry } from "./styleClasses/types.ts"
 
 function pickBindableTypeFields(
   fields: IContentTypeField[] | undefined,
@@ -55,31 +56,6 @@ function pickBindableTypeFields(
   return fields.filter(
     (f) => f.reference_type === "item",
   )
-}
-
-/** Пустое дерево Craft (только ROOT + Body без детей). Нужно, чтобы при переключении на режим с пустым контентом Canvas вызывал deserialize и очищал холст, а не игнорировал null. */
-export const EMPTY_SERIALIZED_NODES: SerializedNodes = {
-  ROOT: {
-    type: { resolvedName: "Body" },
-    isCanvas: true,
-    props: {},
-    displayName: CRAFT_DISPLAY_NAME.Body,
-    custom: {},
-    hidden: false,
-    nodes: [],
-    linkedNodes: {},
-    parent: null,
-  },
-}
-
-const parseContent = (raw: string): SerializedNodes => {
-  if (!raw || !raw.trim()) return EMPTY_SERIALIZED_NODES
-  try {
-    const parsed = (JSON.parse(raw) as SerializedNodes) || EMPTY_SERIALIZED_NODES
-    return decodeSerializedNodesStyleProps(parsed)
-  } catch {
-    return EMPTY_SERIALIZED_NODES
-  }
 }
 
 export const BuilderPage = () => {
@@ -93,6 +69,8 @@ export const BuilderPage = () => {
   const [activeLocale, setActiveLocale] = useState<Locale>("ru")
   const [contentWeb, setContentWeb] = useState("")
   const [contentMobile, setContentMobile] = useState("")
+  const [styleClassesWeb, setStyleClassesWeb] = useState<StyleClassesRegistry>({})
+  const [styleClassesMobile, setStyleClassesMobile] = useState<StyleClassesRegistry>({})
   const [translateWeb, setTranslateWeb] = useState<TranslationsByLocale>(
     createEmptyTranslations(),
   )
@@ -131,8 +109,12 @@ export const BuilderPage = () => {
   useEffect(() => {
     if (!pageLoadSuccess || !pageResponse?.data) return
     const page = pageResponse.data
+    const webContent = parsePageCraftContent(page.content ?? "")
+    const mobileContent = parsePageCraftContent(page.content_mobile ?? "")
     setContentWeb(page.content ?? "")
     setContentMobile(page.content_mobile ?? "")
+    setStyleClassesWeb(webContent.styleClasses)
+    setStyleClassesMobile(mobileContent.styleClasses)
     // --- TODO времено, пока храним перевод в локал сторалд, до тех пор пока сервер не предоставит поля для сохранения
     const stored = loadStoredTranslations(page.id)
     const apiTranslateWeb = normalizeTranslations(page.translate)
@@ -227,10 +209,13 @@ export const BuilderPage = () => {
     [collections, collectionItemsByKey, setCollectionItems],
   )
 
+  const styleClasses = mode === MODE_TYPE.WEB ? styleClassesWeb : styleClassesMobile
+  const setStyleClasses = mode === MODE_TYPE.WEB ? setStyleClassesWeb : setStyleClassesMobile
+
   const initialContent = useMemo(() => {
     if (!loaded) return null
     const raw = mode === MODE_TYPE.WEB ? contentWeb : contentMobile
-    return parseContent(raw)
+    return parsePageCraftContent(raw).nodes
   }, [loaded, mode, contentWeb, contentMobile])
 
   const templatePreviewItem = useMemo(() => {
@@ -296,6 +281,7 @@ export const BuilderPage = () => {
           Image: CraftImage,
         }}
       >
+        <StyleClassProvider classes={styleClasses} setClasses={setStyleClasses}>
         <CraftInlineSettingsBridgeProvider>
         <CraftGridManualEditBridgeProvider>
         <RightPanelContext.Provider
@@ -368,6 +354,7 @@ export const BuilderPage = () => {
         </RightPanelContext.Provider>
         </CraftGridManualEditBridgeProvider>
         </CraftInlineSettingsBridgeProvider>
+        </StyleClassProvider>
       </Editor>
       </PreviewViewportContext.Provider>
     </BuilderModeContext.Provider>

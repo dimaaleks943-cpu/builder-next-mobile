@@ -14,6 +14,7 @@ import { PageType, type IContentItem } from "../../../api/extranet"
 import { ContentListDataContext } from "../context/ContentListDataContext.tsx"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
 import { deleteCraftNode } from "../../../utils/craftDeleteNode.ts"
+import { useStyleClassContext } from "../context/StyleClassContext.tsx"
 import { UpdateIcon } from "../../../icons/UpdateIcon"
 import { MonitorIcon } from "../../../icons/MonitorIcon.tsx";
 import { TabletIcon } from "../../../icons/TabletIcon.tsx";
@@ -45,6 +46,7 @@ export const BuilderCanvas = ({
   onPreviewViewportChange,
 }: BuilderCanvasProps) => {
   const { actions, query } = useEditor()
+  const { pruneUnusedClasses } = useStyleClassContext()
   const modeContext = useBuilderModeContext()
   const isRn = modeContext?.mode === MODE_TYPE.RN
   const [customPreviewWidth, setCustomPreviewWidth] = useState<number | null>(null)
@@ -191,6 +193,7 @@ export const BuilderCanvas = ({
     e.preventDefault()
     e.stopPropagation()
     deleteCraftNode(actions, query, selectedId)
+    pruneUnusedClasses()
   }
 
   const handleUndo = () => {

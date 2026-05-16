@@ -2,11 +2,7 @@ import { Box, Typography } from "@mui/material"
 import type { ChangeEvent } from "react"
 import { COLORS } from "../../../../../theme/colors.ts"
 import { CraftSettingsSelect } from "../../../components/craftSettingsControls/CraftSettingsSelect.tsx"
-import {
-  getResponsiveStyleProp,
-  setResponsiveStyleProp,
-} from "../../../responsiveStyle.ts"
-import type { PreviewViewport } from "../../../builder.enum.ts"
+import { useStyleEditing } from "../../../hooks/useStyleEditing.ts"
 import { BottomResetLabel } from "./BottomResetLabel.tsx"
 
 const WORD_BREAK_SELECT_OPTIONS = [
@@ -27,26 +23,10 @@ const WHITE_SPACE_SELECT_OPTIONS = [
 const WORD_BREAK_IDS = new Set(WORD_BREAK_SELECT_OPTIONS.map((o) => o.id))
 const WHITE_SPACE_IDS = new Set(WHITE_SPACE_SELECT_OPTIONS.map((o) => o.id))
 
-interface Props {
-  actions: {
-    setProp: (
-      id: string,
-      updater: (props: Record<string, unknown>) => void,
-    ) => void
-  };
-  selectedId: string;
-  selectedProps: Record<string, unknown>;
-  viewport: PreviewViewport;
-}
-
-export const TypographyBreakingRow = ({
-  actions,
-  selectedId,
-  selectedProps,
-  viewport,
-}: Props) => {
-  const wordBreakProp = getResponsiveStyleProp(selectedProps, "wordBreak", viewport)
-  const whiteSpaceProp = getResponsiveStyleProp(selectedProps, "whiteSpace", viewport)
+export const TypographyBreakingRow = () => {
+  const { getStyleProp, setStyleProp } = useStyleEditing()
+  const wordBreakProp = getStyleProp("wordBreak")
+  const whiteSpaceProp = getStyleProp("whiteSpace")
 
   const wordBreakStr =
     wordBreakProp !== undefined && wordBreakProp !== null
@@ -71,36 +51,20 @@ export const TypographyBreakingRow = ({
 
   const handleWordBreakChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const v = event.target.value
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      if (v === "normal") {
-        setResponsiveStyleProp(props, "wordBreak", undefined, viewport)
-        return
-      }
-      setResponsiveStyleProp(props, "wordBreak", v, viewport)
-    })
+    setStyleProp("wordBreak", v === "normal" ? undefined : v)
   }
 
   const resetWordBreak = () => {
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "wordBreak", undefined, viewport)
-    })
+    setStyleProp("wordBreak", undefined)
   }
 
   const handleWhiteSpaceChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const v = event.target.value
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      if (v === "normal") {
-        setResponsiveStyleProp(props, "whiteSpace", undefined, viewport)
-        return
-      }
-      setResponsiveStyleProp(props, "whiteSpace", v, viewport)
-    })
+    setStyleProp("whiteSpace", v === "normal" ? undefined : v)
   }
 
   const resetWhiteSpace = () => {
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(props, "whiteSpace", undefined, viewport)
-    })
+    setStyleProp("whiteSpace", undefined)
   }
 
   return (

@@ -9,17 +9,10 @@ import { useCollectionsContext } from "../context/CollectionsContext.tsx";
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts";
 import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts";
 import { SettingsAccordion } from "./components/SettingsAccordion/SettingsAccordion.tsx";
-import { usePreviewViewport } from "../context/PreviewViewportContext.tsx";
-import {
-  resolveResponsiveStyle,
-  setResponsiveStyleProp,
-  type ResponsiveStyle,
-} from "../responsiveStyle.ts";
+import { useStyleEditing } from "../hooks/useStyleEditing.ts";
 
 interface SelectedImageProps {
   src?: string;
-  width?: number;
-  height?: number;
   collectionField?: string | null;
 }
 
@@ -36,7 +29,7 @@ interface ImageSettingsFieldsProps {
 
 export const ImageSettingsFields = ({ asAccordion }: ImageSettingsFieldsProps) => {
   const { actions } = useEditor();
-  const viewport = usePreviewViewport();
+  const { getStyleProp, setStyleProp } = useStyleEditing();
   const { selectedId, selectedProps, parentCollectionKey } = useEditor(
     (state, query): EditorSelection => {
       const [id] = Array.from(state.events.selected);
@@ -66,17 +59,12 @@ export const ImageSettingsFields = ({ asAccordion }: ImageSettingsFieldsProps) =
       }
 
       const raw = node?.data.props as Record<string, unknown> | undefined;
-      const resolved = resolveResponsiveStyle(raw?.style as ResponsiveStyle | undefined, viewport);
-      const width = resolved.width as number | undefined;
-      const height = resolved.height as number | undefined;
 
       return {
         selectedId: id ?? null,
         selectedProps: raw
           ? {
               src: raw.src as string | undefined,
-              width,
-              height,
               collectionField: (raw.collectionField as string | null | undefined) ?? null,
             }
           : null,
@@ -85,37 +73,36 @@ export const ImageSettingsFields = ({ asAccordion }: ImageSettingsFieldsProps) =
     },
   );
 
+  const widthFromStyle = getStyleProp("width") as number | undefined;
+  const heightFromStyle = getStyleProp("height") as number | undefined;
+
   const contentListData = useContentListData();
   const { templatePageCollectionKey } = useBuilderTemplatePage();
   const collectionsContext = useCollectionsContext();
 
   const [urlDraft, setUrlDraft] = useState<string>(selectedProps?.src ?? "");
   const [widthMode, setWidthMode] = useState<"auto" | "px">(
-    typeof selectedProps?.width === "number" ? "px" : "auto",
+    typeof widthFromStyle === "number" ? "px" : "auto",
   );
   const [widthValue, setWidthValue] = useState<string>(
-    typeof selectedProps?.width === "number" ? String(selectedProps.width) : "",
+    typeof widthFromStyle === "number" ? String(widthFromStyle) : "",
   );
   const [heightMode, setHeightMode] = useState<"auto" | "px">(
-    typeof selectedProps?.height === "number" ? "px" : "auto",
+    typeof heightFromStyle === "number" ? "px" : "auto",
   );
   const [heightValue, setHeightValue] = useState<string>(
-    typeof selectedProps?.height === "number" ? String(selectedProps.height) : "",
+    typeof heightFromStyle === "number" ? String(heightFromStyle) : "",
   );
 
   // Синхронизируем локальный стейт с актуальными пропсами,
   // чтобы значения совпадали между модалкой и правым табом.
   useEffect(() => {
     setUrlDraft(selectedProps?.src ?? "");
-    setWidthMode(typeof selectedProps?.width === "number" ? "px" : "auto");
-    setWidthValue(
-      typeof selectedProps?.width === "number" ? String(selectedProps.width) : "",
-    );
-    setHeightMode(typeof selectedProps?.height === "number" ? "px" : "auto");
-    setHeightValue(
-      typeof selectedProps?.height === "number" ? String(selectedProps.height) : "",
-    );
-  }, [selectedProps?.src, selectedProps?.width, selectedProps?.height]);
+    setWidthMode(typeof widthFromStyle === "number" ? "px" : "auto");
+    setWidthValue(typeof widthFromStyle === "number" ? String(widthFromStyle) : "");
+    setHeightMode(typeof heightFromStyle === "number" ? "px" : "auto");
+    setHeightValue(typeof heightFromStyle === "number" ? String(heightFromStyle) : "");
+  }, [selectedProps?.src, widthFromStyle, heightFromStyle]);
 
   const effectiveCollectionKey =
     contentListData?.collectionKey ??
@@ -183,65 +170,37 @@ export const ImageSettingsFields = ({ asAccordion }: ImageSettingsFieldsProps) =
   const handleWidthModeChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const mode = event.target.value as "auto" | "px";
     setWidthMode(mode);
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      if (mode === "auto") {
-        setResponsiveStyleProp(props, "width", undefined, viewport);
-      } else {
-        const parsed = parseInt(widthValue || "0", 10);
-        setResponsiveStyleProp(
-          props,
-          "width",
-          Number.isNaN(parsed) ? undefined : parsed,
-          viewport,
-        );
-      }
-    });
+    if (mode === "auto") {
+      setStyleProp("width", undefined);
+    } else {
+      const parsed = parseInt(widthValue || "0", 10);
+      setStyleProp("width", Number.isNaN(parsed) ? undefined : parsed);
+    }
   };
 
   const handleWidthValueChange = (event: ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     setWidthValue(value);
     const parsed = parseInt(value, 10);
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(
-        props,
-        "width",
-        Number.isNaN(parsed) ? undefined : parsed,
-        viewport,
-      );
-    });
+    setStyleProp("width", Number.isNaN(parsed) ? undefined : parsed);
   };
 
   const handleHeightModeChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const mode = event.target.value as "auto" | "px";
     setHeightMode(mode);
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      if (mode === "auto") {
-        setResponsiveStyleProp(props, "height", undefined, viewport);
-      } else {
-        const parsed = parseInt(heightValue || "0", 10);
-        setResponsiveStyleProp(
-          props,
-          "height",
-          Number.isNaN(parsed) ? undefined : parsed,
-          viewport,
-        );
-      }
-    });
+    if (mode === "auto") {
+      setStyleProp("height", undefined);
+    } else {
+      const parsed = parseInt(heightValue || "0", 10);
+      setStyleProp("height", Number.isNaN(parsed) ? undefined : parsed);
+    }
   };
 
   const handleHeightValueChange = (event: ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     setHeightValue(value);
     const parsed = parseInt(value, 10);
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(
-        props,
-        "height",
-        Number.isNaN(parsed) ? undefined : parsed,
-        viewport,
-      );
-    });
+    setStyleProp("height", Number.isNaN(parsed) ? undefined : parsed);
   };
 
   const content = (

@@ -6,7 +6,8 @@ import { COLORS } from "../../../theme/colors"
 import { useUpdateExtranetPageMutation } from "../../../store/extranetApi"
 import { type BuilderMode, useBuilderModeContext, } from "../context/BuilderModeContext"
 import { MODE_TYPE, PreviewViewport } from "../builder.enum"
-import { encodeSerializedNodesStyleProps } from "../../../utils/stylePropsCodec"
+import { stringifyPageCraftContent } from "../utils/craftPageContent.ts"
+import { useStyleClassContext } from "../context/StyleClassContext.tsx"
 import { compactContentListCells } from "../../../utils/compactContentListCells"
 import { normalizeItemPathPrefix } from "../../../utils/normalizeItemPathPrefix.ts"
 import { computePageContentTypes } from "../../../utils/computePageContentTypes"
@@ -92,6 +93,7 @@ export const BuilderHeader = ({
   const navigate = useNavigate()
   const { actions, query } = useEditor()
   const modeContext = useBuilderModeContext()
+  const { classes: styleClasses } = useStyleClassContext()
   const [updateExtranetPage, { isLoading: isSaving }] =
     useUpdateExtranetPageMutation()
   const [langMenuAnchorEl, setLangMenuAnchorEl] = useState<null | HTMLElement>(null)
@@ -114,11 +116,18 @@ export const BuilderHeader = ({
     actions.clearEvents()
   }
 
-  const handleModeChange = (nextMode: BuilderMode) => {
-    if (!modeContext || modeContext.mode === nextMode) return
+  const buildPageContentJson = () => {
     const serialized = query.getSerializedNodes()
     const compacted = compactContentListCells(serialized)
-    const json = JSON.stringify(encodeSerializedNodesStyleProps(compacted))
+    return stringifyPageCraftContent({
+      nodes: compacted,
+      styleClasses,
+    })
+  }
+
+  const handleModeChange = (nextMode: BuilderMode) => {
+    if (!modeContext || modeContext.mode === nextMode) return
+    const json = buildPageContentJson()
     if (nextMode === MODE_TYPE.RN) {
       modeContext.setContentWeb(json)
       modeContext.setMode(MODE_TYPE.RN)
@@ -148,9 +157,7 @@ export const BuilderHeader = ({
       return
     }
 
-    const serialized = query.getSerializedNodes()
-    const compacted = compactContentListCells(serialized)
-    const currentJson = JSON.stringify(encodeSerializedNodesStyleProps(compacted))
+    const currentJson = buildPageContentJson()
 
     if (modeContext.mode === MODE_TYPE.WEB) {
       modeContext.setContentWeb(currentJson)

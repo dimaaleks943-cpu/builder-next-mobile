@@ -26,7 +26,17 @@ export const extractContentListTypeIdsFromCraftContent = (
 
   let nodes: SerializedNodes
   try {
-    nodes = JSON.parse(content) as SerializedNodes
+    const parsed = JSON.parse(content) as unknown
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      !Array.isArray(parsed) &&
+      "nodes" in parsed
+    ) {
+      nodes = (parsed as { nodes: SerializedNodes }).nodes
+    } else {
+      nodes = parsed as SerializedNodes
+    }
   } catch {
     return []
   }

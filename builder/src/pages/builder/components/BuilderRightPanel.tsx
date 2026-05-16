@@ -22,6 +22,7 @@ import { useRightPanelContext } from "../context/RightPanelContext.tsx"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
 import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts"
 import { CraftSettingsInput } from "./craftSettingsControls/CraftSettingsInput.tsx"
+import { StyleSelector } from "./StyleSelector/StyleSelector.tsx"
 
 type Props = {
   isTemplatePage?: boolean
@@ -138,6 +139,7 @@ export const BuilderRightPanel = ({
                   overflowY: "auto",
                 }}
               >
+                <StyleSelector />
                 <LayoutAccordion />
                 <PositioningAccordion />
                 {selectedType !== CRAFT_DISPLAY_NAME.Body && <SizeAccordion />}

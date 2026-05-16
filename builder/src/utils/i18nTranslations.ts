@@ -70,7 +70,17 @@ export const resolveTranslationText = (
 const parseSerializedNodes = (raw: string): SerializedNodes | null => {
   if (!raw.trim()) return null
   try {
-    return JSON.parse(raw) as SerializedNodes
+    const parsed = JSON.parse(raw) as unknown
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      !Array.isArray(parsed) &&
+      "nodes" in parsed &&
+      (parsed as { nodes: SerializedNodes }).nodes
+    ) {
+      return (parsed as { nodes: SerializedNodes }).nodes
+    }
+    return parsed as SerializedNodes
   } catch {
     return null
   }
@@ -95,7 +105,7 @@ const collectUsedI18nKeysFromNodes = (nodes: SerializedNodes): Set<string> => {
     if (
       i18nKey &&
       !collectionField &&
-      TEXTUAL_NODE_NAMES.has(displayName)
+      TEXTUAL_NODE_NAMES.has(displayName as "CraftText" | "CraftLinkText")
     ) {
       keys.add(i18nKey)
     }

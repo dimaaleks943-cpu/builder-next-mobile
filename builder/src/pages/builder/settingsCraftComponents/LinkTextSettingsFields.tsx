@@ -16,11 +16,11 @@ import {
 } from "../../../store/extranetApi.ts";
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts";
 import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts";
-import { EMPTY_SERIALIZED_NODES } from "../BuilderPage.tsx";
 import { normalizeItemPathPrefix } from "../../../utils/normalizeItemPathPrefix.ts";
 import { PageType } from "../../../api/extranet.ts";
 import { computePageContentTypes } from "../../../utils/computePageContentTypes.ts";
 import { createEmptyTranslations } from "../../../utils/i18nTranslations.ts";
+import { EMPTY_SERIALIZED_NODES } from "../utils/craftPageContent.ts";
 
 type LinkMode = "url" | "page" | "collectionItemPage";
 
