@@ -9,7 +9,7 @@ export enum ResponsiveBranch {
 }
 
 type StyleRecord = Record<string, unknown>
-type ResponsiveStyle = Partial<Record<ResponsiveBranch, StyleRecord>>
+export type ResponsiveStyle = Partial<Record<ResponsiveBranch, StyleRecord>>
 
 export const BRANCHES: ResponsiveBranch[] = [
   ResponsiveBranch.DESKTOP,

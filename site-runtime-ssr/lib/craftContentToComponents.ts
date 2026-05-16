@@ -1,34 +1,32 @@
 import type { ComponentNode } from "./interface"
+import { parsePageCraftContent } from "./pageCraftContent"
 import {
-  decodeSerializedNodesStyleProps,
   decodeStyleProps,
 } from "./stylePropsCodec"
+import type { StyleClassesRegistry } from "./styleClasses/types"
+import { propsForRuntime } from "./styleClasses/resolveNodeStyle"
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === "object" && !Array.isArray(value)
 
-// Сериализованный формат дерева Craft.js, который мы сохраняем в поле content
 type SerializedNodes = Record<
   string,
   {
-    type: any
+    type: unknown
     isCanvas: boolean
-    props: Record<string, any>
+    props: Record<string, unknown>
     displayName?: string
     hidden?: boolean
     nodes?: string[]
     linkedNodes?: Record<string, string>
     parent?: string
-    custom?: Record<string, any>
+    custom?: Record<string, unknown>
   }
 >
 
-// Преобразуем тип Craft-узла в строковое имя компонента рантайма (Body, Block, Text, LinkText)
-// В сериализованном JSON тип всегда представлен как строка или как объект с resolvedName/displayName.
-const resolveTypeName = (type: any, nodeId?: string): string => {
+const resolveTypeName = (type: unknown, nodeId?: string): string => {
   if (!type) {
     if (nodeId) {
-      // eslint-disable-next-line no-console
       console.warn(
         `[craftContentToComponents] resolveTypeName: type is null/undefined for node ${nodeId}`,
       )
@@ -64,28 +62,22 @@ const toStableNodeClassName = (nodeId: string): string => {
   return normalized ? `cn-${normalized}` : "cn-node"
 }
 
-// Рекурсивно строим дерево ComponentNode из сериализованных узлов Craft, начиная с указанного id
 const buildNodeTree = (
   nodes: SerializedNodes,
   id: string,
+  styleClasses: StyleClassesRegistry,
 ): ComponentNode | null => {
   const node = nodes[id]
   if (!node) return null
 
-  // Логируем, если type не строка и не объект с resolvedName/displayName
   if (typeof node.type !== "string" && typeof node.type !== "object" && typeof node.type !== "undefined") {
     console.warn(`[craftContentToComponents] Unexpected type for node ${id}:`, typeof node.type, node.type)
   }
 
   const componentType = resolveTypeName(node.type, id)
 
-  // Для ContentList берём только первую ячейку (шаблон) из всех ячеек.
-  // В сериализованном дереве Craft.js дети ContentList — это ячейки (ContentListCell),
-  // каждая из которых содержит своих детей-шаблонов.
   if (componentType === "ContentList") {
     const linkedNodes = node.linkedNodes ?? {}
-    // Дети ContentList — ячейки; могут быть в node.nodes или только в linkedNodes.
-    // В "сжатом" формате storage мы ожидаем ровно одну ячейку-шаблон: `${contentListId}-cell-0`.
     const pickTemplateCellId = (): string | null => {
       const dataNodes = node.nodes ?? []
       if (dataNodes.length > 0) return dataNodes[0]
@@ -97,7 +89,6 @@ const buildNodeTree = (
       if (linkedNodes[preferredKey]) return linkedNodes[preferredKey]
       if (keys.includes(preferredKey)) return linkedNodes[preferredKey] || preferredKey
 
-      // Фоллбэк: берём любую ячейку, но стараемся не спутать с не-cell ссылками.
       const cellKeys = keys.filter((k) => k.includes("cell"))
       const candidateKey = (cellKeys.length > 0 ? cellKeys : keys)[0]
       return linkedNodes[candidateKey] || candidateKey
@@ -109,7 +100,12 @@ const buildNodeTree = (
         nodeId: id,
         className: toStableNodeClassName(id),
         type: "ContentList",
-        props: node.props ?? {},
+        props: propsForRuntime(
+          (node.props ?? {}) as Record<string, unknown>,
+          "ContentList",
+          node.displayName,
+          styleClasses,
+        ),
       }
     }
     const cellNode = nodes[actualFirstCellId]
@@ -119,7 +115,12 @@ const buildNodeTree = (
         nodeId: id,
         className: toStableNodeClassName(id),
         type: "ContentList",
-        props: node.props ?? {},
+        props: propsForRuntime(
+          (node.props ?? {}) as Record<string, unknown>,
+          "ContentList",
+          node.displayName,
+          styleClasses,
+        ),
       }
     }
 
@@ -138,11 +139,10 @@ const buildNodeTree = (
       const ids = childIds.length ? childIds : Object.keys(ln)
       for (const key of ids) {
         const actualId = ln[key] || key
-        const child = buildNodeTree(nodes, actualId)
+        const child = buildNodeTree(nodes, actualId, styleClasses)
         if (child) {
           templateChildren.push(child)
         } else {
-          // Узел не рендерится (например ContentListCell) — разворачиваем его детей
           collectTemplateFromNode(actualId)
         }
       }
@@ -150,7 +150,7 @@ const buildNodeTree = (
 
     for (const templateChildId of templateChildIds) {
       const actualChildId = cellLinkedNodes[templateChildId] || templateChildId
-      const child = buildNodeTree(nodes, actualChildId)
+      const child = buildNodeTree(nodes, actualChildId, styleClasses)
       if (child) {
         templateChildren.push(child)
       } else {
@@ -158,22 +158,26 @@ const buildNodeTree = (
       }
     }
 
-    // Гарантируем, что все children имеют строковый type
     const safeChildren = templateChildren.map((child) => ({
-      // На этом этапе buildNodeTree уже нормализовал type в строку,
-      // просто явно приводим к string для TypeScript.
       ...child,
       type: String(child.type),
     }))
 
-    // Полный responsive style шаблонной ячейки (ContentListCell): только ветки `props.style`
-    // (`desktop`, `tablet_landscape`, … — см. BRANCHES в responsiveCss), без плоских стилевых ключей на корне.
-    const normalizedCell = decodeStyleProps(
-      (cellNode.props ?? {}) as Record<string, unknown>,
+    const normalizedCell = decodeStyleProps((cellNode.props ?? {}) as Record<string, unknown>)
+    const cellRuntimeProps = propsForRuntime(
+      normalizedCell,
+      "ContentListCell",
+      cellNode.displayName,
+      styleClasses,
     )
-    const cellStyle = isRecord(normalizedCell.style) ? normalizedCell.style : {}
+    const cellStyle = isRecord(cellRuntimeProps.style) ? cellRuntimeProps.style : {}
     const contentListProps = {
-      ...(node.props ?? {}),
+      ...propsForRuntime(
+        (node.props ?? {}) as Record<string, unknown>,
+        "ContentList",
+        node.displayName,
+        styleClasses,
+      ),
       cellClassName: toStableNodeClassName(actualFirstCellId),
       cellStyle,
     }
@@ -187,21 +191,17 @@ const buildNodeTree = (
     }
   }
 
-  // ContentListCell - это просто обёртка в builder для редактирования, в runtime мы её не рендерим
-  // Её дети обрабатываются напрямую в ContentList при построении шаблона
   if (componentType === "ContentListCell") {
     return null
   }
 
-  // Для остальных компонентов строим дерево как обычно
   const childrenIds = node.nodes ?? []
   const children: ComponentNode[] = []
 
   for (const childId of childrenIds) {
-    // Проверяем linkedNodes для правильного разрешения id
     const linkedNodes = node.linkedNodes ?? {}
     const actualChildId = linkedNodes[childId] || childId
-    const child = buildNodeTree(nodes, actualChildId)
+    const child = buildNodeTree(nodes, actualChildId, styleClasses)
     if (child) {
       children.push(child)
     }
@@ -210,9 +210,13 @@ const buildNodeTree = (
   const component: ComponentNode = {
     nodeId: id,
     className: toStableNodeClassName(id),
-    // resolveTypeName всегда возвращает строку, поэтому здесь просто используем её
     type: String(componentType),
-    props: node.props ?? {},
+    props: propsForRuntime(
+      (node.props ?? {}) as Record<string, unknown>,
+      componentType,
+      node.displayName,
+      styleClasses,
+    ),
   }
 
   if (children.length > 0) {
@@ -222,36 +226,26 @@ const buildNodeTree = (
   return component
 }
 
-// Главная функция: берём content из конструктора (строка JSON из Craft.js)
-// и превращаем его в массив ComponentNode, который умеет рендерить site-runtime-ssr
 export const craftContentToComponents = (
   content: string,
 ): ComponentNode[] => {
   if (!content) return []
 
-  let nodes: SerializedNodes
-  try {
-    nodes = JSON.parse(content) as SerializedNodes
-  } catch (error) {
-    console.error("Не удалось распарсить Craft content как JSON:", error)
-    return []
-  }
+  const { nodes, styleClasses } = parsePageCraftContent(content)
 
-  nodes = decodeSerializedNodesStyleProps(nodes)
-
-  const root = nodes.ROOT
+  const root = nodes.ROOT as SerializedNodes[string] | undefined
   if (!root || !Array.isArray(root.nodes)) {
     console.error("Некорректный Craft content: нет ROOT.nodes")
     return []
   }
 
+  const serializedNodes = nodes as SerializedNodes
   const result: ComponentNode[] = []
   const rootLinkedNodes = root.linkedNodes ?? {}
 
-  // Берём детей ROOT и строим из них верхний уровень страницы (разрешаем linkedNodes)
   for (const childKey of root.nodes) {
     const actualChildId = rootLinkedNodes[childKey] || childKey
-    const child = buildNodeTree(nodes, actualChildId)
+    const child = buildNodeTree(serializedNodes, actualChildId, styleClasses)
     if (child) {
       result.push(child)
     }
@@ -270,7 +264,12 @@ export const craftContentToComponents = (
         nodeId: "ROOT",
         className: toStableNodeClassName("ROOT"),
         type: "Body",
-        props: root.props ?? {},
+        props: propsForRuntime(
+          (root.props ?? {}) as Record<string, unknown>,
+          "Body",
+          root.displayName,
+          styleClasses,
+        ),
         children: result,
       },
     ]
@@ -278,4 +277,3 @@ export const craftContentToComponents = (
 
   return result
 }
-
