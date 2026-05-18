@@ -72,7 +72,7 @@ export function renderComponent(
     {
       ...node.props,
       key: node.nodeId,
-      className: node.className,
+      ...(node.className ? { className: node.className } : {}),
       "data-craft-node-id": node.nodeId,
     },
     children,

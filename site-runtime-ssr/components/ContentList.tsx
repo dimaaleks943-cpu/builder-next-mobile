@@ -21,12 +21,13 @@ interface ContentListProps {
   selectedSource?: string
   itemsPerRow?: number
   /**
-   * Класс обёртки ячейки (первая ContentListCell в Craft).
-   * Визуальные стили ячейки — в `#craft-responsive-css` из `cellStyle` на узле ContentList.
+   * Классы обёртки ячейки (slug-ы styleClasses первой ContentListCell).
+   * Стили ячейки — в `#craft-css` (registry + orphan attribute selectors).
    */
   cellClassName?: string
-  /** Зарезервировано под будущий UI; в рендере пока не используется */
- children?: React.ReactNode
+  /** Craft node id шаблонной ячейки для `data-craft-node-id` на обёртке. */
+  cellNodeId?: string
+  children?: React.ReactNode
 }
 
 /**
@@ -48,6 +49,7 @@ export const ContentList = ({
   selectedSource = "",
   itemsPerRow: itemsPerRowProp,
   cellClassName,
+  cellNodeId,
   children: childrenProp,
 }: ContentListProps) => {
   const itemsPerRow: number = itemsPerRowProp ?? 1
@@ -259,6 +261,7 @@ export const ContentList = ({
                   collectionKey={selectedSource}
                   itemsPerRow={itemsPerRow}
                   cellClassName={cellClassName}
+                  cellNodeId={cellNodeId}
                 >
                   {templateChildren}
                 </ContentListItem>
@@ -293,24 +296,27 @@ interface ContentListItemProps {
   collectionKey: string | null
   itemsPerRow: number
   cellClassName?: string
+  cellNodeId?: string
   children?: React.ReactNode
 }
 
 /**
  * Одна ячейка списка коллекции.
- * Визуал ячейки — из `cellClassName` + CSS из `cellStyle` (см. buildResponsiveCss).
+ * Визуал ячейки — из `cellClassName` + CSS registry / orphan selectors.
  */
 const ContentListItem = ({
   itemData,
   collectionKey,
   itemsPerRow,
   cellClassName,
+  cellNodeId,
   children,
 }: ContentListItemProps) => {
   return (
     <ContentDataProvider collectionKey={collectionKey} itemData={itemData}>
       <div
         className={cellClassName}
+        data-craft-node-id={cellNodeId}
         style={{
           flex: itemsPerRow === 1 ? "none" : 1,
           minWidth: 0,

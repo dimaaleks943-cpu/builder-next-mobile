@@ -1,10 +1,14 @@
 import type { ResponsiveStyle } from "../responsiveCss"
 
+export type StyleClassKind = "base" | "combo"
+
 export type StyleClassDefinition = {
   id: string
   name: string
   resolvedName: string
   style: ResponsiveStyle
+  kind?: StyleClassKind
+  comboMemberIds?: string[]
 }
 
 export type StyleClassesRegistry = Record<string, StyleClassDefinition>

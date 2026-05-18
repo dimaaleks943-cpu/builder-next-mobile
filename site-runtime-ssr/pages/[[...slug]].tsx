@@ -12,6 +12,7 @@ import {
   type SitePage,
 } from "@/lib/sitePages"
 import { craftContentToComponents } from "@/lib/craftContentToComponents"
+import { buildCraftPageCss } from "@/lib/styleClasses/buildCraftPageCss"
 import { fetchContentItemBySlug, fetchContentItems } from "@/lib/collectionsApi"
 import { fetchContentCategoryBySlug } from "@/lib/categoriesApi"
 import {
@@ -45,7 +46,6 @@ import {
   normalizeItemPathPrefix,
   resolveTemplatePageForSlug,
 } from "@/lib/templateRoute"
-import { buildResponsiveCss } from "@/lib/responsiveCss"
 
 const EMPTY_CATEGORY_SCOPE: Record<string, string | null> = {}
 
@@ -72,6 +72,7 @@ interface PageProps {
   pageBaseSlug: string
   /** Хвост категории из URL между витриной и итемом (`europe` для `/gid/europe/luvr`). */
   categorySlugTrailFromUrl: string | null
+  craftCss: string
 }
 
 function isContentSitePage(page: SitePage): boolean {
@@ -119,11 +120,19 @@ function findPreviewPageByOriginalCode(
     ) ?? originalPage
   )
 }
-
-function resolveSystemLayoutComponents(
-  pages: SitePage[],
-  query: ParsedUrlQuery,
-): { headerComponents: ComponentNode[]; footerComponents: ComponentNode[] } {
+/**
+ * собирает header/footer для сайта:
+ *
+ * Ищет страницы типа SYSTEM_COMPONENT с code `header` / `footer`.
+ * Версию можно переопределить query-параметром (`?header=…`, `?footer=…`) —
+ * версия по query.header/query.footer, иначе оригинал
+ */
+function resolveSystemLayoutComponents(pages: SitePage[], query: ParsedUrlQuery): {
+  headerComponents: ComponentNode[]
+  footerComponents: ComponentNode[]
+  headerCraft: ReturnType<typeof craftContentToComponents>
+  footerCraft: ReturnType<typeof craftContentToComponents>
+} {
   const pickByCode = (code: "header" | "footer"): SitePage | undefined => {
     const requestedVersion = readQueryString(query[code])
     return (
@@ -141,14 +150,28 @@ function resolveSystemLayoutComponents(
 
   const headerPage = pickByCode("header")
   const footerPage = pickByCode("footer")
+  const headerCraft = headerPage?.content
+    ? craftContentToComponents(headerPage.content)
+    : {
+        components: [],
+        styleClasses: {},
+        orphanStyleNodes: [],
+        stackedStyleClassIds: [],
+      }
+  const footerCraft = footerPage?.content
+    ? craftContentToComponents(footerPage.content)
+    : {
+        components: [],
+        styleClasses: {},
+        orphanStyleNodes: [],
+        stackedStyleClassIds: [],
+      }
 
   return {
-    headerComponents: headerPage
-      ? craftContentToComponents(headerPage.content)
-      : [],
-    footerComponents: footerPage
-      ? craftContentToComponents(footerPage.content)
-      : [],
+    headerComponents: headerCraft.components,
+    footerComponents: footerCraft.components,
+    headerCraft,
+    footerCraft,
   }
 }
 
@@ -241,10 +264,12 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
     return { notFound: true }
   }
 
-  const { headerComponents, footerComponents } = resolveSystemLayoutComponents(
-    pages,
-    query,
-  )
+  const {
+    headerComponents,
+    footerComponents,
+    headerCraft,
+    footerCraft,
+  } = resolveSystemLayoutComponents(pages, query)
 
   const { baseSlug, tailSlug } = splitBaseSlugAndTail(slugPathWithoutLocale)
 
@@ -263,8 +288,8 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       return { notFound: true }
     }
 
-    const components = craftContentToComponents(renderPageCandidate.content)
-    if (components.length === 0) {
+    const pageCraft = craftContentToComponents(renderPageCandidate.content)
+    if (pageCraft.components.length === 0) {
       return { notFound: true }
     }
 
@@ -284,7 +309,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
         slug: slugPathWithoutLocale,
         locale,
         pageTranslate,
-        components,
+        components: pageCraft.components,
         collectionItemsByTypeId,
         sitePages: pages,
         headerComponents,
@@ -294,6 +319,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
         initialSelectedCategorySlugByScope,
         pageBaseSlug,
         categorySlugTrailFromUrl: null,
+        craftCss: buildCraftPageCss(headerCraft, pageCraft, footerCraft),
       },
     }
   }
@@ -329,8 +355,8 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       return { notFound: true }
     }
 
-    const components = craftContentToComponents(renderPageCandidate.content)
-    if (components.length === 0) {
+    const pageCraft = craftContentToComponents(renderPageCandidate.content)
+    if (pageCraft.components.length === 0) {
       return { notFound: true }
     }
 
@@ -391,7 +417,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
         slug: slugPathWithoutLocale,
         locale,
         pageTranslate,
-        components,
+        components: pageCraft.components,
         collectionItemsByTypeId,
         sitePages: pages,
         headerComponents,
@@ -401,6 +427,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
         initialSelectedCategorySlugByScope: EMPTY_CATEGORY_SCOPE,
         pageBaseSlug,
         categorySlugTrailFromUrl,
+        craftCss: buildCraftPageCss(headerCraft, pageCraft, footerCraft),
       },
     }
   }
@@ -424,8 +451,8 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
     return { notFound: true }
   }
 
-  const components = craftContentToComponents(renderPageCandidate.content)
-  if (components.length === 0) {
+  const pageCraft = craftContentToComponents(renderPageCandidate.content)
+  if (pageCraft.components.length === 0) {
     return { notFound: true }
   }
 
@@ -450,7 +477,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       slug: slugPathWithoutLocale,
       locale,
       pageTranslate,
-      components,
+      components: pageCraft.components,
       collectionItemsByTypeId,
       sitePages: pages,
       headerComponents,
@@ -460,6 +487,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       initialSelectedCategorySlugByScope,
       pageBaseSlug,
       categorySlugTrailFromUrl: categorySlugForState,
+      craftCss: buildCraftPageCss(headerCraft, pageCraft, footerCraft),
     },
   }
 }
@@ -479,6 +507,7 @@ export default function Page({
   initialSelectedCategorySlugByScope,
   pageBaseSlug,
   categorySlugTrailFromUrl,
+  craftCss,
 }: PageProps) {
   const publicPath = prefixPublicPath(slug, locale)
   const ogUrlSuffix = publicPath === "/" ? "" : publicPath
@@ -488,11 +517,6 @@ export default function Page({
       {renderPage(components)}
     </main>
   )
-  const responsiveCss = buildResponsiveCss([
-    ...headerComponents,
-    ...components,
-    ...footerComponents,
-  ])
 
   const inner =
     templateContentData ? (
@@ -512,11 +536,11 @@ export default function Page({
         <title>{`Страница ${slug} — ${domain}`}</title>
         <meta property="og:title" content={`Страница ${slug} — ${domain}`} />
         <meta property="og:url" content={`https://${domain}${ogUrlSuffix}`} />
-        {responsiveCss ? (
+        {craftCss ? (
           <style
-            id="craft-responsive-css"
+            id="craft-css"
             // eslint-disable-next-line react/no-danger
-            dangerouslySetInnerHTML={{ __html: responsiveCss }}
+            dangerouslySetInnerHTML={{ __html: craftCss }}
           />
         ) : null}
       </Head>

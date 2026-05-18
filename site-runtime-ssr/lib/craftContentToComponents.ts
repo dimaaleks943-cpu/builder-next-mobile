@@ -1,13 +1,23 @@
 import type { ComponentNode } from "./interface"
 import { parsePageCraftContent } from "./pageCraftContent"
+import { decodeStyleProps } from "./stylePropsCodec"
+import type { OrphanStyleNode } from "./styleClasses/buildOrphanNodeCss"
+import { buildComboClassId } from "./styleClasses/comboClassId"
+import { classNameFromStyleClassIds } from "./styleClasses/styleClassSlug"
+import { normalizeStyleClassIds } from "./styleClasses/styleClassIds"
 import {
-  decodeStyleProps,
-} from "./stylePropsCodec"
+  propsForRuntimeSsr,
+  resolveSerializedNodeStyle,
+} from "./styleClasses/resolveNodeStyle"
 import type { StyleClassesRegistry } from "./styleClasses/types"
-import { propsForRuntime } from "./styleClasses/resolveNodeStyle"
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  !!value && typeof value === "object" && !Array.isArray(value)
+export type CraftContentParseResult = {
+  components: ComponentNode[]
+  styleClasses: StyleClassesRegistry
+  orphanStyleNodes: OrphanStyleNode[]
+  /** Unique `styleClassIds` stacks (length >= 2) for compound CSS selectors. */
+  stackedStyleClassIds: string[][]
+}
 
 type SerializedNodes = Record<
   string,
@@ -51,21 +61,52 @@ const resolveTypeName = (type: unknown, nodeId?: string): string => {
   return "div"
 }
 
-const toStableNodeClassName = (nodeId: string): string => {
-  const normalized = nodeId
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]/g, "-")
-    .replace(/-{2,}/g, "-")
-    .replace(/^-+|-+$/g, "")
+const recordStackedStyleClassIds = (
+  styleClassIds: readonly string[],
+  collector: Map<string, string[]>,
+): void => {
+  if (styleClassIds.length < 2) return
+  const key = buildComboClassId(styleClassIds)
+  if (!collector.has(key)) {
+    collector.set(key, [...styleClassIds])
+  }
+}
 
-  return normalized ? `cn-${normalized}` : "cn-node"
+/** Next.js GSSP rejects `undefined` in serialized props — omit empty className. */
+const classNameProp = (
+  styleClassIds: readonly string[],
+  registry: StyleClassesRegistry,
+): Pick<ComponentNode, "className"> | Record<string, never> => {
+  const className = classNameFromStyleClassIds(styleClassIds, registry)
+  return className ? { className } : {}
+}
+
+const collectOrphanStyle = (
+  nodeId: string,
+  rawProps: Record<string, unknown>,
+  styleClasses: StyleClassesRegistry,
+  orphanStyleNodes: OrphanStyleNode[],
+): void => {
+  const styleClassIds = normalizeStyleClassIds(rawProps.styleClassIds)
+  if (styleClassIds.length > 0) return
+
+  const style = resolveSerializedNodeStyle(
+    rawProps,
+    "",
+    undefined,
+    styleClasses,
+  )
+  if (style) {
+    orphanStyleNodes.push({ nodeId, style })
+  }
 }
 
 const buildNodeTree = (
   nodes: SerializedNodes,
   id: string,
   styleClasses: StyleClassesRegistry,
+  orphanStyleNodes: OrphanStyleNode[],
+  stackedCollector: Map<string, string[]>,
 ): ComponentNode | null => {
   const node = nodes[id]
   if (!node) return null
@@ -75,6 +116,11 @@ const buildNodeTree = (
   }
 
   const componentType = resolveTypeName(node.type, id)
+  const rawNodeProps = (node.props ?? {}) as Record<string, unknown>
+  recordStackedStyleClassIds(
+    normalizeStyleClassIds(rawNodeProps.styleClassIds),
+    stackedCollector,
+  )
 
   if (componentType === "ContentList") {
     const linkedNodes = node.linkedNodes ?? {}
@@ -95,13 +141,18 @@ const buildNodeTree = (
     }
 
     const actualFirstCellId = pickTemplateCellId()
+    collectOrphanStyle(id, rawNodeProps, styleClasses, orphanStyleNodes)
+
     if (!actualFirstCellId) {
       return {
         nodeId: id,
-        className: toStableNodeClassName(id),
+        ...classNameProp(
+          normalizeStyleClassIds(rawNodeProps.styleClassIds),
+          styleClasses,
+        ),
         type: "ContentList",
-        props: propsForRuntime(
-          (node.props ?? {}) as Record<string, unknown>,
+        props: propsForRuntimeSsr(
+          rawNodeProps,
           "ContentList",
           node.displayName,
           styleClasses,
@@ -113,10 +164,13 @@ const buildNodeTree = (
     if (!cellNode) {
       return {
         nodeId: id,
-        className: toStableNodeClassName(id),
+        ...classNameProp(
+          normalizeStyleClassIds(rawNodeProps.styleClassIds),
+          styleClasses,
+        ),
         type: "ContentList",
-        props: propsForRuntime(
-          (node.props ?? {}) as Record<string, unknown>,
+        props: propsForRuntimeSsr(
+          rawNodeProps,
           "ContentList",
           node.displayName,
           styleClasses,
@@ -139,7 +193,13 @@ const buildNodeTree = (
       const ids = childIds.length ? childIds : Object.keys(ln)
       for (const key of ids) {
         const actualId = ln[key] || key
-        const child = buildNodeTree(nodes, actualId, styleClasses)
+        const child = buildNodeTree(
+          nodes,
+          actualId,
+          styleClasses,
+          orphanStyleNodes,
+          stackedCollector,
+        )
         if (child) {
           templateChildren.push(child)
         } else {
@@ -150,7 +210,13 @@ const buildNodeTree = (
 
     for (const templateChildId of templateChildIds) {
       const actualChildId = cellLinkedNodes[templateChildId] || templateChildId
-      const child = buildNodeTree(nodes, actualChildId, styleClasses)
+      const child = buildNodeTree(
+        nodes,
+        actualChildId,
+        styleClasses,
+        orphanStyleNodes,
+        stackedCollector,
+      )
       if (child) {
         templateChildren.push(child)
       } else {
@@ -163,31 +229,45 @@ const buildNodeTree = (
       type: String(child.type),
     }))
 
-    const normalizedCell = decodeStyleProps((cellNode.props ?? {}) as Record<string, unknown>)
-    const cellRuntimeProps = propsForRuntime(
+    const normalizedCell = decodeStyleProps(
+      (cellNode.props ?? {}) as Record<string, unknown>,
+    )
+    collectOrphanStyle(
+      actualFirstCellId,
       normalizedCell,
-      "ContentListCell",
-      cellNode.displayName,
+      styleClasses,
+      orphanStyleNodes,
+    )
+    recordStackedStyleClassIds(
+      normalizeStyleClassIds(normalizedCell.styleClassIds),
+      stackedCollector,
+    )
+
+    const cellClassName = classNameFromStyleClassIds(
+      normalizeStyleClassIds(normalizedCell.styleClassIds),
       styleClasses,
     )
-    const cellStyle = isRecord(cellRuntimeProps.style) ? cellRuntimeProps.style : {}
+
     const contentListProps = {
-      ...propsForRuntime(
-        (node.props ?? {}) as Record<string, unknown>,
+      ...propsForRuntimeSsr(
+        rawNodeProps,
         "ContentList",
         node.displayName,
         styleClasses,
       ),
-      cellClassName: toStableNodeClassName(actualFirstCellId),
-      cellStyle,
+      ...(cellClassName ? { cellClassName } : {}),
+      cellNodeId: actualFirstCellId,
     }
 
     return {
       nodeId: id,
-      className: toStableNodeClassName(id),
+      ...classNameProp(
+        normalizeStyleClassIds(rawNodeProps.styleClassIds),
+        styleClasses,
+      ),
       type: "ContentList",
       props: contentListProps,
-      children: safeChildren.length > 0 ? safeChildren : undefined,
+      ...(safeChildren.length > 0 ? { children: safeChildren } : {}),
     }
   }
 
@@ -201,18 +281,29 @@ const buildNodeTree = (
   for (const childId of childrenIds) {
     const linkedNodes = node.linkedNodes ?? {}
     const actualChildId = linkedNodes[childId] || childId
-    const child = buildNodeTree(nodes, actualChildId, styleClasses)
+    const child = buildNodeTree(
+      nodes,
+      actualChildId,
+      styleClasses,
+      orphanStyleNodes,
+      stackedCollector,
+    )
     if (child) {
       children.push(child)
     }
   }
 
+  collectOrphanStyle(id, rawNodeProps, styleClasses, orphanStyleNodes)
+
   const component: ComponentNode = {
     nodeId: id,
-    className: toStableNodeClassName(id),
+    ...classNameProp(
+      normalizeStyleClassIds(rawNodeProps.styleClassIds),
+      styleClasses,
+    ),
     type: String(componentType),
-    props: propsForRuntime(
-      (node.props ?? {}) as Record<string, unknown>,
+    props: propsForRuntimeSsr(
+      rawNodeProps,
       componentType,
       node.displayName,
       styleClasses,
@@ -228,15 +319,30 @@ const buildNodeTree = (
 
 export const craftContentToComponents = (
   content: string,
-): ComponentNode[] => {
-  if (!content) return []
+): CraftContentParseResult => {
+  const orphanStyleNodes: OrphanStyleNode[] = []
+  const stackedCollector = new Map<string, string[]>()
+
+  if (!content) {
+    return {
+      components: [],
+      styleClasses: {},
+      orphanStyleNodes,
+      stackedStyleClassIds: [],
+    }
+  }
 
   const { nodes, styleClasses } = parsePageCraftContent(content)
 
   const root = nodes.ROOT as SerializedNodes[string] | undefined
   if (!root || !Array.isArray(root.nodes)) {
     console.error("Некорректный Craft content: нет ROOT.nodes")
-    return []
+    return {
+      components: [],
+      styleClasses,
+      orphanStyleNodes,
+      stackedStyleClassIds: [],
+    }
   }
 
   const serializedNodes = nodes as SerializedNodes
@@ -245,7 +351,13 @@ export const craftContentToComponents = (
 
   for (const childKey of root.nodes) {
     const actualChildId = rootLinkedNodes[childKey] || childKey
-    const child = buildNodeTree(serializedNodes, actualChildId, styleClasses)
+    const child = buildNodeTree(
+      serializedNodes,
+      actualChildId,
+      styleClasses,
+      orphanStyleNodes,
+      stackedCollector,
+    )
     if (child) {
       result.push(child)
     }
@@ -255,25 +367,53 @@ export const craftContentToComponents = (
   const rootIsBody =
     rootTypeName === "Body" || rootTypeName === "CraftBody"
 
+  const stackedStyleClassIds = Array.from(stackedCollector.values())
+
   if (rootIsBody) {
     if (result.length === 0) {
-      return []
+      return {
+        components: [],
+        styleClasses,
+        orphanStyleNodes,
+        stackedStyleClassIds,
+      }
     }
-    return [
-      {
-        nodeId: "ROOT",
-        className: toStableNodeClassName("ROOT"),
-        type: "Body",
-        props: propsForRuntime(
-          (root.props ?? {}) as Record<string, unknown>,
-          "Body",
-          root.displayName,
-          styleClasses,
-        ),
-        children: result,
-      },
-    ]
+
+    const rootProps = (root.props ?? {}) as Record<string, unknown>
+    collectOrphanStyle("ROOT", rootProps, styleClasses, orphanStyleNodes)
+    recordStackedStyleClassIds(
+      normalizeStyleClassIds(rootProps.styleClassIds),
+      stackedCollector,
+    )
+
+    return {
+      components: [
+        {
+          nodeId: "ROOT",
+          ...classNameProp(
+            normalizeStyleClassIds(rootProps.styleClassIds),
+            styleClasses,
+          ),
+          type: "Body",
+          props: propsForRuntimeSsr(
+            rootProps,
+            "Body",
+            root.displayName,
+            styleClasses,
+          ),
+          children: result,
+        },
+      ],
+      styleClasses,
+      orphanStyleNodes,
+      stackedStyleClassIds: Array.from(stackedCollector.values()),
+    }
   }
 
-  return result
+  return {
+    components: result,
+    styleClasses,
+    orphanStyleNodes,
+    stackedStyleClassIds,
+  }
 }

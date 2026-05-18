@@ -1,5 +1,3 @@
-import type { ComponentNode } from "./interface"
-
 export enum ResponsiveBranch {
   DESKTOP = "desktop",
   TABLET_LANDSCAPE = "tablet_landscape",
@@ -18,10 +16,12 @@ export const BRANCHES: ResponsiveBranch[] = [
   ResponsiveBranch.PHONE_LANDSCAPE,
   ResponsiveBranch.PHONE,
 ]
-const TABLET_LANDSCAPE_MEDIA = "@media (max-width: 1279px)"
-const TABLET_MEDIA = "@media (max-width: 1023px)"
-const PHONE_LANDSCAPE_MEDIA = "@media (max-width: 767px)"
-const PHONE_MEDIA = "@media (max-width: 567px)"
+export const BRANCH_MEDIA = {
+  tabletLandscape: "@media (max-width: 1279px)",
+  tablet: "@media (max-width: 1023px)",
+  phoneLandscape: "@media (max-width: 767px)",
+  phone: "@media (max-width: 567px)",
+} as const
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === "object" && !Array.isArray(value)
@@ -213,23 +213,7 @@ const toCssRule = (selector: string, declarations: Record<string, string>): stri
   return body.length > 0 ? `${selector}{${body}}` : ""
 }
 
-const collectNodes = (nodes: ComponentNode[]): ComponentNode[] => {
-  const queue = [...nodes]
-  const output: ComponentNode[] = []
-
-  while (queue.length > 0) {
-    const node = queue.shift()
-    if (!node) continue
-    output.push(node)
-    if (Array.isArray(node.children) && node.children.length > 0) {
-      queue.push(...node.children)
-    }
-  }
-
-  return output
-}
-
-const pushRulesForResponsiveStyle = (
+export const pushRulesForResponsiveStyle = (
   selector: string,
   style: ResponsiveStyle | null | undefined,
   baseRules: string[],
@@ -266,59 +250,3 @@ const pushRulesForResponsiveStyle = (
   }
 }
 
-export const buildResponsiveCss = (nodes: ComponentNode[]): string => {
-  if (!Array.isArray(nodes) || nodes.length === 0) return ""
-
-  const allNodes = collectNodes(nodes)
-  const baseRules: string[] = []
-  const tabletLandscapeRules: string[] = []
-  const tabletRules: string[] = []
-  const phoneLandscapeRules: string[] = []
-  const phoneRules: string[] = []
-
-  for (const node of allNodes) {
-    if (!node.className) continue
-    const style = isRecord(node.props?.style)
-      ? (node.props.style as ResponsiveStyle)
-      : null
-    if (style) {
-      pushRulesForResponsiveStyle(
-        `.${node.className}`,
-        style,
-        baseRules,
-        tabletLandscapeRules,
-        tabletRules,
-        phoneLandscapeRules,
-        phoneRules,
-      )
-    }
-
-    // ContentListCell не входит в дерево ComponentNode — стили ячейки лежат в props.cellStyle.
-    if (node.type === "ContentList") {
-      const cellClass = node.props?.cellClassName
-      const cellStyle = isRecord(node.props?.cellStyle)
-        ? (node.props.cellStyle as ResponsiveStyle)
-        : null
-      if (typeof cellClass === "string" && cellClass.trim() && cellStyle) {
-        pushRulesForResponsiveStyle(
-          `.${cellClass.trim()}`,
-          cellStyle,
-          baseRules,
-          tabletLandscapeRules,
-          tabletRules,
-          phoneLandscapeRules,
-          phoneRules,
-        )
-      }
-    }
-  }
-
-  const cssParts: string[] = []
-  if (baseRules.length > 0) cssParts.push(baseRules.join(""))
-  if (tabletLandscapeRules.length > 0) cssParts.push(`${TABLET_LANDSCAPE_MEDIA}{${tabletLandscapeRules.join("")}}`)
-  if (tabletRules.length > 0) cssParts.push(`${TABLET_MEDIA}{${tabletRules.join("")}}`)
-  if (phoneLandscapeRules.length > 0) cssParts.push(`${PHONE_LANDSCAPE_MEDIA}{${phoneLandscapeRules.join("")}}`)
-  if (phoneRules.length > 0) cssParts.push(`${PHONE_MEDIA}{${phoneRules.join("")}}`)
-
-  return cssParts.join("")
-}
