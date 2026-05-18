@@ -1,19 +1,25 @@
 import type { SerializedNodes } from "@craftjs/core"
+import { buildComboClassId } from "./comboClassId.ts"
+import { normalizeStyleClassIds } from "./styleClassIds.ts"
 import type { StyleClassesRegistry } from "./types.ts"
 
 export const collectUsedStyleClassIds = (nodes: SerializedNodes): Set<string> => {
   const used = new Set<string>()
   for (const [nodeId, node] of Object.entries(nodes)) {
     if (nodeId === "ROOT") continue
-    const classId = (node.props as Record<string, unknown> | undefined)?.styleClassId
-    if (typeof classId === "string" && classId.length > 0) {
-      used.add(classId)
+    const props = node.props as Record<string, unknown> | undefined
+    const ids = normalizeStyleClassIds(props?.styleClassIds)
+    for (const id of ids) {
+      used.add(id)
+    }
+    if (ids.length >= 2) {
+      used.add(buildComboClassId(ids))
     }
   }
   return used
 }
 
-/** Keeps only style classes referenced by at least one craft node. */
+/** Keeps only style classes referenced by at least one craft node (including derived combos). */
 export const pruneUnusedStyleClasses = (
   registry: StyleClassesRegistry,
   nodes: SerializedNodes,

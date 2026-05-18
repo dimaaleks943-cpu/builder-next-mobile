@@ -10,6 +10,10 @@ import {
 } from "../responsiveStyle.ts"
 import type { PreviewViewport } from "../builder.enum.ts"
 import { pickNodeResponsiveStyle } from "../styleClasses/pickNodeResponsiveStyle.ts"
+import { buildComboClassId } from "../styleClasses/comboClassId.ts"
+import { buildComboClassLabel } from "../styleClasses/styleClassSlug.ts"
+import { duplicateStyleClass } from "../styleClasses/duplicateStyleClass.ts"
+import { normalizeStyleClassIds } from "../styleClasses/styleClassIds.ts"
 import { createStyleClassId, createStyleClassName } from "../styleClasses/styleClassNames.ts"
 import type { StyleClassDefinition } from "../styleClasses/types.ts"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
@@ -26,7 +30,7 @@ export const useStyleEditing = () => {
     getNodeResolvedName,
   } = useStyleClassContext()
 
-  const { selectedId, selectedProps, selectedResolvedName, styleClassId } = useEditor(
+  const { selectedId, selectedProps, selectedResolvedName, styleClassIds } = useEditor(
     (state) => {
       const [id] = Array.from(state.events.selected)
       const node = id ? state.nodes[id] : null
@@ -35,25 +39,26 @@ export const useStyleEditing = () => {
         selectedId: id ?? null,
         selectedProps: props,
         selectedResolvedName: node ? resolveNodeDisplayName(node) : "",
-        styleClassId: (props.styleClassId as string | undefined) ?? null,
+        styleClassIds: normalizeStyleClassIds(props.styleClassIds),
       }
     },
   )
 
-  const activeClass = styleClassId ? classes[styleClassId] : undefined
-
   const nodeStyleForRead = useMemo(
-    () => pickNodeResponsiveStyle(
-        styleClassId,
+    () =>
+      pickNodeResponsiveStyle(
+        styleClassIds,
         selectedProps.style as ResponsiveStyle | undefined,
         classes,
       ),
-    [styleClassId, selectedProps.style, classes],
+    [styleClassIds, selectedProps.style, classes],
   )
 
-  const ensureStyleClass = useCallback((): string | null => {
+  const ensureFirstStyleClass = useCallback((): string | null => {
     if (!selectedId) return null
-    if (styleClassId && classes[styleClassId]) return styleClassId
+    if (styleClassIds.length > 0 && classes[styleClassIds[0]]) {
+      return styleClassIds[0]
+    }
 
     const existingStyle = (selectedProps.style as ResponsiveStyle | undefined) ?? {}
     const id = createStyleClassId()
@@ -61,23 +66,48 @@ export const useStyleEditing = () => {
       id,
       name: createStyleClassName(selectedResolvedName, classes),
       resolvedName: selectedResolvedName,
+      kind: "base",
       style: structuredClone(existingStyle),
     }
     upsertClass(definition)
     actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      props.styleClassId = id
+      props.styleClassIds = [id]
       delete props.style
     })
     return id
   }, [
     selectedId,
-    styleClassId,
+    styleClassIds,
     classes,
     selectedProps.style,
     selectedResolvedName,
     upsertClass,
     actions,
   ])
+
+  const ensureComboClass = useCallback((): string | null => {
+    if (!selectedId || styleClassIds.length < 2) return null
+    const comboId = buildComboClassId(styleClassIds)
+    if (classes[comboId]) return comboId
+
+    const definition: StyleClassDefinition = {
+      id: comboId,
+      name: buildComboClassLabel(styleClassIds, classes),
+      resolvedName: selectedResolvedName,
+      kind: "combo",
+      comboMemberIds: [...styleClassIds],
+      style: {},
+    }
+    upsertClass(definition)
+    return comboId
+  }, [selectedId, styleClassIds, classes, selectedResolvedName, upsertClass])
+
+  const ensureEditTargetClassId = useCallback((): string | null => {
+    if (!selectedId) return null
+    if (styleClassIds.length === 0) return ensureFirstStyleClass()
+    if (styleClassIds.length === 1) return styleClassIds[0]
+    return ensureComboClass()
+  }, [selectedId, styleClassIds, ensureFirstStyleClass, ensureComboClass])
 
   const getStyleProp = useCallback(
     (key: string, vp: PreviewViewport = viewport) =>
@@ -92,7 +122,7 @@ export const useStyleEditing = () => {
   const setStyleProp = useCallback(
     (key: string, value: unknown, vp: PreviewViewport = viewport) => {
       if (!selectedId) return
-      const classId = ensureStyleClass()
+      const classId = ensureEditTargetClassId()
       if (!classId) return
 
       setClasses((prev) => {
@@ -112,13 +142,13 @@ export const useStyleEditing = () => {
         }
       })
     },
-    [selectedId, ensureStyleClass, setClasses, viewport],
+    [selectedId, ensureEditTargetClassId, setClasses, viewport],
   )
 
   const mutateClassStyle = useCallback(
     (mutator: (draft: Record<string, unknown>) => void) => {
       if (!selectedId) return
-      const classId = ensureStyleClass()
+      const classId = ensureEditTargetClassId()
       if (!classId) return
       setClasses((prev) => {
         const current = prev[classId]
@@ -137,17 +167,17 @@ export const useStyleEditing = () => {
         }
       })
     },
-    [selectedId, ensureStyleClass, setClasses],
+    [selectedId, ensureEditTargetClassId, setClasses],
   )
 
-  const assignStyleClass = useCallback(
-    (classId: string | null) => {
+  const setStyleClassIdsOnNode = useCallback(
+    (nextIds: string[]) => {
       if (!selectedId) return
       actions.setProp(selectedId, (props: Record<string, unknown>) => {
-        if (classId) {
-          props.styleClassId = classId
+        if (nextIds.length > 0) {
+          props.styleClassIds = nextIds
         } else {
-          delete props.styleClassId
+          delete props.styleClassIds
         }
         delete props.style
       })
@@ -156,37 +186,118 @@ export const useStyleEditing = () => {
     [selectedId, actions, pruneUnusedClasses],
   )
 
+  const appendStyleClass = useCallback(
+    (classId: string) => {
+      if (!selectedId || !classId) return
+      const next = styleClassIds.includes(classId)
+        ? styleClassIds
+        : [...styleClassIds, classId]
+      setStyleClassIdsOnNode(next)
+    },
+    [selectedId, styleClassIds, setStyleClassIdsOnNode],
+  )
+
+  const clearStyleClasses = useCallback(() => {
+    setStyleClassIdsOnNode([])
+  }, [setStyleClassIdsOnNode])
+
+  const removeLastStyleClass = useCallback(() => {
+    if (styleClassIds.length === 0) return
+    setStyleClassIdsOnNode(styleClassIds.slice(0, -1))
+  }, [styleClassIds, setStyleClassIdsOnNode])
+
+  const replaceStyleClassAt = useCallback(
+    (index: number, newClassId: string) => {
+      if (!selectedId || index < 0 || index >= styleClassIds.length) return
+      const next = [...styleClassIds]
+      next[index] = newClassId
+      setStyleClassIdsOnNode(next)
+    },
+    [selectedId, styleClassIds, setStyleClassIdsOnNode],
+  )
+
+  const renameStyleClassOnElement = useCallback(
+    (index: number, newName: string) => {
+      const trimmed = newName.trim()
+      if (!trimmed || index < 0 || index >= styleClassIds.length) return
+      const sourceId = styleClassIds[index]
+      const source = classes[sourceId]
+      if (!source) return
+
+      const definition: StyleClassDefinition = {
+        id: createStyleClassId(),
+        name: trimmed,
+        resolvedName: source.resolvedName,
+        kind: "base",
+        style: structuredClone(source.style),
+      }
+      upsertClass(definition)
+      replaceStyleClassAt(index, definition.id)
+    },
+    [styleClassIds, classes, upsertClass, replaceStyleClassAt],
+  )
+
+  const copyStyleClassOnElement = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= styleClassIds.length) return
+      const source = classes[styleClassIds[index]]
+      if (!source) return
+      const definition = duplicateStyleClass(source, classes)
+      upsertClass(definition)
+      replaceStyleClassAt(index, definition.id)
+    },
+    [styleClassIds, classes, upsertClass, replaceStyleClassAt],
+  )
+
   const listClassesForSelected = useCallback(() => {
     return Object.values(classes)
-      .filter((c) => c.resolvedName === selectedResolvedName)
+      .filter((c) => c.kind !== "combo" && c.resolvedName === selectedResolvedName)
       .sort((a, b) => a.name.localeCompare(b.name, "ru"))
   }, [classes, selectedResolvedName])
 
   const listAllClasses = useCallback(
     () =>
-      Object.values(classes).sort((a, b) =>
-        a.name.localeCompare(b.name, "ru"),
-      ),
+      Object.values(classes)
+        .filter((c) => c.kind !== "combo")
+        .sort((a, b) => a.name.localeCompare(b.name, "ru")),
     [classes],
+  )
+
+  const styleClassPills = useMemo(
+    () =>
+      styleClassIds.map((id) => ({
+        id,
+        name: classes[id]?.name ?? id,
+      })),
+    [styleClassIds, classes],
   )
 
   return {
     selectedId,
     selectedProps,
     selectedResolvedName,
-    styleClassId,
-    activeClass,
+    styleClassIds,
+    styleClassPills,
     nodeStyleForRead,
     getStyleProp,
     setStyleProp,
     mutateClassStyle,
-    assignStyleClass,
+    appendStyleClass,
+    clearStyleClasses,
+    removeLastStyleClass,
+    renameStyleClassOnElement,
+    copyStyleClassOnElement,
     listClassesForSelected,
     listAllClasses,
     countNodesWithClass,
     getNodeResolvedName,
-    resolveNodeStyle: (styleClassIdValue?: string | null, localStyle?: ResponsiveStyle,) =>
+    resolveNodeStyle: (
+      styleClassIdsValue?: string[] | null,
+      localStyle?: ResponsiveStyle,
+    ) =>
       resolveResponsiveStyle(
-        pickNodeResponsiveStyle(styleClassIdValue, localStyle, classes), viewport),
+        pickNodeResponsiveStyle(styleClassIdsValue ?? [], localStyle, classes),
+        viewport,
+      ),
   }
 }

@@ -8,6 +8,7 @@ import {
 import { useEditor } from "@craftjs/core"
 import type { StyleClassesRegistry, StyleClassDefinition } from "../styleClasses/types.ts"
 import { pruneUnusedStyleClasses } from "../styleClasses/pruneUnusedStyleClasses.ts"
+import { normalizeStyleClassIds } from "../styleClasses/styleClassIds.ts"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
 
 type StyleClassContextValue = {
@@ -51,7 +52,8 @@ export const StyleClassProvider = ({ children, classes, setClasses }: Props) => 
       return Object.entries(nodes).filter(([nodeId, node]) => {
         if (nodeId === "ROOT") return false
         const props = node.props as Record<string, unknown> | undefined
-        return props?.styleClassId === classId
+
+        return normalizeStyleClassIds(props?.styleClassIds).includes(classId)
       }).length
     },
     [query],

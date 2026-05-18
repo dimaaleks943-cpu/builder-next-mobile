@@ -1,6 +1,6 @@
 import type { ResponsiveStyle } from "../responsiveStyle.ts"
 
-export const STYLE_CLASSES_ROOT_CUSTOM_KEY = "styleClasses" as const
+export type StyleClassKind = "base" | "combo"
 
 export type StyleClassDefinition = {
   id: string
@@ -8,10 +8,8 @@ export type StyleClassDefinition = {
   /** `resolveNodeDisplayName` value, e.g. CraftBlock */
   resolvedName: string
   style: ResponsiveStyle
+  kind?: StyleClassKind
+  comboMemberIds?: string[]
 }
 
 export type StyleClassesRegistry = Record<string, StyleClassDefinition>
-
-export type StyleClassesRootCustom = {
-  [STYLE_CLASSES_ROOT_CUSTOM_KEY]?: StyleClassesRegistry
-}
