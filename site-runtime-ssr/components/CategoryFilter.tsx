@@ -7,9 +7,6 @@ import { prefixPublicPath } from "@/lib/localeFromPath"
 import { useSiteCollections } from "@/components/SiteCollectionsContext"
 import { useCollectionFilterScope } from "@/components/CollectionFilterScopeContext"
 import { useStorefrontPage } from "@/components/StorefrontPageContext"
-import {
-  type CraftVisualEffectsProps,
-} from "@/lib/craftVisualEffects"
 
 /** Пропсы сериализованного блока; `filterScope` должен совпадать с ContentList на той же странице. */
 export type CategoryFilterProps = {
@@ -21,7 +18,7 @@ export type CategoryFilterProps = {
   variant?: "buttons" | "radio" | "list"
   direction?: "row" | "column"
   showAllLabel?: string
-} & CraftVisualEffectsProps
+}
 
 /** Навигация по категориям: пишет выбор в контекст: ContentList с тем же `filterScope` перезапрашивает items. */
 const CategoryFilterComponent = ({

@@ -7,11 +7,8 @@ import {
 } from "@/lib/contentFieldValue"
 import type { IContentItem } from "@/lib/contentTypes"
 import { resolveTranslationText } from "@/lib/resolvePageTranslation"
-import {
-  type CraftVisualEffectsProps,
-} from "@/lib/craftVisualEffects"
 
-interface TextProps extends CraftVisualEffectsProps {
+interface TextProps {
   className?: string
   "data-craft-node-id"?: string
   text?: string

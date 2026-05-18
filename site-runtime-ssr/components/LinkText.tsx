@@ -14,11 +14,8 @@ import { useStorefrontPage } from "@/components/StorefrontPageContext";
 import { usePageLocale } from "@/components/PageLocaleContext";
 import { prefixPublicPath } from "@/lib/localeFromPath";
 import { resolveTranslationText } from "@/lib/resolvePageTranslation";
-import {
-  type CraftVisualEffectsProps,
-} from "@/lib/craftVisualEffects";
 
-interface LinkTextProps extends CraftVisualEffectsProps {
+interface LinkTextProps {
   className?: string;
   "data-craft-node-id"?: string;
   text?: string;

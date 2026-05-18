@@ -64,10 +64,6 @@ export function isSystemPageSitePage(page: SitePage): boolean {
   return page.type === PAGE_TYPES.SYSTEM_PAGE
 }
 
-export function isSystemComponentSitePage(page: SitePage): boolean {
-  return page.type === PAGE_TYPES.SYSTEM_COMPONENT
-}
-
 /**
  * Выбирает template-страницу с наиболее длинным подходящим префиксом (при пересечениях).
  */

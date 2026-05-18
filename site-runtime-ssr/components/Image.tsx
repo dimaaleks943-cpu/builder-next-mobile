@@ -1,8 +1,7 @@
 import { useMemo } from "react"
 import { useContentData } from "./ContentDataContext"
-import { type CraftVisualEffectsProps } from "@/lib/craftVisualEffects"
 
-interface ImageProps extends CraftVisualEffectsProps {
+interface ImageProps {
   className?: string
   "data-craft-node-id"?: string
   src?: string

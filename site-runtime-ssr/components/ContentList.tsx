@@ -6,7 +6,6 @@ import { useSiteCollections } from "@/components/SiteCollectionsContext"
 import { useCollectionFilterScope } from "@/components/CollectionFilterScopeContext"
 import { getCollectionItemsCacheKey } from "@/lib/collectionItemsCacheKey"
 import type { IContentItem } from "@/lib/contentTypes"
-import type { CraftVisualEffectsProps } from "@/lib/craftVisualEffects"
 
 /**
  * Маркер «эффект ещё не сопоставлял категорию с предыдущим запуском».
@@ -14,7 +13,7 @@ import type { CraftVisualEffectsProps } from "@/lib/craftVisualEffects"
  */
 const CATEGORY_FETCH_INIT = Symbol("categoryFetchInit")
 
-interface ContentListProps extends CraftVisualEffectsProps {
+interface ContentListProps {
   className?: string
   "data-craft-node-id"?: string
   /** Должен совпадать с `filterScope` на блоке фильтра категорий, если используется. */
