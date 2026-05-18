@@ -1,8 +1,9 @@
 import { Box, Button, Typography } from "@mui/material"
 import { Form } from "react-final-form"
-import { PageType, type ExtranetPage } from "../api/extranet"
+import { type ExtranetPage, PageType } from "../api/extranet"
 import { useLazyGetExtranetPagesQuery } from "../store/extranetApi"
-import { useMemo, type ReactNode } from "react"
+import { type ReactNode, useMemo } from "react"
+
 type HomeFormValues = {
   page: ExtranetPage[]
 }
@@ -20,11 +21,12 @@ function ExtranetPageListSections({
   pages,
   onOpenBuilder,
 }: ExtranetPageListSectionsProps): ReactNode {
-  const { staticPages, templatePages } = useMemo(() => {
+  const { staticPages, templatePages, systemComponentPages } = useMemo(() => {
     const list = pages ?? []
     return {
       staticPages: list.filter((p) => (p.type ?? PageType.STATIC) === PageType.STATIC),
       templatePages: list.filter((p) => p.type === PageType.TEMPLATE),
+      systemComponentPages: list.filter((p)=> p.type === PageType.SYSTEM_COMPONENT)
     }
   }, [pages])
 
@@ -63,6 +65,25 @@ function ExtranetPageListSections({
           </Typography>
           <Box sx={buttonRowSx}>
             {templatePages.map(page => (
+              <Button
+                key={page.id}
+                variant="outlined"
+                size="small"
+                onClick={() => onOpenBuilder(page.id)}
+              >
+                {page.name}
+              </Button>
+            ))}
+          </Box>
+        </Box>
+      ) : null}
+      {systemComponentPages.length > 0 ? (
+        <Box>
+          <Typography variant="subtitle1" component="h2" sx={{ mb: 1 }}>
+            Системный компоненты
+          </Typography>
+          <Box sx={buttonRowSx}>
+            {systemComponentPages.map(page => (
               <Button
                 key={page.id}
                 variant="outlined"

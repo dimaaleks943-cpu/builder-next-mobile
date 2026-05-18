@@ -4,14 +4,12 @@ import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
 import { useStyleClassContext } from "../context/StyleClassContext.tsx"
 import {
   getResponsiveStyleProp,
-  mergeResponsiveStyles,
   resolveResponsiveStyle,
   setResponsiveStyleProp,
-  subtractResponsiveStyles,
   type ResponsiveStyle,
 } from "../responsiveStyle.ts"
 import type { PreviewViewport } from "../builder.enum.ts"
-import { getCraftIntrinsicStyle } from "../styleClasses/craftIntrinsicStyles.ts"
+import { pickNodeResponsiveStyle } from "../styleClasses/pickNodeResponsiveStyle.ts"
 import { createStyleClassId, createStyleClassName } from "../styleClasses/styleClassNames.ts"
 import type { StyleClassDefinition } from "../styleClasses/types.ts"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
@@ -44,24 +42,26 @@ export const useStyleEditing = () => {
 
   const activeClass = styleClassId ? classes[styleClassId] : undefined
 
-  const mergedStyleForRead = useMemo(() => {
-    const intrinsic = getCraftIntrinsicStyle(selectedResolvedName)
-    const localStyle = selectedProps.style as ResponsiveStyle | undefined
-    return mergeResponsiveStyles(intrinsic, activeClass?.style, localStyle)
-  }, [selectedResolvedName, activeClass?.style, selectedProps.style])
+  const nodeStyleForRead = useMemo(
+    () => pickNodeResponsiveStyle(
+        styleClassId,
+        selectedProps.style as ResponsiveStyle | undefined,
+        classes,
+      ),
+    [styleClassId, selectedProps.style, classes],
+  )
 
   const ensureStyleClass = useCallback((): string | null => {
     if (!selectedId) return null
     if (styleClassId && classes[styleClassId]) return styleClassId
 
     const existingStyle = (selectedProps.style as ResponsiveStyle | undefined) ?? {}
-    const intrinsic = getCraftIntrinsicStyle(selectedResolvedName)
     const id = createStyleClassId()
     const definition: StyleClassDefinition = {
       id,
       name: createStyleClassName(selectedResolvedName, classes),
       resolvedName: selectedResolvedName,
-      style: subtractResponsiveStyles(existingStyle, intrinsic),
+      style: structuredClone(existingStyle),
     }
     upsertClass(definition)
     actions.setProp(selectedId, (props: Record<string, unknown>) => {
@@ -82,11 +82,11 @@ export const useStyleEditing = () => {
   const getStyleProp = useCallback(
     (key: string, vp: PreviewViewport = viewport) =>
       getResponsiveStyleProp(
-        { style: mergedStyleForRead } as Record<string, unknown>,
+        { style: nodeStyleForRead } as Record<string, unknown>,
         key,
         vp,
       ),
-    [mergedStyleForRead, viewport],
+    [nodeStyleForRead, viewport],
   )
 
   const setStyleProp = useCallback(
@@ -176,7 +176,7 @@ export const useStyleEditing = () => {
     selectedResolvedName,
     styleClassId,
     activeClass,
-    mergedStyleForRead,
+    nodeStyleForRead,
     getStyleProp,
     setStyleProp,
     mutateClassStyle,
@@ -185,15 +185,8 @@ export const useStyleEditing = () => {
     listAllClasses,
     countNodesWithClass,
     getNodeResolvedName,
-    resolveMergedStyle: (styleClassIdValue?: string | null, localStyle?: ResponsiveStyle) => {
-      const intrinsic = getCraftIntrinsicStyle(selectedResolvedName)
-      const classStyle = styleClassIdValue
-        ? classes[styleClassIdValue]?.style
-        : undefined
-      return resolveResponsiveStyle(
-        mergeResponsiveStyles(intrinsic, classStyle, localStyle),
-        viewport,
-      )
-    },
+    resolveNodeStyle: (styleClassIdValue?: string | null, localStyle?: ResponsiveStyle,) =>
+      resolveResponsiveStyle(
+        pickNodeResponsiveStyle(styleClassIdValue, localStyle, classes), viewport),
   }
 }

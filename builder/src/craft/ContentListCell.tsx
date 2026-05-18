@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from "react"
 import { ContentListCellContext } from "../pages/builder/context/ContentListCellContext.tsx"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
-import { useCraftResolvedStyle } from "../pages/builder/hooks/useCraftResolvedStyle.ts"
+import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
 import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 
 export type ContentListCellProps = {
@@ -19,11 +19,7 @@ export type ContentListCellProps = {
  * display, flexFlow, justifyContent, alignItems, gridTemplate*, placeItems, gap — в `responsiveStyle` в виде имён React/CSS.
  */
 export const CraftContentListCell = (props: ContentListCellProps) => {
-  const responsiveStyle = useCraftResolvedStyle(
-    CRAFT_DISPLAY_NAME.ContentListCell,
-    props.styleClassId,
-    props.style,
-  )
+  const responsiveStyle = useCraftNodeStyle(props.styleClassId, props.style)
   const {
     connectors: { connect, drag },
   } = useNode((node) => ({

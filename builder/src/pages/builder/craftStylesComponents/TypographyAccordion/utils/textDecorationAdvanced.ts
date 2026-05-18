@@ -8,7 +8,7 @@ export type TextDecorationLinePreset =
   | "overline_strikethrough"
   | "all"
 
-export type TextDecorationStyleKeyword =
+type TextDecorationStyleKeyword =
   | "solid"
   | "double"
   | "dotted"
@@ -30,8 +30,7 @@ const STYLE_KEYWORDS: readonly TextDecorationStyleKeyword[] = [
   "solid",
 ] as const
 
-export const defaultTextDecorationAdvancedParts =
-  (): TextDecorationAdvancedParts => ({
+const defaultTextDecorationAdvancedParts = (): TextDecorationAdvancedParts => ({
     line: "none",
     style: undefined,
     thicknessPx: "",

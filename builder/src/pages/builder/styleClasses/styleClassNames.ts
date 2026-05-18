@@ -12,7 +12,7 @@ const DISPLAY_LABEL: Record<string, string> = {
   [CRAFT_DISPLAY_NAME.CategoryFilter]: "Category Filter",
 }
 
-export const getStyleClassDisplayLabel = (resolvedName: string): string =>
+const getStyleClassDisplayLabel = (resolvedName: string): string =>
   DISPLAY_LABEL[resolvedName] ?? resolvedName.replace(/^Craft/, "")
 
 export const createStyleClassName = (

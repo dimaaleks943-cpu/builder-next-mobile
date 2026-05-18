@@ -12,7 +12,7 @@ import { useContentListData } from "../pages/builder/context/ContentListDataCont
 import { COLORS } from "../theme/colors"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
-import { useCraftResolvedStyle } from "../pages/builder/hooks/useCraftResolvedStyle.ts"
+import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
 import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 import { useBuilderModeContext } from "../pages/builder/context/BuilderModeContext.tsx"
 import {
@@ -29,11 +29,7 @@ export interface TextProps {
 }
 
 export const CraftText = (props: TextProps) => {
-  const responsiveStyle = useCraftResolvedStyle(
-    CRAFT_DISPLAY_NAME.Text,
-    props.styleClassId,
-    props.style,
-  )
+  const responsiveStyle = useCraftNodeStyle(props.styleClassId, props.style)
   const text = props.text ?? "Текст"
   const i18nKey = props.i18nKey ?? null
   const collectionField = props.collectionField ?? null

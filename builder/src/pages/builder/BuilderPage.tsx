@@ -229,7 +229,7 @@ export const BuilderPage = () => {
     )
     return withSlug ?? items[0] ?? null
   }, [isTemplateWithCollection, templateItemsSuccess, templateItemsResponse])
-  console.log("templatePreviewItem12321", templatePreviewItem)
+
   const builderTemplatePageValue = useMemo(
     () => ({
       templatePageCollectionKey:
@@ -322,6 +322,7 @@ export const BuilderPage = () => {
                     : (pageMeta?.item_path_prefix ?? null)
                 }
                 onPreviewViewportChange={setPreviewViewport}
+                pageCode={pageMeta?.code as string}
               />
 
               <Box

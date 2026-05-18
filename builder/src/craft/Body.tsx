@@ -1,7 +1,7 @@
 import { useNode } from "@craftjs/core"
 import type { ReactNode } from "react"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
-import { useCraftResolvedStyle } from "../pages/builder/hooks/useCraftResolvedStyle.ts"
+import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
 import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 
@@ -13,11 +13,7 @@ export type BodyProps = {
 
 // Root component используется только как стартовый элемент холста, не удаляется
 export const CraftBody = (props: BodyProps) => {
-  const responsiveStyle = useCraftResolvedStyle(
-    CRAFT_DISPLAY_NAME.Body,
-    props.styleClassId,
-    props.style,
-  )
+  const responsiveStyle = useCraftNodeStyle(props.styleClassId, props.style)
 
   const {
     connectors: { connect, drag },

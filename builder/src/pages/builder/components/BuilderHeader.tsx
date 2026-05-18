@@ -31,6 +31,7 @@ interface BuilderHeaderProps {
   pageId?: string;
   pageName?: string;
   pageSlug?: string;
+  pageCode: string;
   /** С метаданных GET страницы — нужны для PUT. */
   siteId?: number;
   directoryId?: string | null;
@@ -82,6 +83,7 @@ export const BuilderHeader = ({
   pageName,
   pageSlug,
   siteId,
+  pageCode,
   directoryId = null,
   pageType = PageType.STATIC,
   collectionTypeId = null,
@@ -148,7 +150,7 @@ export const BuilderHeader = ({
       console.error("BuilderModeContext недоступен")
       return
     }
-    if (!pageName || !pageSlug) {
+    if (!pageName) {
       console.error("Невозможно сохранить: не загружены name/slug страницы")
       return
     }
@@ -206,6 +208,7 @@ export const BuilderHeader = ({
       site_id: siteId,
       mode: pageMode,
       visibility: pageVisibility,
+      code: pageCode,
     }
 
     try {

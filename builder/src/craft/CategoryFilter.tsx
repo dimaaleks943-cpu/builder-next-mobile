@@ -12,7 +12,7 @@ import {
   type InlineSettingsViewportAnchor,
 } from "../pages/builder/context/CraftInlineSettingsBridgeContext.tsx"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
-import { useCraftResolvedStyle } from "../pages/builder/hooks/useCraftResolvedStyle.ts"
+import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
 import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 
 /**
@@ -55,11 +55,7 @@ export const CraftCategoryFilter = () => {
     useCollectionFilterScope()
   const [fetchCategories, { data: categoriesResponse, isFetching }] =
     useLazyGetContentCategoriesQuery()
-  const responsiveStyle = useCraftResolvedStyle(
-    CRAFT_DISPLAY_NAME.CategoryFilter,
-    props.styleClassId,
-    props.style,
-  )
+  const responsiveStyle = useCraftNodeStyle(props.styleClassId, props.style)
 
   const filterScope = props.filterScope ?? ""
   const contentCategoryRootId = props.contentCategoryRootId ?? ""

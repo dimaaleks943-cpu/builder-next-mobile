@@ -89,9 +89,7 @@ export const encodeStyleProps = (
   return encoded
 }
 
-export const decodeStyleProps = (
-  shortProps: StylePropsInput,
-): Record<string, unknown> => {
+const decodeStyleProps = (shortProps: StylePropsInput): Record<string, unknown> => {
   if (!shortProps) return {}
 
   const decoded = { ...shortProps }

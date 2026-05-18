@@ -19,9 +19,7 @@ const resolveTypeName = (type: unknown): string => {
   return "div"
 }
 
-export const extractContentListTypeIdsFromCraftContent = (
-  content: string | null | undefined,
-): string[] => {
+const extractContentListTypeIdsFromCraftContent = (content: string | null | undefined,): string[] => {
   if (!content?.trim()) return []
 
   let nodes: SerializedNodes

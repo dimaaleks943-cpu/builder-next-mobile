@@ -27,7 +27,6 @@ type LinkMode = "url" | "page" | "collectionItemPage";
 const COLLECTION_ITEM_SELECT_NONE = "__collection_item_none__";
 const COLLECTION_ITEM_SELECT_CURRENT = "__collection_item_current__";
 
-export { normalizeItemPathPrefix };
 
 interface SelectedLinkProps {
   href?: string;

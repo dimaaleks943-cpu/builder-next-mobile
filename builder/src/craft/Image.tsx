@@ -10,7 +10,7 @@ import {
 import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
-import { useCraftResolvedStyle } from "../pages/builder/hooks/useCraftResolvedStyle.ts"
+import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
 import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 import backgroundImage from "../assets/background-image.svg"
 
@@ -24,11 +24,7 @@ export interface CraftImageProps {
 }
 
 export const CraftImage = (props: CraftImageProps) => {
-  const responsiveStyle = useCraftResolvedStyle(
-    CRAFT_DISPLAY_NAME.Image,
-    props.styleClassId,
-    props.style,
-  )
+  const responsiveStyle = useCraftNodeStyle(props.styleClassId, props.style)
   const src = props.src
   const alt = props.alt ?? "Изображение"
   const collectionField = props.collectionField ?? null

@@ -2,7 +2,8 @@ import { useNode } from "@craftjs/core"
 import type { CSSProperties, ReactNode } from "react"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
-import { useCraftResolvedStyle } from "../pages/builder/hooks/useCraftResolvedStyle.ts"
+import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
+import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 
 export type BlockProps = {
   children?: ReactNode
@@ -11,11 +12,7 @@ export type BlockProps = {
 }
 
 export const CraftBlock = (props: BlockProps) => {
-  const responsiveStyle = useCraftResolvedStyle(
-    CRAFT_DISPLAY_NAME.Block,
-    props.styleClassId,
-    props.style,
-  )
+  const responsiveStyle = useCraftNodeStyle(props.styleClassId, props.style)
   const {
     connectors: { connect, drag },
   } = useNode((node) => ({
@@ -37,7 +34,15 @@ export const CraftBlock = (props: BlockProps) => {
 
 (CraftBlock as any).craft = {
   displayName: CRAFT_DISPLAY_NAME.Block,
-  props: {},
+  props: {
+    style: {
+      [PreviewViewport.DESKTOP]: {
+        display: "block",
+        height: "20px",
+        boxSizing: "border-box",
+      },
+    },
+  },
   rules: {
     canMoveIn: () => true,
   },

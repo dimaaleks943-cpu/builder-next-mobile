@@ -11,7 +11,7 @@ import { COLORS } from "../theme/colors"
 import { useContentListData } from "../pages/builder/context/ContentListDataContext.tsx"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
-import { useCraftResolvedStyle } from "../pages/builder/hooks/useCraftResolvedStyle.ts"
+import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
 import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 import { useBuilderModeContext } from "../pages/builder/context/BuilderModeContext.tsx"
 import {
@@ -33,11 +33,7 @@ export interface LinkTextProps {
 }
 
 export const CraftLinkText = (props: LinkTextProps) => {
-  const responsiveStyle = useCraftResolvedStyle(
-    CRAFT_DISPLAY_NAME.LinkText,
-    props.styleClassId,
-    props.style,
-  )
+  const responsiveStyle = useCraftNodeStyle(props.styleClassId, props.style)
   const text = props.text ?? "Ссылка"
   const i18nKey = props.i18nKey ?? null
   const collectionField = props.collectionField ?? null

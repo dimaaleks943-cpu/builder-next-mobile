@@ -145,11 +145,11 @@ export const EffectsAccordion = () => {
   const isRn = modeContext?.mode === MODE_TYPE.RN
   const viewport = usePreviewViewport()
   const { actions } = useEditor()
-  const { selectedId, getStyleProp, setStyleProp, mutateClassStyle, mergedStyleForRead } =
+  const { selectedId, getStyleProp, setStyleProp, mutateClassStyle, nodeStyleForRead } =
     useStyleEditing()
   const selectedProps = useMemo(
-    () => ({ style: mergedStyleForRead }) as Record<string, unknown>,
-    [mergedStyleForRead],
+    () => ({ style: nodeStyleForRead }) as Record<string, unknown>,
+    [nodeStyleForRead],
   )
 
   const [boxShadowAnchorEl, setBoxShadowAnchorEl] = useState<HTMLElement | null>(null)

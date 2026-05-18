@@ -1,5 +1,5 @@
 /** Допустимые значения CSS `mix-blend-mode` для селекта «Blending». */
-export type CraftMixBlendMode =
+type CraftMixBlendMode =
   | "normal"
   | "darken"
   | "multiply"
