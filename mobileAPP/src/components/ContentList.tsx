@@ -41,6 +41,9 @@ interface ContentListProps {
   style?: unknown;
   /** Вложенный responsive `style` шаблонной ячейки (из craft); display/gap/flex читаются после `resolveResponsiveStyle`. */
   cellTemplateStyle?: unknown;
+  cellNodeId?: string;
+  nativeID?: string;
+  testID?: string;
   children?: ComponentNode[];
 }
 
@@ -53,6 +56,9 @@ export const ContentList = ({
   selectedSource = "",
   style,
   cellTemplateStyle,
+  cellNodeId,
+  nativeID,
+  testID,
   children: childrenProp,
 }: ContentListProps) => {
   const { viewport } = useResponsiveViewport();
@@ -318,6 +324,8 @@ export const ContentList = ({
   if (!selectedSource || blockingLoading) {
     return (
       <View
+        nativeID={nativeID}
+        testID={testID}
         style={[
           listRootBackgroundStyle,
           listRootBorderStyle,
@@ -331,6 +339,8 @@ export const ContentList = ({
   if (collectionItems.length === 0) {
     return (
       <View
+        nativeID={nativeID}
+        testID={testID}
         style={[
           listRootBackgroundStyle,
           listRootBorderStyle,
@@ -349,6 +359,8 @@ export const ContentList = ({
   return (
     <ContentListProvider filterScope={scopeTrimmed || undefined}>
       <View
+        nativeID={nativeID}
+        testID={testID}
         style={[
           listRootBackgroundStyle,
           listRootBorderStyle,
@@ -381,6 +393,7 @@ export const ContentList = ({
                     placeItems={cellPlaceItems ?? undefined}
                     backgroundColor={cellBackgroundColor}
                     cellOpacityPercent={cellOpacityPercent}
+                    cellNodeId={cellNodeId}
                   >
                     {children}
                   </ContentListItem>
@@ -428,6 +441,7 @@ interface ContentListItemProps {
   placeItems?: string;
   backgroundColor?: string;
   cellOpacityPercent?: number;
+  cellNodeId?: string;
   children: ComponentNode[];
 }
 
@@ -473,6 +487,7 @@ const ContentListItem = ({
   placeItems,
   backgroundColor: cellBg,
   cellOpacityPercent,
+  cellNodeId,
   children,
 }: ContentListItemProps) => {
   const cellOpacityStyle = resolveCraftVisualEffectsRnStyle({
@@ -507,6 +522,8 @@ const ContentListItem = ({
   return (
     <ContentDataProvider collectionKey={collectionKey} itemData={itemData}>
       <View
+        nativeID={cellNodeId}
+        testID={cellNodeId}
         style={[
           {
             flex: itemsPerRow === 1 ? 0 : 1,

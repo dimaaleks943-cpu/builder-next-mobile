@@ -1,4 +1,6 @@
 import type { ResponsiveStyle } from "../../content/responsiveStyle";
+import { normalizeStyleClassIds } from "./styleClassIds";
+import { resolveStackedNodeStyle } from "./resolveStackedNodeStyle";
 import type { StyleClassesRegistry } from "./types";
 
 const hasStyleBranches = (style: ResponsiveStyle): boolean =>
@@ -9,20 +11,20 @@ const hasStyleBranches = (style: ResponsiveStyle): boolean =>
       Object.keys(branch).length > 0,
   );
 
-/** Один источник: класс или `props.style`, без склейки слоёв. */
 export const resolveSerializedNodeStyle = (
   rawProps: Record<string, unknown>,
   _componentType: string,
   _nodeDisplayName: string | undefined,
   styleClasses: StyleClassesRegistry,
 ): ResponsiveStyle | undefined => {
-  const styleClassId =
-    typeof rawProps.styleClassId === "string" ? rawProps.styleClassId : undefined;
-  const nodeStyle = styleClassId
-    ? styleClasses[styleClassId]?.style
-    : rawProps.style && typeof rawProps.style === "object"
+  const styleClassIds = normalizeStyleClassIds(rawProps.styleClassIds);
+  const nodeStyle = resolveStackedNodeStyle(
+    styleClassIds,
+    rawProps.style && typeof rawProps.style === "object"
       ? (rawProps.style as ResponsiveStyle)
-      : undefined;
+      : undefined,
+    styleClasses,
+  );
 
   return nodeStyle && hasStyleBranches(nodeStyle) ? nodeStyle : undefined;
 };
@@ -40,7 +42,7 @@ export const propsForRuntime = (
     styleClasses,
   );
   const props = { ...rawProps };
-  delete props.styleClassId;
+  delete props.styleClassIds;
   if (resolvedStyle) {
     props.style = resolvedStyle;
   } else {

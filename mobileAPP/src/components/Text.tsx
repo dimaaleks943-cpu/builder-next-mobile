@@ -16,12 +16,16 @@ interface TextProps {
   style?: unknown;
   text?: string;
   collectionField?: string | null;
+  nativeID?: string;
+  testID?: string;
 }
 
 export const Text = ({
   text,
   collectionField = null,
   style,
+  nativeID,
+  testID,
 }: TextProps) => {
   const { viewport } = useResponsiveViewport();
   const rs = resolveResponsiveStyle(style, viewport);
@@ -75,5 +79,9 @@ export const Text = ({
     ...opacityEffects,
   };
 
-  return <RNText style={textStyle}>{displayText}</RNText>;
+  return (
+    <RNText nativeID={nativeID} testID={testID} style={textStyle}>
+      {displayText}
+    </RNText>
+  );
 };

@@ -35,6 +35,8 @@ interface LinkTextProps {
   collectionItemLinkTarget?: "none" | "template";
   collectionItemTemplatePageId?: string | null;
   openInNewTab?: boolean;
+  nativeID?: string;
+  testID?: string;
 }
 
 export const LinkText = ({
@@ -46,6 +48,8 @@ export const LinkText = ({
   collectionItemTemplatePageId = null,
   openInNewTab: _openInNewTab, // не используется в RN, оставлен для совместимости с типом конструктора
   style,
+  nativeID,
+  testID,
 }: LinkTextProps) => {
   const { viewport } = useResponsiveViewport();
   const rs = resolveResponsiveStyle(style, viewport);
@@ -181,7 +185,7 @@ export const LinkText = ({
   };
 
   return (
-    <Pressable onPress={handlePress}>
+    <Pressable nativeID={nativeID} testID={testID} onPress={handlePress}>
       <RNText style={linkTextStyle}>
         {displayText}
       </RNText>

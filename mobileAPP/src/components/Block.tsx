@@ -22,9 +22,16 @@ type FlexAlignItems =
 interface BlockProps {
   style?: unknown;
   children?: ReactNode;
+  nativeID?: string;
+  testID?: string;
 }
 
-export const Block = ({ children, style }: BlockProps) => {
+export const Block = ({
+  children,
+  style,
+  nativeID,
+  testID,
+}: BlockProps) => {
   const { viewport } = useResponsiveViewport();
   const rs = resolveResponsiveStyle(style, viewport) as Record<string, unknown>;
 
@@ -77,6 +84,8 @@ export const Block = ({ children, style }: BlockProps) => {
 
   return (
     <View
+      nativeID={nativeID}
+      testID={testID}
       style={[
         styles.block,
         shadowStyle,

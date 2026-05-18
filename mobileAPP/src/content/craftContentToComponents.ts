@@ -55,6 +55,7 @@ const buildNodeTree = (
   if (!node) return null;
 
   const componentType = resolveTypeName(node.type, id);
+  const rawNodeProps = (node.props ?? {}) as Record<string, unknown>;
 
   if (componentType === "ContentList") {
     const linkedNodes = node.linkedNodes ?? {};
@@ -77,9 +78,10 @@ const buildNodeTree = (
     const actualFirstCellId = pickTemplateCellId();
     if (!actualFirstCellId) {
       return {
+        nodeId: id,
         type: "ContentList",
         props: propsForRuntime(
-          (node.props ?? {}) as Record<string, unknown>,
+          rawNodeProps,
           "ContentList",
           node.displayName,
           styleClasses,
@@ -90,9 +92,10 @@ const buildNodeTree = (
 
     if (!cellNode) {
       return {
+        nodeId: id,
         type: "ContentList",
         props: propsForRuntime(
-          (node.props ?? {}) as Record<string, unknown>,
+          rawNodeProps,
           "ContentList",
           node.displayName,
           styleClasses,
@@ -148,18 +151,19 @@ const buildNodeTree = (
       cellNode.displayName,
       styleClasses,
     );
-
     const contentListProps = {
       ...propsForRuntime(
-        (node.props ?? {}) as Record<string, unknown>,
+        rawNodeProps,
         "ContentList",
         node.displayName,
         styleClasses,
       ),
       cellTemplateStyle: cellRuntimeProps.style,
+      cellNodeId: actualFirstCellId,
     };
 
     return {
+      nodeId: id,
       type: "ContentList",
       props: contentListProps,
       children: safeChildren.length > 0 ? safeChildren : undefined,
@@ -181,9 +185,10 @@ const buildNodeTree = (
   }
 
   const component: ComponentNode = {
+    nodeId: id,
     type: String(componentType),
     props: propsForRuntime(
-      (node.props ?? {}) as Record<string, unknown>,
+      rawNodeProps,
       componentType,
       node.displayName,
       styleClasses,
@@ -214,6 +219,7 @@ export const craftContentToComponents = (content: string): ComponentNode[] => {
   const serializedNodes = nodes as SerializedNodes;
   const result: ComponentNode[] = [];
   const rootLinkedNodes = root.linkedNodes ?? {};
+  const rootProps = (root.props ?? {}) as Record<string, unknown>;
 
   for (const childKey of root.nodes) {
     const actualChildId = rootLinkedNodes[childKey] || childKey;
@@ -233,9 +239,10 @@ export const craftContentToComponents = (content: string): ComponentNode[] => {
     }
     return [
       {
+        nodeId: "ROOT",
         type: "Body",
         props: propsForRuntime(
-          (root.props ?? {}) as Record<string, unknown>,
+          rootProps,
           "Body",
           root.displayName,
           styleClasses,

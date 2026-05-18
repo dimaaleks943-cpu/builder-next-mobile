@@ -7,9 +7,16 @@ import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 interface BodyProps {
   style?: unknown;
   children?: ReactNode;
+  nativeID?: string;
+  testID?: string;
 }
 
-export const Body = ({ children, style }: BodyProps) => {
+export const Body = ({
+  children,
+  style,
+  nativeID,
+  testID,
+}: BodyProps) => {
   const { viewport } = useResponsiveViewport();
   const rs = resolveResponsiveStyle(style, viewport);
   const backgroundColor =
@@ -30,6 +37,8 @@ export const Body = ({ children, style }: BodyProps) => {
 
   return (
     <View
+      nativeID={nativeID}
+      testID={testID}
       style={[
         styles.root,
         { backgroundColor },

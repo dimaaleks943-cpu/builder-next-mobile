@@ -26,6 +26,9 @@ const componentMap = {
   ContentList,
 } as Record<string, React.ComponentType<any>>;
 
+const nodeViewIds = (nodeId: string | undefined,): { nativeID?: string; testID?: string } =>
+  nodeId ? { nativeID: nodeId, testID: nodeId } : {};
+
 export const renderComponent = (
   node: ComponentNode,
   viewport: Viewport,
@@ -62,6 +65,7 @@ export const renderComponent = (
           React.ComponentProps<typeof ContentList>,
           "children"
         >)}
+        {...nodeViewIds(node.nodeId)}
         children={templateChildren}
       />
     );
@@ -101,7 +105,14 @@ export const renderComponent = (
   }
 
   const nodeProps = ((node as any).props ?? {}) as Record<string, unknown>;
-  return <Component {...nodeProps}>{children}</Component>;
+  return (
+    <Component
+      {...nodeProps}
+      {...nodeViewIds(node.nodeId)}
+    >
+      {children}
+    </Component>
+  );
 };
 
 /**
