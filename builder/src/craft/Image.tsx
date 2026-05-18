@@ -19,12 +19,12 @@ export interface CraftImageProps {
   alt?: string
   /** Поле коллекции, содержащее URL изображения (если компонент внутри ContentList). */
   collectionField?: string | null
-  styleClassId?: string | null
+  styleClassIds?: string[]
   style?: ResponsiveStyle
 }
 
 export const CraftImage = (props: CraftImageProps) => {
-  const responsiveStyle = useCraftNodeStyle(props.styleClassId, props.style)
+  const responsiveStyle = useCraftNodeStyle(props.styleClassIds, props.style)
   const src = props.src
   const alt = props.alt ?? "Изображение"
   const collectionField = props.collectionField ?? null

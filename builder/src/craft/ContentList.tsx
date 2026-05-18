@@ -39,7 +39,7 @@ export type ContentListProps = {
    * и включает передачу `categoryIds` в запрос элементов при смене категории в контексте.
    */
   filterScope?: string
-  styleClassId?: string | null
+  styleClassIds?: string[]
   style?: ResponsiveStyle
 }
 
@@ -75,7 +75,7 @@ export const CraftContentList = ({}: ContentListProps) => {
   const { selectedCategoryIdByScope } = useCollectionFilterScope()
   const [fetchContentItems] = useLazyGetContentItemsQuery()
   const viewport = usePreviewViewport()
-  const responsiveStyle = useCraftNodeStyle(props.styleClassId, props.style)
+  const responsiveStyle = useCraftNodeStyle(props.styleClassIds, props.style)
 
   const openInlineSettingsModal = useCallback(
     (viewportAnchor?: InlineSettingsViewportAnchor | null) => {

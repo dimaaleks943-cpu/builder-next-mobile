@@ -8,11 +8,11 @@ import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 export type BlockProps = {
   children?: ReactNode
   style?: ResponsiveStyle
-  styleClassId?: string | null
+  styleClassIds?: string[]
 }
 
 export const CraftBlock = (props: BlockProps) => {
-  const responsiveStyle = useCraftNodeStyle(props.styleClassId, props.style)
+  const responsiveStyle = useCraftNodeStyle(props.styleClassIds, props.style)
   const {
     connectors: { connect, drag },
   } = useNode((node) => ({

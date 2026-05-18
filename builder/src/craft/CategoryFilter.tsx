@@ -28,7 +28,7 @@ type CategoryFilterProps = {
   direction?: "row" | "column"
   /** Подпись пункта «все категории» (`categoryId === null` в контексте). */
   showAllLabel?: string
-  styleClassId?: string | null
+  styleClassIds?: string[]
   style?: ResponsiveStyle
 }
 
@@ -55,7 +55,7 @@ export const CraftCategoryFilter = () => {
     useCollectionFilterScope()
   const [fetchCategories, { data: categoriesResponse, isFetching }] =
     useLazyGetContentCategoriesQuery()
-  const responsiveStyle = useCraftNodeStyle(props.styleClassId, props.style)
+  const responsiveStyle = useCraftNodeStyle(props.styleClassIds, props.style)
 
   const filterScope = props.filterScope ?? ""
   const contentCategoryRootId = props.contentCategoryRootId ?? ""

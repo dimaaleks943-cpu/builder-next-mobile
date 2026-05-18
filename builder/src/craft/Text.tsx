@@ -24,12 +24,12 @@ export interface TextProps {
   text?: string
   i18nKey?: string | null
   collectionField?: string | null
-  styleClassId?: string | null
+  styleClassIds?: string[]
   style?: ResponsiveStyle
 }
 
 export const CraftText = (props: TextProps) => {
-  const responsiveStyle = useCraftNodeStyle(props.styleClassId, props.style)
+  const responsiveStyle = useCraftNodeStyle(props.styleClassIds, props.style)
   const text = props.text ?? "Текст"
   const i18nKey = props.i18nKey ?? null
   const collectionField = props.collectionField ?? null

@@ -4,16 +4,16 @@ import { useStyleClassContext } from "../context/StyleClassContext.tsx"
 import { pickNodeResponsiveStyle } from "../styleClasses/pickNodeResponsiveStyle.ts"
 import { resolveResponsiveStyle, type ResponsiveStyle } from "../responsiveStyle.ts"
 
-/** Резолвит стили узла для текущего viewport. Без склейки — только `props.style` или класс. */
+/** Резолвит стили узла для текущего viewport (стек классов + combo). */
 export const useCraftNodeStyle = (
-  styleClassId?: string | null,
+  styleClassIds?: string[] | null,
   localStyle?: ResponsiveStyle,
 ) => {
   const viewport = usePreviewViewport()
   const { classes } = useStyleClassContext()
 
   return useMemo(() => {
-    const nodeStyle = pickNodeResponsiveStyle(styleClassId, localStyle, classes)
+    const nodeStyle = pickNodeResponsiveStyle(styleClassIds ?? [], localStyle, classes)
     return resolveResponsiveStyle(nodeStyle, viewport)
-  }, [styleClassId, localStyle, classes, viewport])
+  }, [styleClassIds, localStyle, classes, viewport])
 }

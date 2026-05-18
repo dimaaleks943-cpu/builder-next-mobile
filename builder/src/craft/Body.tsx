@@ -7,13 +7,13 @@ import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 
 export type BodyProps = {
   children?: ReactNode
-  styleClassId?: string | null
+  styleClassIds?: string[]
   style?: ResponsiveStyle
 }
 
 // Root component используется только как стартовый элемент холста, не удаляется
 export const CraftBody = (props: BodyProps) => {
-  const responsiveStyle = useCraftNodeStyle(props.styleClassId, props.style)
+  const responsiveStyle = useCraftNodeStyle(props.styleClassIds, props.style)
 
   const {
     connectors: { connect, drag },

@@ -7,7 +7,7 @@ import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 
 export type ContentListCellProps = {
   children?: ReactNode
-  styleClassId?: string | null
+  styleClassIds?: string[]
   style?: ResponsiveStyle
 }
 
@@ -18,7 +18,7 @@ export type ContentListCellProps = {
  * display, flexFlow, justifyContent, alignItems, gridTemplate*, placeItems, gap — в `responsiveStyle` в виде имён React/CSS.
  */
 export const CraftContentListCell = (props: ContentListCellProps) => {
-  const responsiveStyle = useCraftNodeStyle(props.styleClassId, props.style)
+  const responsiveStyle = useCraftNodeStyle(props.styleClassIds, props.style)
   const {
     connectors: { connect, drag },
   } = useNode((node) => ({

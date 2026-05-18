@@ -28,12 +28,12 @@ export interface LinkTextProps {
   collectionItemLinkTarget?: "none" | "template"
   collectionItemTemplatePageId?: string | null
   openInNewTab?: boolean
-  styleClassId?: string | null
+  styleClassIds?: string[]
   style?: ResponsiveStyle
 }
 
 export const CraftLinkText = (props: LinkTextProps) => {
-  const responsiveStyle = useCraftNodeStyle(props.styleClassId, props.style)
+  const responsiveStyle = useCraftNodeStyle(props.styleClassIds, props.style)
   const text = props.text ?? "Ссылка"
   const i18nKey = props.i18nKey ?? null
   const collectionField = props.collectionField ?? null
