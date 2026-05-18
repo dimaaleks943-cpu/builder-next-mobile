@@ -1,7 +1,4 @@
 import type { ResponsiveStyle } from "../../content/responsiveStyle";
-import { resolveCraftDisplayName } from "./craftDisplayNames";
-import { getCraftIntrinsicStyle } from "./craftIntrinsicStyles";
-import { mergeResponsiveStyles } from "./mergeResponsiveStyles";
 import type { StyleClassesRegistry } from "./types";
 
 const hasStyleBranches = (style: ResponsiveStyle): boolean =>
@@ -12,24 +9,22 @@ const hasStyleBranches = (style: ResponsiveStyle): boolean =>
       Object.keys(branch).length > 0,
   );
 
+/** Один источник: класс или `props.style`, без склейки слоёв. */
 export const resolveSerializedNodeStyle = (
   rawProps: Record<string, unknown>,
-  componentType: string,
-  nodeDisplayName: string | undefined,
+  _componentType: string,
+  _nodeDisplayName: string | undefined,
   styleClasses: StyleClassesRegistry,
 ): ResponsiveStyle | undefined => {
-  const displayName = resolveCraftDisplayName(componentType, nodeDisplayName);
-  const intrinsic = getCraftIntrinsicStyle(displayName);
   const styleClassId =
     typeof rawProps.styleClassId === "string" ? rawProps.styleClassId : undefined;
-  const classStyle = styleClassId ? styleClasses[styleClassId]?.style : undefined;
-  const localStyle =
-    rawProps.style && typeof rawProps.style === "object"
+  const nodeStyle = styleClassId
+    ? styleClasses[styleClassId]?.style
+    : rawProps.style && typeof rawProps.style === "object"
       ? (rawProps.style as ResponsiveStyle)
       : undefined;
 
-  const merged = mergeResponsiveStyles(intrinsic, classStyle, localStyle);
-  return hasStyleBranches(merged) ? merged : undefined;
+  return nodeStyle && hasStyleBranches(nodeStyle) ? nodeStyle : undefined;
 };
 
 export const propsForRuntime = (
