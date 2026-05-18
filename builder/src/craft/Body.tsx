@@ -1,9 +1,9 @@
 import { useNode } from "@craftjs/core"
 import type { ReactNode } from "react"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
+import { BODY_CRAFT_DEFAULT_PROPS } from "./defaultDefaultCraftStyles.ts"
 import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
 import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
-import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 
 export type BodyProps = {
   children?: ReactNode
@@ -39,16 +39,7 @@ export const CraftBody = (props: BodyProps) => {
 
 (CraftBody as any).craft = {
   displayName: CRAFT_DISPLAY_NAME.Body,
-  props: {
-    style: {
-      [PreviewViewport.DESKTOP]: {
-        display: "block",
-        boxSizing: "border-box",
-        position: "relative",
-        width: "100%",
-      },
-    },
-  },
+  props: BODY_CRAFT_DEFAULT_PROPS,
   rules: {
     canMoveIn: () => true,
   },

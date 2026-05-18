@@ -1,6 +1,5 @@
 import { useNode } from "@craftjs/core"
 import type { CSSProperties, ReactNode } from "react"
-import { ContentListCellContext } from "../pages/builder/context/ContentListCellContext.tsx"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
@@ -38,9 +37,7 @@ export const CraftContentListCell = (props: ContentListCellProps) => {
         padding: "16px",
       }}
     >
-      <ContentListCellContext.Provider value={true}>
-        {props.children}
-      </ContentListCellContext.Provider>
+      {props.children}
     </div>
   )
 };
