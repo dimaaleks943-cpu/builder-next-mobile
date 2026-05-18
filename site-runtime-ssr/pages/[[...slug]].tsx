@@ -13,6 +13,7 @@ import {
 } from "@/lib/sitePages"
 import { craftContentToComponents } from "@/lib/craftContentToComponents"
 import { buildCraftPageCss } from "@/lib/styleClasses/buildCraftPageCss"
+import { CRAFT_FRAGMENT_SCOPE } from "@/lib/styleClasses/fragmentScope"
 import { fetchContentItemBySlug, fetchContentItems } from "@/lib/collectionsApi"
 import { fetchContentCategoryBySlug } from "@/lib/categoriesApi"
 import {
@@ -151,16 +152,18 @@ function resolveSystemLayoutComponents(pages: SitePage[], query: ParsedUrlQuery)
   const headerPage = pickByCode("header")
   const footerPage = pickByCode("footer")
   const headerCraft = headerPage?.content
-    ? craftContentToComponents(headerPage.content)
+    ? craftContentToComponents(headerPage.content, CRAFT_FRAGMENT_SCOPE.header)
     : {
+        fragmentScope: CRAFT_FRAGMENT_SCOPE.header,
         components: [],
         styleClasses: {},
         orphanStyleNodes: [],
         stackedStyleClassIds: [],
       }
   const footerCraft = footerPage?.content
-    ? craftContentToComponents(footerPage.content)
+    ? craftContentToComponents(footerPage.content, CRAFT_FRAGMENT_SCOPE.footer)
     : {
+        fragmentScope: CRAFT_FRAGMENT_SCOPE.footer,
         components: [],
         styleClasses: {},
         orphanStyleNodes: [],
@@ -288,7 +291,10 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       return { notFound: true }
     }
 
-    const pageCraft = craftContentToComponents(renderPageCandidate.content)
+    const pageCraft = craftContentToComponents(
+      renderPageCandidate.content,
+      CRAFT_FRAGMENT_SCOPE.main,
+    )
     if (pageCraft.components.length === 0) {
       return { notFound: true }
     }
@@ -355,7 +361,10 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
       return { notFound: true }
     }
 
-    const pageCraft = craftContentToComponents(renderPageCandidate.content)
+    const pageCraft = craftContentToComponents(
+      renderPageCandidate.content,
+      CRAFT_FRAGMENT_SCOPE.main,
+    )
     if (pageCraft.components.length === 0) {
       return { notFound: true }
     }
@@ -451,7 +460,10 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
     return { notFound: true }
   }
 
-  const pageCraft = craftContentToComponents(renderPageCandidate.content)
+  const pageCraft = craftContentToComponents(
+    renderPageCandidate.content,
+    CRAFT_FRAGMENT_SCOPE.main,
+  )
   if (pageCraft.components.length === 0) {
     return { notFound: true }
   }
@@ -513,7 +525,7 @@ export default function Page({
   const ogUrlSuffix = publicPath === "/" ? "" : publicPath
 
   const main = (
-    <main>
+    <main id="site-main">
       {renderPage(components)}
     </main>
   )
@@ -562,9 +574,13 @@ export default function Page({
               locale={locale}
               translate={pageTranslate.translate}
             >
-              {renderPage(headerComponents)}
+              <header id="site-header">
+                {renderPage(headerComponents)}
+              </header>
               {inner}
-              {renderPage(footerComponents)}
+              <footer id="site-footer">
+                {renderPage(footerComponents)}
+              </footer>
             </PageLocaleProvider>
           </StorefrontPageProvider>
         </CollectionFilterScopeProvider>

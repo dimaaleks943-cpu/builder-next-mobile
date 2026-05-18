@@ -3,6 +3,10 @@ import { parsePageCraftContent } from "./pageCraftContent"
 import { decodeStyleProps } from "./stylePropsCodec"
 import type { OrphanStyleNode } from "./styleClasses/buildOrphanNodeCss"
 import { buildComboClassId } from "./styleClasses/comboClassId"
+import {
+  type CraftFragmentScopePrefix,
+  prefixCraftNodeId,
+} from "./styleClasses/fragmentScope"
 import { classNameFromStyleClassIds } from "./styleClasses/styleClassSlug"
 import { normalizeStyleClassIds } from "./styleClasses/styleClassIds"
 import {
@@ -12,6 +16,7 @@ import {
 import type { StyleClassesRegistry } from "./styleClasses/types"
 
 export type CraftContentParseResult = {
+  fragmentScope: CraftFragmentScopePrefix
   components: ComponentNode[]
   styleClasses: StyleClassesRegistry
   orphanStyleNodes: OrphanStyleNode[]
@@ -76,16 +81,27 @@ const recordStackedStyleClassIds = (
 const classNameProp = (
   styleClassIds: readonly string[],
   registry: StyleClassesRegistry,
+  fragmentScope: CraftFragmentScopePrefix,
 ): Pick<ComponentNode, "className"> | Record<string, never> => {
-  const className = classNameFromStyleClassIds(styleClassIds, registry)
+  const className = classNameFromStyleClassIds(
+    styleClassIds,
+    registry,
+    fragmentScope,
+  )
   return className ? { className } : {}
 }
+
+const scopedNodeId = (
+  nodeId: string,
+  fragmentScope: CraftFragmentScopePrefix,
+): string => prefixCraftNodeId(nodeId, fragmentScope)
 
 const collectOrphanStyle = (
   nodeId: string,
   rawProps: Record<string, unknown>,
   styleClasses: StyleClassesRegistry,
   orphanStyleNodes: OrphanStyleNode[],
+  fragmentScope: CraftFragmentScopePrefix,
 ): void => {
   const styleClassIds = normalizeStyleClassIds(rawProps.styleClassIds)
   if (styleClassIds.length > 0) return
@@ -97,7 +113,7 @@ const collectOrphanStyle = (
     styleClasses,
   )
   if (style) {
-    orphanStyleNodes.push({ nodeId, style })
+    orphanStyleNodes.push({ nodeId: scopedNodeId(nodeId, fragmentScope), style })
   }
 }
 
@@ -107,6 +123,7 @@ const buildNodeTree = (
   styleClasses: StyleClassesRegistry,
   orphanStyleNodes: OrphanStyleNode[],
   stackedCollector: Map<string, string[]>,
+  fragmentScope: CraftFragmentScopePrefix,
 ): ComponentNode | null => {
   const node = nodes[id]
   if (!node) return null
@@ -141,14 +158,21 @@ const buildNodeTree = (
     }
 
     const actualFirstCellId = pickTemplateCellId()
-    collectOrphanStyle(id, rawNodeProps, styleClasses, orphanStyleNodes)
+    collectOrphanStyle(
+      id,
+      rawNodeProps,
+      styleClasses,
+      orphanStyleNodes,
+      fragmentScope,
+    )
 
     if (!actualFirstCellId) {
       return {
-        nodeId: id,
+        nodeId: scopedNodeId(id, fragmentScope),
         ...classNameProp(
           normalizeStyleClassIds(rawNodeProps.styleClassIds),
           styleClasses,
+          fragmentScope,
         ),
         type: "ContentList",
         props: propsForRuntimeSsr(
@@ -163,10 +187,11 @@ const buildNodeTree = (
 
     if (!cellNode) {
       return {
-        nodeId: id,
+        nodeId: scopedNodeId(id, fragmentScope),
         ...classNameProp(
           normalizeStyleClassIds(rawNodeProps.styleClassIds),
           styleClasses,
+          fragmentScope,
         ),
         type: "ContentList",
         props: propsForRuntimeSsr(
@@ -199,6 +224,7 @@ const buildNodeTree = (
           styleClasses,
           orphanStyleNodes,
           stackedCollector,
+          fragmentScope,
         )
         if (child) {
           templateChildren.push(child)
@@ -216,6 +242,7 @@ const buildNodeTree = (
         styleClasses,
         orphanStyleNodes,
         stackedCollector,
+        fragmentScope,
       )
       if (child) {
         templateChildren.push(child)
@@ -237,6 +264,7 @@ const buildNodeTree = (
       normalizedCell,
       styleClasses,
       orphanStyleNodes,
+      fragmentScope,
     )
     recordStackedStyleClassIds(
       normalizeStyleClassIds(normalizedCell.styleClassIds),
@@ -246,6 +274,7 @@ const buildNodeTree = (
     const cellClassName = classNameFromStyleClassIds(
       normalizeStyleClassIds(normalizedCell.styleClassIds),
       styleClasses,
+      fragmentScope,
     )
 
     const contentListProps = {
@@ -256,14 +285,15 @@ const buildNodeTree = (
         styleClasses,
       ),
       ...(cellClassName ? { cellClassName } : {}),
-      cellNodeId: actualFirstCellId,
+      cellNodeId: scopedNodeId(actualFirstCellId, fragmentScope),
     }
 
     return {
-      nodeId: id,
+      nodeId: scopedNodeId(id, fragmentScope),
       ...classNameProp(
         normalizeStyleClassIds(rawNodeProps.styleClassIds),
         styleClasses,
+        fragmentScope,
       ),
       type: "ContentList",
       props: contentListProps,
@@ -287,19 +317,27 @@ const buildNodeTree = (
       styleClasses,
       orphanStyleNodes,
       stackedCollector,
+      fragmentScope,
     )
     if (child) {
       children.push(child)
     }
   }
 
-  collectOrphanStyle(id, rawNodeProps, styleClasses, orphanStyleNodes)
+  collectOrphanStyle(
+    id,
+    rawNodeProps,
+    styleClasses,
+    orphanStyleNodes,
+    fragmentScope,
+  )
 
   const component: ComponentNode = {
-    nodeId: id,
+    nodeId: scopedNodeId(id, fragmentScope),
     ...classNameProp(
       normalizeStyleClassIds(rawNodeProps.styleClassIds),
       styleClasses,
+      fragmentScope,
     ),
     type: String(componentType),
     props: propsForRuntimeSsr(
@@ -319,12 +357,14 @@ const buildNodeTree = (
 
 export const craftContentToComponents = (
   content: string,
+  fragmentScope: CraftFragmentScopePrefix,
 ): CraftContentParseResult => {
   const orphanStyleNodes: OrphanStyleNode[] = []
   const stackedCollector = new Map<string, string[]>()
 
   if (!content) {
     return {
+      fragmentScope,
       components: [],
       styleClasses: {},
       orphanStyleNodes,
@@ -338,6 +378,7 @@ export const craftContentToComponents = (
   if (!root || !Array.isArray(root.nodes)) {
     console.error("Некорректный Craft content: нет ROOT.nodes")
     return {
+      fragmentScope,
       components: [],
       styleClasses,
       orphanStyleNodes,
@@ -357,6 +398,7 @@ export const craftContentToComponents = (
       styleClasses,
       orphanStyleNodes,
       stackedCollector,
+      fragmentScope,
     )
     if (child) {
       result.push(child)
@@ -372,6 +414,7 @@ export const craftContentToComponents = (
   if (rootIsBody) {
     if (result.length === 0) {
       return {
+        fragmentScope,
         components: [],
         styleClasses,
         orphanStyleNodes,
@@ -380,19 +423,27 @@ export const craftContentToComponents = (
     }
 
     const rootProps = (root.props ?? {}) as Record<string, unknown>
-    collectOrphanStyle("ROOT", rootProps, styleClasses, orphanStyleNodes)
+    collectOrphanStyle(
+      "ROOT",
+      rootProps,
+      styleClasses,
+      orphanStyleNodes,
+      fragmentScope,
+    )
     recordStackedStyleClassIds(
       normalizeStyleClassIds(rootProps.styleClassIds),
       stackedCollector,
     )
 
     return {
+      fragmentScope,
       components: [
         {
-          nodeId: "ROOT",
+          nodeId: scopedNodeId("ROOT", fragmentScope),
           ...classNameProp(
             normalizeStyleClassIds(rootProps.styleClassIds),
             styleClasses,
+            fragmentScope,
           ),
           type: "Body",
           props: propsForRuntimeSsr(
@@ -411,6 +462,7 @@ export const craftContentToComponents = (
   }
 
   return {
+    fragmentScope,
     components: result,
     styleClasses,
     orphanStyleNodes,

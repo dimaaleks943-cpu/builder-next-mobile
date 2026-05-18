@@ -2,21 +2,26 @@ import {
   BRANCH_MEDIA,
   pushRulesForResponsiveStyle,
 } from "../responsiveCss"
-import { buildComboSelector, styleClassSlug } from "./styleClassSlug"
+import type { CraftFragmentScopePrefix } from "./fragmentScope"
+import { buildComboSelector, scopedStyleClassSlug } from "./styleClassSlug"
 import type { StyleClassDefinition, StyleClassesRegistry } from "./types"
 
 const selectorForClass = (
   entry: StyleClassDefinition,
   registry: StyleClassesRegistry,
+  scopePrefix: CraftFragmentScopePrefix,
 ): string | null => {
   if (entry.kind === "combo" && entry.comboMemberIds?.length) {
-    return buildComboSelector(entry.comboMemberIds, registry)
+    return buildComboSelector(entry.comboMemberIds, registry, scopePrefix)
   }
-  const slug = styleClassSlug(entry.name)
+  const slug = scopedStyleClassSlug(entry.name, scopePrefix)
   return slug ? `.${slug}` : null
 }
 
-export const buildStyleClassesCss = (registry: StyleClassesRegistry): string => {
+export const buildStyleClassesCss = (
+  registry: StyleClassesRegistry,
+  scopePrefix: CraftFragmentScopePrefix,
+): string => {
   const entries = Object.values(registry)
   if (entries.length === 0) return ""
 
@@ -28,7 +33,7 @@ export const buildStyleClassesCss = (registry: StyleClassesRegistry): string => 
 
   for (const entry of entries) {
     if (entry.kind === "combo") continue
-    const selector = selectorForClass(entry, registry)
+    const selector = selectorForClass(entry, registry, scopePrefix)
     if (!selector) continue
     pushRulesForResponsiveStyle(
       selector,

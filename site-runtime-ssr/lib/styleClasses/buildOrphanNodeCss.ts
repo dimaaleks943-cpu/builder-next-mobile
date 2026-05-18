@@ -1,6 +1,5 @@
 import type { ResponsiveStyle } from "../responsiveCss"
 import { BRANCH_MEDIA, pushRulesForResponsiveStyle } from "../responsiveCss"
-
 export type OrphanStyleNode = {
   nodeId: string
   style: ResponsiveStyle

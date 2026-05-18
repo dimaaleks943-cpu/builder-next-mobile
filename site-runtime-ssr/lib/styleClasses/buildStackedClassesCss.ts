@@ -3,6 +3,7 @@ import {
   pushRulesForResponsiveStyle,
   type ResponsiveStyle,
 } from "../responsiveCss"
+import type { CraftFragmentScopePrefix } from "./fragmentScope"
 import { buildComboClassId } from "./comboClassId"
 import { buildComboSelector } from "./styleClassSlug"
 import { resolveStackedNodeStyle } from "./resolveStackedNodeStyle"
@@ -27,6 +28,7 @@ const stackDedupeKey = (memberIds: readonly string[]): string =>
 export const buildStackedClassesCss = (
   stacks: readonly (readonly string[])[],
   registry: StyleClassesRegistry,
+  scopePrefix: CraftFragmentScopePrefix,
 ): string => {
   const seen = new Set<string>()
   const baseRules: string[] = []
@@ -44,7 +46,7 @@ export const buildStackedClassesCss = (
     const style = resolveStackedNodeStyle(memberIds, undefined, registry)
     if (!style || !hasStyleBranches(style)) continue
 
-    const selector = buildComboSelector(memberIds, registry)
+    const selector = buildComboSelector(memberIds, registry, scopePrefix)
     pushRulesForResponsiveStyle(
       selector,
       style,
