@@ -8,7 +8,7 @@ import { ColorPaletteIcon } from "../../../../icons/ColorPaletteIcon.tsx"
 import { AssetsIcon } from "../../../../icons/AssetsIcon.tsx"
 import { AddMenu } from "./components/AddMenu"
 import { NavigationMenu } from "./components/NavigationMenu"
-import { VariablesMenu } from "./components/VariablesMenu"
+import { VariablesMenu } from "./components/VariablesMenu/VariablesMenu.tsx"
 
 type ActiveMenu = "add" | "navigation" | "variables" | null
 
@@ -25,6 +25,12 @@ export const BuilderLeftPanel = () => {
       if (!target) return
       if (barRef.current?.contains(target)) return
       if (menuRef.current?.contains(target)) return
+      if (
+        target instanceof Element &&
+        target.closest(".MuiPopover-root, .MuiMenu-root")
+      ) {
+        return
+      }
       setActiveMenu(null)
     }
 
