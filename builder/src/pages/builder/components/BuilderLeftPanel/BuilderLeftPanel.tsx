@@ -1,12 +1,16 @@
-import { Box, IconButton } from "@mui/material"
+import { Box, Divider, IconButton } from "@mui/material"
 import { useEffect, useRef, useState } from "react"
 import { COLORS } from "../../../../theme/colors.ts"
 import { AddIcon } from "../../../../icons/AddIcon.tsx"
 import { NavigationIcon } from "../../../../icons/NavigationIcon.tsx"
+import { LayersIcon } from "../../../../icons/LayersIcon.tsx"
+import { ColorPaletteIcon } from "../../../../icons/ColorPaletteIcon.tsx"
+import { AssetsIcon } from "../../../../icons/AssetsIcon.tsx"
 import { AddMenu } from "./components/AddMenu"
 import { NavigationMenu } from "./components/NavigationMenu"
+import { VariablesMenu } from "./components/VariablesMenu"
 
-type ActiveMenu = "add" | "navigation" | null
+type ActiveMenu = "add" | "navigation" | "variables" | null
 
 export const BuilderLeftPanel = () => {
   const [activeMenu, setActiveMenu] = useState<ActiveMenu>(null)
@@ -34,12 +38,16 @@ export const BuilderLeftPanel = () => {
     setActiveMenu((current) => (current === menu ? null : menu))
   }
 
-  const handleCloseMenu = () => {
-    setActiveMenu(null)
-  }
+  const handleCloseMenu = () => setActiveMenu(null)
+
+
+  const handleLayersClick = () => {}
+
+  const handleAssetsClick = () => {}
 
   const isAddActive = activeMenu === "add"
   const isNavigationActive = activeMenu === "navigation"
+  const isVariablesActive = activeMenu === "variables"
 
   return (
     <Box
@@ -59,6 +67,7 @@ export const BuilderLeftPanel = () => {
     >
       <IconButton
         size="small"
+        disableRipple
         onClick={() => toggleMenu("add")}
         sx={{
           width: 28,
@@ -80,6 +89,7 @@ export const BuilderLeftPanel = () => {
 
       <IconButton
         size="small"
+        disableRipple
         onClick={() => toggleMenu("navigation")}
         sx={{
           width: 28,
@@ -98,6 +108,77 @@ export const BuilderLeftPanel = () => {
         />
       </IconButton>
 
+      <Divider
+        flexItem
+        sx={{
+          width: "100%",
+          borderColor: COLORS.gray200,
+        }}
+      />
+
+      <IconButton
+        size="small"
+        disableRipple
+        onClick={handleLayersClick}
+        sx={{
+          width: 28,
+          height: 28,
+          borderRadius: "6px",
+          padding: 0,
+          backgroundColor: "transparent",
+          "&:hover": {
+            backgroundColor: "transparent",
+          },
+        }}
+      >
+        <LayersIcon
+          size={18}
+          fill={COLORS.gray500}
+        />
+      </IconButton>
+
+      <IconButton
+        size="small"
+        disableRipple
+        onClick={() => toggleMenu("variables")}
+        sx={{
+          width: 28,
+          height: 28,
+          borderRadius: "6px",
+          padding: 0,
+          backgroundColor: "transparent",
+          "&:hover": {
+            backgroundColor: "transparent",
+          },
+        }}
+      >
+        <ColorPaletteIcon
+          size={18}
+          fill={isVariablesActive ? COLORS.purple400 : COLORS.gray500}
+        />
+      </IconButton>
+
+      <IconButton
+        size="small"
+        disableRipple
+        onClick={handleAssetsClick}
+        sx={{
+          width: 28,
+          height: 28,
+          borderRadius: "6px",
+          padding: 0,
+          backgroundColor: "transparent",
+          "&:hover": {
+            backgroundColor: "transparent",
+          },
+        }}
+      >
+        <AssetsIcon
+          size={18}
+          fill={COLORS.gray500}
+        />
+      </IconButton>
+
       {activeMenu && (
         <Box
           ref={menuRef}
@@ -111,10 +192,14 @@ export const BuilderLeftPanel = () => {
             pointerEvents: "auto",
           }}
         >
-          {activeMenu === "add" ? (
+          {activeMenu === "add" && (
             <AddMenu onClose={handleCloseMenu} />
-          ) : (
+          )}
+          {activeMenu === "navigation" && (
             <NavigationMenu />
+          )}
+          {activeMenu === "variables" && (
+            <VariablesMenu onClose={handleCloseMenu} />
           )}
         </Box>
       )}
