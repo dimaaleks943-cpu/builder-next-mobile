@@ -132,10 +132,8 @@ export const BuilderRightPanel = ({
               <Box
                 sx={{
                   flex: 1,
-                  padding: "12px 16px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "8px",
                   overflowY: "auto",
                 }}
               >

@@ -15,7 +15,10 @@ import { buildComboClassLabel } from "../styleClasses/styleClassSlug.ts"
 import { duplicateStyleClass } from "../styleClasses/duplicateStyleClass.ts"
 import { normalizeStyleClassIds } from "../styleClasses/styleClassIds.ts"
 import { createStyleClassId, createStyleClassName } from "../styleClasses/styleClassNames.ts"
-import type { StyleClassDefinition } from "../styleClasses/types.ts"
+import type {
+  StyleClassDefinition,
+  StyleClassesRegistry,
+} from "../styleClasses/types.ts"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
 
 export const useStyleEditing = () => {
@@ -220,21 +223,28 @@ export const useStyleEditing = () => {
     (index: number, newName: string) => {
       const trimmed = newName.trim()
       if (!trimmed || index < 0 || index >= styleClassIds.length) return
-      const sourceId = styleClassIds[index]
-      const source = classes[sourceId]
-      if (!source) return
+      const classId = styleClassIds[index]
+      const source = classes[classId]
+      if (!source || source.kind === "combo") return
+      if (trimmed === source.name) return
 
-      const definition: StyleClassDefinition = {
-        id: createStyleClassId(),
-        name: trimmed,
-        resolvedName: source.resolvedName,
-        kind: "base",
-        style: structuredClone(source.style),
-      }
-      upsertClass(definition)
-      replaceStyleClassAt(index, definition.id)
+      setClasses((prev) => {
+        const next: StyleClassesRegistry = {
+          ...prev,
+          [classId]: { ...source, name: trimmed },
+        }
+        for (const [id, def] of Object.entries(next)) {
+          if (def.kind === "combo" && def.comboMemberIds?.includes(classId)) {
+            next[id] = {
+              ...def,
+              name: buildComboClassLabel(def.comboMemberIds, next),
+            }
+          }
+        }
+        return next
+      })
     },
-    [styleClassIds, classes, upsertClass, replaceStyleClassAt],
+    [styleClassIds, classes, setClasses],
   )
 
   const copyStyleClassOnElement = useCallback(
