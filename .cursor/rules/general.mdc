@@ -7,3 +7,5 @@ alwaysApply: true
 - If the props interface is not imported or reused elsewhere, it should be named `Props`
 - When specifying any color, it must be taken from the global COLORS variable
 - Do not declare top-level constants, in-component const objects, or useMemo values whose sole purpose is to hold style objects passed to sx (or equivalent MUI style props) inside the component file. Put those in neighboring styles.ts via MUI styled(...). Inline <Component sx={{ ... }} /> and brief single-use sx in JSX are fine.
+- Prefer `interface` over `type` for object shapes, props, and API contracts; use `type` only when `interface` cannot express the shape (unions, intersections, mapped/conditional types, tuples, branded types)
+- When creating a React component, place it in a same-named folder: `ComponentName/ComponentName.tsx` (e.g. `Page/Page.tsx`); co-locate related files in that folder (`styles.ts`, hooks, subcomponents)
