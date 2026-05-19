@@ -78,6 +78,21 @@ export const CraftSettingsResetPopoverPaper = styled(Paper)(() => ({
   boxSizing: "border-box",
 }))
 
+export const ColorFieldInputShell = styled(Box)(() => ({
+  flex: 1,
+  minWidth: 0,
+  position: "relative",
+  display: "flex",
+  alignItems: "center",
+  boxSizing: "border-box",
+  padding: "4px 8px",
+  borderRadius: "4px",
+  border: `1px solid ${COLORS.purple100}`,
+  backgroundColor: COLORS.white,
+  gap: "6px",
+  overflow: "visible",
+}))
+
 /** Zero-size absolute layer for CSS-border triangles on the flex-align overlay */
 export const FlexAlignSpaceAroundArrow = styled(Box)(() => ({
   position: "absolute",

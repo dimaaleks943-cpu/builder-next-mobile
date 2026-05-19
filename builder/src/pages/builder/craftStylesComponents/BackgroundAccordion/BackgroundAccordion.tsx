@@ -34,7 +34,11 @@ import {
 } from "react"
 import { COLORS } from "../../../../theme/colors.ts"
 import { AddIcon } from "../../../../icons/AddIcon.tsx"
-import { CraftSettingsColorField } from "../../components/craftSettingsControls/CraftSettingsColorField.tsx"
+import { CraftSettingsColorField } from "../../components/craftSettingsControls/CraftSettingsColorField/CraftSettingsColorField.tsx"
+import {
+  isStyleVariableRef,
+  type StyleVariableRef,
+} from "../../variables/types.ts"
 import { CraftSettingsSelect } from "../../components/craftSettingsControls/CraftSettingsSelect.tsx"
 import { usePreviewViewport } from "../../context/PreviewViewportContext.tsx"
 import { useStyleEditing } from "../../hooks/useStyleEditing.ts"
@@ -110,7 +114,8 @@ type ImageGradientMenuState = {
 export const BackgroundAccordion = () => {
   const viewport = usePreviewViewport()
   const { selectedId, selectedProps, getStyleProp, setStyleProp, mutateClassStyle } = useStyleEditing()
-  const [colorDraft, setColorDraft] = useState<string>(DEFAULT_BG_DISPLAY)
+  const [colorDraft, setColorDraft] =
+    useState<string | StyleVariableRef>(DEFAULT_BG_DISPLAY)
   const colorTimeoutRef = useRef<number | undefined>(undefined)
   const [imageGradientMenu, setImageGradientMenu] =
     useState<ImageGradientMenuState | null>(null)
@@ -142,11 +147,13 @@ export const BackgroundAccordion = () => {
   )
 
   useEffect(() => {
+    const backgroundColorProp = getStyleProp("backgroundColor")
     setColorDraft(
-      (getStyleProp("backgroundColor") as string | undefined) ??
-        DEFAULT_BG_DISPLAY,
+      isStyleVariableRef(backgroundColorProp)
+        ? backgroundColorProp
+        : ((backgroundColorProp as string | undefined) ?? DEFAULT_BG_DISPLAY),
     )
-  }, [selectedProps, selectedId, viewport])
+  }, [selectedProps, selectedId, viewport, getStyleProp])
 
   useEffect(() => {
     if (!imageGradientMenu) return
@@ -232,8 +239,12 @@ export const BackgroundAccordion = () => {
     }, 200)
   }
 
-  const handleColorChange = (value: string) => {
+  const handleColorChange = (value: string | StyleVariableRef) => {
     setColorDraft(value)
+    if (isStyleVariableRef(value)) {
+      setStyleProp("backgroundColor", value)
+      return
+    }
     scheduleBackgroundColorUpdate(value)
   }
 
@@ -696,6 +707,7 @@ export const BackgroundAccordion = () => {
 
           <CraftSettingsColorField
             label="Color"
+            withVariables
             value={colorDraft}
             onChange={handleColorChange}
           />

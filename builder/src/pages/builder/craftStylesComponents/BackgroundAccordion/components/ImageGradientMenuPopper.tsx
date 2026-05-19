@@ -8,7 +8,7 @@ import { GradientRoundedIcon } from "../../../../../icons/GradientRoundedIcon.ts
 import { OverlayRoundedIcon } from "../../../../../icons/OverlayRoundedIcon.tsx"
 import { RadialGradientIcon } from "../../../../../icons/RadialGradientIcon.tsx"
 import { CraftSettingsButtonGroup } from "../../../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
-import { CraftSettingsColorField } from "../../../components/craftSettingsControls/CraftSettingsColorField.tsx"
+import { CraftSettingsColorField } from "../../../components/craftSettingsControls/CraftSettingsColorField/CraftSettingsColorField.tsx"
 import {
   ImageGradientMenuPaper,
   ImageGradientMenuSection,

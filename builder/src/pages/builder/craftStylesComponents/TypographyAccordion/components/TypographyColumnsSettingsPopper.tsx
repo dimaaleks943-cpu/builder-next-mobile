@@ -19,7 +19,7 @@ import { CraftSettingsButtonGroup } from "../../../components/craftSettingsContr
 import {
   CraftSettingsPercentSliderRow
 } from "../../../components/craftSettingsControls/CraftSettingsPercentSliderRow.tsx"
-import { CraftSettingsColorField } from "../../../components/craftSettingsControls/CraftSettingsColorField.tsx"
+import { CraftSettingsColorField } from "../../../components/craftSettingsControls/CraftSettingsColorField/CraftSettingsColorField.tsx"
 import {
   CraftSettingsResetLabelWithPopper
 } from "../../../components/craftSettingsControls/CraftSettingsResetLabelWithPopper.tsx"

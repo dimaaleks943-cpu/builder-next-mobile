@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react"
 import { Paper, Popper } from "@mui/material"
 import { COLORS } from "../../../../../../../../theme/colors.ts"
-import { CraftSettingsColorField } from "../../../../../craftSettingsControls/CraftSettingsColorField.tsx"
+import { CraftSettingsColorField } from "../../../../../craftSettingsControls/CraftSettingsColorField/CraftSettingsColorField.tsx"
 
 interface Props {
   anchorEl: HTMLElement | null

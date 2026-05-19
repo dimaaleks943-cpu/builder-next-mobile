@@ -13,7 +13,7 @@ import { COLORS } from "../../../../../theme/colors.ts"
 import { CloseIcon } from "../../../../../icons/CloseIcon.tsx"
 import { CraftSettingsSelect } from "../../../components/craftSettingsControls/CraftSettingsSelect.tsx"
 import { CraftSettingsInput } from "../../../components/craftSettingsControls/CraftSettingsInput.tsx"
-import { CraftSettingsColorField } from "../../../components/craftSettingsControls/CraftSettingsColorField.tsx"
+import { CraftSettingsColorField } from "../../../components/craftSettingsControls/CraftSettingsColorField/CraftSettingsColorField.tsx"
 import type {
   TextDecorationAdvancedParts,
   TextDecorationLinePreset,

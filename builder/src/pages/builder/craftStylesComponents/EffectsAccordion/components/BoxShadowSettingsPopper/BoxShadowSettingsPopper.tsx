@@ -4,7 +4,7 @@ import type { Ref } from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { COLORS } from "../../../../../../theme/colors.ts"
 import { CraftSettingsButtonGroup } from "../../../../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
-import { CraftSettingsColorField } from "../../../../components/craftSettingsControls/CraftSettingsColorField.tsx"
+import { CraftSettingsColorField } from "../../../../components/craftSettingsControls/CraftSettingsColorField/CraftSettingsColorField.tsx"
 import { ShadowLengthSliderRowWithReset } from "../../../../components/craftSettingsControls/ShadowLengthSliderRowWithReset.tsx"
 import {
   type BoxShadowParts,

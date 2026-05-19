@@ -20,7 +20,7 @@ import { CRAFT_MIX_BLEND_MODE_OPTIONS } from "../../../../craft/craftVisualEffec
 import { CraftSettingsPercentSliderRow } from "../../components/craftSettingsControls/CraftSettingsPercentSliderRow.tsx"
 import { CraftSettingsButtonGroup } from "../../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
 import { CraftSettingsInput } from "../../components/craftSettingsControls/CraftSettingsInput.tsx"
-import { CraftSettingsColorField } from "../../components/craftSettingsControls/CraftSettingsColorField.tsx"
+import { CraftSettingsColorField } from "../../components/craftSettingsControls/CraftSettingsColorField/CraftSettingsColorField.tsx"
 import { CloseIcon } from "../../../../icons/CloseIcon.tsx"
 import { DashedIcon } from "../../../../icons/DashedIcon.tsx"
 import { MinusIcon } from "../../../../icons/MinusIcon.tsx"

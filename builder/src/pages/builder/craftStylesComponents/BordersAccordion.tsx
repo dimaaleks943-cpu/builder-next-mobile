@@ -12,7 +12,7 @@ import { COLORS } from "../../../theme/colors.ts"
 import { CraftSettingsPercentSliderRow } from "../components/craftSettingsControls/CraftSettingsPercentSliderRow.tsx"
 import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
 import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSettingsInput.tsx"
-import { CraftSettingsColorField } from "../components/craftSettingsControls/CraftSettingsColorField.tsx"
+import { CraftSettingsColorField } from "../components/craftSettingsControls/CraftSettingsColorField/CraftSettingsColorField.tsx"
 import {
   BorderSidesFrame,
   type BorderSide,

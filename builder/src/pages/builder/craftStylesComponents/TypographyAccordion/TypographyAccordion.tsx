@@ -27,7 +27,11 @@ import { CraftSettingsSelect } from "../../components/craftSettingsControls/Craf
 import { CraftSettingsInput } from "../../components/craftSettingsControls/CraftSettingsInput.tsx"
 import { CraftSettingsValueWithUnit } from "../../components/craftSettingsControls/CraftSettingsValueWithUnit.tsx"
 import { CraftSettingsButtonGroup } from "../../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
-import { CraftSettingsColorField } from "../../components/craftSettingsControls/CraftSettingsColorField.tsx"
+import { CraftSettingsColorField } from "../../components/craftSettingsControls/CraftSettingsColorField/CraftSettingsColorField.tsx"
+import {
+  isStyleVariableRef,
+  type StyleVariableRef,
+} from "../../variables/types.ts"
 import {
   TypographyFormatRow,
   type TextDecorationKind,
@@ -163,8 +167,8 @@ export const TypographyAccordion = () => {
     return null
   }
 
-  const [colorDraft, setColorDraft] = useState<string>(
-    selectedProps.color ?? COLORS.black,
+  const [colorDraft, setColorDraft] = useState<string | StyleVariableRef>(
+    COLORS.black,
   )
   const [strokeColorDraft, setStrokeColorDraft] = useState<string>(
     selectedProps.strokeColor ?? COLORS.black,
@@ -187,11 +191,13 @@ export const TypographyAccordion = () => {
   const strokeColorTimeoutRef = useRef<number | undefined>(undefined)
 
   useEffect(() => {
+    const colorProp = getStyleProp("color")
     setColorDraft(
-      (getStyleProp("color") as string | undefined) ??
-      COLORS.black,
+      isStyleVariableRef(colorProp)
+        ? colorProp
+        : ((colorProp as string | undefined) ?? COLORS.black),
     )
-  }, [selectedProps, selectedId, viewport])
+  }, [selectedProps, selectedId, viewport, getStyleProp])
 
   useEffect(() => {
     setStrokeColorDraft(
@@ -290,8 +296,12 @@ export const TypographyAccordion = () => {
     setStyleProp("lineHeight", next)
   }
 
-  const handleColorChange = (value: string) => {
+  const handleColorChange = (value: string | StyleVariableRef) => {
     setColorDraft(value)
+    if (isStyleVariableRef(value)) {
+      setStyleProp("color", value)
+      return
+    }
     scheduleColorUpdate(value)
   }
 
@@ -718,6 +728,7 @@ export const TypographyAccordion = () => {
 
           <CraftSettingsColorField
             label="Color"
+            withVariables
             value={colorDraft}
             onChange={handleColorChange}
           />
