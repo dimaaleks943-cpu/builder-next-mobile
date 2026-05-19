@@ -126,6 +126,16 @@ export const useDesignVariables = () => {
     })
   }, [])
 
+  const updateColorVariable = useCallback((variableId: string, value: string) => {
+    setVariables((current) =>
+      current.map((variable) =>
+        variable.id === variableId && variable.type === "color"
+          ? { ...variable, value }
+          : variable,
+      ),
+    )
+  }, [])
+
   return {
     collections,
     variables,
@@ -138,5 +148,6 @@ export const useDesignVariables = () => {
     renameCollection,
     duplicateCollection,
     deleteCollection,
+    updateColorVariable,
   }
 }

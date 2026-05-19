@@ -59,6 +59,21 @@ export const VariableTypeIcon = styled(Box)({
   backgroundColor: COLORS.purple100,
 })
 
+export const VariableTypeIconButton = styled(Box)({
+  width: 16,
+  height: 16,
+  borderRadius: 4,
+  flexShrink: 0,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: COLORS.purple100,
+  cursor: "pointer",
+  "&:hover": {
+    backgroundColor: COLORS.purple200,
+  },
+})
+
 export const VariableColorSwatch = styled(Box)({
   width: 16,
   height: 16,

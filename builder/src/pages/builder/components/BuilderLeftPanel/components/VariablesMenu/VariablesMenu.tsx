@@ -46,6 +46,7 @@ export const VariablesMenu = (_props: Props) => {
     renameCollection,
     duplicateCollection,
     deleteCollection,
+    updateColorVariable,
   } = useDesignVariables()
 
   const sensors = useSensors(
@@ -111,6 +112,8 @@ export const VariablesMenu = (_props: Props) => {
         <CollectionDetail
           collection={selectedCollection}
           variables={selectedCollectionVariables}
+          pickerZIndex={menuZIndex}
+          onColorChange={updateColorVariable}
         />
       )}
     </VariablesMenuShell>

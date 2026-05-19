@@ -23,9 +23,16 @@ import type { DesignVariable, DesignVariableCollection } from "../../../../../..
 interface Props {
   collection: DesignVariableCollection | undefined
   variables: DesignVariable[]
+  pickerZIndex: number
+  onColorChange: (variableId: string, value: string) => void
 }
 
-export const CollectionDetail = ({ collection, variables }: Props) => {
+export const CollectionDetail = ({
+  collection,
+  variables,
+  pickerZIndex,
+  onColorChange,
+}: Props) => {
   const [searchQuery, setSearchQuery] = useState("")
 
   const filteredVariables = useMemo(
@@ -79,7 +86,12 @@ export const CollectionDetail = ({ collection, variables }: Props) => {
             </VariablesTableEmpty>
           ) : (
             filteredVariables.map((variable) => (
-              <VariableRow key={variable.id} variable={variable} />
+              <VariableRow
+                key={variable.id}
+                variable={variable}
+                pickerZIndex={pickerZIndex}
+                onColorChange={onColorChange}
+              />
             ))
           )}
         </VariablesTableBody>

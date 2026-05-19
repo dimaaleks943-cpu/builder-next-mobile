@@ -27,7 +27,7 @@ export const BuilderLeftPanel = () => {
       if (menuRef.current?.contains(target)) return
       if (
         target instanceof Element &&
-        target.closest(".MuiPopover-root, .MuiMenu-root")
+        target.closest(".MuiPopover-root, .MuiMenu-root, .MuiPopper-root")
       ) {
         return
       }
