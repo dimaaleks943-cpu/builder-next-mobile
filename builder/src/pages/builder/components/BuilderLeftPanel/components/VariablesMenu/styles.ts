@@ -43,11 +43,18 @@ export const VariablesMenuLoading = styled(Typography)({
   color: COLORS.gray600,
 })
 
-export const VariablesMenuRoot = styled(Box)({
+export const VariablesMenuShell = styled(Box)({
+  height: "100%",
+  display: "flex",
+  flexDirection: "row",
+})
+
+export const VariablesMenuSidebar = styled(Box)({
   width: 280,
   height: "100%",
   display: "flex",
   flexDirection: "column",
   borderRight: `1px solid ${COLORS.gray200}`,
   backgroundColor: COLORS.white,
+  flexShrink: 0,
 })

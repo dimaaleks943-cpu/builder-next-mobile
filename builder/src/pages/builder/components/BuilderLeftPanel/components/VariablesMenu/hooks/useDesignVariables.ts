@@ -1,7 +1,11 @@
 import { arrayMove } from "@dnd-kit/sortable"
-import { useCallback, useEffect, useState } from "react"
-import type { DesignVariableCollection } from "../../../../../variables/types.ts"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import type {
+  DesignVariable,
+  DesignVariableCollection,
+} from "../../../../../variables/types.ts"
 import { fetchDesignVariablesMock } from "../utils/fetchDesignVariablesMock.ts"
+import { getCollectionVariables } from "../utils/collectionVariables.ts"
 
 const sortCollections = (
   collections: DesignVariableCollection[],
@@ -10,6 +14,7 @@ const sortCollections = (
 
 export const useDesignVariables = () => {
   const [collections, setCollections] = useState<DesignVariableCollection[]>([])
+  const [variables, setVariables] = useState<DesignVariable[]>([])
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(
     null,
   )
@@ -26,6 +31,7 @@ export const useDesignVariables = () => {
 
         const sorted = sortCollections(payload.collections)
         setCollections(sorted)
+        setVariables(payload.variables)
         setSelectedCollectionId(sorted[0]?.id ?? null)
       } finally {
         if (!cancelled) {
@@ -40,6 +46,16 @@ export const useDesignVariables = () => {
       cancelled = true
     }
   }, [])
+
+  const selectedCollection = useMemo(
+    () => collections.find((collection) => collection.id === selectedCollectionId),
+    [collections, selectedCollectionId],
+  )
+
+  const selectedCollectionVariables = useMemo(
+    () => getCollectionVariables(selectedCollection, variables),
+    [selectedCollection, variables],
+  )
 
   const reorderCollections = useCallback((activeId: string, overId: string) => {
     setCollections((current) => {
@@ -112,6 +128,9 @@ export const useDesignVariables = () => {
 
   return {
     collections,
+    variables,
+    selectedCollection,
+    selectedCollectionVariables,
     selectedCollectionId,
     isLoading,
     setSelectedCollectionId,
