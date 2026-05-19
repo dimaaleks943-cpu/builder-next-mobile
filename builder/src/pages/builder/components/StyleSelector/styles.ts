@@ -38,12 +38,8 @@ export const SelectorRoot = styled(Box)({
   display: "flex",
   flexDirection: "column",
   gap: 4,
-})
-
-export const SelectorLabel = styled(Typography)({
-  fontSize: 11,
-  fontWeight: 600,
-  color: COLORS.gray700,
+  backgroundColor: COLORS.white,
+  padding: "8px",
 })
 
 export const SelectorField = styled(Box)({
