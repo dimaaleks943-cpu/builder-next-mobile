@@ -1,3 +1,5 @@
+import { resolveDesignVariableRefs } from "@/lib/variables/resolveDesignVariableRefs"
+
 export enum ResponsiveBranch {
   DESKTOP = "desktop",
   TABLET_LANDSCAPE = "tablet_landscape",
@@ -77,6 +79,7 @@ const toFontWeight = (value: unknown): string | undefined => {
 }
 
 const styleBranchToCssDeclarations = (style: StyleRecord): Record<string, string> => {
+  const resolvedStyle = resolveDesignVariableRefs(style) as StyleRecord
   const declarations: Record<string, string> = {}
 
   const set = (property: string, value: string | undefined) => {
@@ -84,119 +87,119 @@ const styleBranchToCssDeclarations = (style: StyleRecord): Record<string, string
   }
 
   // -- PositioningAccordion --//
-  const zIndexValue = asNumber(style.zIndex ?? style["z-index"])
+  const zIndexValue = asNumber(resolvedStyle.zIndex ?? resolvedStyle["z-index"])
   if (zIndexValue !== undefined) set("z-index", String(zIndexValue))
-  if (typeof style.inset === "string") set("inset", style.inset)
-  if (typeof style.position === "string") set("position", style.position)
-  if (typeof style.float === "string") set("float", style.float)
-  if (typeof style.clear === "string") set("clear", style.clear)
+  if (typeof resolvedStyle.inset === "string") set("inset", resolvedStyle.inset)
+  if (typeof resolvedStyle.position === "string") set("position", resolvedStyle.position)
+  if (typeof resolvedStyle.float === "string") set("float", resolvedStyle.float)
+  if (typeof resolvedStyle.clear === "string") set("clear", resolvedStyle.clear)
 
   // -- BorderAccordion --//
-  set("border-radius", toCssLength(style.borderRadius))
-  set("border-top-width", toCssLength(style.borderTopWidth))
-  set("border-right-width", toCssLength(style.borderRightWidth))
-  set("border-bottom-width", toCssLength(style.borderBottomWidth))
-  set("border-left-width", toCssLength(style.borderLeftWidth))
-  if (typeof style.borderStyle === "string") set("border-style", style.borderStyle)
-  if (typeof style.borderColor === "string") set("border-color", style.borderColor)
+  set("border-radius", toCssLength(resolvedStyle.borderRadius))
+  set("border-top-width", toCssLength(resolvedStyle.borderTopWidth))
+  set("border-right-width", toCssLength(resolvedStyle.borderRightWidth))
+  set("border-bottom-width", toCssLength(resolvedStyle.borderBottomWidth))
+  set("border-left-width", toCssLength(resolvedStyle.borderLeftWidth))
+  if (typeof resolvedStyle.borderStyle === "string") set("border-style", resolvedStyle.borderStyle)
+  if (typeof resolvedStyle.borderColor === "string") set("border-color", resolvedStyle.borderColor)
 
   // -- TypographyAccordion --//
-  if (typeof style.fontFamily === "string") set("font-family", style.fontFamily)
-  set("font-size", toCssLength(style.fontSize))
-  set("line-height", toCssLength(style.lineHeight))
-  set("font-weight", toFontWeight(style.fontWeight))
-  if (typeof style.textAlign === "string") set("text-align", style.textAlign)
-  if (typeof style.color === "string") set("color", style.color)
-  if (typeof style.textTransform === "string") set("text-transform", style.textTransform)
-  if (typeof style.strokeColor === "string") set("-webkit-text-stroke-color", style.strokeColor)
-  set("-webkit-text-stroke-width", toCssLength(style.strokeWidth))
-  const textDecorationFromFlags = toTextDecoration(style.isUnderline, style.isStrikethrough)
-  if (typeof style.textDecoration === "string") {
-    set("text-decoration", style.textDecoration)
+  if (typeof resolvedStyle.fontFamily === "string") set("font-family", resolvedStyle.fontFamily)
+  set("font-size", toCssLength(resolvedStyle.fontSize))
+  set("line-height", toCssLength(resolvedStyle.lineHeight))
+  set("font-weight", toFontWeight(resolvedStyle.fontWeight))
+  if (typeof resolvedStyle.textAlign === "string") set("text-align", resolvedStyle.textAlign)
+  if (typeof resolvedStyle.color === "string") set("color", resolvedStyle.color)
+  if (typeof resolvedStyle.textTransform === "string") set("text-transform", resolvedStyle.textTransform)
+  if (typeof resolvedStyle.strokeColor === "string") set("-webkit-text-stroke-color", resolvedStyle.strokeColor)
+  set("-webkit-text-stroke-width", toCssLength(resolvedStyle.strokeWidth))
+  const textDecorationFromFlags = toTextDecoration(resolvedStyle.isUnderline, resolvedStyle.isStrikethrough)
+  if (typeof resolvedStyle.textDecoration === "string") {
+    set("text-decoration", resolvedStyle.textDecoration)
   } else if (textDecorationFromFlags) {
     set("text-decoration", textDecorationFromFlags)
   }
-  if (typeof style.textDecorationSkipInk === "string") {
-    set("text-decoration-skip-ink", style.textDecorationSkipInk)
+  if (typeof resolvedStyle.textDecorationSkipInk === "string") {
+    set("text-decoration-skip-ink", resolvedStyle.textDecorationSkipInk)
   }
-  if (typeof style.fontStyle === "string") {
-    set("font-style", style.fontStyle)
-  } else if (style.isItalic === true) {
+  if (typeof resolvedStyle.fontStyle === "string") {
+    set("font-style", resolvedStyle.fontStyle)
+  } else if (resolvedStyle.isItalic === true) {
     set("font-style", "italic")
   }
-  set("letter-spacing", toCssLength(style.letterSpacing))
-  set("text-indent", toCssLength(style.textIndent))
-  if (typeof style.textShadow === "string") set("text-shadow", style.textShadow)
-  set("column-count", toColumnCount(style.columnCount))
-  set("column-gap", toCssLength(style.columnGap))
-  if (typeof style.columnRule === "string") set("column-rule", style.columnRule)
-  if (typeof style.columnRuleStyle === "string") set("column-rule-style", style.columnRuleStyle)
-  set("column-rule-width", toCssLength(style.columnRuleWidth))
-  if (typeof style.columnRuleColor === "string") set("column-rule-color", style.columnRuleColor)
-  if (typeof style.columnSpan === "string") set("column-span", style.columnSpan)
-  if (typeof style.wordBreak === "string") set("word-break", style.wordBreak)
-  if (typeof style.whiteSpace === "string") set("white-space", style.whiteSpace)
-  if (typeof style.overflowWrap === "string") set("overflow-wrap", style.overflowWrap)
-  if (typeof style.textOverflow === "string") set("text-overflow", style.textOverflow)
+  set("letter-spacing", toCssLength(resolvedStyle.letterSpacing))
+  set("text-indent", toCssLength(resolvedStyle.textIndent))
+  if (typeof resolvedStyle.textShadow === "string") set("text-shadow", resolvedStyle.textShadow)
+  set("column-count", toColumnCount(resolvedStyle.columnCount))
+  set("column-gap", toCssLength(resolvedStyle.columnGap))
+  if (typeof resolvedStyle.columnRule === "string") set("column-rule", resolvedStyle.columnRule)
+  if (typeof resolvedStyle.columnRuleStyle === "string") set("column-rule-style", resolvedStyle.columnRuleStyle)
+  set("column-rule-width", toCssLength(resolvedStyle.columnRuleWidth))
+  if (typeof resolvedStyle.columnRuleColor === "string") set("column-rule-color", resolvedStyle.columnRuleColor)
+  if (typeof resolvedStyle.columnSpan === "string") set("column-span", resolvedStyle.columnSpan)
+  if (typeof resolvedStyle.wordBreak === "string") set("word-break", resolvedStyle.wordBreak)
+  if (typeof resolvedStyle.whiteSpace === "string") set("white-space", resolvedStyle.whiteSpace)
+  if (typeof resolvedStyle.overflowWrap === "string") set("overflow-wrap", resolvedStyle.overflowWrap)
+  if (typeof resolvedStyle.textOverflow === "string") set("text-overflow", resolvedStyle.textOverflow)
 
   // -- EffectsAccordion --//
-  if (typeof style.mixBlendMode === "string") set("mix-blend-mode", style.mixBlendMode)
-  set("opacity", toOpacity(style.opacity))
-  if (typeof style.outline === "string") set("outline", style.outline)
-  if (typeof style.outlineOffset === "string") set("outline-offset", style.outlineOffset)
-  if (typeof style.boxShadow === "string") set("box-shadow", style.boxShadow)
+  if (typeof resolvedStyle.mixBlendMode === "string") set("mix-blend-mode", resolvedStyle.mixBlendMode)
+  set("opacity", toOpacity(resolvedStyle.opacity))
+  if (typeof resolvedStyle.outline === "string") set("outline", resolvedStyle.outline)
+  if (typeof resolvedStyle.outlineOffset === "string") set("outline-offset", resolvedStyle.outlineOffset)
+  if (typeof resolvedStyle.boxShadow === "string") set("box-shadow", resolvedStyle.boxShadow)
 
   // -- BackgroundAccordion --//
-  if (typeof style.backgroundColor === "string") set("background-color", style.backgroundColor)
-  if (typeof style.backgroundImage === "string") set("background-image", style.backgroundImage)
-  if (typeof style.backgroundSize === "string") set("background-size", style.backgroundSize)
-  if (typeof style.backgroundPosition === "string") set("background-position", style.backgroundPosition)
-  if (typeof style.backgroundRepeat === "string") set("background-repeat", style.backgroundRepeat)
-  if (typeof style.backgroundAttachment === "string") {
-    set("background-attachment", style.backgroundAttachment)
+  if (typeof resolvedStyle.backgroundColor === "string") set("background-color", resolvedStyle.backgroundColor)
+  if (typeof resolvedStyle.backgroundImage === "string") set("background-image", resolvedStyle.backgroundImage)
+  if (typeof resolvedStyle.backgroundSize === "string") set("background-size", resolvedStyle.backgroundSize)
+  if (typeof resolvedStyle.backgroundPosition === "string") set("background-position", resolvedStyle.backgroundPosition)
+  if (typeof resolvedStyle.backgroundRepeat === "string") set("background-repeat", resolvedStyle.backgroundRepeat)
+  if (typeof resolvedStyle.backgroundAttachment === "string") {
+    set("background-attachment", resolvedStyle.backgroundAttachment)
   }
-  if (typeof style.backgroundClip === "string") set("background-clip", style.backgroundClip)
-  if (typeof style.WebkitTextFillColor === "string") {
-    set("-webkit-text-fill-color", style.WebkitTextFillColor)
+  if (typeof resolvedStyle.backgroundClip === "string") set("background-clip", resolvedStyle.backgroundClip)
+  if (typeof resolvedStyle.WebkitTextFillColor === "string") {
+    set("-webkit-text-fill-color", resolvedStyle.WebkitTextFillColor)
   }
 
   // -- SizeAccordion --//
-  set("width", style.fullSize === true ? "100%" : toCssLength(style.width))
-  set("height", style.fullSize === true ? "100%" : toCssLength(style.height))
-  set("min-width", toCssLength(style.minWidth))
-  set("min-height", toCssLength(style.minHeight))
-  set("max-width", toCssLength(style.maxWidth))
-  set("max-height", toCssLength(style.maxHeight))
-  if (typeof style.overflow === "string") set("overflow", style.overflow)
-  set("aspect-ratio", toAspectRatio(style.aspectRatio))
-  if (typeof style.boxSizing === "string") set("box-sizing", style.boxSizing)
-  if (typeof style.objectFit === "string") set("object-fit", style.objectFit)
-  if (typeof style.objectPosition === "string") set("object-position", style.objectPosition)
+  set("width", resolvedStyle.fullSize === true ? "100%" : toCssLength(resolvedStyle.width))
+  set("height", resolvedStyle.fullSize === true ? "100%" : toCssLength(resolvedStyle.height))
+  set("min-width", toCssLength(resolvedStyle.minWidth))
+  set("min-height", toCssLength(resolvedStyle.minHeight))
+  set("max-width", toCssLength(resolvedStyle.maxWidth))
+  set("max-height", toCssLength(resolvedStyle.maxHeight))
+  if (typeof resolvedStyle.overflow === "string") set("overflow", resolvedStyle.overflow)
+  set("aspect-ratio", toAspectRatio(resolvedStyle.aspectRatio))
+  if (typeof resolvedStyle.boxSizing === "string") set("box-sizing", resolvedStyle.boxSizing)
+  if (typeof resolvedStyle.objectFit === "string") set("object-fit", resolvedStyle.objectFit)
+  if (typeof resolvedStyle.objectPosition === "string") set("object-position", resolvedStyle.objectPosition)
 
   // -- SpacingAccordion --//
-  set("margin-top", toCssLength(style.marginTop))
-  set("margin-right", toCssLength(style.marginRight))
-  set("margin-bottom", toCssLength(style.marginBottom))
-  set("margin-left", toCssLength(style.marginLeft))
-  set("padding-top", toCssLength(style.paddingTop))
-  set("padding-right", toCssLength(style.paddingRight))
-  set("padding-bottom", toCssLength(style.paddingBottom))
-  set("padding-left", toCssLength(style.paddingLeft))
+  set("margin-top", toCssLength(resolvedStyle.marginTop))
+  set("margin-right", toCssLength(resolvedStyle.marginRight))
+  set("margin-bottom", toCssLength(resolvedStyle.marginBottom))
+  set("margin-left", toCssLength(resolvedStyle.marginLeft))
+  set("padding-top", toCssLength(resolvedStyle.paddingTop))
+  set("padding-right", toCssLength(resolvedStyle.paddingRight))
+  set("padding-bottom", toCssLength(resolvedStyle.paddingBottom))
+  set("padding-left", toCssLength(resolvedStyle.paddingLeft))
 
   // -- LayoutAccordion --//
-  if (typeof style.display === "string") set("display", style.display)
-  if (typeof style.flexFlow === "string") set("flex-flow", style.flexFlow)
-  if (typeof style.justifyContent === "string") set("justify-content", style.justifyContent)
-  if (typeof style.alignItems === "string") set("align-items", style.alignItems)
-  set("gap", toCssLength(style.gap))
-  if (typeof style.gridTemplateColumns === "string") {
-    set("grid-template-columns", style.gridTemplateColumns)
+  if (typeof resolvedStyle.display === "string") set("display", resolvedStyle.display)
+  if (typeof resolvedStyle.flexFlow === "string") set("flex-flow", resolvedStyle.flexFlow)
+  if (typeof resolvedStyle.justifyContent === "string") set("justify-content", resolvedStyle.justifyContent)
+  if (typeof resolvedStyle.alignItems === "string") set("align-items", resolvedStyle.alignItems)
+  set("gap", toCssLength(resolvedStyle.gap))
+  if (typeof resolvedStyle.gridTemplateColumns === "string") {
+    set("grid-template-columns", resolvedStyle.gridTemplateColumns)
   }
-  if (typeof style.gridTemplateRows === "string") {
-    set("grid-template-rows", style.gridTemplateRows)
+  if (typeof resolvedStyle.gridTemplateRows === "string") {
+    set("grid-template-rows", resolvedStyle.gridTemplateRows)
   }
-  if (typeof style.gridAutoFlow === "string") set("grid-auto-flow", style.gridAutoFlow)
-  if (typeof style.placeItems === "string") set("place-items", style.placeItems)
+  if (typeof resolvedStyle.gridAutoFlow === "string") set("grid-auto-flow", resolvedStyle.gridAutoFlow)
+  if (typeof resolvedStyle.placeItems === "string") set("place-items", resolvedStyle.placeItems)
 
   // -- Non-css / consumed elsewhere (stylePropsShortMapV1: itemsPerRow, fullSize) --//
   // itemsPerRow — только для ContentList в данных узла, не объявление CSS селектора.
