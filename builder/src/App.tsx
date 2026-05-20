@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom"
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material"
-import { HomePage } from "./pages/HomePage"
+import { HomePage } from "./pages/HomePage/HomePage.tsx"
 import { BuilderPage } from "./pages/builder/BuilderPage"
 
 const theme = createTheme()

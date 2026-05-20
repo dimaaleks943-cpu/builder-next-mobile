@@ -1,9 +1,10 @@
 import { Box, Button, Tab, Tabs, Typography } from "@mui/material"
 import { type ReactNode, useMemo, useState } from "react"
 import { Form } from "react-final-form"
-import { type ExtranetPage, PageType } from "../api/extranet"
-import { useLazyGetExtranetPagesQuery } from "../store/extranetApi"
-import { COLORS } from "../theme/colors.ts"
+import { type ExtranetPage, PageType } from "../../api/extranet.ts"
+import { useLazyGetExtranetPagesQuery } from "../../store/extranetApi.ts"
+import { COLORS } from "../../theme/colors.ts"
+import { FontsTabContent } from "./components/FontsTabContent/FontsTabContent.tsx"
 
 type HomeFormValues = {
   page: ExtranetPage[]
@@ -130,21 +131,6 @@ const PagesTabContent = ({
       </Button>
     </Box>
     <ExtranetPageListSections pages={pages} onOpenBuilder={onOpenBuilder} />
-  </Box>
-)
-
-const FontsTabContent = (): ReactNode => (
-  <Box>
-    <Typography
-      variant="h5"
-      component="h2"
-      sx={{ mb: 2, fontWeight: 700, color: COLORS.black }}
-    >
-      Шрифты
-    </Typography>
-    <Typography variant="body2" color="text.secondary">
-      Здесь будет библиотека шрифтов и загрузка пользовательских файлов.
-    </Typography>
   </Box>
 )
 
