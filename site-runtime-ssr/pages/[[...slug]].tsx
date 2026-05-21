@@ -47,6 +47,9 @@ import {
   normalizeItemPathPrefix,
   resolveTemplatePageForSlug,
 } from "@/lib/templateRoute"
+import { getUploadedFontsFaceCss } from "@/lib/fonts/uploadedFontsRegistry"
+
+const UPLOADED_FONTS_FACE_CSS = getUploadedFontsFaceCss()
 
 const EMPTY_CATEGORY_SCOPE: Record<string, string | null> = {}
 
@@ -548,6 +551,13 @@ export default function Page({
         <title>{`Страница ${slug} — ${domain}`}</title>
         <meta property="og:title" content={`Страница ${slug} — ${domain}`} />
         <meta property="og:url" content={`https://${domain}${ogUrlSuffix}`} />
+        {UPLOADED_FONTS_FACE_CSS ? ( //Регистируем шрифты
+          <style
+            id="uploaded-fonts-css"
+            // eslint-disable-next-line react/no-danger
+            dangerouslySetInnerHTML={{ __html: UPLOADED_FONTS_FACE_CSS }}
+          />
+        ) : null}
         {craftCss ? (
           <style
             id="craft-css"
