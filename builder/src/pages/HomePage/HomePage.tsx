@@ -4,7 +4,7 @@ import { Form } from "react-final-form"
 import { type ExtranetPage, PageType } from "../../api/extranet.ts"
 import { useLazyGetExtranetPagesQuery } from "../../store/extranetApi.ts"
 import { COLORS } from "../../theme/colors.ts"
-import { FontsTabContent } from "./components/FontsTabContent/FontsTabContent.tsx"
+import { FontUploadSection } from "./components/FontUploadSection/FontUploadSection.tsx";
 
 type HomeFormValues = {
   page: ExtranetPage[]
@@ -217,7 +217,7 @@ export const HomePage = ({ onOpenBuilder }: Props): ReactNode => {
                   onLoadPages={() => handleLoadPages((pages) => form.change("page", pages))}
                 />
               ) : (
-                <FontsTabContent />
+                <FontUploadSection />
               )}
             </Box>
           </Box>
