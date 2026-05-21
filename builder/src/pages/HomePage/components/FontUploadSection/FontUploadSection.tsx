@@ -17,7 +17,7 @@ import {
   FontsTabTitle,
   FontsUploadActionButton,
   FontsUploadPlaceholder,
-} from "../styles.ts"
+} from "./styles.ts"
 
 enum FONTS_TAB_MODE {
   LIBRARY = "library",
