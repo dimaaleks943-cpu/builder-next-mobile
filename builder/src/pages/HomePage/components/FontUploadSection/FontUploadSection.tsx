@@ -10,6 +10,7 @@ import {
   Select,
 } from "@mui/material"
 import { FontUploadFileForm } from "./components/FontUploadFileForm/FontUploadFileForm.tsx"
+import { InstalledFontsList } from "./components/InstalledFontsList/InstalledFontsList.tsx"
 import {
   type FontUploadFormValues,
   type FontUploadPostPayload,
@@ -60,12 +61,12 @@ const FONT_FILE_ACCEPT = ALLOWED_FONT_EXTENSIONS.join(",")
 
 export const FontUploadSection = (): ReactNode => {
   const fileInputRef = useRef<HTMLInputElement>(null)
-
   const [tabMode, setTabMode] = useState<FONTS_TAB_MODE>(FONTS_TAB_MODE.LIBRARY)
   const [selectedLibraryFont, setSelectedLibraryFont] = useState<string>("")
   const [pendingUploads, setPendingUploads] = useState<PendingFontUpload[]>([])
   const [uploadedFonts, setUploadedFonts] = useState<UploadedFont[]>([])
   const [validationError, setValidationError] = useState<string>("")
+  const [isManageOpen, setIsManageOpen] = useState<boolean>(false)
 
   const handlePickFileClick = () => {
     fileInputRef.current?.click()
@@ -159,8 +160,10 @@ export const FontUploadSection = (): ReactNode => {
     }
   }
 
-  const handleToggleManage = () => {
+  const handleToggleManage = () => setIsManageOpen((prev) => !prev)
 
+  const handleDeleteUploadedFont = (fontId: string) => {
+    setUploadedFonts((prev) => prev.filter((font) => font.id !== fontId))
   }
 
   return (
@@ -233,6 +236,10 @@ export const FontUploadSection = (): ReactNode => {
               Управлять файлами шрифта
             </FontsUploadActionButton>
           </FontsUploadPlaceholder>
+
+          {isManageOpen ? (
+            <InstalledFontsList fonts={uploadedFonts} onDelete={handleDeleteUploadedFont} />
+          ) : null}
 
           {validationError ? (
             <FontsUploadValidationError>{validationError}</FontsUploadValidationError>

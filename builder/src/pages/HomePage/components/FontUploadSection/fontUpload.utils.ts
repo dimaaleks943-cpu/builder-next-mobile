@@ -1,6 +1,7 @@
 import {
   type FontUploadFormValues,
   type FontUploadPostPayload,
+  type FontWeight,
 } from "./fontUpload.types.ts"
 
 export const ALLOWED_FONT_EXTENSIONS = [".woff", ".woff2", ".ttf", ".otf"] as const
@@ -117,6 +118,25 @@ export const fileToBase64 = (file: File): Promise<string> =>
     reader.onerror = () => reject(reader.error ?? new Error("Failed to read file"))
     reader.readAsDataURL(file)
   })
+
+export const getFontFaceFormat = (fileName: string): string => getFontFileExtensionLabel(fileName)
+
+export const getFontFileExtensionLabel = (fileName: string): string => getFontFileExtension(fileName).replace(".", "")
+
+export const formatBase64FileSize = (base64: string): string => {
+  const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0
+  const bytes = Math.floor((base64.length * 3) / 4) - padding
+  const kib = bytes / 1024
+
+  return `${kib.toFixed(3)} KiB`
+}
+
+export const formatFontWeightsLabel = (weights: FontWeight[]): string =>
+  weights
+    .map((weight) => FONT_WEIGHT_OPTIONS.find((option) => option.value === weight)?.label ?? String(weight))
+    .join(", ")
+
+export const capitalizeFontStyle = (style: string): string => style.charAt(0).toUpperCase() + style.slice(1)
 
 /** Имитация POST-запроса на сервер до появления реального API. */
 export const mockUploadFontRequest = async (
