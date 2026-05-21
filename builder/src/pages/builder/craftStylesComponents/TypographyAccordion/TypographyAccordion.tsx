@@ -69,6 +69,10 @@ import {
   TEXT_SHADOW_DRAFT_KEY,
   type TextShadowParts,
 } from "./utils/textShadowUtils.ts"
+import {
+  findUploadedFontByFamilyStack,
+  getTypographyFontSelectOptions,
+} from "../../fonts/uploadedFontsRegistry.ts"
 
 interface SelectedTypographyProps {
   fontFamily?: string;
@@ -273,14 +277,22 @@ export const TypographyAccordion = () => {
 
   const handleFontFamilyChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value
-    actions.setProp(selectedId, (props: any) => {
-      setResponsiveStyleProp(
-        props,
-        "fontFamily",
-        value === "system" ? undefined : value,
-        viewport,
-      )
-    })
+
+    if (value === "system") {
+      setStyleProp("fontFamily", undefined)
+      return
+    }
+
+    setStyleProp("fontFamily", value)
+
+    const uploadedFont = findUploadedFontByFamilyStack(value)
+    if (!uploadedFont) return
+
+    setStyleProp("fontWeight", uploadedFont.fontWeight[0] ?? 400)
+    setStyleProp(
+      "fontStyle",
+      uploadedFont.style === "italic" ? "italic" : undefined,
+    )
   }
 
   const handleFontWeightChange = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -654,11 +666,7 @@ export const TypographyAccordion = () => {
             label="Font"
             value={(getStyleProp("fontFamily") as string | undefined) ?? "system"}
             onChange={handleFontFamilyChange}
-            options={[
-              { id: "system", value: "System" },
-              { id: "Roboto", value: "Roboto" },
-              { id: "Inter", value: "Inter" },
-            ]}
+            options={getTypographyFontSelectOptions()}
           />
 
           <CraftSettingsSelect

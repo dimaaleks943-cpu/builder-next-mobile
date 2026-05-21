@@ -48,6 +48,7 @@ import {
 } from "../../utils/i18nTranslations.ts"
 import type { Locale, TranslationsByLocale } from "../../api/extranet.ts"
 import type { StyleClassesRegistry } from "./styleClasses/types.ts"
+import { BuilderUploadedFontsFaceRegistry } from "./fonts/BuilderUploadedFontsFaceRegistry.tsx"
 
 function pickBindableTypeFields(
   fields: IContentTypeField[] | undefined,
@@ -306,6 +307,7 @@ export const BuilderPage = () => {
                 backgroundColor: COLORS.gray100,
               }}
             >
+              <BuilderUploadedFontsFaceRegistry />
               <BuilderHeader
                 pageId={id}
                 pageName={pageMeta?.name}
