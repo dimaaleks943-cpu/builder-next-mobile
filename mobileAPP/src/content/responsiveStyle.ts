@@ -144,8 +144,15 @@ const pickResolvedFontWeight = (
   return s as TextStyle["fontWeight"];
 };
 
+export interface BuildCraftTextRnStyleOptions {
+  resolveRnFontFamily?: (familyStack: string) => string | undefined;
+}
+
 /** Craft responsive-style fields safe for RN Text (no CSS-only / Craft-only keys). */
-export const buildCraftTextRnStyle = (rs: Record<string, unknown>): TextStyle => {
+export const buildCraftTextRnStyle = (
+  rs: Record<string, unknown>,
+  options?: BuildCraftTextRnStyleOptions,
+): TextStyle => {
   const style: TextStyle = {};
 
   const fontSize = parseCssPx(rs.fontSize);
@@ -159,6 +166,19 @@ export const buildCraftTextRnStyle = (rs: Record<string, unknown>): TextStyle =>
 
   const fontWeight = pickResolvedFontWeight(rs);
   if (fontWeight !== undefined) style.fontWeight = fontWeight;
+
+  const fontFamilyStack = rs.fontFamily;
+  if (typeof fontFamilyStack === "string" && fontFamilyStack.trim()) {
+    const resolvedFontFamily = options?.resolveRnFontFamily?.(fontFamilyStack);
+    if (resolvedFontFamily) {
+      style.fontFamily = resolvedFontFamily;
+    }
+  }
+
+  const fontStyle = rs.fontStyle;
+  if (fontStyle === "italic" || fontStyle === "normal") {
+    style.fontStyle = fontStyle;
+  }
 
   const letterSpacing = parseCssPx(rs.letterSpacing);
   if (letterSpacing !== undefined) style.letterSpacing = letterSpacing;

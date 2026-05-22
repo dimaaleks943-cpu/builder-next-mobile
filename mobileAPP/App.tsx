@@ -40,6 +40,10 @@ import { CollectionFilterScopeProvider } from "./src/contexts/CollectionFilterSc
 import { StorefrontPageProvider } from "./src/contexts/StorefrontPageContext"
 import { SiteCollectionsProvider } from "./src/contexts/SiteCollectionsContext"
 import { ResponsiveViewportProvider } from "./src/contexts/ResponsiveViewportContext"
+import {
+  UploadedFontsProvider,
+  useUploadedFonts,
+} from "./src/contexts/UploadedFontsContext/UploadedFontsContext"
 import { craftContentToComponents } from "./src/content/craftContentToComponents"
 import { renderPage } from "./src/content/renderer"
 
@@ -290,6 +294,30 @@ const PageScreen = ({ route }: PageScreenProps) => {
   )
 }
 
+const AppRoot = () => {
+  const { fontsLoaded } = useUploadedFonts()
+
+  if (!fontsLoaded) {
+    return (
+      <View style={styles.fontLoadingOverlay}>
+        <ActivityIndicator size="small" />
+      </View>
+    )
+  }
+
+  return (
+    <NavigationContainer ref={navigationRef}>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen
+          name="Page"
+          component={PageScreen}
+          initialParams={{ slug: "/" }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
+  )
+}
+
 export default function App() {
   useEffect(() => {
     let isMounted = true
@@ -324,15 +352,9 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer ref={navigationRef}>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen
-            name="Page"
-            component={PageScreen}
-            initialParams={{ slug: "/" }}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <UploadedFontsProvider>
+        <AppRoot />
+      </UploadedFontsProvider>
     </SafeAreaProvider>
   )
 }
@@ -434,5 +456,11 @@ const styles = StyleSheet.create({
   errorBody: {
     fontSize: 12,
     color: "#333333",
+  },
+  fontLoadingOverlay: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F5F5F5",
   },
 })

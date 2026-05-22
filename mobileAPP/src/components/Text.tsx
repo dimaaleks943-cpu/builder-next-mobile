@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Text as RNText, type TextStyle, StyleProp } from "react-native";
 import { useContentData } from "../contexts/ContentDataContext";
 import { useResponsiveViewport } from "../contexts/ResponsiveViewportContext";
+import { useUploadedFonts } from "../contexts/UploadedFontsContext/UploadedFontsContext";
 import {
   buildCraftTextRnStyle,
   resolveResponsiveStyle,
@@ -28,6 +29,7 @@ export const Text = ({
   testID,
 }: TextProps) => {
   const { viewport } = useResponsiveViewport();
+  const { resolveRnFontFamily } = useUploadedFonts();
   const rs = resolveResponsiveStyle(style, viewport);
   const contentData = useContentData();
   const textTransform =
@@ -69,8 +71,7 @@ export const Text = ({
       : {};
 
   const textStyle: StyleProp<TextStyle> = {
-    ...buildCraftTextRnStyle(rs),
-    fontStyle: isItalic ? "italic" : "normal",
+    ...buildCraftTextRnStyle(rs, { resolveRnFontFamily }),
     textDecorationLine:
       (textDecorationParts.length > 0
         ? textDecorationParts.join(" ")

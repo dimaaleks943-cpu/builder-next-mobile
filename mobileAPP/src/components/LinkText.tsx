@@ -14,6 +14,7 @@ import { useCollectionFilterScope } from "../contexts/CollectionFilterScopeConte
 import { useStorefrontPage } from "../contexts/StorefrontPageContext";
 import { useSiteCollections } from "../contexts/SiteCollectionsContext";
 import { useResponsiveViewport } from "../contexts/ResponsiveViewportContext";
+import { useUploadedFonts } from "../contexts/UploadedFontsContext/UploadedFontsContext";
 import {
   buildCraftTextRnStyle,
   resolveResponsiveStyle,
@@ -52,6 +53,7 @@ export const LinkText = ({
   testID,
 }: LinkTextProps) => {
   const { viewport } = useResponsiveViewport();
+  const { resolveRnFontFamily } = useUploadedFonts();
   const rs = resolveResponsiveStyle(style, viewport);
   const navigation = useNavigation<any>();
   const contentData = useContentData();
@@ -175,8 +177,7 @@ export const LinkText = ({
       : {};
 
   const linkTextStyle: StyleProp<TextStyle> = {
-    ...buildCraftTextRnStyle(rs),
-    fontStyle: isItalic ? "italic" : "normal",
+    ...buildCraftTextRnStyle(rs, { resolveRnFontFamily }),
     textDecorationLine: textDecorationParts.join(
       " ",
     ) as TextStyle["textDecorationLine"],
