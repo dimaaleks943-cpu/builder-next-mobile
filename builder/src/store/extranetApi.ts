@@ -1,6 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
 import {
-  EXTRANET_API_TOKEN,
   EXTRANET_SITES_BASE,
   type IContentItem,
   type TranslationsByLocale,
@@ -14,6 +13,7 @@ import {
   type PAGE_MODES,
   type PAGE_VISIBILITY,
 } from "../api/extranet"
+import { EXTRANET_API_TOKEN } from "../api/tokent.ts";
 
 const baseQuery = fetchBaseQuery({
   baseUrl: EXTRANET_SITES_BASE,

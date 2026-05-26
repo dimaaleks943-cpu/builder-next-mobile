@@ -1,7 +1,7 @@
 import type { IContentItem, IContentItemField } from "../api/extranet"
 import { PRODUCTS_SELECTED_SOURCE } from "../constants/contentListSources"
 import type { IFullProduct } from "../hooks/useFullProduct.ts";
-import type { IProduct } from "../store/productsApi.ts";
+import type { IProduct } from "../intercafes/product/product.ts";
 
 const readProductSlug = (core: IProduct): string => {
   const rawSlug = core.slug

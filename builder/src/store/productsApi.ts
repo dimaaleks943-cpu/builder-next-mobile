@@ -7,22 +7,17 @@ import {
 } from "@reduxjs/toolkit/query/react"
 import {
   EXTRANET_API_ROOT,
-  EXTRANET_API_TOKEN,
   EXTRANET_SITES_BASE,
   type DistributorProductsQueryParams,
   type IDistributorProductContent,
   type PaginatedResponse,
   type ProductsListResponse,
 } from "../api/extranet"
+import type { IProduct } from "../intercafes/product/product.ts";
+import { EXTRANET_API_TOKEN } from "../api/tokent.ts";
 
 
 /** Товар поставщика из extranet v2 (`GET …/v2/Products`). */
-export interface IProduct {
-  id?: number
-  name?: string
-  [key: string]: unknown
-}
-
 interface ProductsListResponseInput {
   data?: IProduct[]
   total?: number
