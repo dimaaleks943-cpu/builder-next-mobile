@@ -1,100 +1,26 @@
 import { useCallback, useMemo } from "react"
-import type { ProductsListQueryParams } from "../api/extranet"
-import {
-  useGetDistributorProductsQuery,
-  useGetProductsListQuery,
-} from "../store/productsApi"
-import {
-  mergeProductWithDistributor,
-  type IFullProduct,
-} from "./mergeProductWithDistributor"
+import type { IContentItem, ProductsListQueryParams } from "../api/extranet"
+import { type IProduct, useGetProductsListQuery, } from "../store/productsApi"
 
-export type { IFullProduct }
-
-export interface UseFullProductParams {
-  productId: number
-  distributorId?: number
-  skip?: boolean
-}
 
 export interface UseFullProductsListParams {
   params?: ProductsListQueryParams
-  distributorId?: number
   skip?: boolean
 }
 
-export const useFullProduct = ({
-  productId,
-  distributorId,
-  skip = false,
-}: UseFullProductParams) => {
-  const productsQuery = useGetProductsListQuery(
-    {
-      params: {
-        filter: { id: [productId] },
-        range: [0, 0],
-      },
-    },
-    { skip: skip || !productId },
-  )
-
-  // Пока distributor API пуст — запрос пропускаем; позже: skip: !distributorId
-  useGetDistributorProductsQuery(
-    {
-      params: {
-        filter: {
-          ...(distributorId != null
-            ? { distributor_id: [distributorId] }
-            : {}),
-          product_id: [productId],
-        },
-      },
-    },
-    { skip: true },
-  )
-
-  const product = useMemo((): IFullProduct | null => {
-    const core = productsQuery.data?.data?.[0]
-    if (!core) return null
-    return mergeProductWithDistributor(core, [], productId)
-  }, [productsQuery.data, productId])
-
-  const refetch = useCallback(() => {
-    void productsQuery.refetch()
-  }, [productsQuery.refetch])
-
-  return {
-    product,
-    isLoading: productsQuery.isLoading,
-    isFetching: productsQuery.isFetching,
-    isError: productsQuery.isError,
-    error: productsQuery.error,
-    refetch,
-  }
-}
-
+/** Хук для получения продукта + доп полей из контент продукта */
 export const useFullProductsList = ({
   params,
-  distributorId,
   skip = false,
 }: UseFullProductsListParams = {}) => {
   const productsQuery = useGetProductsListQuery({ params }, { skip })
 
-  useGetDistributorProductsQuery(
-    {
-      params: {
-        filter:
-          distributorId != null
-            ? { distributor_id: [distributorId] }
-            : undefined,
-      },
-    },
-    { skip: true },
-  )
+  // useGetDistributorProductsQuery( //TODO будущий хук для получения контент продукта, запрашивается по массиву ид полученных продуктов
 
+  /** Мердж продукта и контект продукта */
   const products = useMemo((): IFullProduct[] => {
     const items = productsQuery.data?.data ?? []
-    return items.map((core) => mergeProductWithDistributor(core, []))
+    return items.map((core) => mergeProductWithContent(core, []))
   }, [productsQuery.data])
 
   const refetch = useCallback(() => {
@@ -110,4 +36,23 @@ export const useFullProductsList = ({
     error: productsQuery.error,
     refetch,
   }
+}
+
+export interface IFullProduct {
+  core: IProduct
+  distributorContent: IContentItem | null
+}
+
+const mergeProductWithContent = (
+  core: IProduct,
+  distributorItems: IContentItem[],
+  productId?: number,
+): IFullProduct => {
+  const id = productId ?? core.id
+  if (id == null || !distributorItems.length) {
+    return { core, distributorContent: null }
+  }
+
+  const match = distributorItems.find((item) => Number(item.id) === id)
+  return { core, distributorContent: match ?? null }
 }

@@ -11,9 +11,22 @@ import {
   EXTRANET_SITES_BASE,
   type DistributorProductsQueryParams,
   type IDistributorProductContent,
-  type IProduct,
   type PaginatedResponse,
+  type ProductsListResponse,
 } from "../api/extranet"
+
+
+/** Товар поставщика из extranet v2 (`GET …/v2/Products`). */
+export interface IProduct {
+  id?: number
+  name?: string
+  [key: string]: unknown
+}
+
+interface ProductsListResponseInput {
+  data?: IProduct[]
+  total?: number
+}
 
 const prepareHeaders = (
   headers: Headers,
@@ -55,7 +68,7 @@ export const productsApi = createApi({
   tagTypes: ["Product", "DistributorProduct"],
   endpoints: (build) => ({
     getProductsList: build.query<
-      { data: IProduct[]; total: number },
+      ProductsListResponse,
       {
         params?: {
           range?: [number, number]
@@ -81,11 +94,20 @@ export const productsApi = createApi({
         }
       },
       transformResponse: (
-        response: { data?: IProduct[]; total?: number },
-      ): { data: IProduct[]; total: number } => ({
-        data: response?.data ?? [],
-        total: response?.total ?? 0,
-      }),
+        response: IProduct[] | ProductsListResponseInput,
+      ): ProductsListResponse => {
+        if (Array.isArray(response)) {
+          return {
+            data: response,
+            total: response.length,
+          }
+        }
+
+        return {
+          data: response?.data ?? [],
+          total: response?.total ?? response?.data?.length ?? 0,
+        }
+      },
       providesTags: (result) =>
         result?.data
           ? [

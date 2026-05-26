@@ -165,16 +165,14 @@
 
 Для `ContentList` используем единый контракт во всех рантаймах:
 
-- `selectedSource` хранит `content_type_id` (UUID), а не условные значения вроде `products`.
-- загрузка items выполняется через `GET /v3/sites/{domain}/content/items` с filter:
-  `{"content_type_id":["<UUID>"]}`.
-- `GET /v3/sites/{domain}/content/types` - опциональный endpoint для списка типов контента
-  (UI выбора в билдере), но не обязательный для runtime-рендера.
-- сигнатура адаптера должна оставаться в виде `getCollectionByKey(domain, key)`, где
-  `key` в текущем контракте равен `content_type_id`.
+- `selectedSource` хранит `content_type_id` (UUID) **или** sentinel `__products__` (`PRODUCTS_SELECTED_SOURCE`) для списка товаров.
+- content types: загрузка items через `GET /v3/sites/{domain}/content/items` с filter `{"content_type_id":["<UUID>"]}`.
+- Products: загрузка через `GET v2/Products` (builder — `productsApi` / `useFullProductsList`; SSR — `lib/productsApi.ts` с `EXTRANET_API_TOKEN`).
+- Адаптер `mapFullProductToContentItem` приводит товар к `IContentItem` для field binding в Text/Image.
+- `GET /v3/sites/{domain}/content/types` — список типов контента для UI билдера; Products добавляется синтетически в `BuilderPage`.
+- сигнатура SSR-адаптера: `fetchCollectionItemsBySource(domain, selectedSource, params?)` и `getCollectionByKey(domain, key)`.
 
-Важно: в документации и комментариях для источника `ContentList` не используем legacy wording
-`products/ecommerce`; корректный термин - `content_type_id` / тип контента.
+Маршрутизация витрины (single-segment page slug + tail) — `site-runtime-ssr/DEV_NOTES.md` §7.2, `lib/pagePathResolve.ts`.
 
 ---
 

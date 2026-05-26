@@ -49,6 +49,10 @@ import {
 import type { Locale, TranslationsByLocale } from "../../api/extranet.ts"
 import type { StyleClassesRegistry } from "./styleClasses/types.ts"
 import { BuilderUploadedFontsFaceRegistry } from "./fonts/BuilderUploadedFontsFaceRegistry.tsx"
+import {
+  PRODUCT_BINDABLE_FIELDS,
+  PRODUCTS_SELECTED_SOURCE,
+} from "../../constants/contentListSources.ts"
 
 function pickBindableTypeFields(
   fields: IContentTypeField[] | undefined,
@@ -184,8 +188,17 @@ export const BuilderPage = () => {
           label: t.name,
           items: [],
           fields: pickBindableTypeFields(t.fields),
+          sourceKind: "content",
         }),
-      ),
+      ).concat([
+        {
+          key: PRODUCTS_SELECTED_SOURCE,
+          label: "Products",
+          items: [],
+          fields: PRODUCT_BINDABLE_FIELDS,
+          sourceKind: "products",
+        },
+      ]),
     )
   }, [typesData])
 

@@ -1,8 +1,11 @@
 import { useNode, useEditor, Element } from "@craftjs/core"
-import { useState, useEffect, useRef, startTransition, useCallback } from "react"
+import { useState, useEffect, useRef, startTransition, useCallback, useMemo } from "react"
 import type { CSSProperties } from "react"
 import { useLazyGetContentItemsQuery } from "../store/extranetApi"
 import { COLORS } from "../theme/colors"
+import { useFullProductsList } from "../hooks/useFullProduct.ts"
+import { isProductsSelectedSource } from "../constants/contentListSources.ts"
+import { mapFullProductToContentItem } from "../utils/productToContentItem.ts"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import { useCollectionsContext } from "../pages/builder/context/CollectionsContext.tsx"
 import { useCollectionFilterScope } from "../pages/builder/context/CollectionFilterScopeContext.tsx"
@@ -74,6 +77,18 @@ export const CraftContentList = ({}: ContentListProps) => {
   const collectionsContext = useCollectionsContext()
   const { selectedCategoryIdByScope } = useCollectionFilterScope()
   const [fetchContentItems] = useLazyGetContentItemsQuery()
+  // Текущий выбранный source берём из props узла Craft.js,
+  // чтобы настройки сохранялись в JSON и восстанавливались при загрузке
+  const selectedSource = props.selectedSource ?? ""
+  const isProductsSource = isProductsSelectedSource(selectedSource)
+  const {
+    products: fullProducts,
+    isLoading: areProductsLoading,
+    isFetching: areProductsFetching,
+  } = useFullProductsList({
+    params: { range: [0, 20] },
+    skip: !isProductsSource,
+  })
   const viewport = usePreviewViewport()
   const responsiveStyle = useCraftNodeStyle(props.styleClassIds, props.style)
 
@@ -106,9 +121,6 @@ export const CraftContentList = ({}: ContentListProps) => {
     setIsSettingsOpen(false)
   }
 
-  // Текущий выбранный source и layout берём из props узла Craft.js,
-  // чтобы настройки сохранялись в JSON и восстанавливались при загрузке
-  const selectedSource = props.selectedSource ?? ""
   const itemsPerRow = (responsiveStyle.itemsPerRow as number | undefined) ?? 1
   const filterScope = props.filterScope
   const scopeTrimmed = filterScope?.trim() ?? ""
@@ -121,26 +133,57 @@ export const CraftContentList = ({}: ContentListProps) => {
 
   // Кэш в CollectionsContext: без scope — голый type id; со scope — `scope::typeId` (несколько списков одного типа).
   const cacheKey = getCollectionItemsCacheKey(filterScope, selectedSource)
+  const productItems = useMemo(
+    () => fullProducts.map(mapFullProductToContentItem),
+    [fullProducts],
+  )
+  const cachedItems = selectedSource
+    ? collectionsContext?.collectionItemsByKey[cacheKey]
+    : undefined
 
   const resolvedItems: any[] =
-    selectedSource && collectionsContext
-      ? collectionsContext.collectionItemsByKey[cacheKey] ?? []
+    selectedSource
+      ? isProductsSource
+        ? cachedItems ?? productItems
+        : cachedItems ?? []
       : []
 
   // Подгрузка элементов коллекции в превью редактора: с scope — с фильтром по категории из контекста.
   useEffect(() => {
     if (!selectedSource || !collectionsContext?.setCollectionItems) return
 
+    const categoryPart = scopeTrimmed
+      ? (selectedCategoryIdForList ?? "__all__")
+      : "__default__"
+    const signature = `${cacheKey}|${categoryPart}`
+
+    if (isProductsSource) {
+      if (!productItems.length && (areProductsLoading || areProductsFetching)) {
+        return
+      }
+
+      const productIds = productItems
+        .map((item) => item.id || item.slug || "")
+        .join(",")
+      const productsSignature = `${signature}|products:${productItems.length}:${productIds}`
+
+      if (
+        lastItemsFetchSignatureRef.current === productsSignature &&
+        collectionsContext.collectionItemsByKey[cacheKey] !== undefined
+      ) {
+        return
+      }
+
+      lastItemsFetchSignatureRef.current = productsSignature
+      collectionsContext.setCollectionItems(cacheKey, productItems)
+      return
+    }
+
     const collection = collectionsContext.collections.find(
       (c) => c.key === selectedSource,
     )
     if (!collection) return
 
-    // Сигнатура запроса: ключ кэша + выбранная категория (или «все»), чтобы не дёргать API повторно без смены условий.
-    const categoryPart = scopeTrimmed
-      ? (selectedCategoryIdForList ?? "__all__")
-      : "__default__"
-    const signature = `${cacheKey}|${categoryPart}`
     if (
       lastItemsFetchSignatureRef.current === signature &&
       collectionsContext.collectionItemsByKey[cacheKey] !== undefined
@@ -148,7 +191,6 @@ export const CraftContentList = ({}: ContentListProps) => {
       return
     }
 
-    // В API уходит `category_id` только если задан scope и выбрана конкретная категория (не «Все»).
     const categoryIds =
       scopeTrimmed && selectedCategoryIdForList
         ? [selectedCategoryIdForList]
@@ -182,9 +224,18 @@ export const CraftContentList = ({}: ContentListProps) => {
     selectedCategoryIdForList,
     collectionsContext,
     fetchContentItems,
+    isProductsSource,
+    productItems,
+    areProductsLoading,
+    areProductsFetching,
   ])
 
   const hasCollection = resolvedItems.length > 0
+  const isProductsPending =
+    isProductsSource &&
+    resolvedItems.length === 0 &&
+    (areProductsLoading || areProductsFetching)
+  const isProductsEmpty = isProductsSource && resolvedItems.length === 0 && !isProductsPending
   const cellCount = hasCollection ? resolvedItems.length : 0
 
   // Seed: только при пустых целях и новом seedKey (lastSeedKeyRef), без пересечения с активным sync (syncInProgressRef).
@@ -558,7 +609,37 @@ export const CraftContentList = ({}: ContentListProps) => {
               </div>
             ))
           })()
-          : (
+          : isProductsPending ? (
+            <div
+              style={{
+                flex: 1,
+                minHeight: 300,
+                padding: "16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: COLORS.gray700,
+                fontSize: 14,
+              }}
+            >
+              Loading products...
+            </div>
+          ) : isProductsEmpty ? (
+            <div
+              style={{
+                flex: 1,
+                minHeight: 300,
+                padding: "16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: COLORS.gray700,
+                fontSize: 14,
+              }}
+            >
+              No products found.
+            </div>
+          ) : (
             <>
               {/* Строка 1 плейсхолдер */}
               <div
@@ -818,7 +899,7 @@ export const CraftContentList = ({}: ContentListProps) => {
               color: COLORS.gray600,
             }}
           >
-            To create a Collection of products to sell, go to the Ecommerce panel.
+            Select a content type or Products to populate the list.
           </div>
         )}
         {/* Кнопка "Показать все настройки" рендерится в InlineSettingsModal через onShowAllSettings */}

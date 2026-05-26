@@ -11,6 +11,7 @@ export type CollectionInfo = {
   label: string
   items: IContentItem[]
   fields: IContentTypeField[]
+  sourceKind?: "content" | "products"
 }
 
 export type CollectionsContextValue = {
