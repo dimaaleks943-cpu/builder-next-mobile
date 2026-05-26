@@ -5,7 +5,6 @@ import type { ContentCategory } from "../api/extranet"
 import { COLORS } from "../theme/colors"
 import { useCollectionFilterScope } from "../pages/builder/context/CollectionFilterScopeContext.tsx"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
-import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import {
   useReactToInlineSettingsOpenRequest,
@@ -14,6 +13,7 @@ import {
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
 import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
+import { InlineSettingsModal } from "../components/InlineSettingsModal/InlineSettingsModal.tsx";
 
 /**
  * Пропсы блока «Фильтр категорий». Выбор пользователя хранится в {@link useCollectionFilterScope}

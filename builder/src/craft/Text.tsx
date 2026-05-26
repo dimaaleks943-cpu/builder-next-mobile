@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useEditor, useNode } from "@craftjs/core"
 import type { CSSProperties } from "react"
-import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
-import { TextSettingsFields } from "../pages/builder/settingsCraftComponents/TextSettingsFields.tsx"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import {
   useReactToInlineSettingsOpenRequest,
@@ -19,6 +17,8 @@ import {
   commitCraftTextDraft,
   getCraftTextDisplayText,
 } from "../utils/craftLocalizedText.ts"
+import { TextSettingsFields } from "../pages/builder/settingsCraftComponents/TextSettingsFields/TextSettingsFields.tsx";
+import { InlineSettingsModal } from "../components/InlineSettingsModal/InlineSettingsModal.tsx";
 
 export interface TextProps {
   text?: string

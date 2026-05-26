@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState, useCallback } from "react"
 import { useNode } from "@craftjs/core"
-import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
 import { ImageSettingsFields } from "../pages/builder/settingsCraftComponents/ImageSettingsFields.tsx"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import {
@@ -13,6 +12,7 @@ import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
 import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 import backgroundImage from "../assets/background-image.svg"
+import { InlineSettingsModal } from "../components/InlineSettingsModal/InlineSettingsModal.tsx";
 
 export interface CraftImageProps {
   src?: string

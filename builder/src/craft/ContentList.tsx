@@ -11,7 +11,6 @@ import { useCollectionsContext } from "../pages/builder/context/CollectionsConte
 import { useCollectionFilterScope } from "../pages/builder/context/CollectionFilterScopeContext.tsx"
 import { CraftContentListCell } from "./ContentListCell"
 import { ContentListDataContext } from "../pages/builder/context/ContentListDataContext.tsx"
-import { InlineSettingsModal } from "../components/InlineSettingsModal.tsx"
 import {
   useReactToInlineSettingsOpenRequest,
   type InlineSettingsViewportAnchor,
@@ -34,6 +33,7 @@ import {
   setResponsiveStyleProp,
   type ResponsiveStyle,
 } from "../pages/builder/responsiveStyle.ts"
+import { InlineSettingsModal } from "../components/InlineSettingsModal/InlineSettingsModal.tsx";
 
 export type ContentListProps = {
   selectedSource?: string

@@ -15,7 +15,6 @@ import {
 } from "../craftStylesComponents"
 import {
   ImageSettingsFields,
-  TextSettingsFields,
   LinkTextSettingsFields,
 } from "../settingsCraftComponents"
 import { useRightPanelContext } from "../context/RightPanelContext.tsx"
@@ -23,6 +22,7 @@ import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts
 import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts"
 import { CraftSettingsInput } from "./craftSettingsControls/CraftSettingsInput.tsx"
 import { StyleSelector } from "./StyleSelector/StyleSelector.tsx"
+import { TextSettingsFields } from "../settingsCraftComponents/TextSettingsFields/TextSettingsFields.tsx";
 
 type Props = {
   isTemplatePage?: boolean
