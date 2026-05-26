@@ -5,6 +5,9 @@ import type {
 } from "@/lib/contentTypes"
 import { parseSingleEntityJson } from "@/lib/apiParsers"
 import { normalizeSiteDomain } from "@/lib/sitePages"
+import { isProductsSelectedSource } from "@/constants/contentListSources"
+import { fetchProductsList } from "@/api/productsApi"
+import { mapFullProductToContentItem } from "@/lib/productToContentItem"
 
 export type CollectionInfo = {
   key: string
@@ -27,6 +30,31 @@ function buildContentItemsFilter(
   const ids = categoryIds?.map((id) => id.trim()).filter(Boolean)
   if (ids?.length) payload.category_id = ids
   return JSON.stringify(payload)
+}
+
+/**
+ * Загружает элементы коллекции по `selectedSource` (content type UUID или Products sentinel).
+ */
+export const fetchCollectionItemsBySource = async (
+  domain: string,
+  selectedSource: string,
+  params?: {
+    limit?: number
+    offset?: number
+    categoryIds?: string[]
+  },
+): Promise<IContentItem[] | null> => {
+  if (isProductsSelectedSource(selectedSource)) {
+    const range: [number, number] = [
+      params?.offset ?? 0,
+      (params?.offset ?? 0) + (params?.limit ?? 30), //TODO limit
+    ]
+    const products = await fetchProductsList({ range })
+
+    return products?.map(mapFullProductToContentItem) ?? null
+  }
+
+  return fetchContentItems(domain, selectedSource, params)
 }
 
 /**
@@ -186,7 +214,7 @@ export const getCollectionByKey = async (
   domain: string,
   key: string,
 ): Promise<CollectionInfo | null> => {
-  const items = await fetchContentItems(domain, key)
+  const items = await fetchCollectionItemsBySource(domain, key)
   if (items === null) return null
   return {
     key,

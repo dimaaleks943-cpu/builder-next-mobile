@@ -1,123 +1,42 @@
 /**
- * Разбор публичного URL: базовый slug страницы и последний сегмент (кандидат в slug итема или категории).
+ * URL builders for storefront category trails and template item links.
+ * Page slug is always a single path segment; tail may contain multi-segment category trails.
  */
 
 import { normalizeItemPathPrefix } from "@/lib/templateRoute"
 
-/**
- * Цепочка slug категории между префиксом витрины и последним сегментом (slug итема).
- * Напр. prefix `/gid`, path `/gid/europe/luvr`, item `luvr` → `europe`.
- */
-export function categoryTrailBetweenPrefixAndItemSlug(
-  prefix: string,
-  slugPath: string,
-  itemSlug: string,
-): string | null {
-  const norm = normalizeItemPathPrefix(prefix)
-  const tail = itemSlug.trim()
-  if (!tail) return null
-
-  if (norm === "/") {
-    const path = slugPath.startsWith("/") ? slugPath : `/${slugPath}`
-    const inner = path.slice(1).split("/").filter(Boolean)
-    if (inner.length < 2) return null
-    const last = inner[inner.length - 1]!
-    let lastDecoded: string
-    try {
-      lastDecoded = decodeURIComponent(last)
-    } catch {
-      lastDecoded = last
-    }
-    if (lastDecoded !== tail && last !== tail) return null
-    return inner
-      .slice(0, -1)
-      .map((s) => {
-        try {
-          return decodeURIComponent(s)
-        } catch {
-          return s
-        }
-      })
-      .join("/")
-  }
-
-  const pathPrefix = `${norm}/`
-  if (!slugPath.startsWith(pathPrefix)) return null
-  const rest = slugPath.slice(pathPrefix.length)
-  const parts = rest.split("/").filter(Boolean)
-  if (parts.length < 2) return null
-  const last = parts[parts.length - 1]!
-  let lastDecoded: string
-  try {
-    lastDecoded = decodeURIComponent(last)
-  } catch {
-    lastDecoded = last
-  }
-  if (lastDecoded !== tail && last !== tail) return null
-  return parts
-    .slice(0, -1)
-    .map((s) => {
-      try {
-        return decodeURIComponent(s)
-      } catch {
-        return s
-      }
-    })
-    .join("/")
-}
-
-/** URL карточки итема: prefix + опционально категория + slug записи. */
-export function buildStorefrontTemplateHref(
-  prefix: string,
+/** URL карточки итема: page slug + опциональный category trail + slug записи. */
+export const buildStorefrontTemplateHref = (
+  pageBaseSlug: string,
   itemSlug: string,
   categoryTrail: string | null | undefined,
-): string {
-  const norm = normalizeItemPathPrefix(prefix)
-  const normalizedCategoryTrail = categoryTrail ?? ""
-  const catParts = normalizedCategoryTrail.split("/").filter(Boolean)
+): string => {
+  const base = normalizeItemPathPrefix(pageBaseSlug)
+  const catParts = (categoryTrail ?? "").split("/").filter(Boolean)
   const slugParts = itemSlug.split("/").filter(Boolean)
   const allParts = [...catParts, ...slugParts]
-  const encoded = allParts.map((p) => encodeURIComponent(p)).join("/")
-  if (norm === "/") return `/${encoded}`
-  const base = norm.replace(/\/+$/, "")
-  return `${base}/${encoded}`
+  const encoded = allParts.map((part) => encodeURIComponent(part)).join("/")
+  if (base === "/") return `/${encoded}`
+  const trimmedBase = base.replace(/\/+$/, "")
+  return `${trimmedBase}/${encoded}`
 }
 
-/** URL витрины с выбранной категорией: `/gid` или `/gid/europe`. */
-export function buildStorefrontCategoryUrl(
+/** URL витрины с выбранной категорией: `/catalog` или `/catalog/europe/asia`. */
+export const buildStorefrontCategoryUrl = (
   pageBaseSlug: string,
-  categorySlug: string | null,
-): string {
+  categorySlugOrTrail: string | null,
+): string => {
   const base = normalizeItemPathPrefix(pageBaseSlug)
-  const normalizedCategorySlug = categorySlug?.trim() ?? ""
-  if (!normalizedCategorySlug) return base
-  const b = base.replace(/\/+$/, "") || "/"
-  if (b === "/") return `/${encodeURIComponent(normalizedCategorySlug)}`
-  return `${b}/${encodeURIComponent(normalizedCategorySlug)}`
-}
+  const trail = categorySlugOrTrail?.trim() ?? ""
+  if (!trail) return base
 
-export function splitBaseSlugAndTail(slugPath: string): {
-  baseSlug: string
-  tailSlug: string | null
-} {
-  const raw = slugPath.trim()
-  const withSlash = raw.startsWith("/") ? raw : `/${raw}`
-  const noTrailing = withSlash.replace(/\/+$/, "") || "/"
-  const inner = noTrailing === "/" ? "" : noTrailing.slice(1)
-  const segments = inner.split("/").filter(Boolean)
+  const encodedTrail = trail
+    .split("/")
+    .filter(Boolean)
+    .map((part) => encodeURIComponent(part))
+    .join("/")
 
-  if (segments.length <= 1) {
-    return { baseSlug: noTrailing, tailSlug: null }
-  }
-
-  const tailRaw = segments[segments.length - 1]!
-  let tailSlug: string
-  try {
-    tailSlug = decodeURIComponent(tailRaw)
-  } catch {
-    tailSlug = tailRaw
-  }
-  const baseSegments = segments.slice(0, -1)
-  const baseSlug = `/${baseSegments.join("/")}`
-  return { baseSlug, tailSlug }
+  const trimmedBase = base.replace(/\/+$/, "") || "/"
+  if (trimmedBase === "/") return `/${encodedTrail}`
+  return `${trimmedBase}/${encodedTrail}`
 }

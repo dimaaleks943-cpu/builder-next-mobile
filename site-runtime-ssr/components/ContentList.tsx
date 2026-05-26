@@ -1,5 +1,5 @@
 import React from "react"
-import { fetchContentItems, getCollectionByKey } from "@/lib/collectionsApi"
+import { fetchCollectionItemsBySource, getCollectionByKey } from "@/lib/collectionsApi"
 import { ContentDataProvider } from "@/components/ContentDataContext"
 import { ContentListProvider } from "@/components/ContentListContext"
 import { useSiteCollections } from "@/components/SiteCollectionsContext"
@@ -112,7 +112,7 @@ export const ContentList = ({
 
     let cancelled = false
     setFilterLoading(true)
-    fetchContentItems(domain, selectedSource, {
+    fetchCollectionItemsBySource(domain, selectedSource, {
       categoryIds: cat ? [cat] : undefined,
     })
       .then((items) => {

@@ -218,8 +218,8 @@
 
 Актуальный API-контракт:
 
-- `selectedSource` = `content_type_id` (UUID);
-- items: `GET /v3/sites/{domain}/content/items?filter={"content_type_id":["<UUID>"]}`;
+- `selectedSource` = `content_type_id` (UUID) или `__products__` для Products;
+- items: content через `GET /v3/sites/{domain}/content/items`; Products через `GET v2/Products` (`fetchCollectionItemsBySource`);
 - одна запись по **slug** (уникален среди items и categories на сайте): `GET /v3/sites/{domain}/content/items/s/{slug}`;
 - одна категория по **slug**: `GET /v3/sites/{domain}/content/categories/s/{slug}`;
 - `GET /v3/sites/{domain}/content/types` - optional endpoint (используется там, где нужен список типов).
@@ -229,7 +229,7 @@
 Актуальный поток в `pages/[[...slug]].tsx`:
 
 1. из Craft JSON извлекаются пары `(filterScope?, selectedSource)` через `extractContentListPrefetchPairsFromCraftContent` — ключ кэша `getCollectionItemsCacheKey(filterScope, content_type_id)`;
-2. на сервере prefetch'им items по каждой паре через `fetchContentItems` (с `category_id` в filter, если в URL задана категория и у блока есть `filterScope`);
+2. на сервере prefetch'им items по каждой паре через `fetchCollectionItemsBySource` (с `category_id` в filter, если в URL задана категория и у блока есть `filterScope`);
 3. складываем результат в `collectionItemsByTypeId` и прокидываем в `SiteCollectionsProvider`;
 4. при URL вида `/страница/slug-категории` начальный выбор категории задаётся через `CollectionFilterScopeProvider` (`initialSelectedCategoryIdByScope` с SSR);
 5. `ContentList` на клиенте сначала использует prefetched data из provider;
@@ -243,58 +243,72 @@
 
 ---
 
-### 7.2 Маршрутизация по `slugPath` (статика, template-запись, витрина с категорией)
+### 7.2 Маршрутизация по `slugPath` (single-segment page + tail)
 
-**Где код**: `pages/[[...slug]].tsx`, разбор базы и хвоста — `lib/catalogPathResolve.ts` (`splitBaseSlugAndTail`), выбор template по префиксу — `lib/templateRoute.ts`.
+**Где код**: `pages/[[...slug]].tsx`, разбор пути — `lib/pagePathResolve.ts`, URL builders — `lib/catalogPathResolve.ts`.
 
 **Домен для API**: `normalizeSiteDomain(context.req.headers.host)` (без захардкоженного хоста).
 
-#### 7.2.1 Публичный URL и локаль (`ru` / `en`)
+#### 7.2.1 Публичный URL и локаль
 
-- **Дефолтная локаль** `ru` — в адресе **нет** языкового префикса: `/`, `/gid`, `/gid/europe/item`.
-- **Английская** `en` — префикс **первого сегмента**: `/en`, `/en/gid`, `/en/gid/europe/item`.
-- Список префиксов локалей (пока только `en`) и дефолт — `lib/localeFromPath.ts`: `LOCALE_PREFIXES`, `DEFAULT_LOCALE`, функции `parseLocaleFromSlugPath` (из полного catch-all пути получаем `{ locale, slugPathWithoutLocale }`) и `prefixPublicPath` (сборка пути для ссылок и `og:url`).
-- В `getServerSideProps` после сборки `slugPath` из `[[...slug]]` вызывается `parseLocaleFromSlugPath`; **вся** дальнейшая маршрутизация (`splitBaseSlugAndTail`, `findStaticPage`, `resolveTemplatePageForSlug`, `categoryTrailBetweenPrefixAndItemSlug`, `notFound`) работает только с **`slugPathWithoutLocale`**, чтобы префикс `en` не воспринимался как часть `SitePage.slug`.
-- В пропсы страницы уходят `locale`, `slug` (путь **без** префикса локали), объект `pageTranslate` (ветки `translate` / `translate_mobile`).
-- **Заглушка переводов** по `page.id`: `lib/hardcodedPageTranslations.ts` (`PAGE_TRANSLATIONS_BY_ID`, `getHardcodedTranslationsForPage`). Для неизвестного `id` возвращаются пустые словари — рендер как раньше по полю `text` в Craft. Дальше словари и список локалей планируется брать из API (`translate` и метаданные локалей), как в билдере.
-- **Резолв строки** (как `resolveTranslationText` в билдере): `lib/resolvePageTranslation.ts` — `translations[locale][key] ?? translations.ru[key] ?? fallbackText`.
-- **Контекст**: `components/PageLocaleContext.tsx` (`PageLocaleProvider` / `usePageLocale`) оборачивает дерево страницы в `[[...slug]].tsx`; в `components/StorefrontPageContext.tsx` дополнительно прокидывается `locale` для префиксации внутренних URL (`LinkText`, `CategoryFilter` через `prefixPublicPath`).
+- **Дефолтная локаль** `ru` — в адресе **нет** языкового префикса.
+- **Локаль** — опциональный **первый сегмент длиной 2 символа** (`en`, …): `/en/catalog/...`.
+- Default `ru` when absent; page slug min **3** chars vs locale **2** chars helps distinguish.
+- Функции: `lib/localeFromPath.ts` — `parseLocaleFromSlugPath`, `prefixPublicPath`.
+- Вся маршрутизация после locale работает с **`slugPathWithoutLocale`**.
 
-**Разбор пути**:
+**Пример**: `https://szim.ru/en/catalog/zazemlenie/komplekty_zazemleniya/138069/`
 
-- `slugPath` собирается из catch-all (ведущий `/`, корень = `"/"`); затем вычитается префикс локали → `slugPathWithoutLocale`.
-- `splitBaseSlugAndTail(slugPathWithoutLocale)`: если в пути **один** сегмент страницы или только корень (`/`, `/gid`) — `tailSlug === null` (только статическая страница, без запросов item/category по slug).
-- Если сегментов **два и больше**: `baseSlug` — путь без последнего сегмента, `tailSlug` — последний сегмент (после `decodeURIComponent`).
+- `en` → locale
+- `catalog` → **page slug** (lookup по одному сегменту)
+- `zazemlenie/komplekty_zazemleniya/138069` → tail (категории / item / product), **не** page lookup
 
-**Если `tailSlug === null`**
+#### 7.2.2 Page slug (один сегмент)
 
-- Ищется **статическая** страница: `page.slug === slugPath`, `!isTemplateSitePage(page)`; для корня — допускается `slug === "/"`.
-- Prefetch ContentList — как в §7.1 (без фильтра категории).
+- Page slug = **первый** сегмент пути после locale (или корень `/` для home).
+- Min **3** символа (кроме home `/`).
+- Lookup только по этому сегменту — `resolveRenderablePage(pages, pageSlugSegment)`.
+- Типы: `STATIC`, `TEMPLATE`, `SYSTEM_PAGE` (`version === null`). `SYSTEM_COMPONENT` — только header/footer (без изменений).
 
-**Если `tailSlug` задан** (публичный slug уникален среди items и categories):
+#### 7.2.3 Tail после page slug
 
-1. `GET .../content/items/s/{tailSlug}`. Если запись есть — **ветка template**:
-   - `resolveTemplatePageForSlug(pages, slugPath)` выбирает страницу с `type === "template"` и префиксом (`item_path_prefix ?? slug`); при нескольких кандидатах — более длинный префикс, затем `sort`, затем `id`.
-   - Проверка: `content_type_id` / `collection_type_id` записи совпадает с `page.collection_type_id` (без учёта регистра). Иначе — `notFound`.
-   - Запись берётся **только** из ответа `items/s/{slug}` (без загрузки по UUID и без поиска по полному списку).
-   - `templateContentData = { collectionKey, itemData }`; в `collectionItemsByTypeId` для списков с тем же `selectedSource`, что и `collection_type_id`, кладётся `[item]` под ключом `getCollectionItemsCacheKey(...)`; остальные пары догружаются через `fetchContentItems`.
-2. Если итема нет — `GET .../content/categories/s/{tailSlug}`. Если категория есть — **ветка витрины**:
-   - Загружается **статическая** страница с `slug === baseSlug` (не template).
-   - Prefetch: для каждой пары ContentList с `filterScope` — `fetchContentItems` с `category_id`; для пар без scope — без фильтра.
-   - `CollectionFilterScopeProvider` получает `initialSelectedCategoryIdByScope`: для каждого встреченного `filterScope` — `category.id`.
-3. Если категория не найдена — `notFound`.
+Перед интерпретацией tail вызывается `stripFilterBlocks` — блоки `/filter/.../apply/` удаляются (структура зарезервирована для будущих фильтров).
 
-**Поля `SitePage` для template** (см. `lib/sitePages.ts`): `type: "template"`, `collection_type_id`, `item_path_prefix`, `sort` — как раньше для `resolveTemplatePageForSlug`.
+**TEMPLATE**:
 
-**Рендер**:
+- Последний сегмент tail = **item/product slug** (обязателен).
+- Средние сегменты = category trail.
+- Item: `fetchTemplateItemForPage` — content item или product (если `collection_type_id === __products__`).
 
-- `SiteCollectionsProvider` + `CollectionFilterScopeProvider` + при необходимости `ContentDataProvider` вокруг `<main>` (см. `[[...slug]].tsx`).
-- `renderPage(components)` без изменений.
+**STATIC / SYSTEM_PAGE**:
 
-**LinkText на template-URL** (`components/LinkText.tsx`):
+- Если последний сегмент — content item или product → inline-item (category trail = сегменты до последнего).
+- Иначе весь tail = category slug trail; категория — по **последнему** сегменту (`resolveCategoryFromTrail`).
 
-- При `linkMode === "collectionItemPage"` и template: в путь подставляется **`item.slug`** (не `item.id`); при пустом slug — предупреждение в dev и fallback `href`; итоговый путь префиксуется через `prefixPublicPath` при `locale === "en"`.
-- При `linkMode === "page"` и `href`, начинающемся с `/`, тот же префикс добавляется для согласованности с URL вида `/en/...`.
+**Home (`/`)**: `pageSlugSegment === null`.
+
+#### 7.2.4 ContentList / Products
+
+- `selectedSource` = UUID или `__products__` (`lib/contentListSources.ts`).
+- Prefetch: `fetchCollectionItemsBySource` в GSSP и client fallback в `ContentList.tsx`.
+- Products API: `lib/productsApi.ts`, token `EXTRANET_API_TOKEN`.
+
+#### 7.2.5 LinkText / CategoryFilter URL
+
+- `pageBaseSlug` = `normalizeItemPathPrefix(page.slug)` — один сегмент (`/catalog`).
+- Template href: `buildStorefrontTemplateHref(pageBaseSlug, itemSlug, categoryTrail)` — **не** `item_path_prefix`.
+- Category URL: `buildStorefrontCategoryUrl` принимает multi-segment trail (`a/b/c`).
+
+#### Migration (old → new)
+
+| Old | New |
+|-----|-----|
+| `splitBaseSlugAndTail` | `parseStorefrontPath` |
+| `resolveTemplatePageForSlug` | page by first segment + `resolveTailForTemplatePage` |
+| `categoryTrailBetweenPrefixAndItemSlug` | tail slice / join after filter strip |
+| Multi-segment `SitePage.slug` lookup | Single segment only → 404 if legacy |
+
+**Parity mobileAPP** — отложено; см. §7.3.
 
 ---
 
@@ -306,7 +320,7 @@
 |------|---------------------------|------------------|
 | Список страниц | `getSitePages(domain)` в `getServerSideProps` | `fetchSitePages(domain)` с заголовком `x-mobile-client` |
 | Нормализация пути | вручную в `[[...slug]].tsx` | `normalizeSiteSlugPath` в `src/api/sitePagesApi.ts` |
-| Статика vs template + сегмент | блоки в `[[...slug]].tsx` + `resolveTemplatePageForSlug` | `resolveSitePageForSlugPath` (обёртка над той же идеей) |
+| Статика vs template + tail | `pagePathResolve.ts` + `[[...slug]].tsx` | `resolveSitePageForSlugPath` (legacy, mobileAPP) |
 | Утилиты префикса/сегмента | `lib/templateRoute.ts` | `src/lib/templateRoute.ts` (копия контракта) |
 | Загрузка записи | inline в GSSP | `fetchTemplatePageItem` в `sitePagesApi.ts` |
 | Обёртки контекста | `SiteCollectionsProvider` + опционально `ContentDataProvider` вокруг `<main>` | `SiteCollectionsProvider` + `ContentDataProvider` вокруг нативного `ScrollView` в `App.tsx` |

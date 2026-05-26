@@ -21,13 +21,14 @@ export const parseLocaleFromSlugPath = (
     return { locale: DEFAULT_LOCALE, slugPathWithoutLocale: "/" }
   }
   const first = segments[0]!
-  if (!isPrefixedLocale(first)) {
+  if (first.length !== 2) {
     return { locale: DEFAULT_LOCALE, slugPathWithoutLocale: noTrailing }
   }
+  const locale = (isPrefixedLocale(first) ? first : first) as SsrLocale
   const rest = segments.slice(1)
-  const slugPathWithoutLocale =
-    rest.length === 0 ? "/" : `/${rest.join("/")}`
-  return { locale: first, slugPathWithoutLocale }
+  const slugPathWithoutLocale = rest.length === 0 ? "/" : `/${rest.join("/")}`
+
+  return { locale, slugPathWithoutLocale }
 }
 
 export const prefixPublicPath = (path: string, locale: SsrLocale): string => {

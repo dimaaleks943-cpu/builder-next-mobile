@@ -117,7 +117,7 @@ export const LinkText = ({
       return href?.trim() ? href : "#";
     }
 
-    const prefix = normalizeItemPathPrefix(page.item_path_prefix ?? page.slug);
+    const prefix = normalizeItemPathPrefix(page.slug);
     const rawSlug = (item as Record<string, unknown>).slug;
     const segment =
       typeof rawSlug === "string" && rawSlug.trim()
