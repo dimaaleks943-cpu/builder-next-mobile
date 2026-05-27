@@ -1,7 +1,5 @@
 import {
-  FULL_TO_SHORT,
   SHORT_TO_FULL,
-  type FullStylePropKey,
   type ShortStylePropKey,
 } from "./stylePropsShortMapV1"
 import { BRANCHES } from "@/lib/responsiveCss"

@@ -4,7 +4,7 @@ import { fetchContentCategoryBySlug } from "@/lib/categoriesApi"
 import { fetchContentItemBySlug } from "@/lib/collectionsApi"
 import type { IContentItem } from "@/lib/contentTypes"
 import { isProductsSelectedSource, PRODUCTS_SELECTED_SOURCE } from "@/constants/contentListSources"
-import { fetchProductBySlugOrId } from "@/api/productsApi"
+import { fetchProductBySlug } from "@/api/productsApi"
 import { mapFullProductToContentItem } from "@/lib/productToContentItem"
 import { getItemContentTypeId } from "@/lib/templateRoute"
 
@@ -183,7 +183,7 @@ export const resolveTailForStaticSystemPage = async (
     }
   }
 
-  const product = await fetchProductBySlugOrId(lastSegment)
+  const product = await fetchProductBySlug(lastSegment)
   if (product) {
     return {
       mode: "inline-item",
@@ -231,7 +231,7 @@ export const fetchTemplateItemForPage = async (
   if (!trimmed) return null
 
   if (isProductsCollectionTypeId(collectionTypeId)) {
-    const product = await fetchProductBySlugOrId(trimmed)
+    const product = await fetchProductBySlug(trimmed)
     return product ? mapFullProductToContentItem(product) : null
   }
 

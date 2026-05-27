@@ -45,22 +45,6 @@ const setRangeQueryParams = (
   queryParams.set("limit", String(limit))
 }
 
-const productMatchesSegment = (
-  product: IFullProduct,
-  segment: string,
-  isNumeric: boolean,
-): boolean => {
-  const core = product.core as Record<string, unknown>
-  const { id, slug } = core
-  if (isNumeric) {
-    if (typeof id === "number") return id === Number(segment)
-    if (typeof id === "string") return id.trim() === segment
-    return false
-  }
-  return typeof slug === "string" && slug.trim() === segment
-}
-
-
 export const fetchProductsList = async (params?: {
   range?: [number, number]
   filter?: Record<string, unknown>
@@ -94,20 +78,12 @@ export const fetchProductsList = async (params?: {
   }
 }
 
-export const fetchProductBySlugOrId = async (
-  segment: string,
+export const fetchProductBySlug = async (
+  slug: string,
 ): Promise<IFullProduct | null> => {
-  const trimmed = segment.trim()
+  const trimmed = slug.trim()
   if (!trimmed) return null
 
-  const isNumeric = /^\d+$/.test(trimmed)
-  const filter = isNumeric
-    ? { id: [Number(trimmed)] }
-    : { slug: [trimmed] }
-
-  const products = await fetchProductsList({ filter, range: [0, 0] })
-  return (
-    products?.find((product) => productMatchesSegment(product, trimmed, isNumeric)) ??
-    null
-  )
+  const products = await fetchProductsList({ filter: { slug: trimmed } })
+  return products?.[0] ?? null
 }
