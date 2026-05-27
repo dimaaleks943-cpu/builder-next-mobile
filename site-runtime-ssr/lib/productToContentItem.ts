@@ -22,11 +22,11 @@ const readProductName = (core: Record<string, unknown>): string => {
   return typeof name === "string" ? name : ""
 }
 
-const readProductImage = (core: Record<string, unknown>): unknown => {
-  if (core.image != null) return core.image
-  if (core.image_url != null) return core.image_url
-  if (core.preview_image != null) return core.preview_image
-  return null
+const readProductBrandName = (core: Record<string, unknown>): string => {
+  const brand = core.distributor_brand
+  if (!brand || typeof brand !== "object") return ""
+  const name = (brand as Record<string, unknown>).name
+  return typeof name === "string" ? name : ""
 }
 
 const makeField = (
@@ -53,13 +53,12 @@ export const mapFullProductToContentItem = (product: IFullProduct): IContentItem
         : ""
   const slug = readProductSlug(core)
   const name = readProductName(core)
-  const image = readProductImage(core)
-
+  const brand = readProductBrandName(core)
   const fields: IContentItemField[] = [
     makeField("id", "ID", id),
     makeField("name", "Name", name),
+    makeField("brand.name", "Brand Name", brand),
     makeField("slug", "Slug", slug),
-    makeField("image", "Image", image),
   ]
 
   return {

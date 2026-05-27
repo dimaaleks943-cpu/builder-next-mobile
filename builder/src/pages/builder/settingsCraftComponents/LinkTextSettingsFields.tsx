@@ -21,6 +21,7 @@ import { PageType } from "../../../api/extranet.ts";
 import { computePageContentTypes } from "../../../utils/computePageContentTypes.ts";
 import { createEmptyTranslations } from "../../../utils/i18nTranslations.ts";
 import { EMPTY_SERIALIZED_NODES } from "../utils/craftPageContent.ts";
+import { PRODUCTS_SELECTED_SOURCE } from "../../../constants/contentListSources.ts";
 
 type LinkMode = "url" | "page" | "collectionItemPage";
 
@@ -112,6 +113,10 @@ export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
 
   const templatePagesForCollection = useMemo(() => {
     if (!contentListContentTypeId || !pages?.data?.length) return [];
+    if(contentListContentTypeId === PRODUCTS_SELECTED_SOURCE) {
+      return pages.data.filter(p => p.slug === "/products")
+    }
+
     return pages.data
       .filter(
         (p) =>
