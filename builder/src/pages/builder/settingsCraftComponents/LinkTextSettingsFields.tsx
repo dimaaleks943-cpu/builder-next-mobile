@@ -2,32 +2,21 @@ import type { ChangeEvent } from "react";
 import { useMemo } from "react";
 import { Box, Checkbox, FormControlLabel, Typography } from "@mui/material";
 import { useEditor } from "@craftjs/core";
-import { useParams } from "react-router-dom";
 import { COLORS } from "../../../theme/colors";
-import { useCollectionsContext } from "../context/CollectionsContext.tsx";
 import { SettingsAccordion } from "./components/SettingsAccordion/SettingsAccordion.tsx";
 import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup.tsx";
 import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSettingsInput.tsx";
 import { CraftSettingsSelect } from "../components/craftSettingsControls/CraftSettingsSelect.tsx";
-import {
-  useCreateExtranetPageMutation,
-  useGetExtranetPageQuery,
-  useGetExtranetPagesQuery,
-} from "../../../store/extranetApi.ts";
+import { useGetExtranetPagesQuery } from "../../../store/extranetApi.ts";
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts";
 import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts";
-import { normalizeItemPathPrefix } from "../../../utils/normalizeItemPathPrefix.ts";
 import { PageType } from "../../../api/extranet.ts";
-import { computePageContentTypes } from "../../../utils/computePageContentTypes.ts";
-import { createEmptyTranslations } from "../../../utils/i18nTranslations.ts";
-import { EMPTY_SERIALIZED_NODES } from "../utils/craftPageContent.ts";
 import { PRODUCTS_SELECTED_SOURCE } from "../../../constants/contentListSources.ts";
+import { Link2Icon } from "../../../icons/Link2Icon.tsx";
+import { FileIcon } from "../../../icons/FileIcon.tsx";
+import { FileOutlineIcon } from "../../../icons/FileOutlineIcon.tsx";
 
 type LinkMode = "url" | "page" | "collectionItemPage";
-
-const COLLECTION_ITEM_SELECT_NONE = "__collection_item_none__";
-const COLLECTION_ITEM_SELECT_CURRENT = "__collection_item_current__";
-
 
 interface SelectedLinkProps {
   href?: string;
@@ -54,14 +43,7 @@ interface Props {
 
 export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
   const { actions } = useEditor();
-  const { id: editorPageId } = useParams<{ id: string }>();
   const { data: pages, isError: isPagesError } = useGetExtranetPagesQuery();
-  const {
-    data: editorPageResponse,
-  } = useGetExtranetPageQuery(editorPageId!, { skip: !editorPageId });
-  const [createExtranetPage, { isLoading: isCreatingCollectionTemplate }] =
-    useCreateExtranetPageMutation();
-  const collectionsContext = useCollectionsContext();
   const { selectedId, selectedProps, isLinkTextNode, isInsideContentList, contentListContentTypeId } =
     useEditor((state, query): EditorSelection => {
       const [id] = Array.from(state.events.selected);
@@ -101,80 +83,27 @@ export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
       };
     });
 
-  const contentListCollectionLabel = useMemo(() => {
-    if (!contentListContentTypeId || !collectionsContext) {
-      return null;
-    }
-    return (
-      collectionsContext.collections.find((c) => c.key === contentListContentTypeId)?.label ??
-      null
-    );
-  }, [contentListContentTypeId, collectionsContext]);
-
   const templatePagesForCollection = useMemo(() => {
     if (!contentListContentTypeId || !pages?.data?.length) return [];
-    if(contentListContentTypeId === PRODUCTS_SELECTED_SOURCE) {
-      return pages.data.filter(p => p.slug === "/products")
+
+    //TODO костыль! мы ищем страницы шаблоны по ид коллекции, продукт коллекции нету, соответсвтено нет ид,
+    // поэтому присвоили фейк ид PRODUCTS_SELECTED_SOURCE дефолтной странице p.slug === "/products"
+    // в будущем либо коллекция с продуктами существует либо если мы работаем на странице с продуктом то поиск
+    // template продукт осуществляет по  p.slug === "/products"
+    if (contentListContentTypeId === PRODUCTS_SELECTED_SOURCE) {
+      return pages.data.filter((p) => p.slug === "/products" && !p.version);
     }
 
     return pages.data
       .filter(
         (p) =>
-          p.type === PageType.TEMPLATE && p.collection_type_id === contentListContentTypeId,
+          p.type === PageType.TEMPLATE &&
+          p.collection_type_id === contentListContentTypeId &&
+          !p.version,
       )
       .slice()
       .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
   }, [contentListContentTypeId, pages?.data]);
-
-  /** Старые узлы без `collectionItemLinkTarget` (в т.ч. в `collectionItemPage`) — без привязки к шаблону. */
-  const collectionItemTargetResolved =
-    selectedProps?.collectionItemLinkTarget ?? "none";
-  const collectionItemTemplateId =
-    collectionItemTargetResolved === "template"
-      ? (selectedProps?.collectionItemTemplatePageId ?? null)
-      : null;
-
-  const orphanTemplateOption = useMemo(() => {
-    if (
-      collectionItemTargetResolved !== "template" ||
-      !collectionItemTemplateId ||
-      templatePagesForCollection.some((p) => p.id === collectionItemTemplateId)
-    ) {
-      return null;
-    }
-    const fromAll = pages?.data?.find((p) => p.id === collectionItemTemplateId);
-    return {
-      id: collectionItemTemplateId,
-      value: fromAll?.name ?? `Шаблон (${collectionItemTemplateId.slice(0, 8)}…)`,
-    };
-  }, [
-    collectionItemTargetResolved,
-    collectionItemTemplateId,
-    templatePagesForCollection,
-    pages?.data,
-  ]);
-
-  const collectionItemPageSelectOptions = useMemo(() => {
-    const base: { id: string; value: string }[] = [
-      { id: COLLECTION_ITEM_SELECT_NONE, value: "Нет" },
-    ];
-    if (templatePagesForCollection.length === 0) {
-      const currentLabel = contentListCollectionLabel ?? "Шаблон"
-      base.push({ id: COLLECTION_ITEM_SELECT_CURRENT, value: currentLabel });
-    }
-    base.push(...templatePagesForCollection.map((p) => ({ id: p.id, value: p.name })));
-    if (orphanTemplateOption) {
-      base.push(orphanTemplateOption);
-    }
-    return base;
-  }, [contentListCollectionLabel, templatePagesForCollection, orphanTemplateOption]);
-
-  const collectionItemPageSelectValue = useMemo(() => {
-    if (collectionItemTargetResolved !== "template" || !collectionItemTemplateId) {
-      return COLLECTION_ITEM_SELECT_NONE;
-    }
-    return collectionItemTemplateId;
-  }, [collectionItemTargetResolved, collectionItemTemplateId]);
 
   if (!selectedId || !isLinkTextNode) {
     return null;
@@ -202,96 +131,23 @@ export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
       if (mode !== "collectionItemPage") {
         props.collectionItemLinkTarget = "none";
         props.collectionItemTemplatePageId = null;
-      }
-    });
-  };
-
-  /** Обработчик селекта для  collectionItemPage*/
-  const handleCollectionItemPageSelectChange = async (
-    event: ChangeEvent<HTMLSelectElement>,
-  ) => {
-    if (!selectedId) return;
-    const value = event.target.value;
-
-    if (value === COLLECTION_ITEM_SELECT_NONE) {
-      actions.setProp(selectedId, (props: any) => {
-        props.collectionItemLinkTarget = "none";
-        props.collectionItemTemplatePageId = null;
-        props.href = "";
-      });
-      return;
-    }
-
-    /**
-     * Если для текущего content_type_id списка уже есть шаблоны в ответе API (templatePagesForCollection), берётся первая после сортировки TODO
-     * по sort и её id записывается в пропсы — без запроса на создание.
-     *
-     * если шаблонов нет, создаем его с type: "template" и пустым контентом
-     * */
-    if (value === COLLECTION_ITEM_SELECT_CURRENT) {
-      if (templatePagesForCollection.length > 0) {
-        const pick = templatePagesForCollection[0];
-        actions.setProp(selectedId, (props: any) => {
-          props.collectionItemLinkTarget = "template";
-          props.collectionItemTemplatePageId = pick.id;
-          props.href = "";
-        });
         return;
       }
 
-      const current = editorPageResponse?.data;
-      const safeSlugPart = contentListContentTypeId?.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12); //TODO
-      const slug = `item-${safeSlugPart || "tpl"}-${Date.now()}`;
-
-      const siteId = current?.site_id
-      if (siteId == null) {
-        console.error(
-          "Невозможно создать шаблон коллекции: у текущей страницы не задан site_id",
-        )
-        return
+      const firstPage = templatePagesForCollection.find(() => true);
+      if (firstPage) {
+        props.collectionItemLinkTarget = "template";
+        props.collectionItemTemplatePageId = firstPage.id;
+        props.href = "";
+        return;
       }
 
-      try {
-        const emptyContent = JSON.stringify(EMPTY_SERIALIZED_NODES);
-        const contentTypes = computePageContentTypes({
-          content: emptyContent,
-          contentMobile: null,
-          pageType: PageType.TEMPLATE,
-          collectionTypeId: contentListContentTypeId,
-        });
-        const created = await createExtranetPage({
-          directory_id: current?.directory_id ?? null,
-          name: `Шаблон: ${contentListCollectionLabel}`,
-          slug,
-          type: PageType.TEMPLATE,
-          content_types: contentTypes,
-          collection_type_id: contentListContentTypeId,
-          item_path_prefix: normalizeItemPathPrefix(current?.slug),
-          content: emptyContent,
-          content_mobile: null,
-          translate: createEmptyTranslations(),
-          translate_mobile: createEmptyTranslations(),
-          sort: 0,
-          site_id: siteId,
-        }).unwrap();
-
-        actions.setProp(selectedId, (props: any) => {
-          props.collectionItemLinkTarget = "template";
-          props.collectionItemTemplatePageId = created.id;
-          props.href = "";
-        });
-      } catch {
-
-      }
-      return;
-    }
-
-    actions.setProp(selectedId, (props: any) => {
-      props.collectionItemLinkTarget = "template";
-      props.collectionItemTemplatePageId = value;
+      props.collectionItemLinkTarget = "none";
+      props.collectionItemTemplatePageId = null;
       props.href = "";
     });
   };
+
   const handlePageChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const slug = event.target.value;
     actions.setProp(selectedId, (props: any) => {
@@ -300,7 +156,9 @@ export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
   };
 
   const linkMode: LinkMode = linkProps.linkMode ?? "url";
-  const pageOptions = (pages?.data ?? []).map((page) => ({
+  const pageOptions = (pages?.data ?? [])
+    .filter(p => [PageType.SYSTEM_PAGE, PageType.STATIC].includes(p.type))
+    .map((page) => ({
     id: page.slug || page.id,
     value: page.name,
   }));
@@ -310,122 +168,67 @@ export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
     : [{ id: "", value: isPagesError ? "Не удалось загрузить страницы" : "Нет доступных страниц" }];
   const hrefForPageMode = linkProps.href ?? "";
   const pageValue = hasPageOptions
-    ? (pageOptions.some((option) => option.id === hrefForPageMode)
+    ? pageOptions.some((option) => option.id === hrefForPageMode)
       ? hrefForPageMode
-      : pageOptions[0].id)
+      : pageOptions[0].id
     : "";
 
   const content = (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: "6px" }}>
       <CraftSettingsButtonGroup
         withoutLabel
         label="Mode"
         value={linkMode}
         options={[
-          { id: "url", content: "Link URL" },
-          { id: "page", content: "Page" },
+          { id: "url", content: <Link2Icon size={16}  /> },
+          { id: "page", content: <FileIcon size={16} /> },
           ...(isInsideContentList
-            ? [{ id: "collectionItemPage", content: "CollectionPage" }]
+            ? [{ id: "collectionItemPage", content: <FileOutlineIcon size={16}  /> }]
             : []),
         ]}
         onChange={(modeId) => handleLinkModeChange(modeId as LinkMode)}
       />
 
-      {linkMode === "collectionItemPage" && (
-        <>
-          <CraftSettingsSelect
-            label="Page"
-            value={collectionItemPageSelectValue}
-            onChange={(e) => {
-              void handleCollectionItemPageSelectChange(e);
-            }}
-            options={collectionItemPageSelectOptions}
-            disabled={isCreatingCollectionTemplate}
-          />
-
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={Boolean(linkProps.openInNewTab)}
-                onChange={handleOpenInNewTabChange}
-                size="small"
-                sx={{
-                  color: COLORS.gray600,
-                  "&.Mui-checked": {
-                    color: COLORS.purple400,
-                  },
-                }}
-              />
-            }
-            label={
-              <Typography sx={{ color: COLORS.gray700, fontSize: "12px" }}>
-                Открыть в новой вкладке
-              </Typography>
-            }
-          />
-        </>
-      )}
-
       {linkMode === "url" && (
-        <>
-          <CraftSettingsInput
-            label="URL"
-            value={linkProps.href ?? ""}
-            onChange={handleUrlChange}
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={Boolean(linkProps.openInNewTab)}
-                onChange={handleOpenInNewTabChange}
-                size="small"
-                sx={{
-                  color: COLORS.gray600,
-                  "&.Mui-checked": {
-                    color: COLORS.purple400,
-                  },
-                }}
-              />
-            }
-            label={
-              <Typography sx={{ color: COLORS.gray700, fontSize: "12px" }}>
-                Открыть в новой вкладке
-              </Typography>
-            }
-          />
-        </>
+        <CraftSettingsInput
+          label="URL"
+          value={linkProps.href ?? ""}
+          onChange={handleUrlChange}
+        />
       )}
 
       {linkMode === "page" && (
-        <>
-          <CraftSettingsSelect
-            label="Page"
-            value={pageValue}
-            onChange={handlePageChange}
-            options={safePageOptions}
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={Boolean(linkProps.openInNewTab)}
-                onChange={handleOpenInNewTabChange}
-                size="small"
-                sx={{
-                  color: COLORS.gray600,
-                  "&.Mui-checked": {
-                    color: COLORS.purple400,
-                  },
-                }}
-              />
-            }
-            label={
-              <Typography sx={{ color: COLORS.gray700, fontSize: "12px" }}>
-                Открыть в новой вкладке
-              </Typography>
-            }
-          />
-        </>
+        <CraftSettingsSelect
+          label="Page"
+          value={pageValue}
+          onChange={handlePageChange}
+          options={safePageOptions}
+        />
       )}
+
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={Boolean(linkProps.openInNewTab)}
+            onChange={handleOpenInNewTabChange}
+            size="small"
+            sx={{
+              padding: 0,
+              color: COLORS.gray600,
+              marginLeft: "11px",
+
+              "&.Mui-checked": {
+                color: COLORS.purple400,
+              },
+            }}
+          />
+        }
+        label={
+          <Typography sx={{ color: COLORS.gray700, fontSize: "12px", marginLeft: "4px" }}>
+            Открыть в новой вкладке
+          </Typography>
+        }
+      />
     </Box>
   );
 
@@ -435,4 +238,3 @@ export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
     </SettingsAccordion>
   );
 };
-
