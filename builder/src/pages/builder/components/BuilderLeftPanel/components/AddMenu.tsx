@@ -74,12 +74,21 @@ export const useCategories = (): Category[] => {
 
 interface Props {
   onClose: () => void;
+  onDragStartHide: () => void;
 }
 
-export const AddMenu = (_props: Props) => {
+export const AddMenu = ({ onClose, onDragStartHide }: Props) => {
   const { connectors: { create } } = useEditor()
   const [tabIndex, setTabIndex] = useState(1)
   const categories = useCategories()
+
+  const handleDragStart = () => {
+    window.requestAnimationFrame(() => {
+      onDragStartHide()
+    })
+  }
+
+  const handleDragEnd = () => onClose();
 
   return (
     <Box
@@ -202,6 +211,8 @@ export const AddMenu = (_props: Props) => {
                     if (!ref) return
                     create(ref, item.component)
                   }}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
                   sx={{
                     display: "flex",
                     flexDirection: "column",

@@ -14,6 +14,7 @@ type ActiveMenu = "add" | "navigation" | "variables" | null
 
 export const BuilderLeftPanel = () => {
   const [activeMenu, setActiveMenu] = useState<ActiveMenu>(null)
+  const [isAddMenuHiddenDuringDrag, setIsAddMenuHiddenDuringDrag] = useState(false)
   const barRef = useRef<HTMLDivElement | null>(null)
   const menuRef = useRef<HTMLDivElement | null>(null)
 
@@ -40,11 +41,24 @@ export const BuilderLeftPanel = () => {
     }
   }, [activeMenu])
 
+  useEffect(() => {
+    if (!activeMenu) {
+      setIsAddMenuHiddenDuringDrag(false)
+    }
+  }, [activeMenu])
+
   const toggleMenu = (menu: ActiveMenu) => {
     setActiveMenu((current) => (current === menu ? null : menu))
   }
 
-  const handleCloseMenu = () => setActiveMenu(null)
+  const handleCloseMenu = () => {
+    setIsAddMenuHiddenDuringDrag(false)
+    setActiveMenu(null)
+  }
+
+  const handleAddMenuDragStartHide = () => {
+    setIsAddMenuHiddenDuringDrag(true)
+  }
 
 
   const handleLayersClick = () => {}
@@ -196,10 +210,19 @@ export const BuilderLeftPanel = () => {
             display: "flex",
             zIndex: (theme) => theme.zIndex.drawer + 2,
             pointerEvents: "auto",
+            ...(activeMenu === "add" && isAddMenuHiddenDuringDrag
+              ? {
+                  visibility: "hidden",
+                  pointerEvents: "none",
+                }
+              : {}),
           }}
         >
           {activeMenu === "add" && (
-            <AddMenu onClose={handleCloseMenu} />
+            <AddMenu
+              onClose={handleCloseMenu}
+              onDragStartHide={handleAddMenuDragStartHide}
+            />
           )}
           {activeMenu === "navigation" && (
             <NavigationMenu />
