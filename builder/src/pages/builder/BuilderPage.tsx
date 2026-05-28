@@ -50,9 +50,12 @@ import type { Locale, TranslationsByLocale } from "../../api/extranet.ts"
 import type { StyleClassesRegistry } from "./styleClasses/types.ts"
 import { BuilderUploadedFontsFaceRegistry } from "./fonts/BuilderUploadedFontsFaceRegistry.tsx"
 import {
+  isProductsSelectedSource,
   PRODUCT_BINDABLE_FIELDS,
   PRODUCTS_SELECTED_SOURCE,
 } from "../../constants/contentListSources.ts"
+import { useFullProductsList } from "../../hooks/useFullProduct.ts"
+import { mapFullProductToContentItem } from "../../utils/productToContentItem.ts"
 
 function pickBindableTypeFields(
   fields: IContentTypeField[] | undefined,
@@ -61,6 +64,15 @@ function pickBindableTypeFields(
   return fields.filter(
     (f) => f.reference_type === "item",
   )
+}
+
+const pickTemplatePreviewItem = (items: IContentItem[]): IContentItem | null => {
+  const withSlug = items.find(
+    (i) =>
+      typeof (i as { slug?: string }).slug === "string" &&
+      (i as { slug: string }).slug.trim().length > 0,
+  )
+  return withSlug ?? items[0] ?? null
 }
 
 export const BuilderPage = () => {
@@ -99,12 +111,30 @@ export const BuilderPage = () => {
   const templateCollectionId = pageMeta?.collection_type_id ?? null
   const isTemplateWithCollection =
     pageMeta?.type === PageType.TEMPLATE && !!templateCollectionId
+  const isTemplateProductsSource =
+    isTemplateWithCollection &&
+    !!templateCollectionId &&
+    isProductsSelectedSource(templateCollectionId)
 
   const { data: templateItemsResponse, isSuccess: templateItemsSuccess } =
     useGetContentItemsQuery(
       { contentTypeId: templateCollectionId ?? "" },
-      { skip: !isTemplateWithCollection },
+      { skip: !isTemplateWithCollection || isTemplateProductsSource },
     )
+
+  const {
+    products: fullProducts,
+    isLoading: areProductsLoading,
+    isFetching: areProductsFetching,
+  } = useFullProductsList({
+    params: { range: [0, 0] }, //Только один продукт
+    skip: !isTemplateProductsSource,
+  })
+
+  const templateProductItems = useMemo(
+    () => fullProducts.map(mapFullProductToContentItem),
+    [fullProducts],
+  )
 
   useEffect(() => {
     if (!id) return
@@ -204,11 +234,27 @@ export const BuilderPage = () => {
 
   useEffect(() => {
     if (!isTemplateWithCollection || !templateCollectionId) return
+
+    if (isTemplateProductsSource) {
+      if (
+        !templateProductItems.length &&
+        (areProductsLoading || areProductsFetching)
+      ) {
+        return
+      }
+      setCollectionItems(templateCollectionId, templateProductItems)
+      return
+    }
+
     if (!templateItemsSuccess) return
     setCollectionItems(templateCollectionId, templateItemsResponse?.data ?? [])
   }, [
     isTemplateWithCollection,
+    isTemplateProductsSource,
     templateCollectionId,
+    templateProductItems,
+    areProductsLoading,
+    areProductsFetching,
     templateItemsSuccess,
     templateItemsResponse,
     setCollectionItems,
@@ -233,16 +279,30 @@ export const BuilderPage = () => {
   }, [loaded, mode, contentWeb, contentMobile])
 
   const templatePreviewItem = useMemo(() => {
-    if (!isTemplateWithCollection || !templateItemsSuccess || !templateItemsResponse)
-      return null
+    if (!isTemplateWithCollection) return null
+
+    if (isTemplateProductsSource) {
+      if (
+        !templateProductItems.length &&
+        (areProductsLoading || areProductsFetching)
+      ) {
+        return null
+      }
+      return pickTemplatePreviewItem(templateProductItems)
+    }
+
+    if (!templateItemsSuccess || !templateItemsResponse) return null
     const items = templateItemsResponse.data ?? []
-    const withSlug = items.find(
-      (i) =>
-        typeof (i as { slug?: string }).slug === "string" &&
-        (i as { slug: string }).slug.trim().length > 0,
-    )
-    return withSlug ?? items[0] ?? null
-  }, [isTemplateWithCollection, templateItemsSuccess, templateItemsResponse])
+    return pickTemplatePreviewItem(items)
+  }, [
+    isTemplateWithCollection,
+    isTemplateProductsSource,
+    templateProductItems,
+    areProductsLoading,
+    areProductsFetching,
+    templateItemsSuccess,
+    templateItemsResponse,
+  ])
 
   const builderTemplatePageValue = useMemo(
     () => ({
