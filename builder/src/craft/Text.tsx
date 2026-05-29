@@ -3,6 +3,7 @@ import { useEditor, useNode } from "@craftjs/core"
 import type { CSSProperties } from "react"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import {
+  useCraftInlineSettingsBridge,
   useReactToInlineSettingsOpenRequest,
   type InlineSettingsViewportAnchor,
 } from "../pages/builder/context/CraftInlineSettingsBridgeContext.tsx"
@@ -70,11 +71,24 @@ export const CraftText = (props: TextProps) => {
     [],
   )
 
+  const { clearInlineSettingsRequest } = useCraftInlineSettingsBridge()
+
+  const closeTextInlineSettings = useCallback(() => {
+    setIsTextModalOpen(false)
+    clearInlineSettingsRequest()
+  }, [clearInlineSettingsRequest])
+
   useReactToInlineSettingsOpenRequest(id, openTextInlineSettings)
+
+  useEffect(() => {
+    if (!selected && isTextModalOpen) {
+      closeTextInlineSettings()
+    }
+  }, [selected, isTextModalOpen, closeTextInlineSettings])
 
   const handleShowAllSettings = () => {
     rightPanelContext?.setTabIndex(1)
-    setIsTextModalOpen(false)
+    closeTextInlineSettings()
   }
 
   const displayText = useMemo(
@@ -184,10 +198,10 @@ export const CraftText = (props: TextProps) => {
         title="Настройки текста"
         top={modalPosition.top}
         left={modalPosition.left}
-        onClose={() => setIsTextModalOpen(false)}
+        onClose={closeTextInlineSettings}
         onShowAllSettings={handleShowAllSettings}
       >
-        <TextSettingsFields />
+        <TextSettingsFields nodeId={id} />
       </InlineSettingsModal>
     </>
   )

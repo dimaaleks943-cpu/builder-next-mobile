@@ -7,6 +7,7 @@ import { useCollectionFilterScope } from "../pages/builder/context/CollectionFil
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import {
+  useCraftInlineSettingsBridge,
   useReactToInlineSettingsOpenRequest,
   type InlineSettingsViewportAnchor,
 } from "../pages/builder/context/CraftInlineSettingsBridgeContext.tsx"
@@ -84,11 +85,18 @@ export const CraftCategoryFilter = () => {
     [],
   )
 
+  const { clearInlineSettingsRequest } = useCraftInlineSettingsBridge()
+
+  const closeInlineSettings = useCallback(() => {
+    setIsSettingsOpen(false)
+    clearInlineSettingsRequest()
+  }, [clearInlineSettingsRequest])
+
   useReactToInlineSettingsOpenRequest(nodeId, openInlineSettingsModal)
 
   const handleShowAllSettings = () => {
     rightPanelContext?.setTabIndex(1)
-    setIsSettingsOpen(false)
+    closeInlineSettings()
   }
 
   // Список опций фильтра: дочерние категории от указанного корня (content category id).
@@ -288,7 +296,7 @@ export const CraftCategoryFilter = () => {
       title="Настройки фильтра категорий"
       top={modalPosition.top}
       left={modalPosition.left}
-      onClose={() => setIsSettingsOpen(false)}
+      onClose={closeInlineSettings}
       onShowAllSettings={handleShowAllSettings}
     >
       <label

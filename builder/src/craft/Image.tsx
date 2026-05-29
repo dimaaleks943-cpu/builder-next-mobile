@@ -3,6 +3,7 @@ import { useNode } from "@craftjs/core"
 import { ImageSettingsFields } from "../pages/builder/settingsCraftComponents/ImageSettingsFields.tsx"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import {
+  useCraftInlineSettingsBridge,
   useReactToInlineSettingsOpenRequest,
   type InlineSettingsViewportAnchor,
 } from "../pages/builder/context/CraftInlineSettingsBridgeContext.tsx"
@@ -58,11 +59,18 @@ export const CraftImage = (props: CraftImageProps) => {
     [],
   )
 
+  const { clearInlineSettingsRequest } = useCraftInlineSettingsBridge()
+
+  const closeImageInlineSettings = useCallback(() => {
+    setIsSettingsOpen(false)
+    clearInlineSettingsRequest()
+  }, [clearInlineSettingsRequest])
+
   useReactToInlineSettingsOpenRequest(imageNodeId, openImageInlineSettings)
 
   const handleShowAllSettings = () => {
     rightPanelContext?.setTabIndex(1)
-    setIsSettingsOpen(false)
+    closeImageInlineSettings()
   }
 
   const effectiveSrc = useMemo(() => {
@@ -100,7 +108,7 @@ export const CraftImage = (props: CraftImageProps) => {
         title="Настройки изображения"
         top={modalPosition.top}
         left={modalPosition.left}
-        onClose={() => setIsSettingsOpen(false)}
+        onClose={closeImageInlineSettings}
         onShowAllSettings={handleShowAllSettings}
       >
         <ImageSettingsFields />

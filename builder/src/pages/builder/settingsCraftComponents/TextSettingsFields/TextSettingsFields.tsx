@@ -71,6 +71,7 @@ interface CollectionFieldOption {
 interface Props {
   /** Если true — рендерится как аккордеон в правой панели, иначе — как простой блок в модалке. */
   asAccordion?: boolean
+  nodeId?: string
 }
 const FieldTypeIcon = ({ connected = false }: { connected?: boolean}) => {
   const fill = connected ? COLORS.white : COLORS.gray600
@@ -80,11 +81,11 @@ const FieldTypeIcon = ({ connected = false }: { connected?: boolean}) => {
   )
 }
 
-export const TextSettingsFields = ({ asAccordion }: Props) => {
+export const TextSettingsFields = ({ asAccordion, nodeId }: Props) => {
   const { actions } = useEditor()
   const { selectedId, selectedProps, parentCollectionKey } = useEditor(
     (state, query): EditorSelection => {
-      const [id] = Array.from(state.events.selected)
+      const id = nodeId ?? (Array.from(state.events.selected)[0] as string | undefined) ?? null
       const node = id ? state.nodes[id] : null
 
       let foundCollectionKey: string | null = null

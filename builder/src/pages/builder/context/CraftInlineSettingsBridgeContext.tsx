@@ -24,6 +24,7 @@ interface CraftInlineSettingsBridgeContextValue {
     nodeId: string,
     viewportAnchor?: InlineSettingsViewportAnchor | null,
   ) => void
+  clearInlineSettingsRequest: () => void
 }
 
 const CraftInlineSettingsBridgeContext =
@@ -51,9 +52,17 @@ export const CraftInlineSettingsBridgeProvider = ({ children }: ProviderProps) =
     [],
   )
 
+  const clearInlineSettingsRequest = useCallback(() => {
+    setRequest((prev) => ({
+      nodeId: null,
+      seq: prev.seq + 1,
+      viewportAnchor: null,
+    }))
+  }, [])
+
   const value = useMemo(
-    () => ({ request, requestInlineSettingsOpen }),
-    [request, requestInlineSettingsOpen],
+    () => ({ request, requestInlineSettingsOpen, clearInlineSettingsRequest }),
+    [request, requestInlineSettingsOpen, clearInlineSettingsRequest],
   )
 
   return (

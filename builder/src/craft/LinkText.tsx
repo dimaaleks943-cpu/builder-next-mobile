@@ -3,6 +3,7 @@ import { useEditor, useNode } from "@craftjs/core"
 import { LinkTextSettingsFields } from "../pages/builder/settingsCraftComponents/LinkTextSettingsFields.tsx"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import {
+  useCraftInlineSettingsBridge,
   useReactToInlineSettingsOpenRequest,
   type InlineSettingsViewportAnchor,
 } from "../pages/builder/context/CraftInlineSettingsBridgeContext.tsx"
@@ -76,11 +77,18 @@ export const CraftLinkText = (props: LinkTextProps) => {
     [],
   )
 
+  const { clearInlineSettingsRequest } = useCraftInlineSettingsBridge()
+
+  const closeLinkInlineSettings = useCallback(() => {
+    setIsSettingsOpen(false)
+    clearInlineSettingsRequest()
+  }, [clearInlineSettingsRequest])
+
   useReactToInlineSettingsOpenRequest(id, openLinkInlineSettings)
 
   const handleShowAllSettings = () => {
     rightPanelContext?.setTabIndex(1)
-    setIsSettingsOpen(false)
+    closeLinkInlineSettings()
   }
 
   const displayText = useMemo(
@@ -200,7 +208,7 @@ export const CraftLinkText = (props: LinkTextProps) => {
       title="Настройки ссылки"
       top={modalPosition.top}
       left={modalPosition.left}
-      onClose={() => setIsSettingsOpen(false)}
+      onClose={closeLinkInlineSettings}
       onShowAllSettings={handleShowAllSettings}
     >
       <LinkTextSettingsFields />

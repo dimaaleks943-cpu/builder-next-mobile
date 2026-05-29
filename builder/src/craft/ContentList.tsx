@@ -12,6 +12,7 @@ import { useCollectionFilterScope } from "../pages/builder/context/CollectionFil
 import { CraftContentListCell } from "./ContentListCell"
 import { ContentListDataContext } from "../pages/builder/context/ContentListDataContext.tsx"
 import {
+  useCraftInlineSettingsBridge,
   useReactToInlineSettingsOpenRequest,
   type InlineSettingsViewportAnchor,
 } from "../pages/builder/context/CraftInlineSettingsBridgeContext.tsx"
@@ -114,11 +115,18 @@ export const CraftContentList = ({}: ContentListProps) => {
     openInlineSettingsModal()
   }
 
+  const { clearInlineSettingsRequest } = useCraftInlineSettingsBridge()
+
+  const closeInlineSettings = useCallback(() => {
+    setIsSettingsOpen(false)
+    clearInlineSettingsRequest()
+  }, [clearInlineSettingsRequest])
+
   useReactToInlineSettingsOpenRequest(contentListId, openInlineSettingsModal)
 
   const handleShowAllSettings = () => {
     rightPanelContext?.setTabIndex(1) // вкладка "Настройки"
-    setIsSettingsOpen(false)
+    closeInlineSettings()
   }
 
   const itemsPerRow = (responsiveStyle.itemsPerRow as number | undefined) ?? 1
@@ -720,7 +728,7 @@ export const CraftContentList = ({}: ContentListProps) => {
         title="Настройки списка контента"
         top={modalPosition.top}
         left={modalPosition.left}
-        onClose={() => setIsSettingsOpen(false)}
+        onClose={closeInlineSettings}
         onShowAllSettings={handleShowAllSettings}
       >
         <label
