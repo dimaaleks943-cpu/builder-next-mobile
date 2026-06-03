@@ -89,7 +89,10 @@ export const extranetApi = createApi({
       }),
     }),
 
-    /** Категории контента для UI фильтра (дерево от заданного корня). */
+    /**
+     * Категории контента для UI фильтра.
+     * `contentCategoryId` — id типа контента (`content_type_id` в filter API).
+     */
     getContentCategories: build.query<
       PaginatedResponse<ContentCategory>,
       {

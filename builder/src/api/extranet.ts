@@ -102,6 +102,8 @@ export interface IContentTypeField {
 export interface ContentType {
   id: string
   name: string
+  slug?: string
+  has_categories?: boolean
   fields?: IContentTypeField[]
   [key: string]: unknown
 }

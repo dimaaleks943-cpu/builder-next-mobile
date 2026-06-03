@@ -1,6 +1,9 @@
 import { useEditor, useNode } from "@craftjs/core"
-import { useCallback, useEffect, useRef, useState, startTransition } from "react"
-import { useLazyGetContentCategoriesQuery } from "../store/extranetApi"
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react"
+import {
+  useGetContentTypesQuery,
+  useLazyGetContentCategoriesQuery,
+} from "../store/extranetApi"
 import type { ContentCategory } from "../api/extranet"
 import { COLORS } from "../theme/colors"
 import { useCollectionFilterScope } from "../pages/builder/context/CollectionFilterScopeContext.tsx"
@@ -20,10 +23,10 @@ import { InlineSettingsModal } from "../components/InlineSettingsModal/InlineSet
  * Пропсы блока «Фильтр категорий». Выбор пользователя хранится в {@link useCollectionFilterScope}
  * по строке `filterScope`; у {@link CraftContentList} в том же scope подставляются `categoryIds` в запрос items.
  */
-type CategoryFilterProps = {
+interface CategoryFilterProps {
   /** Идентификатор группы фильтра на странице; должен совпадать с `filterScope` у ContentList. */
   filterScope: string
-  /** UUID корня дерева категорий в extranet — по нему грузится список кнопок/радио. */
+  /** Id типа контента extranet (`content_type_id` для getContentCategories). */
   contentCategoryRootId?: string
   variant?: "buttons" | "radio" | "list"
   direction?: "row" | "column"
@@ -56,6 +59,7 @@ export const CraftCategoryFilter = () => {
     useCollectionFilterScope()
   const [fetchCategories, { data: categoriesResponse, isFetching }] =
     useLazyGetContentCategoriesQuery()
+  const { data: contentTypesResponse } = useGetContentTypesQuery({ limit: 200 })
   const responsiveStyle = useCraftNodeStyle(props.styleClassIds, props.style)
 
   const filterScope = props.filterScope ?? ""
@@ -99,7 +103,24 @@ export const CraftCategoryFilter = () => {
     closeInlineSettings()
   }
 
-  // Список опций фильтра: дочерние категории от указанного корня (content category id).
+  const contentTypeOptions = useMemo(() => {
+    const types = (contentTypesResponse?.data ?? [])
+      .filter((type) => type.has_categories !== false)
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name))
+
+    const currentId = contentCategoryRootId.trim()
+    if (currentId && !types.some((type) => type.id === currentId)) {
+      return [
+        { id: currentId, name: `${currentId} (сохранённое значение)` },
+        ...types,
+      ]
+    }
+
+    return types
+  }, [contentTypesResponse?.data, contentCategoryRootId])
+
+  // Список опций фильтра: категории типа контента по `contentCategoryRootId` (content_type_id).
   useEffect(() => {
     const id = contentCategoryRootId.trim()
     if (!id) return
@@ -235,7 +256,7 @@ export const CraftCategoryFilter = () => {
           </span>
         ) : rootMissing ? (
           <span style={{ color: COLORS.gray600, fontSize: 13 }}>
-            Укажите ID корня категорий в настройках для загрузки списка.
+            Выберите тип контента в настройках для загрузки списка категорий.
           </span>
         ) : isFetching ? (
           <span style={{ color: COLORS.gray600, fontSize: 13 }}>Загрузка…</span>
@@ -340,11 +361,9 @@ export const CraftCategoryFilter = () => {
           color: COLORS.gray700,
         }}
       >
-        ID корня категорий (content category)
+        Тип контента
       </label>
-      <input
-        type="text"
-        placeholder="UUID"
+      <select
         style={{
           width: "100%",
           padding: "6px 8px",
@@ -363,7 +382,14 @@ export const CraftCategoryFilter = () => {
             })
           })
         }}
-      />
+      >
+        <option value="">Не выбран</option>
+        {contentTypeOptions.map((type) => (
+          <option key={type.id} value={type.id}>
+            {type.name}
+          </option>
+        ))}
+      </select>
 
       <div
         style={{

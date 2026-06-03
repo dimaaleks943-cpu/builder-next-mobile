@@ -1,4 +1,8 @@
-import type { IContentTypeField } from "../api/extranet"
+import {
+  CONTENT_FIELD_TYPES,
+  CONTENT_REFERENCE_TYPES,
+  type IContentTypeField,
+} from "../api/extranet"
 
 //selected source храним в content_types, который нужен для проверки перед удалением контента, что данный
 //контент нигде не используется на страницах, пока хардкод что бы не получать ошиьку от бека "30007127-a7f2-4629-9d68-e1fca18e1551"
@@ -9,7 +13,22 @@ export const isProductsSelectedSource = (source: string): boolean =>
 
 /** список полей для ContentList который предлагает /Products */
 export const PRODUCT_BINDABLE_FIELDS: IContentTypeField[] = [
-  { id: "name", name: "Name", field_type: "text" },
-  { id: "brand.name", name: "Brand Name", field_type: "text" },
-  { id: "description", name: "Description", field_type: "text" },
+  {
+    id: "name",
+    name: "Name",
+    field_type: CONTENT_FIELD_TYPES.TEXT,
+    reference_type: CONTENT_REFERENCE_TYPES.CONTENT_ITEMS,
+  },
+  {
+    id: "brand.name",
+    name: "Brand Name",
+    field_type: CONTENT_FIELD_TYPES.TEXT,
+    reference_type: CONTENT_REFERENCE_TYPES.CONTENT_ITEMS,
+  },
+  {
+    id: "description",
+    name: "Description",
+    field_type: CONTENT_FIELD_TYPES.TEXT,
+    reference_type: CONTENT_REFERENCE_TYPES.CONTENT_ITEMS,
+  },
 ]

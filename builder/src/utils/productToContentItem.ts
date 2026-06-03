@@ -13,12 +13,8 @@ const readProductSlug = (core: IProduct): string => {
   return String(core.id)
 }
 
-const readProductBrandName = (core: Record<string, unknown>): string => {
-  const brand = core.brand
-  if (!brand || typeof brand !== "object") return ""
-  const name = (brand as Record<string, unknown>).name
-  return typeof name === "string" ? name : ""
-}
+const readProductBrandName = (core: IProduct): string =>
+  core.brand?.name ?? ""
 
 const makeField = (id: string, name: string, value: string,): IContentItemField => (
   { id, field_type: "text", name, value, value_text: value, }
@@ -30,17 +26,12 @@ const makeField = (id: string, name: string, value: string,): IContentItemField 
  * TODO пока достаем только brand, name, description
  * */
 export const mapFullProductToContentItem = (product: IFullProduct): IContentItem => {
-  const core = product.core as Record<string, unknown>
-  const id =
-    typeof core.id === "number"
-      ? String(core.id)
-      : typeof core.id === "string"
-        ? core.id
-        : ""
-  const slug = readProductSlug(core)
-  const name = core.name as string ?? ""
-  const brandName = readProductBrandName(core)
-  const description = core.description as string ?? ""
+  const core = product.core;
+  const id = String(core.id);
+  const slug = readProductSlug(core);
+  const name = core.name ?? "";
+  const brandName = readProductBrandName(core);
+  const description = core.description ?? "";
 
   const fields: IContentItemField[] = [
     makeField("name", "Name", name),
@@ -51,7 +42,13 @@ export const mapFullProductToContentItem = (product: IFullProduct): IContentItem
   return {
     id: id || slug || PRODUCTS_SELECTED_SOURCE,
     content_type_id: PRODUCTS_SELECTED_SOURCE,
+    categories: [],
+    name,
     slug,
+    active: true,
+    sort: 0,
+    created_at: "",
+    updated_at: "",
     fields,
   }
 }
