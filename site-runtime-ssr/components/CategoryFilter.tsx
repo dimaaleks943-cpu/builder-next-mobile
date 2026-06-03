@@ -1,5 +1,7 @@
 import React from "react"
 import { useRouter } from "next/router"
+import { fetchDistributorCategories } from "@/api/distributorCategoriesApi"
+import { isProductsSelectedSource } from "@/constants/contentListSources"
 import { fetchContentCategories } from "@/lib/categoriesApi"
 import type { ContentCategory } from "@/lib/contentTypes"
 import { buildStorefrontCategoryUrl } from "@/lib/catalogPathResolve"
@@ -13,7 +15,7 @@ export type CategoryFilterProps = {
   className?: string
   "data-craft-node-id"?: string
   filterScope: string
-  /** UUID корня дерева категорий — в API уходит `filter` с `category_id`. */
+  /** Id типа контента или sentinel «Товары» (`PRODUCTS_SELECTED_SOURCE`). */
   contentCategoryRootId?: string
   variant?: "buttons" | "radio" | "list"
   direction?: "row" | "column"
@@ -60,18 +62,29 @@ const CategoryFilterComponent = ({
 
   // Загрузка плоского списка категорий под фильтр (от корня дерева в настройках блока).
   React.useEffect(() => {
-    if (!domain || !rootId) {
+    if (!rootId) {
       setCategories([])
       setLoading(false)
       return
     }
+
+    if (!isProductsSelectedSource(rootId) && !domain) {
+      setCategories([])
+      setLoading(false)
+      return
+    }
+
     let cancelled = false
     setLoading(true)
 
-    fetchContentCategories(domain, {
-      categoryRootId: rootId,
-      limit: 500,
-    })
+    const fetchPromise = isProductsSelectedSource(rootId)
+      ? fetchDistributorCategories()
+      : fetchContentCategories(domain, {
+          categoryRootId: rootId,
+          limit: 500,
+        })
+
+    fetchPromise
       .then((data) => {
         if (!cancelled) setCategories(data ?? [])
       })
