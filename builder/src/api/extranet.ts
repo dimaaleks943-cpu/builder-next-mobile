@@ -181,3 +181,30 @@ export interface DistributorProductsQueryParams {
   offset?: number
   [key: string]: unknown
 }
+
+/** Категория поставщика из extranet v2 (`GET …/v2/DistributorCategories`). */
+export interface IDistributorCategory {
+  id: number
+  name: string
+  slug: string
+  sort: number
+  distributor_id: number
+  category_id: number | null
+  needs_moderation: boolean
+  external_data: unknown
+  created_at: string
+  updated_at: string
+  active: boolean
+  has_children: boolean
+  Products_Count: number
+  Self_Products_Count: number
+}
+
+export interface DistributorCategoriesFilter {
+  distributor_id: number
+}
+
+export interface DistributorCategoriesQueryParams {
+  parent_id?: number | null
+  filter?: DistributorCategoriesFilter
+}
