@@ -42,8 +42,10 @@ export const BuilderRightPanel = ({
     const node = id ? state.nodes[id] : null
 
     const displayName = node ? resolveNodeDisplayName(node) : null
+    const isLinkBlock = displayName === CRAFT_DISPLAY_NAME.LinkBlock
     const isLinkText =
       displayName === CRAFT_DISPLAY_NAME.LinkText ||
+      isLinkBlock ||
       node?.data.props?.href !== undefined ||
       node?.data.props?.linkMode === "collectionItemPage"
     const isHeading = displayName === CRAFT_DISPLAY_NAME.Heading
@@ -52,9 +54,11 @@ export const BuilderRightPanel = ({
 
     return {
       hasSelection: Boolean(id),
-      selectedType: isLinkText
-        ? "LinkText"
-        : isHeading
+      selectedType: isLinkBlock
+        ? "LinkBlock"
+        : isLinkText
+          ? "LinkText"
+          : isHeading
           ? "Heading"
           : isParagraph
             ? "Paragraph"
@@ -169,7 +173,7 @@ export const BuilderRightPanel = ({
                   selectedType === "LinkText") && (
                   <TextSettingsFields asAccordion />
                 )}
-                {selectedType === "LinkText" && (
+                {(selectedType === "LinkText" || selectedType === "LinkBlock") && (
                   <LinkTextSettingsFields asAccordion />
                 )}
                 {selectedType === "Image" && (

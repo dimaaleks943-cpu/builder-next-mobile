@@ -7,6 +7,7 @@ const DISPLAY_LABEL: Record<string, string> = {
   [CRAFT_DISPLAY_NAME.Heading]: "Heading",
   [CRAFT_DISPLAY_NAME.Paragraph]: "Paragraph",
   [CRAFT_DISPLAY_NAME.LinkText]: "Link Text",
+  [CRAFT_DISPLAY_NAME.LinkBlock]: "Link Block",
   [CRAFT_DISPLAY_NAME.Image]: "Image",
   [CRAFT_DISPLAY_NAME.ContentList]: "Content List",
   [CRAFT_DISPLAY_NAME.ContentListCell]: "List Cell",

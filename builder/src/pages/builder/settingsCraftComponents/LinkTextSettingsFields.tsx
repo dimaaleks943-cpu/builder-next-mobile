@@ -30,7 +30,7 @@ interface EditorSelection {
   selectedId: string | null;
   /** Сериализованные пропсы узла; для выбранного узла всегда объект (в т.ч. `{}`), чтобы не зависеть от наличия `href`. */
   selectedProps: SelectedLinkProps | null;
-  isLinkTextNode: boolean;
+  isLinkSettingsNode: boolean;
   isInsideContentList: boolean;
   /** `content_type_id` из ближайшего предка ContentList (`selectedSource`); null если коллекция в списке не выбрана. */
   contentListContentTypeId: string | null;
@@ -44,12 +44,14 @@ interface Props {
 export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
   const { actions } = useEditor();
   const { data: pages, isError: isPagesError } = useGetExtranetPagesQuery();
-  const { selectedId, selectedProps, isLinkTextNode, isInsideContentList, contentListContentTypeId } =
+  const { selectedId, selectedProps, isLinkSettingsNode, isInsideContentList, contentListContentTypeId } =
     useEditor((state, query): EditorSelection => {
       const [id] = Array.from(state.events.selected);
       const node = id ? state.nodes[id] : null;
-      const isLinkText =
-        Boolean(node) && resolveNodeDisplayName(node) === CRAFT_DISPLAY_NAME.LinkText;
+      const displayName = node ? resolveNodeDisplayName(node) : null;
+      const isLinkSettings =
+        displayName === CRAFT_DISPLAY_NAME.LinkText ||
+        displayName === CRAFT_DISPLAY_NAME.LinkBlock;
       let foundContentListAncestor = false;
       let nearestListContentTypeId: string | null = null;
 
@@ -77,7 +79,7 @@ export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
         selectedProps: node
           ? ((node.data.props as SelectedLinkProps | undefined) ?? {})
           : null,
-        isLinkTextNode: isLinkText,
+        isLinkSettingsNode: isLinkSettings,
         isInsideContentList: foundContentListAncestor,
         contentListContentTypeId: nearestListContentTypeId,
       };
@@ -105,7 +107,7 @@ export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
       .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
   }, [contentListContentTypeId, pages?.data]);
 
-  if (!selectedId || !isLinkTextNode) {
+  if (!selectedId || !isLinkSettingsNode) {
     return null;
   }
 

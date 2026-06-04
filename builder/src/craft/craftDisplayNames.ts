@@ -8,6 +8,7 @@ export const CRAFT_DISPLAY_NAME = {
   Heading: "CraftHeading",
   Paragraph: "CraftParagraph",
   LinkText: "CraftLinkText",
+  LinkBlock: "CraftLinkBlock",
   Image: "CraftImage",
   ContentList: "CraftContentList",
   ContentListCell: "CraftContentListCell",

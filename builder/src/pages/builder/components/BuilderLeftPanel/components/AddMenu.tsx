@@ -15,6 +15,7 @@ import { CraftBlock } from "../../../../../craft/Block.tsx"
 import { CraftHeading } from "../../../../../craft/CraftHeading.tsx"
 import { CraftParagraph } from "../../../../../craft/CraftParagraph.tsx"
 import { CraftLinkText } from "../../../../../craft/LinkText.tsx"
+import { CraftLinkBlock } from "../../../../../craft/CraftLinkBlock.tsx"
 import { CraftContentList } from "../../../../../craft/ContentList.tsx"
 import { CraftCategoryFilter } from "../../../../../craft/CategoryFilter.tsx"
 import { CraftImage } from "../../../../../craft/Image.tsx"
@@ -40,10 +41,8 @@ export const useCategories = (): Category[] => {
       {
         title: "Базовые",
         items: [
-          {
-            name: "Div-блок",
-            component: <CraftBlock />
-          },
+          { name: "Div-блок", component: <CraftBlock /> },
+          { name: "Ссылка-блок", component: <CraftLinkBlock /> },
         ],
       },
       {

@@ -24,6 +24,7 @@ import { CraftBody } from "../../craft/Body.tsx"
 import { CraftHeading } from "../../craft/CraftHeading.tsx"
 import { CraftParagraph } from "../../craft/CraftParagraph.tsx"
 import { CraftLinkText } from "../../craft/LinkText.tsx"
+import { CraftLinkBlock } from "../../craft/CraftLinkBlock.tsx"
 import { CraftContentList } from "../../craft/ContentList.tsx"
 import { CraftContentListCell } from "../../craft/ContentListCell.tsx"
 import { CraftCategoryFilter } from "../../craft/CategoryFilter.tsx"
@@ -351,6 +352,7 @@ export const BuilderPage = () => {
           Heading: CraftHeading,
           Paragraph: CraftParagraph,
           LinkText: CraftLinkText,
+          LinkBlock: CraftLinkBlock,
           ContentList: CraftContentList,
           ContentListCell: CraftContentListCell,
           CategoryFilter: CraftCategoryFilter, // filterScope должен совпадать с ContentList
