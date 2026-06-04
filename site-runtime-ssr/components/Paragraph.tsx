@@ -7,6 +7,7 @@ import {
 } from "@/lib/contentFieldValue"
 import type { IContentItem } from "@/lib/contentTypes"
 import { resolveTranslationText } from "@/lib/resolvePageTranslation"
+import { renderParagraphText } from "@/lib/renderParagraphText"
 
 interface Props {
   className?: string
@@ -56,7 +57,7 @@ export const Paragraph = ({
 
   return (
     <p className={className} data-craft-node-id={dataCraftNodeId}>
-      {displayText}
+      {renderParagraphText(displayText)}
     </p>
   )
 }

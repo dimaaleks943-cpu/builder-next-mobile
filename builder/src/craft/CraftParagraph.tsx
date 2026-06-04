@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react"
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react"
 import { useEditor, useNode } from "@craftjs/core"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import {
@@ -20,6 +20,36 @@ import {
 import { TextSettingsFields } from "../pages/builder/settingsCraftComponents/TextSettingsFields/TextSettingsFields.tsx"
 import { InlineSettingsModal } from "../components/InlineSettingsModal/InlineSettingsModal.tsx"
 
+/** One `<br>` ↔ one `\n` in stored `text` / i18n. */
+const getParagraphTextFromElement = (element: HTMLElement): string => {
+  let out = ""
+  element.childNodes.forEach((child) => {
+    if (child.nodeType === Node.TEXT_NODE) {
+      out += child.textContent ?? ""
+      return
+    }
+    if (child.nodeType !== Node.ELEMENT_NODE) return
+    const el = child as HTMLElement
+    if (el.tagName === "BR") {
+      out += "\n"
+    }
+  })
+  return out
+}
+
+const setParagraphContentFromText = (element: HTMLParagraphElement, text: string): void => {
+  element.replaceChildren()
+  const segments = text.split("\n")
+  segments.forEach((segment, index) => {
+    if (index > 0) {
+      element.appendChild(document.createElement("br"))
+    }
+    if (segment.length > 0) {
+      element.appendChild(document.createTextNode(segment))
+    }
+  })
+}
+
 export const CRAFT_PARAGRAPH_DEFAULT_TEXT =
   "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
 
@@ -37,8 +67,8 @@ export const CraftParagraph = (props: Props) => {
   const i18nKey = props.i18nKey ?? null
   const collectionField = props.collectionField ?? null
   const [isEditing, setIsEditing] = useState(false)
-  const [draft, setDraft] = useState(text)
   const paragraphRef = useRef<HTMLParagraphElement | null>(null)
+  const lastSyncedTextRef = useRef<string | null>(null)
   const [isTextModalOpen, setIsTextModalOpen] = useState(false)
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
   const rightPanelContext = useRightPanelContext()
@@ -104,52 +134,79 @@ export const CraftParagraph = (props: Props) => {
     [collectionField, contentListData?.itemData, text, modeContext, i18nKey],
   )
 
-  useEffect(() => {
-    if (!isEditing) {
-      setDraft(displayText)
-      if (paragraphRef.current) {
-        paragraphRef.current.textContent = displayText
-      }
+  const persistParagraphText = useCallback(
+    (value: string) => {
+      if (!id) return
+      commitCraftTextDraft({
+        nodeId: id,
+        value,
+        i18nKey,
+        collectionField,
+        modeContext,
+        setProp: actions.setProp,
+      })
+    },
+    [actions.setProp, collectionField, i18nKey, id, modeContext],
+  )
+
+  const endEditing = useCallback(() => {
+    const el = paragraphRef.current
+    if (!el) {
+      setIsEditing(false)
+      return
     }
-  }, [displayText, isEditing])
+    const value = getParagraphTextFromElement(el)
+    persistParagraphText(value)
+    setParagraphContentFromText(el, value)
+    lastSyncedTextRef.current = value
+    setIsEditing(false)
+  }, [persistParagraphText])
+
+  useLayoutEffect(() => {
+    const el = paragraphRef.current
+    if (!el || collectionField || isEditing) return
+    if (lastSyncedTextRef.current === displayText) return
+    lastSyncedTextRef.current = displayText
+    setParagraphContentFromText(el, displayText)
+  }, [displayText, isEditing, collectionField])
+
+  useEffect(() => {
+    if (selected || !isEditing) return
+    endEditing()
+  }, [selected, isEditing, endEditing])
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLParagraphElement>) => {
     e.stopPropagation()
-    if (!selected) return
-    if (collectionField) return
+    if (!selected || collectionField) return
+    const el = paragraphRef.current
+    if (el) {
+      setParagraphContentFromText(el, displayText)
+      lastSyncedTextRef.current = displayText
+    }
     setIsEditing(true)
-  }
-
-  const handleInput = (e: React.FormEvent<HTMLParagraphElement>) => {
-    const value = e.currentTarget.textContent ?? ""
-    setDraft(value)
-  }
-
-  const saveDraft = () => {
-    if (!id) return
-    const value = paragraphRef.current?.textContent ?? draft
-    commitCraftTextDraft({
-      nodeId: id,
-      value,
-      i18nKey,
-      collectionField,
-      modeContext,
-      setProp: actions.setProp,
-    })
-    setIsEditing(false)
   }
 
   const handleBlur = () => {
     if (isEditing) {
-      saveDraft()
+      endEditing()
     }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLParagraphElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      e.stopPropagation()
+      document.execCommand("insertLineBreak")
+      return
+    }
     if (e.key === "Escape") {
       e.preventDefault()
       e.stopPropagation()
-      setDraft(text)
+      const el = paragraphRef.current
+      if (el) {
+        setParagraphContentFromText(el, displayText)
+        lastSyncedTextRef.current = displayText
+      }
       setIsEditing(false)
     }
   }
@@ -169,13 +226,10 @@ export const CraftParagraph = (props: Props) => {
         contentEditable={isEditing && !collectionField}
         suppressContentEditableWarning
         onDoubleClick={handleDoubleClick}
-        onInput={handleInput}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         style={{ ...responsiveStyle }}
-      >
-        {displayText}
-      </p>
+      />
       <InlineSettingsModal
         open={isTextModalOpen}
         title="Настройки текста"
