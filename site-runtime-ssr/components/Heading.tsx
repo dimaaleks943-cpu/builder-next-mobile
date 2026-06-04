@@ -8,7 +8,7 @@ import {
 import type { IContentItem } from "@/lib/contentTypes"
 import { resolveTranslationText } from "@/lib/resolvePageTranslation"
 
-interface TextProps {
+interface Props {
   className?: string
   "data-craft-node-id"?: string
   text?: string
@@ -16,15 +16,16 @@ interface TextProps {
   collectionField?: string | null
 }
 
-export const Text = ({
+export const Heading = ({
   className,
   "data-craft-node-id": dataCraftNodeId,
-  text = "Текст",
+  text,
   i18nKey = null,
   collectionField = null,
-}: TextProps) => {
+}: Props) => {
   const contentData = useContentData()
   const pageLocale = usePageLocale()
+  const textFallback = text as string;
 
   const displayText = useMemo(() => {
     if (collectionField && contentData?.itemData) {
@@ -32,7 +33,7 @@ export const Text = ({
       const field = findContentItemField(item, collectionField)
       if (field) {
         const resolved = getContentFieldDisplayValue(field)
-        return resolved !== "" ? resolved : text
+        return resolved !== "" ? resolved : textFallback
       }
     }
     if (!collectionField || !contentData?.itemData) {
@@ -40,17 +41,17 @@ export const Text = ({
         pageLocale.translate,
         pageLocale.locale,
         i18nKey,
-        text as string,
+        textFallback,
       )
     }
-    return text
+    return textFallback
   }, [
     collectionField,
     contentData?.itemData,
     i18nKey,
     pageLocale.locale,
     pageLocale.translate,
-    text,
+    textFallback,
   ])
 
   return (

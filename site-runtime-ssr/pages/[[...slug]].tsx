@@ -133,7 +133,7 @@ interface PageProps {
   sitePages: SitePage[]
   headerComponents: ComponentNode[]
   footerComponents: ComponentNode[]
-  /** Данные записи для template-страницы (поля Text/Image вне ContentList). */
+  /** Данные записи для template-страницы (поля Heading/Image вне ContentList). */
   templateContentData: {
     collectionKey: string
     itemData: IContentItem

@@ -1,7 +1,7 @@
 import React from "react"
 import { Block } from "@/components/Block"
 import { Body } from "@/components/Body"
-import { Text } from "@/components/Text"
+import { Heading } from "@/components/Heading"
 import { LinkText } from "@/components/LinkText"
 import { Image } from "@/components/Image"
 import { ContentList } from "@/components/ContentList"
@@ -11,7 +11,7 @@ import type { ComponentNode } from "./interface"
 const componentMap: Record<string, React.ComponentType<any>> = {
   Block,
   Body,
-  Text,
+  Heading,
   LinkText,
   Image,
   ContentList,
