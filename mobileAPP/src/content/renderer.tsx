@@ -1,5 +1,5 @@
 /**
- * Рендер контента страницы: маппинг имён компонентов (Body, Block, Heading, Image, LinkText, CategoryFilter, ContentList)
+ * Рендер контента страницы: маппинг имён компонентов (Body, Block, Heading, Paragraph, Image, LinkText, CategoryFilter, ContentList)
  * на RN-компоненты и отрисовка страницы из массива узлов (ComponentNode[]).
  */
 
@@ -11,6 +11,7 @@ import type { Viewport } from "./responsiveStyle";
 import { Body } from "../components/Body";
 import { Block } from "../components/Block";
 import { Heading } from "../components/Heading";
+import { Paragraph } from "../components/Paragraph";
 import { Image } from "../components/Image";
 import { LinkText } from "../components/LinkText";
 import { CategoryFilter } from "../components/CategoryFilter";
@@ -20,6 +21,7 @@ const componentMap = {
   Body,
   Block,
   Heading,
+  Paragraph,
   Image,
   LinkText,
   CategoryFilter, // связка с ContentList по `filterScope` через CollectionFilterScope
