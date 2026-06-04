@@ -88,6 +88,7 @@ const parseSerializedNodes = (raw: string): SerializedNodes | null => {
 
 const TEXTUAL_NODE_NAMES = new Set([
   CRAFT_DISPLAY_NAME.Heading,
+  CRAFT_DISPLAY_NAME.Paragraph,
   CRAFT_DISPLAY_NAME.LinkText,
 ])
 
@@ -105,7 +106,7 @@ const collectUsedI18nKeysFromNodes = (nodes: SerializedNodes): Set<string> => {
     if (
       i18nKey &&
       !collectionField &&
-      TEXTUAL_NODE_NAMES.has(displayName as "CraftHeading" | "CraftLinkText")
+      TEXTUAL_NODE_NAMES.has(displayName as "CraftHeading" | "CraftParagraph" | "CraftLinkText")
     ) {
       keys.add(i18nKey)
     }

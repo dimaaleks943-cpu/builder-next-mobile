@@ -13,6 +13,7 @@ import { useMemo, useState } from "react"
 import { COLORS } from "../../../../../theme/colors"
 import { CraftBlock } from "../../../../../craft/Block.tsx"
 import { CraftHeading } from "../../../../../craft/CraftHeading.tsx"
+import { CraftParagraph } from "../../../../../craft/CraftParagraph.tsx"
 import { CraftLinkText } from "../../../../../craft/LinkText.tsx"
 import { CraftContentList } from "../../../../../craft/ContentList.tsx"
 import { CraftCategoryFilter } from "../../../../../craft/CategoryFilter.tsx"
@@ -49,6 +50,7 @@ export const useCategories = (): Category[] => {
         title: "Типографика",
         items: [
           { name: "Заголовок", component: <CraftHeading /> },
+          { name: "Текст", component: <CraftParagraph /> },
           { name: "Текст-ссылка", component: <CraftLinkText /> },
         ],
       },

@@ -42,12 +42,12 @@ export const BuilderRightPanel = ({
     const node = id ? state.nodes[id] : null
 
     const displayName = node ? resolveNodeDisplayName(node) : null
-    const hasTextProp = node?.data.props?.text !== undefined
     const isLinkText =
       displayName === CRAFT_DISPLAY_NAME.LinkText ||
       node?.data.props?.href !== undefined ||
       node?.data.props?.linkMode === "collectionItemPage"
-    const isHeading = displayName === CRAFT_DISPLAY_NAME.Heading || hasTextProp
+    const isHeading = displayName === CRAFT_DISPLAY_NAME.Heading
+    const isParagraph = displayName === CRAFT_DISPLAY_NAME.Paragraph
     const isImage = displayName === CRAFT_DISPLAY_NAME.Image
 
     return {
@@ -56,9 +56,11 @@ export const BuilderRightPanel = ({
         ? "LinkText"
         : isHeading
           ? "Heading"
-          : isImage
-            ? "Image"
-            : displayName,
+          : isParagraph
+            ? "Paragraph"
+            : isImage
+              ? "Image"
+              : displayName,
     }
   })
 
@@ -162,7 +164,9 @@ export const BuilderRightPanel = ({
                   overflowY: "auto",
                 }}
               >
-                {(selectedType === "Heading" || selectedType === "LinkText") && (
+                {(selectedType === "Heading" ||
+                  selectedType === "Paragraph" ||
+                  selectedType === "LinkText") && (
                   <TextSettingsFields asAccordion />
                 )}
                 {selectedType === "LinkText" && (

@@ -11,6 +11,7 @@ import { useBuilderTemplatePage } from "../../context/BuilderTemplatePageContext
 import { useCollectionsContext } from "../../context/CollectionsContext.tsx"
 import { resolveNodeDisplayName } from "../../../../utils/resolveNodeDisplayName.ts"
 import { CRAFT_DISPLAY_NAME } from "../../../../craft/craftDisplayNames.ts"
+import { CRAFT_PARAGRAPH_DEFAULT_TEXT } from "../../../../craft/CraftParagraph.tsx"
 import { SettingsAccordion } from "../components/SettingsAccordion/SettingsAccordion.tsx"
 import {
   findContentItemField,
@@ -50,6 +51,7 @@ import { TextFieldsIcon } from "../../../../icons/TextFieldsIcon.tsx";
 
 const getDefaultTextForDisplayName = (displayName: string | null): string => {
   if (displayName === CRAFT_DISPLAY_NAME.LinkText) return "Ссылка"
+  if (displayName === CRAFT_DISPLAY_NAME.Paragraph) return CRAFT_PARAGRAPH_DEFAULT_TEXT
 
   return "Заголовок"
 }

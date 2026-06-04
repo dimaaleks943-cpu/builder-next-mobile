@@ -22,6 +22,7 @@ import { COLORS } from "../../theme/colors"
 import { CraftBlock } from "../../craft/Block.tsx"
 import { CraftBody } from "../../craft/Body.tsx"
 import { CraftHeading } from "../../craft/CraftHeading.tsx"
+import { CraftParagraph } from "../../craft/CraftParagraph.tsx"
 import { CraftLinkText } from "../../craft/LinkText.tsx"
 import { CraftContentList } from "../../craft/ContentList.tsx"
 import { CraftContentListCell } from "../../craft/ContentListCell.tsx"
@@ -348,6 +349,7 @@ export const BuilderPage = () => {
           Block: CraftBlock,
           Body: CraftBody,
           Heading: CraftHeading,
+          Paragraph: CraftParagraph,
           LinkText: CraftLinkText,
           ContentList: CraftContentList,
           ContentListCell: CraftContentListCell,

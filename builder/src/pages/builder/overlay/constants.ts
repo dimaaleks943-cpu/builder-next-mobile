@@ -9,6 +9,7 @@ export const OVERLAY_BADGE_GAP_Y = 6
 /** Ключи resolver (`Editor resolver`), когда в state есть `type.resolvedName`. */
 export const CRAFT_INLINE_SETTINGS_RESOLVED_NAMES = new Set([
   "Heading",
+  "Paragraph",
   "LinkText",
   "Image",
   "ContentList",
@@ -22,6 +23,7 @@ export const CRAFT_INLINE_SETTINGS_RESOLVED_NAMES = new Set([
 export const CRAFT_INLINE_SETTINGS_BADGE_LABELS = new Set<string>([
   ...CRAFT_INLINE_SETTINGS_RESOLVED_NAMES,
   CRAFT_DISPLAY_NAME.Heading,
+  CRAFT_DISPLAY_NAME.Paragraph,
   CRAFT_DISPLAY_NAME.LinkText,
   CRAFT_DISPLAY_NAME.Image,
   CRAFT_DISPLAY_NAME.ContentList,
