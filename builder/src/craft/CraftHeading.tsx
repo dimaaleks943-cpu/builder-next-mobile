@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useEditor, useNode } from "@craftjs/core"
-import type { CSSProperties } from "react"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import {
   useCraftInlineSettingsBridge,
@@ -21,7 +20,7 @@ import {
 import { TextSettingsFields } from "../pages/builder/settingsCraftComponents/TextSettingsFields/TextSettingsFields.tsx";
 import { InlineSettingsModal } from "../components/InlineSettingsModal/InlineSettingsModal.tsx";
 
-export interface TextProps {
+interface Props {
   text?: string
   i18nKey?: string | null
   collectionField?: string | null
@@ -29,9 +28,9 @@ export interface TextProps {
   style?: ResponsiveStyle
 }
 
-export const CraftText = (props: TextProps) => {
+export const CraftHeading = (props: Props) => {
   const responsiveStyle = useCraftNodeStyle(props.styleClassIds, props.style)
-  const text = props.text ?? "Текст"
+  const text = props.text ?? ""
   const i18nKey = props.i18nKey ?? null
   const collectionField = props.collectionField ?? null
   const [isEditing, setIsEditing] = useState(false)
@@ -165,13 +164,10 @@ export const CraftText = (props: TextProps) => {
     }
   }
 
-  const outerWrapperStyle: CSSProperties = {
-    display: "block",
-  }
 
   return (
     <>
-      <span ref={outerWrapperRef} style={outerWrapperStyle}>
+      <span ref={outerWrapperRef}>
         <span
           ref={(ref) => {
             spanRef.current = ref
@@ -207,29 +203,20 @@ export const CraftText = (props: TextProps) => {
   )
 };
 
-;(CraftText as any).craft = {
-  displayName: CRAFT_DISPLAY_NAME.Text,
+(CraftHeading as any).craft = {
+  displayName: CRAFT_DISPLAY_NAME.Heading,
   props: {
-    text: "Текст",
+    text: "Заголовок",
     i18nKey: null,
     collectionField: null,
     style: {
       [PreviewViewport.DESKTOP]: {
-        fontSize: "14px",
-        lineHeight: "20px",
-        fontWeight: "normal" as const,
+        fontSize: "60px",
+        lineHeight: "72px",
+        fontWeight: "600",
         color: COLORS.gray700,
-
-        marginTop: 0,
-        marginRight: 0,
-        marginBottom: 0,
-        marginLeft: 0,
-        paddingTop: 0,
-        paddingRight: 0,
-        paddingBottom: 0,
-        paddingLeft: 0,
+        display: "block",
       },
     },
   },
 }
-

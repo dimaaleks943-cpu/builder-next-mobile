@@ -12,7 +12,7 @@ import { useEditor } from "@craftjs/core"
 import { useMemo, useState } from "react"
 import { COLORS } from "../../../../../theme/colors"
 import { CraftBlock } from "../../../../../craft/Block.tsx"
-import { CraftText } from "../../../../../craft/Text.tsx"
+import { CraftHeading } from "../../../../../craft/CraftHeading.tsx"
 import { CraftLinkText } from "../../../../../craft/LinkText.tsx"
 import { CraftContentList } from "../../../../../craft/ContentList.tsx"
 import { CraftCategoryFilter } from "../../../../../craft/CategoryFilter.tsx"
@@ -48,7 +48,7 @@ export const useCategories = (): Category[] => {
       {
         title: "Типографика",
         items: [
-          { name: "Текст", component: <CraftText /> },
+          { name: "Заголовок", component: <CraftHeading /> },
           { name: "Текст-ссылка", component: <CraftLinkText /> },
         ],
       },

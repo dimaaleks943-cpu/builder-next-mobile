@@ -21,7 +21,7 @@ import { CraftInlineSettingsBridgeProvider } from "./context/CraftInlineSettings
 import { COLORS } from "../../theme/colors"
 import { CraftBlock } from "../../craft/Block.tsx"
 import { CraftBody } from "../../craft/Body.tsx"
-import { CraftText } from "../../craft/Text.tsx"
+import { CraftHeading } from "../../craft/CraftHeading.tsx"
 import { CraftLinkText } from "../../craft/LinkText.tsx"
 import { CraftContentList } from "../../craft/ContentList.tsx"
 import { CraftContentListCell } from "../../craft/ContentListCell.tsx"
@@ -347,7 +347,7 @@ export const BuilderPage = () => {
         resolver={{
           Block: CraftBlock,
           Body: CraftBody,
-          Text: CraftText,
+          Heading: CraftHeading,
           LinkText: CraftLinkText,
           ContentList: CraftContentList,
           ContentListCell: CraftContentListCell,

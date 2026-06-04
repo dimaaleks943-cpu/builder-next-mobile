@@ -4,7 +4,12 @@ import {
   useGetContentTypesQuery,
   useLazyGetContentCategoriesQuery,
 } from "../store/extranetApi"
-import type { ContentCategory } from "../api/extranet"
+import { useLazyGetDistributorCategoriesQuery } from "../store/distributorCategoriesApi"
+import type { ContentCategory, IDistributorCategory } from "../api/extranet"
+import {
+  isProductsSelectedSource,
+  PRODUCTS_SELECTED_SOURCE,
+} from "../constants/contentListSources.ts"
 import { COLORS } from "../theme/colors"
 import { useCollectionFilterScope } from "../pages/builder/context/CollectionFilterScopeContext.tsx"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
@@ -26,7 +31,7 @@ import { InlineSettingsModal } from "../components/InlineSettingsModal/InlineSet
 interface CategoryFilterProps {
   /** Идентификатор группы фильтра на странице; должен совпадать с `filterScope` у ContentList. */
   filterScope: string
-  /** Id типа контента extranet (`content_type_id` для getContentCategories). */
+  /** Id типа контента extranet или sentinel {@link PRODUCTS_SELECTED_SOURCE} («Товары»). */
   contentCategoryRootId?: string
   variant?: "buttons" | "radio" | "list"
   direction?: "row" | "column"
@@ -36,8 +41,18 @@ interface CategoryFilterProps {
   style?: ResponsiveStyle
 }
 
+const mapDistributorCategoryToContentCategory = (
+  category: IDistributorCategory,
+): ContentCategory => ({
+  id: String(category.id),
+  name: category.name,
+  slug: category.slug,
+  sort: category.sort,
+})
+
 /**
- * Редакторский блок фильтра: загрузка категорий через RTK Query и запись выбора в `CollectionFilterScope`.
+ * Редакторский блок фильтра: категории контента или категории поставщика (для «Товары»);
+ * выбор пишется в `CollectionFilterScope`.
  */
 export const CraftCategoryFilter = () => {
   const rootRef = useRef<HTMLDivElement | null>(null)
@@ -55,15 +70,22 @@ export const CraftCategoryFilter = () => {
     id: node.id,
   }))
 
+  const siteId = 1
+
   const { selectedCategoryIdByScope, setCategoryForScope } =
     useCollectionFilterScope()
   const [fetchCategories, { data: categoriesResponse, isFetching }] =
     useLazyGetContentCategoriesQuery()
+  const [
+    fetchDistributorCategories,
+    { data: distributorCategoriesResponse, isFetching: isDistributorFetching },
+  ] = useLazyGetDistributorCategoriesQuery()
   const { data: contentTypesResponse } = useGetContentTypesQuery({ limit: 200 })
   const responsiveStyle = useCraftNodeStyle(props.styleClassIds, props.style)
 
   const filterScope = props.filterScope ?? ""
   const contentCategoryRootId = props.contentCategoryRootId ?? ""
+  const isProductsRoot = isProductsSelectedSource(contentCategoryRootId)
   const variant = props.variant ?? "buttons"
   const direction = props.direction ?? "row"
   const showAllLabel = props.showAllLabel ?? "Все"
@@ -104,30 +126,56 @@ export const CraftCategoryFilter = () => {
   }
 
   const contentTypeOptions = useMemo(() => {
+    const productsEntry = { id: PRODUCTS_SELECTED_SOURCE, name: "Товары" }
     const types = (contentTypesResponse?.data ?? [])
       .filter((type) => type.has_categories !== false)
+      .filter((type) => type.id !== PRODUCTS_SELECTED_SOURCE)
       .slice()
       .sort((a, b) => a.name.localeCompare(b.name))
 
     const currentId = contentCategoryRootId.trim()
-    if (currentId && !types.some((type) => type.id === currentId)) {
+    if (
+      currentId &&
+      currentId !== PRODUCTS_SELECTED_SOURCE &&
+      !types.some((type) => type.id === currentId)
+    ) {
       return [
+        productsEntry,
         { id: currentId, name: `${currentId} (сохранённое значение)` },
         ...types,
       ]
     }
 
-    return types
+    return [productsEntry, ...types]
   }, [contentTypesResponse?.data, contentCategoryRootId])
 
-  // Список опций фильтра: категории типа контента по `contentCategoryRootId` (content_type_id).
+  // Категории контента по content_type_id или категории поставщика для «Товары» (distributor_id = site_id).
   useEffect(() => {
     const id = contentCategoryRootId.trim()
     if (!id) return
-    void fetchCategories({ contentCategoryId: id, limit: 500 })
-  }, [contentCategoryRootId, fetchCategories])
 
-  const categories: ContentCategory[] = categoriesResponse?.data ?? []
+    if (isProductsSelectedSource(id)) {
+      if (typeof siteId !== "number") return
+      void fetchDistributorCategories({
+        params: { filter: { distributor_id: siteId } },
+      })
+      return
+    }
+
+    void fetchCategories({ contentCategoryId: id, limit: 500 })
+  }, [contentCategoryRootId, fetchCategories, fetchDistributorCategories, siteId])
+
+  const categories: ContentCategory[] = useMemo(() => {
+    if (isProductsRoot) {
+      return (distributorCategoriesResponse ?? []).map(
+        mapDistributorCategoryToContentCategory,
+      )
+    }
+    return categoriesResponse?.data ?? []
+  }, [isProductsRoot, distributorCategoriesResponse, categoriesResponse?.data])
+
+  const productsSiteMissing = isProductsRoot && typeof siteId !== "number"
+  const isCategoriesLoading = isProductsRoot ? isDistributorFetching : isFetching
 
   const flexDirection = direction === "column" ? "column" : "row"
   const isList = variant === "list"
@@ -258,8 +306,16 @@ export const CraftCategoryFilter = () => {
           <span style={{ color: COLORS.gray600, fontSize: 13 }}>
             Выберите тип контента в настройках для загрузки списка категорий.
           </span>
-        ) : isFetching ? (
+        ) : productsSiteMissing ? (
+          <span style={{ color: COLORS.gray600, fontSize: 13 }}>
+            Не удалось определить site_id страницы для загрузки категорий товаров.
+          </span>
+        ) : isCategoriesLoading ? (
           <span style={{ color: COLORS.gray600, fontSize: 13 }}>Загрузка…</span>
+        ) : categories.length === 0 ? (
+          <span style={{ color: COLORS.gray600, fontSize: 13 }}>
+            Категории не найдены для выбранного типа.
+          </span>
         ) : (
           <>
             {isRadio ? (

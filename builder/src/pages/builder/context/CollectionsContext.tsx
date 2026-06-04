@@ -24,7 +24,7 @@ export type CollectionsContextValue = {
 
 /**
  * Пробрасываем инфу о всех загруженных коллекциях, что бы показать список доступных коллекций,
- * динамически собрать список полей и привязывать значение к компоненту (Text)
+ * динамически собрать список полей и привязывать значение к компоненту (Heading, LinkText)
  */
 export const CollectionsContext = createContext<CollectionsContextValue | undefined>(
   undefined,

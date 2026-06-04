@@ -12,7 +12,7 @@ export type ContentListCellProps = {
 }
 
 /**
- * Одна ячейка списка коллекции. Canvas: в неё можно перетащить элементы (Text и т.д.).
+ * Одна ячейка списка коллекции. Canvas: в неё можно перетащить элементы (Heading и т.д.).
  * Любая ячейка может быть источником правды: ContentList синхронизирует изменения во все ячейки.
  *
  * display, flexFlow, justifyContent, alignItems, gridTemplate*, placeItems, gap — в `responsiveStyle` в виде имён React/CSS.

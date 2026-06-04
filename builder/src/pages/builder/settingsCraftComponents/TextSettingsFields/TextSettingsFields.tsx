@@ -48,7 +48,11 @@ import {
 } from "./styles.ts"
 import { TextFieldsIcon } from "../../../../icons/TextFieldsIcon.tsx";
 
-const DEFAULT_TEXT = "Текст"
+const getDefaultTextForDisplayName = (displayName: string | null): string => {
+  if (displayName === CRAFT_DISPLAY_NAME.LinkText) return "Ссылка"
+
+  return "Заголовок"
+}
 
 interface SelectedTextProps {
   text?: string
@@ -60,6 +64,7 @@ interface EditorSelection {
   selectedId: string | null
   selectedProps: SelectedTextProps | null
   parentCollectionKey: string | null
+  selectedDisplayName: string | null
 }
 
 interface CollectionFieldOption {
@@ -83,7 +88,7 @@ const FieldTypeIcon = ({ connected = false }: { connected?: boolean}) => {
 
 export const TextSettingsFields = ({ asAccordion, nodeId }: Props) => {
   const { actions } = useEditor()
-  const { selectedId, selectedProps, parentCollectionKey } = useEditor(
+  const { selectedId, selectedProps, parentCollectionKey, selectedDisplayName } = useEditor(
     (state, query): EditorSelection => {
       const id = nodeId ?? (Array.from(state.events.selected)[0] as string | undefined) ?? null
       const node = id ? state.nodes[id] : null
@@ -115,9 +120,13 @@ export const TextSettingsFields = ({ asAccordion, nodeId }: Props) => {
         selectedId: id ?? null,
         selectedProps: (node?.data.props as SelectedTextProps) ?? null,
         parentCollectionKey: foundCollectionKey,
+        selectedDisplayName: node ? resolveNodeDisplayName(node) : null,
       }
     },
   )
+
+  const defaultText =
+    useMemo(() => getDefaultTextForDisplayName(selectedDisplayName), [selectedDisplayName])
 
   const contentListData = useContentListData()
   const modeContext = useBuilderModeContext()
@@ -186,17 +195,17 @@ export const TextSettingsFields = ({ asAccordion, nodeId }: Props) => {
     [collectionField, collectionFields],
   )
 
-  const hasResettableValue = isCollectionConnected || (selectedProps?.text ?? DEFAULT_TEXT) !== DEFAULT_TEXT
+  const hasResettableValue = isCollectionConnected || (selectedProps?.text ?? defaultText) !== defaultText
 
   if (!selectedId || !selectedProps) {
     return null
   }
 
   const handleReset = () => {
-    setTextDraft(DEFAULT_TEXT)
+    setTextDraft(defaultText)
     setIsConnectOpen(false)
     actions.setProp(selectedId, (props: SelectedTextProps) => {
-      props.text = DEFAULT_TEXT
+      props.text = defaultText
       props.collectionField = null
       props.i18nKey = null
     })
