@@ -13,7 +13,7 @@ import {
 } from "../content/contentFieldValue";
 import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 
-interface TextProps {
+interface Props {
   style?: unknown;
   text?: string;
   collectionField?: string | null;
@@ -21,13 +21,13 @@ interface TextProps {
   testID?: string;
 }
 
-export const Text = ({
+export const Heading = ({
   text,
   collectionField = null,
   style,
   nativeID,
   testID,
-}: TextProps) => {
+}: Props) => {
   const { viewport } = useResponsiveViewport();
   const { resolveRnFontFamily } = useUploadedFonts();
   const rs = resolveResponsiveStyle(style, viewport);
