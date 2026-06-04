@@ -21,7 +21,6 @@ import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 export type CategoryFilterProps = {
   style?: any;
   nativeID?: string;
-  testID?: string;
   filterScope: string;
   /** UUID корня дерева категорий — в API уходит `filter` с `category_id`. */
   contentCategoryRootId?: string;
@@ -34,7 +33,6 @@ export type CategoryFilterProps = {
 export const CategoryFilter = ({
   style,
   nativeID,
-  testID,
   filterScope,
   contentCategoryRootId = "",
   variant = "buttons",
@@ -140,7 +138,6 @@ export const CategoryFilter = ({
   return (
     <View
       nativeID={nativeID}
-      testID={testID}
       style={[
         styles.nav,
         row ? styles.navRow : styles.navCol,

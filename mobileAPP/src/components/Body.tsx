@@ -8,14 +8,12 @@ interface BodyProps {
   style?: unknown;
   children?: ReactNode;
   nativeID?: string;
-  testID?: string;
 }
 
 export const Body = ({
   children,
   style,
   nativeID,
-  testID,
 }: BodyProps) => {
   const { viewport } = useResponsiveViewport();
   const rs = resolveResponsiveStyle(style, viewport);
@@ -38,7 +36,6 @@ export const Body = ({
   return (
     <View
       nativeID={nativeID}
-      testID={testID}
       style={[
         styles.root,
         { backgroundColor },

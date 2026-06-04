@@ -18,7 +18,6 @@ interface Props {
   text?: string;
   collectionField?: string | null;
   nativeID?: string;
-  testID?: string;
 }
 
 export const Paragraph = ({
@@ -26,7 +25,6 @@ export const Paragraph = ({
   collectionField = null,
   style,
   nativeID,
-  testID,
 }: Props) => {
   const { viewport } = useResponsiveViewport();
   const { resolveRnFontFamily } = useUploadedFonts();
@@ -81,7 +79,7 @@ export const Paragraph = ({
   };
 
   return (
-    <RNText nativeID={nativeID} testID={testID} style={textStyle}>
+    <RNText nativeID={nativeID} style={textStyle}>
       {displayText}
     </RNText>
   );

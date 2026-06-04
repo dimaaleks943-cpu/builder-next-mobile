@@ -20,7 +20,6 @@ interface ImageProps {
   /** todo кол-во полей для коллекций пока не поддерживаем в мобилке */
   collectionField?: string | null;
   nativeID?: string;
-  testID?: string;
 }
 
 export const Image = ({
@@ -29,7 +28,6 @@ export const Image = ({
   collectionField = null,
   style,
   nativeID,
-  testID,
 }: ImageProps) => {
   const { viewport } = useResponsiveViewport();
   const rs = resolveResponsiveStyle(style, viewport);
@@ -132,7 +130,7 @@ export const Image = ({
 
 
   return (
-    <View nativeID={nativeID} testID={testID} style={frameStyle}>
+    <View nativeID={nativeID} style={frameStyle}>
       <RNImage
         source={{ uri: effectiveSrc }}
         accessibilityLabel={alt}

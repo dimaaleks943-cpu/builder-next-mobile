@@ -28,8 +28,7 @@ const componentMap = {
   ContentList,
 } as Record<string, React.ComponentType<any>>;
 
-const nodeViewIds = (nodeId: string | undefined,): { nativeID?: string; testID?: string } =>
-  nodeId ? { nativeID: nodeId, testID: nodeId } : {};
+const nodeViewIds = (nodeId: string | undefined,): { nativeID?: string } => nodeId ? { nativeID: nodeId } : {};
 
 export const renderComponent = (
   node: ComponentNode,

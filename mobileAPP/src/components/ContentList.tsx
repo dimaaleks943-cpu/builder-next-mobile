@@ -43,7 +43,6 @@ interface ContentListProps {
   cellTemplateStyle?: unknown;
   cellNodeId?: string;
   nativeID?: string;
-  testID?: string;
   children?: ComponentNode[];
 }
 
@@ -58,7 +57,6 @@ export const ContentList = ({
   cellTemplateStyle,
   cellNodeId,
   nativeID,
-  testID,
   children: childrenProp,
 }: ContentListProps) => {
   const { viewport } = useResponsiveViewport();
@@ -325,7 +323,6 @@ export const ContentList = ({
     return (
       <View
         nativeID={nativeID}
-        testID={testID}
         style={[
           listRootBackgroundStyle,
           listRootBorderStyle,
@@ -340,7 +337,6 @@ export const ContentList = ({
     return (
       <View
         nativeID={nativeID}
-        testID={testID}
         style={[
           listRootBackgroundStyle,
           listRootBorderStyle,
@@ -360,7 +356,6 @@ export const ContentList = ({
     <ContentListProvider filterScope={scopeTrimmed || undefined}>
       <View
         nativeID={nativeID}
-        testID={testID}
         style={[
           listRootBackgroundStyle,
           listRootBorderStyle,
@@ -523,7 +518,6 @@ const ContentListItem = ({
     <ContentDataProvider collectionKey={collectionKey} itemData={itemData}>
       <View
         nativeID={cellNodeId}
-        testID={cellNodeId}
         style={[
           {
             flex: itemsPerRow === 1 ? 0 : 1,
