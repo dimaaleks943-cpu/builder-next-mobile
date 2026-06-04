@@ -7,12 +7,13 @@ export interface ContentDataContextValue {
 
 /**
  * Глобальный контекст данных для "динамических" контейнеров (список, таблица и т.п.).
- * Через него простые компоненты (например, `Heading`) получают данные текущего элемента
+ * Через него простые компоненты (например, `Heading`, `Paragraph`) получают данные текущего элемента
  * коллекции/строки/записи, не зная, в каком именно контейнере они находятся.
  *
  * @example
  * <ContentDataProvider collectionKey="550e8400-e29b-41d4-a716-446655440000" itemData={item}>
  *   <Heading collectionField="<content-field-uuid>" />
+ *   <Paragraph collectionField="<content-field-uuid>" />
  * </ContentDataProvider>
  */
 const ContentDataContext = React.createContext<ContentDataContextValue>({
