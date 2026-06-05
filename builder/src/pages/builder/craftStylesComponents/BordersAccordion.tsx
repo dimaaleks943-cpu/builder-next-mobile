@@ -111,9 +111,9 @@ const radiusCornerGridCssIndices = [0, 1, 3, 2] as const
 
 type BorderStyleUi = "none" | "solid" | "dashed" | "dotted"
 
-const borderStyleForButtonGroup = (value: string | undefined): BorderStyleUi => {
+const borderStyleForButtonGroup = (value: string | undefined): BorderStyleUi | undefined => {
   if (value === "none" || value === "solid" || value === "dashed" || value === "dotted") return value
-  return "solid"
+  return undefined
 }
 
 export const BordersAccordion = () => {
