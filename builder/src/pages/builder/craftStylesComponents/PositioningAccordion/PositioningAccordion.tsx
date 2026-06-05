@@ -168,7 +168,7 @@ export const PositioningAccordion = () => {
       }
     })
 
-  const { getStyleProp, setStyleProp } = useStyleEditing()
+  const { getStyleProp, setStyleProp, mutateClassStyle } = useStyleEditing()
   const [floatClearOpen, setFloatClearOpen] = useState(false)
   const position = uiPosition(getStyleProp("position"))
   const floatValue = uiFloat(getStyleProp("float"))
@@ -181,7 +181,7 @@ export const PositioningAccordion = () => {
 
   const handlePositionChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const v = e.target.value as PositionValue
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+    mutateClassStyle((props) => {
       setResponsiveStyleProp(
         props,
         "position",
@@ -196,33 +196,18 @@ export const PositioningAccordion = () => {
 
   const handleFloatChange = (id: string) => {
     const v = id as FloatValue
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(
-        props,
-        "float",
-        v === "none" ? undefined : v,
-        viewport,
-      )
-    })
+    setStyleProp("float", v === "none" ? undefined : v)
   }
 
   const handleClearChange = (id: string) => {
     const v = id as ClearValue
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      setResponsiveStyleProp(
-        props,
-        "clear",
-        v === "none" ? undefined : v,
-        viewport,
-      )
-    })
+    setStyleProp("clear", v === "none" ? undefined : v)
   }
 
   const handleInsetSelect = (id: string) => {
     const option = INSET_OPTIONS.find((item) => item.id === id)
-    if (!option) {
-      return
-    }
+    if (!option) return
+
     setStyleProp("inset", option.value)
   }
 
