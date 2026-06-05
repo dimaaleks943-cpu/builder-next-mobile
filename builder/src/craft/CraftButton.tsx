@@ -20,6 +20,7 @@ import {
 import { InlineSettingsModal } from "../components/InlineSettingsModal/InlineSettingsModal.tsx"
 import { TextSettingsFields } from "../pages/builder/settingsCraftComponents/TextSettingsFields/TextSettingsFields.tsx"
 import { LinkTextSettingsFields } from "../pages/builder/settingsCraftComponents/LinkTextSettingsFields.tsx"
+import { Box } from "@mui/material";
 
 interface Props {
   text?: string
@@ -210,8 +211,10 @@ export const CraftButton = (props: Props) => {
         onClose={closeInlineSettings}
         onShowAllSettings={handleShowAllSettings}
       >
-        <TextSettingsFields nodeId={id} />
-        <LinkTextSettingsFields />
+        <Box display="flex" flexDirection="column" rowGap="8px">
+          <TextSettingsFields nodeId={id}/>
+          <LinkTextSettingsFields/>
+        </Box>
       </InlineSettingsModal>
     </>
   )
@@ -231,7 +234,10 @@ export const CraftButton = (props: Props) => {
     style: {
       [PreviewViewport.DESKTOP]: {
         display: "inline-block",
-        padding: "9px 15px",
+        paddingTop: "9px",
+        paddingBottom: "9px",
+        paddingRight: "15px",
+        paddingLeft: "15px",
         backgroundColor: COLORS.blue400,
         color: COLORS.white,
         border: 0,
