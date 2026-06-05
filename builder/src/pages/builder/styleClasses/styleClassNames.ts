@@ -4,6 +4,7 @@ import type { StyleClassesRegistry } from "./types.ts"
 const DISPLAY_LABEL: Record<string, string> = {
   [CRAFT_DISPLAY_NAME.Block]: "Block",
   [CRAFT_DISPLAY_NAME.Body]: "Body",
+  [CRAFT_DISPLAY_NAME.Button]: "Button",
   [CRAFT_DISPLAY_NAME.Heading]: "Heading",
   [CRAFT_DISPLAY_NAME.Paragraph]: "Paragraph",
   [CRAFT_DISPLAY_NAME.LinkText]: "Link Text",

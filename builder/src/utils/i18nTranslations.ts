@@ -87,6 +87,7 @@ const parseSerializedNodes = (raw: string): SerializedNodes | null => {
 }
 
 const TEXTUAL_NODE_NAMES = new Set([
+  CRAFT_DISPLAY_NAME.Button,
   CRAFT_DISPLAY_NAME.Heading,
   CRAFT_DISPLAY_NAME.Paragraph,
   CRAFT_DISPLAY_NAME.LinkText,

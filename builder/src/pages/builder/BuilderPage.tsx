@@ -23,6 +23,7 @@ import { CraftBlock } from "../../craft/Block.tsx"
 import { CraftBody } from "../../craft/Body.tsx"
 import { CraftHeading } from "../../craft/CraftHeading.tsx"
 import { CraftParagraph } from "../../craft/CraftParagraph.tsx"
+import { CraftButton } from "../../craft/CraftButton.tsx"
 import { CraftLinkText } from "../../craft/LinkText.tsx"
 import { CraftLinkBlock } from "../../craft/CraftLinkBlock.tsx"
 import { CraftContentList } from "../../craft/ContentList.tsx"
@@ -351,6 +352,7 @@ export const BuilderPage = () => {
           Body: CraftBody,
           Heading: CraftHeading,
           Paragraph: CraftParagraph,
+          Button: CraftButton,
           LinkText: CraftLinkText,
           LinkBlock: CraftLinkBlock,
           ContentList: CraftContentList,

@@ -51,6 +51,7 @@ export const LinkTextSettingsFields = ({ asAccordion }: Props) => {
       const displayName = node ? resolveNodeDisplayName(node) : null;
       const isLinkSettings =
         displayName === CRAFT_DISPLAY_NAME.LinkText ||
+        displayName === CRAFT_DISPLAY_NAME.Button ||
         displayName === CRAFT_DISPLAY_NAME.LinkBlock;
       let foundContentListAncestor = false;
       let nearestListContentTypeId: string | null = null;

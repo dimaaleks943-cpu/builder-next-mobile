@@ -50,6 +50,7 @@ import {
 import { TextFieldsIcon } from "../../../../icons/TextFieldsIcon.tsx";
 
 const getDefaultTextForDisplayName = (displayName: string | null): string => {
+  if (displayName === CRAFT_DISPLAY_NAME.Button) return "Кнопка"
   if (displayName === CRAFT_DISPLAY_NAME.LinkText) return "Ссылка"
   if (displayName === CRAFT_DISPLAY_NAME.Paragraph) return CRAFT_PARAGRAPH_DEFAULT_TEXT
 

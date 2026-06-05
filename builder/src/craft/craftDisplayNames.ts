@@ -5,6 +5,7 @@
 export const CRAFT_DISPLAY_NAME = {
   Block: "CraftBlock",
   Body: "CraftBody",
+  Button: "CraftButton",
   Heading: "CraftHeading",
   Paragraph: "CraftParagraph",
   LinkText: "CraftLinkText",
