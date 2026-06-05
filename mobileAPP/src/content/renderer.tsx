@@ -15,6 +15,7 @@ import { Paragraph } from "../components/Paragraph";
 import { Image } from "../components/Image";
 import { LinkText } from "../components/LinkText";
 import { LinkBlock } from "../components/LinkBlock";
+import { Button } from "../components/Button";
 import { CategoryFilter } from "../components/CategoryFilter";
 import { ContentList } from "../components/ContentList";
 
@@ -26,6 +27,7 @@ const componentMap = {
   Image,
   LinkText,
   LinkBlock,
+  Button,
   CategoryFilter, // связка с ContentList по `filterScope` через CollectionFilterScope
   ContentList,
 } as Record<string, React.ComponentType<any>>;

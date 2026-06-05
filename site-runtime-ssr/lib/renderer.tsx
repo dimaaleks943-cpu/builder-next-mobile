@@ -5,6 +5,7 @@ import { Heading } from "@/components/Heading"
 import { Paragraph } from "@/components/Paragraph"
 import { LinkText } from "@/components/LinkText"
 import { LinkBlock } from "@/components/LinkBlock"
+import { Button } from "@/components/Button"
 import { Image } from "@/components/Image"
 import { ContentList } from "@/components/ContentList"
 import { CategoryFilter } from "@/components/CategoryFilter"
@@ -17,6 +18,7 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   Paragraph,
   LinkText,
   LinkBlock,
+  Button,
   Image,
   ContentList,
   CategoryFilter, // выбор категории в контексте для ContentList с тем же filterScope
