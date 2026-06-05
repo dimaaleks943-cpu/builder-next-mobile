@@ -81,8 +81,8 @@ interface SelectedTypographyProps {
   textAlign?: "left" | "center" | "right" | "justify";
   color?: string;
   textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
-  strokeColor?: string;
-  strokeWidth?: number;
+  WebkitTextStrokeColor?: string;
+  WebkitTextStrokeWidth?: number | string;
   style?: ResponsiveStyle;
   textDecoration?: string;
   textDecorationSkipInk?: string;
@@ -125,6 +125,22 @@ const parseDecorationFromResolved = (resolved: Record<string, unknown>): TextDec
 
 const parseItalicFromResolved = (resolved: Record<string, unknown>): boolean =>
   resolved.fontStyle === "italic"
+
+const parseStrokeWidthFromProp = (value: unknown): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string") {
+    const t = value.trim()
+    if (t === "") return undefined
+    const pxMatch = t.match(/^(-?(?:\d+\.?\d*|\.\d+))px$/i)
+    if (pxMatch) {
+      const n = Number(pxMatch[1])
+      return Number.isFinite(n) ? n : undefined
+    }
+    const n = Number(t)
+    return Number.isFinite(n) ? n : undefined
+  }
+  return undefined
+}
 
 interface EditorSelection {
   selectedId: string | null;
@@ -174,7 +190,7 @@ export const TypographyAccordion = () => {
     COLORS.black,
   )
   const [strokeColorDraft, setStrokeColorDraft] = useState<string>(
-    selectedProps.strokeColor ?? COLORS.black,
+    selectedProps.WebkitTextStrokeColor ?? COLORS.black,
   )
   const [moreTypeOptionsOpen, setMoreTypeOptionsOpen] = useState(false)
   const [textIndentDraft, setTextIndentDraft] = useState("")
@@ -204,7 +220,7 @@ export const TypographyAccordion = () => {
 
   useEffect(() => {
     setStrokeColorDraft(
-      (getStyleProp("strokeColor") as string | undefined) ??
+      (getStyleProp("WebkitTextStrokeColor") as string | undefined) ??
       COLORS.black,
     )
   }, [selectedProps, selectedId, viewport])
@@ -270,7 +286,7 @@ export const TypographyAccordion = () => {
       window.clearTimeout(strokeColorTimeoutRef.current)
     }
     strokeColorTimeoutRef.current = window.setTimeout(() => {
-      setStyleProp("strokeColor", value)
+      setStyleProp("WebkitTextStrokeColor", value)
     }, 200)
   }
 
@@ -333,7 +349,7 @@ export const TypographyAccordion = () => {
   const handleStrokeWidthChange = (event: ChangeEvent<HTMLInputElement>) => {
     const next = Number(event.target.value)
     const safe = Number.isNaN(next) ? 0 : next
-    setStyleProp("strokeWidth", safe)
+    setStyleProp("WebkitTextStrokeWidth", safe)
   }
 
   const handleStrokeColorChange = (value: string) => {
@@ -341,9 +357,7 @@ export const TypographyAccordion = () => {
     scheduleStrokeColorUpdate(value)
   }
 
-  const resetStrokeWidth = () => {
-    setStyleProp("strokeWidth", undefined)
-  }
+  const resetStrokeWidth = () => setStyleProp("WebkitTextStrokeWidth", undefined)
 
   const resetStrokeColor = () => {
     if (strokeColorTimeoutRef.current !== undefined) {
@@ -351,7 +365,7 @@ export const TypographyAccordion = () => {
       strokeColorTimeoutRef.current = undefined
     }
     setStrokeColorDraft(COLORS.black)
-    setStyleProp("strokeColor", undefined)
+    setStyleProp("WebkitTextStrokeColor", undefined)
   }
 
   const applyTextShadowPatch = (patch: Partial<TextShadowParts>) => {
@@ -467,14 +481,22 @@ export const TypographyAccordion = () => {
     columnCountProp !== "" &&
     !(typeof columnCountProp === "number" && columnCountProp === 0)
 
-  const responsiveStrokeWidth = getStyleProp("strokeWidth") as number | undefined
+  const responsiveStrokeWidthRaw = getStyleProp("WebkitTextStrokeWidth") as
+    | number
+    | string
+    | undefined
+  const parsedResponsiveStrokeWidth = parseStrokeWidthFromProp(
+    responsiveStrokeWidthRaw,
+  )
+  const responsiveStrokeWidth = parsedResponsiveStrokeWidth ?? 0
 
   const hasStrokeWidthResetValue =
-    responsiveStrokeWidth !== undefined &&
-    responsiveStrokeWidth !== null &&
-    Number(responsiveStrokeWidth) !== 0
+    parsedResponsiveStrokeWidth !== undefined &&
+    parsedResponsiveStrokeWidth !== 0
 
-  const responsiveStrokeColor = getStyleProp("strokeColor") as string | undefined
+  const responsiveStrokeColor = getStyleProp("WebkitTextStrokeColor") as
+    | string
+    | undefined
 
   const hasStrokeColorResetValue =
     responsiveStrokeColor !== undefined &&
