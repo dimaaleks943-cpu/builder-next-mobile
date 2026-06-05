@@ -111,8 +111,15 @@ const styleBranchToCssDeclarations = (style: StyleRecord): Record<string, string
   if (typeof resolvedStyle.textAlign === "string") set("text-align", resolvedStyle.textAlign)
   if (typeof resolvedStyle.color === "string") set("color", resolvedStyle.color)
   if (typeof resolvedStyle.textTransform === "string") set("text-transform", resolvedStyle.textTransform)
-  if (typeof resolvedStyle.strokeColor === "string") set("-webkit-text-stroke-color", resolvedStyle.strokeColor)
-  set("-webkit-text-stroke-width", toCssLength(resolvedStyle.strokeWidth))
+  const webkitTextStrokeColor =
+    typeof resolvedStyle.WebkitTextStrokeColor === "string"
+      ? resolvedStyle.WebkitTextStrokeColor
+      : typeof resolvedStyle.strokeColor === "string"
+        ? resolvedStyle.strokeColor
+        : undefined
+  set("-webkit-text-stroke-color", webkitTextStrokeColor)
+  const webkitTextStrokeWidthRaw = resolvedStyle.WebkitTextStrokeWidth ?? resolvedStyle.strokeWidth
+  set("-webkit-text-stroke-width", toCssLength(webkitTextStrokeWidthRaw))
   const textDecorationFromFlags = toTextDecoration(resolvedStyle.isUnderline, resolvedStyle.isStrikethrough)
   if (typeof resolvedStyle.textDecoration === "string") {
     set("text-decoration", resolvedStyle.textDecoration)
