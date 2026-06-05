@@ -48,7 +48,6 @@ import { TypographyWrapTruncateSection } from "./components/TypographyWrapTrunca
 import { usePreviewViewport } from "../../context/PreviewViewportContext.tsx"
 import { useStyleEditing } from "../../hooks/useStyleEditing.ts"
 import {
-  getResponsiveStyleProp,
   resolveResponsiveStyle,
   setResponsiveStyleProp,
   type ResponsiveStyle,
@@ -155,7 +154,7 @@ const renderTextAlignIcon = (
 export const TypographyAccordion = () => {
   const { actions } = useEditor()
   const viewport = usePreviewViewport()
-  const { getStyleProp, setStyleProp } = useStyleEditing()
+  const { getStyleProp, setStyleProp, mutateClassStyle } = useStyleEditing()
   const { selectedId, selectedProps } = useEditor(
     (state): EditorSelection => {
       const [id] = Array.from(state.events.selected)
@@ -356,44 +355,47 @@ export const TypographyAccordion = () => {
   }
 
   const applyTextShadowPatch = (patch: Partial<TextShadowParts>) => {
+    const styleRaw = getStyleProp("textShadow")
+    const draftRaw = (selectedProps as Record<string, unknown>)[TEXT_SHADOW_DRAFT_KEY]
+    const styleStr = typeof styleRaw === "string" ? styleRaw.trim() : ""
+    const draftStr = typeof draftRaw === "string" ? draftRaw.trim() : ""
+    const sourceRaw = styleStr.length > 0 ? styleStr : draftStr
+    const cur = parseTextShadowFromProp(sourceRaw.length > 0 ? sourceRaw : undefined)
+    const built = buildTextShadow({ ...cur, ...patch })
+    if (styleStr.length > 0) {
+      setStyleProp("textShadow", built)
+      return
+    }
     actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      const raw = getEffectiveTextShadowRaw(props, viewport)
-      const cur = parseTextShadowFromProp(raw.length > 0 ? raw : undefined)
-      const built = buildTextShadow({ ...cur, ...patch })
-      if (isTextShadowOnCanvas(props, viewport)) {
-        setResponsiveStyleProp(props, "textShadow", built, viewport)
-      } else {
-        props[TEXT_SHADOW_DRAFT_KEY] = built
-      }
+      props[TEXT_SHADOW_DRAFT_KEY] = built
     })
   }
 
   const handleClearTextShadow = () => {
     actions.setProp(selectedId, (props: Record<string, unknown>) => {
       delete props[TEXT_SHADOW_DRAFT_KEY]
-      setResponsiveStyleProp(props, "textShadow", undefined, viewport)
     })
+    setStyleProp("textShadow", undefined)
     setTextShadowAnchorEl(null)
   }
 
   const handleToggleTextShadowCanvas = () => {
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      const applied = isTextShadowOnCanvas(props, viewport)
-      const styleVal = getResponsiveStyleProp(props, "textShadow", viewport)
-      const styleStr = typeof styleVal === "string" ? styleVal.trim() : ""
-
-      if (applied && styleStr.length > 0) {
+    const styleVal = getStyleProp("textShadow")
+    const styleStr = typeof styleVal === "string" ? styleVal.trim() : ""
+    if (styleStr.length > 0) {
+      actions.setProp(selectedId, (props: Record<string, unknown>) => {
         props[TEXT_SHADOW_DRAFT_KEY] = styleStr
-        setResponsiveStyleProp(props, "textShadow", undefined, viewport)
-        return
-      }
-
-      const draft = props[TEXT_SHADOW_DRAFT_KEY]
-      if (typeof draft === "string" && draft.trim().length > 0) {
-        setResponsiveStyleProp(props, "textShadow", draft.trim(), viewport)
+      })
+      setStyleProp("textShadow", undefined)
+      return
+    }
+    const draft = (selectedProps as Record<string, unknown>)[TEXT_SHADOW_DRAFT_KEY]
+    if (typeof draft === "string" && draft.trim().length > 0) {
+      setStyleProp("textShadow", draft.trim())
+      actions.setProp(selectedId, (props: Record<string, unknown>) => {
         delete props[TEXT_SHADOW_DRAFT_KEY]
-      }
-    })
+      })
+    }
   }
 
   const textShadowRawEffective = getEffectiveTextShadowRaw(
@@ -423,13 +425,8 @@ export const TypographyAccordion = () => {
     if (!hasTextShadowConfig) {
       actions.setProp(selectedId, (props: Record<string, unknown>) => {
         delete props[TEXT_SHADOW_DRAFT_KEY]
-        setResponsiveStyleProp(
-          props,
-          "textShadow",
-          buildTextShadow(DEFAULT_TEXT_SHADOW),
-          viewport,
-        )
       })
+      setStyleProp("textShadow", buildTextShadow(DEFAULT_TEXT_SHADOW))
     }
   }
 
@@ -487,7 +484,7 @@ export const TypographyAccordion = () => {
   const handleLetterSpacingCommit = (
     next: string | number | undefined,
   ) => {
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+    mutateClassStyle((props) => {
       if (next === undefined || next === null || next === "") {
         setResponsiveStyleProp(props, "letterSpacing", undefined, viewport)
         return
@@ -558,7 +555,7 @@ export const TypographyAccordion = () => {
     next: string | number | undefined,
   ) => {
     if (!isGridDisplay) return
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+    mutateClassStyle((props) => {
       if (next === undefined || next === null || next === "") {
         setResponsiveStyleProp(props, "columnCount", undefined, viewport)
         return
@@ -598,7 +595,7 @@ export const TypographyAccordion = () => {
 
   const handleFormatItalicPress = () => {
     const nextItalic = !formatItalic
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
+    mutateClassStyle((props) => {
       setResponsiveStyleProp(
         props,
         "fontStyle",
@@ -628,15 +625,9 @@ export const TypographyAccordion = () => {
     setColumnsSettingsAnchorEl(el)
   }
 
-  const applyDecorationPartsPatch = (
-    patch: Partial<TextDecorationAdvancedParts>,
-  ) => {
-    actions.setProp(selectedId, (props: Record<string, unknown>) => {
-      const curRaw = getResponsiveStyleProp(
-        props,
-        "textDecoration",
-        viewport,
-      ) as string | undefined
+  const applyDecorationPartsPatch = (patch: Partial<TextDecorationAdvancedParts>) => {
+    mutateClassStyle((props) => {
+      const curRaw = getStyleProp("textDecoration") as string | undefined
       const merged = { ...parseTextDecorationAdvanced(curRaw), ...patch }
       const built = buildTextDecorationAdvanced(merged)
       setResponsiveStyleProp(props, "textDecoration", built, viewport)
