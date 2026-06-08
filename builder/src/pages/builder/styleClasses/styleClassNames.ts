@@ -13,6 +13,7 @@ const DISPLAY_LABEL: Record<string, string> = {
   [CRAFT_DISPLAY_NAME.ContentList]: "Content List",
   [CRAFT_DISPLAY_NAME.ContentListCell]: "List Cell",
   [CRAFT_DISPLAY_NAME.CategoryFilter]: "Category Filter",
+  [CRAFT_DISPLAY_NAME.Navbar]: "Navbar",
 }
 
 const getStyleClassDisplayLabel = (resolvedName: string): string =>

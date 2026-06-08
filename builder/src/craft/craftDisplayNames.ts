@@ -14,4 +14,5 @@ export const CRAFT_DISPLAY_NAME = {
   ContentList: "CraftContentList",
   ContentListCell: "CraftContentListCell",
   CategoryFilter: "CraftCategoryFilter",
+  Navbar: "CraftNavbar",
 } as const

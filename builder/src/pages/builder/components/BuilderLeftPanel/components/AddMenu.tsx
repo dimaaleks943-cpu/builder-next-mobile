@@ -8,7 +8,7 @@ import {
   Typography,
 } from "@mui/material"
 import type { ReactElement } from "react"
-import { useEditor } from "@craftjs/core"
+import { Element, useEditor } from "@craftjs/core"
 import { useMemo, useState } from "react"
 import { COLORS } from "../../../../../theme/colors"
 import { CraftBlock } from "../../../../../craft/Block.tsx"
@@ -20,8 +20,9 @@ import { CraftLinkBlock } from "../../../../../craft/CraftLinkBlock.tsx"
 import { CraftContentList } from "../../../../../craft/ContentList.tsx"
 import { CraftCategoryFilter } from "../../../../../craft/CategoryFilter.tsx"
 import { CraftImage } from "../../../../../craft/Image.tsx"
+import { CraftNavbar } from "../../../../../craft/CraftNavbar.tsx"
 import { useBuilderModeContext } from "../../../context/BuilderModeContext"
-import { MODE_TYPE } from "../../../builder.enum"
+import { MODE_TYPE, PreviewViewport } from "../../../builder.enum"
 
 interface ComponentItem {
   name: string;
@@ -69,6 +70,33 @@ export const useCategories = (): Category[] => {
       {
         title: "Медиа",
         items: [{ name: "Изображение", component: <CraftImage /> }],
+      },
+      {
+        title: "Advanced",
+        items: [
+          {
+            name: "Панель навигации",
+            component: (
+              <Element is={CraftNavbar} canvas>
+                <Element
+                  is={CraftBlock}
+                  canvas
+                  style={{
+                    [PreviewViewport.DESKTOP]: {
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "16px",
+                    },
+                  }}
+                >
+                  <Element is={CraftLinkText} text="About" href="#" linkMode="url" />
+                  <Element is={CraftLinkText} text="Home" href="#" linkMode="url" />
+                  <Element is={CraftLinkText} text="Contact" href="#" linkMode="url" />
+                </Element>
+              </Element>
+            ),
+          },
+        ],
       },
     ],
     [isRn],
