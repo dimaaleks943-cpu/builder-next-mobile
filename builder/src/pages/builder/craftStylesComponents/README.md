@@ -1,64 +1,116 @@
 # craftStylesComponents
 
-Панель стилей конструктора (правая колонка, вкладка **Style**). Каждый аккордеон редактирует CSS-свойства выбранного элемента через хук `useStyleEditing` и поддерживает **responsive-стили** по текущему viewport (`usePreviewViewport`).
+Панель стилей конструктора — правая колонка, вкладка **Style**. Каждый аккордеон редактирует CSS выбранного элемента через `useStyleEditing` с учётом текущего viewport (`usePreviewViewport`).
 
-Аккордеоны не рендерятся, если нет выбранного элемента (`selectedId`).
-
-Режим **RN** (`MODE_TYPE.RN`) скрывает часть web-only контролов (см. пометки в описаниях).
+- Аккордеоны не рендерятся без выбранного элемента (`selectedId`).
+- В режиме **RN** (`MODE_TYPE.RN`) часть web-only контролов скрыта (см. пометки в описаниях аккордеонов).
 
 ---
 
 ## BackgroundAccordion — «Фон»
 
-Управляет заливкой и многослойным фоном.
+Управляет `background-color`, многослойным фоном (`background-image` и сопутствующие свойства) и clipping.
 
-При добавление "Image & Gradient" открывается Poper с настройкой. Поле Type определяет 4 режима:
-{ id: "url", content: <AssetsIcon size={16} fill={iconFill}/> },
-{ id: "linear-gradient", content: <GradientRoundedIcon size={16} fill={iconFill}/> },
-{ id: "radial-gradient", content: <RadialGradientIcon size={16} fill={iconFill}/> },
-{ id: "overlay", content: <OverlayRoundedIcon size={16} fill={iconFill}/> },
-До дефолту превым устанавливается url, в craftElement сразу попадают эти параметеры:
+### Поток работы
+
+1. Пользователь нажимает **+** у блока **Image & Gradient** — открывается `ImageGradientMenuPopper`.
+2. Выбирает **Type** (режим заливки) и настраивает параметры в popper.
+3. Слой появляется в списке как `SortableBackgroundLayerRow`; клик по строке снова открывает popper для редактирования этого слоя.
+4. Можно добавить несколько слоёв — каждый со своим режимом и настройками.
+5. Отдельно задаются **Color** (`background-color`) и **Clipping** (`background-clip` / `-webkit-text-fill-color`).
+
+### Режимы Type (`ImageGradientMenuPopper`)
+
+Переключатель **Type** — четыре режима:
+
+| Режим | Иконка | Управляемые CSS-свойства |
+|-------|--------|--------------------------|
+| `url` | Assets | `background-image`, `background-size`, `background-position`, `background-repeat`, `background-attachment` |
+| `linear-gradient` | Gradient | только `background-image` |
+| `radial-gradient` | Radial | только `background-image` |
+| `overlay` | Overlay | только `background-image` (равномерный цветной слой) |
+
+**При смене режима настройки предыдущего режима сбрасываются** — в слой записываются дефолты нового режима.
+
+#### `url` (по умолчанию при добавлении слоя)
+
+Сразу в стили попадают:
+
+```css
 background-image: url(/src/assets/background-image.svg);
 background-position: 0px 0px;
 background-size: auto;
+background-repeat: repeat;
+background-attachment: scroll;
+```
 
-Так же ниже в Poper предлает настройку:
-background-image - можно выбрать изображение, хнраить ссылку урл на картинку
-background-size: где кнопку custom - устанавливает auto, и позволяет записать значения with и height
-background-position - настройка background-position
-background-repeat
-background-attachment
+В popper доступно:
 
-Пользотваель может настроесть все эти CSS свой-ва, если пользователь переключается на linear-gradient либо любой другой режим все эти свой-ва удаляются и устанавливается:
+- **background-image** — выбор изображения, хранится URL;
+- **background-size** — пресеты или **custom** (`auto` + поля width / height);
+- **background-position**;
+- **background-repeat**;
+- **background-attachment**.
+
+#### `linear-gradient`
+
+Сопутствующие url-свойства (`size`, `position`, `repeat`, `attachment`) очищаются. Устанавливается:
+
+```css
 background-image: linear-gradient(black, white);
-В этом режиме мы управляем background-image
+```
 
-При установке radial-gradient мы удаляем всё что поставили в других режимах и устанавливаем:
-background-image: radial-gradient(circle, black, rgb(38, 38, 38) 17%, white);
-Все настройки внутри управляют background-image
+Дальнейшие правки в секции редактора меняют только `background-image`.
 
-4 режим устанавливает overlay:   
+#### `radial-gradient`
+
+Аналогично — всё от других режимов сбрасывается, устанавливается дефолт:
+
+```css
+background-image: radial-gradient(circle, black, white);
+```
+
+Редактор управляет только `background-image`.
+
+#### `overlay`
+
+Устанавливается равномерный полупрозрачный слой:
+
+```css
 background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5));
+```
 
-Когда пользователь переключается между режимами прошлый настройки удаляются!
+Цвет настраивается полем **Color** в popper.
 
+### Несколько слоёв
 
+Пользователь может добавить несколько фонов. В painted CSS значения объединяются через запятую (по одному значению на видимый слой):
 
-Настроек может быть несколько. Пользователь может установить несколько настроек фона:
-Пример хранения:
-background-image: url(https://cdn.prod.website-files.com/6940fbf…/6940fc5…_c2f5c949-97e3-4088-8145-d0f7c234301d.avif), url(https://cdn.prod.website-files.com/6940fbf…/6940fc4…_2a0fe3a7-a7ca-4fc6-babf-2360a8073238.avif);
+```css
+background-image: url(…avif), url(…avif);
 background-position: 100% 0%, 50% 50%;
 background-size: contain, cover;
 background-repeat: repeat-y, repeat-x;
 background-attachment: scroll, fixed;
+```
 
-Каждая настройка отображается в аккордионе как SortableBackgroundLayerRow, при клике на неё я могу отдельо отредактировать выбраный фон, так же есть сортировку, кнопка удаления и кнока hide.
-Кнопка удаления - удаляем этот фон
-Кнопка hide - отключет его, пользователь может потом включить обратно
-Сортировка меняет порядок нескольких фонов
+Каждый слой — строка `SortableBackgroundLayerRow`:
+
+| Действие | Поведение |
+|----------|-----------|
+| Клик по строке | Открыть popper и редактировать выбранный слой |
+| Drag | Изменить порядок слоёв (и соответствующих comma-значений) |
+| Delete | Удалить слой |
+| Hide | Скрыть слой с канваса; настройки сохраняются, слой можно включить обратно |
+
+### Хранение данных
+
+Два уровня (паттерн как у `boxShadowDraft` в `EffectsAccordion`):
+
+- **Node props** (builder-only) — полная модель слоёв: `backgroundImageLayers`, `backgroundImageLayerVisible`, `backgroundImageLayerIds`, `backgroundImageLayerSizes`, `backgroundImageLayerPositions`, `backgroundImageLayerRepeats`, `backgroundImageLayerAttachments`. Нужны для hide, drag-and-drop и per-layer редактирования. В runtime SSR не попадают.
+- **Style class** — итоговый painted CSS (`background-image`, `background-size`, …) только для **видимых** слоёв; синхронизируется через `syncPaintedBackgroundStack`.
 
 ---
-
 
 ## Структура папки
 
