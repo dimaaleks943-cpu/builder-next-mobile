@@ -7,6 +7,18 @@
 
 ---
 
+## Сброс стилей (Reset)
+
+Общий механизм для всех аккордеонов. Поля с явно заданным значением показывают кликабельный label; по клику открывается popper с кнопкой **Сброс** (также **Alt + click** на label).
+
+Реализован через `labelReset` (`hasValue` + `onReset`) в контролах `CraftSettingsSelect`, `CraftSettingsInput`, `CraftSettingsColorField` и аналогах.
+
+**Что делает сброс:** `onReset` записывает `undefined` в responsive-ветку style class элемента (`setStyleProp` / `setResponsiveStyleProp`). Свойство **удаляется из craft element** — в JSON узла его больше нет, элемент снова наследует браузерное / каскадное значение. Это не подстановка дефолта в UI, а именно отмена переопределения.
+
+Кнопка сброса видна только пока `hasValue: true` — то есть пока свойство реально записано в стили текущего viewport.
+
+---
+
 ## BackgroundAccordion — «Фон»
 
 Управляет `background-color`, многослойным фоном (`background-image` и сопутствующие свойства) и clipping.
@@ -17,7 +29,7 @@
 2. Выбирает **Type** (режим заливки) и настраивает параметры в popper.
 3. Слой появляется в списке как `SortableBackgroundLayerRow`; клик по строке снова открывает popper для редактирования этого слоя.
 4. Можно добавить несколько слоёв — каждый со своим режимом и настройками.
-5. Отдельно задаются **Color** (`background-color`) и **Clipping** (`background-clip` / `-webkit-text-fill-color`).
+5. Ниже списка слоёв — **Color** и **Clipping** (см. отдельные подразделы).
 
 ### Режимы Type (`ImageGradientMenuPopper`)
 
@@ -102,6 +114,27 @@ background-attachment: scroll, fixed;
 | Drag | Изменить порядок слоёв (и соответствующих comma-значений) |
 | Delete | Удалить слой |
 | Hide | Скрыть слой с канваса; настройки сохраняются, слой можно включить обратно |
+
+### Color
+
+Поле **Color** (`CraftSettingsColorField`) задаёт `background-color` — сплошную заливку под слоями Image & Gradient.
+
+- Поддерживает CSS-переменные (`withVariables`).
+- Обычный цвет коммитится с debounce ~200 ms; переменная — сразу.
+- В UI до первого изменения показывается `#ffffff`; после записи в style class отображается фактическое значение элемента.
+
+### Clipping
+
+Селект **Clipping** (`CraftSettingsSelect`) управляет обрезкой фона. Записывает пару свойств в style class:
+
+| Значение в UI | CSS |
+|---------------|-----|
+| None | `background-clip: border-box`, `-webkit-text-fill-color: inherit` |
+| Clip background to padding | `background-clip: padding-box` |
+| Clip background to content | `background-clip: content-box` |
+| Clip background to text | `background-clip: text`, `-webkit-text-fill-color: transparent` |
+
+**Сброс** (см. общий раздел выше): `handleClipReset` удаляет `backgroundClip` и `WebkitTextFillColor` из craft element (`undefined` в текущем viewport). После сброса clipping снова определяется каскадом, а не переопределением в стилях узла. Кнопка сброса доступна, пока хотя бы одно из этих свойств явно задано (`hasClippingOverrides`).
 
 ### Хранение данных
 
