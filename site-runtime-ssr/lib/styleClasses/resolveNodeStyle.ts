@@ -30,6 +30,17 @@ export const resolveSerializedNodeStyle = (
 }
 
 
+/** Builder-only node props; must not leak to published runtime DOM. */
+const BACKGROUND_LAYER_BUILDER_KEYS = [
+  "backgroundImageLayers",
+  "backgroundImageLayerVisible",
+  "backgroundImageLayerIds",
+  "backgroundImageLayerSizes",
+  "backgroundImageLayerPositions",
+  "backgroundImageLayerRepeats",
+  "backgroundImageLayerAttachments",
+] as const
+
 /** SSR: styles come from registry CSS and orphan attribute selectors, not inline props. */
 export const propsForRuntimeSsr = (
   rawProps: Record<string, unknown>,
@@ -40,5 +51,8 @@ export const propsForRuntimeSsr = (
   const props = { ...rawProps }
   delete props.styleClassIds
   delete props.style
+  BACKGROUND_LAYER_BUILDER_KEYS.forEach((key) => {
+    delete props[key]
+  })
   return props
 }
