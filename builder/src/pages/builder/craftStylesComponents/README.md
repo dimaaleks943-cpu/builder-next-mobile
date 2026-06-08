@@ -298,6 +298,412 @@ box-shadow: 0px 2px 5px 0px rgba(0, 0, 0, 0.2);
 
 ---
 
+## PositioningAccordion — «Позиционирование»
+
+Управляет `position`, `inset`, `z-index`, `float` и `clear`.
+
+### Поток работы
+
+1. **Position** — выбор режима позиционирования.
+2. При `position` ≠ `static` — блок **Inset** (пресеты + пошаговая настройка сторон), **Relative to** и **z-Index**.
+3. Секция **Float and clear** раскрывается отдельной кнопкой — **Float** и **Clear**.
+
+### Position
+
+Селект **Position** → CSS `position`.
+
+| Значение | Поведение |
+|----------|-----------|
+| `static` | Свойство **удаляется** из craft element; блок Inset скрывается |
+| `relative` | `position: relative`; `inset` **очищается** |
+| `absolute` | `position: absolute`; доступен Inset |
+| `fixed` | `position: fixed`; доступен Inset |
+| `sticky` | `position: sticky`; `inset` **очищается** |
+
+### Inset
+
+Показывается при `position: absolute` или `position: fixed`.
+
+#### Пресеты (9 иконок)
+
+Быстрая привязка к краям / центру. Примеры значений:
+
+| Пресет | `inset` |
+|--------|---------|
+| Верхний левый угол | `0% auto auto 0%` |
+| Верхний правый | `0% 0% auto auto` |
+| Нижний левый | `auto auto 0% 0%` |
+| Растянуть на 0% | `0%` (все стороны) |
+
+Полный список — `INSET_OPTIONS` в `positioningAccordion.const.tsx`.
+
+#### Ручная настройка сторон
+
+Визуальный блок **top / right / bottom / left**. Клик по стороне открывает popper:
+
+- слайдер с единицами (`px`, `%`, `em`, …);
+- пресеты: **Auto**, `0`, `10`, `20`, `40`, `60`, `100`, `140`, `220`;
+- **Сброс** стороны → `auto` для выбранной стороны (остальные стороны не меняются).
+
+Значение пишется в одно свойство `inset` (shorthand `top right bottom left`).
+
+### Relative to
+
+Только отображение — **не пишет CSS**. Показывает имя ближайшего предка с `position: relative` (обход вверх от родителя выбранного узла). Клик по кнопке выделяет этот узел на канвасе. Если предка нет — «—», кнопка неактивна.
+
+### z-Index
+
+Поле **z-Index** (`CraftSettingsValueWithUnit`, unitless) → `z-index`. Placeholder **Auto** — до записи свойство отсутствует в craft element.
+
+### Float and clear
+
+Раскрывающаяся секция.
+
+#### Float
+
+Переключатель → `float`.
+
+| Значение | CSS |
+|----------|-----|
+| `none` (иконка ✕) | свойство **удаляется** |
+| `left` | `float: left` |
+| `right` | `float: right` |
+
+#### Clear
+
+Переключатель → `clear`.
+
+| Значение | CSS |
+|----------|-----|
+| `none` (иконка ✕) | свойство **удаляется** |
+| `left` | `clear: left` |
+| `right` | `clear: right` |
+| `both` | `clear: both` |
+
+### Поля с Reset
+
+| Поле | Поведение сброса |
+|------|------------------|
+| **Inset → popper стороны** | Сторона → `auto` (внутри shorthand `inset`) |
+| **Position** | Неявный: `static` удаляет `position`; `relative` / `sticky` удаляют `inset` |
+| **Float** | Неявный: `none` удаляет `float` |
+| **Clear** | Неявный: `none` удаляет `clear` |
+
+**z-Index**, **Relative to** — без `labelReset`. Полное удаление `inset` — смена **Position** на `static`, `relative` или `sticky`.
+
+---
+
+## SizeAccordion — «Размеры»
+
+Управляет размерами элемента, overflow, aspect ratio, box model и (для медиа) `object-fit` / `object-position`.
+
+> **RN:** только **Width**, **Height**, **Min H** с единицами `CSS_SIZE_UNITS_RN`. Секции Overflow, More size options, Fit/Position скрыты.
+
+### Поток работы
+
+1. Сетка полей **Width** / **Height** / min / max (web) или **Width** / **Height** / **Min H** (RN).
+2. **Overflow** (web) — переключатель видимости содержимого.
+3. **More size options** (web) — **Ratio**, **Box size**.
+4. **Fit** + кнопка **Position** (web) — поведение вложенного изображения / медиа.
+
+### Размеры (Width / Height / Min / Max)
+
+Поля `CraftSettingsValueWithUnit` → соответствующие CSS-свойства:
+
+| Поле (web) | CSS | Примечание |
+|------------|-----|------------|
+| **Width** | `width` | |
+| **Height** | `height` | |
+| **Min W** | `min-width` | |
+| **Min H** | `min-height` | |
+| **Max W** | `max-width` | placeholder **None** |
+| **Max H** | `max-height` | placeholder **None** |
+
+| Поле (RN) | CSS |
+|-----------|-----|
+| **Width** | `width` |
+| **Height** | `height` |
+| **Min H** | `min-height` |
+
+Пустое значение / снятие единицы удаляет свойство из craft element. Отдельного `labelReset` нет.
+
+### Overflow (web)
+
+Переключатель **Overflow** → `overflow`.
+
+| Значение | CSS |
+|----------|-----|
+| visible | `overflow: visible` |
+| hidden | `overflow: hidden` |
+| clip | `overflow: clip` |
+| scroll | `overflow: scroll` |
+| auto | `overflow: auto` |
+
+До первого выбора ни одна кнопка не подсвечена — свойство не задано.
+
+### More size options (web)
+
+#### Ratio
+
+Селект **Ratio** → `aspect-ratio`.
+
+| Значение | CSS |
+|----------|-----|
+| Auto | `aspect-ratio: auto` |
+| Anamorphic (2.39:1) | `2.39 / 1` |
+| Univisium/Netflix (2:1) | `2 / 1` |
+| Widescreen (16:9) | `16 / 9` |
+| Landscape (3:2) | `3 / 2` |
+| Portrait (2:3) | `2 / 3` |
+| Square (1:1) | `1 / 1` |
+| Custom | произвольное `W / H`; при первом выборе без значения — дефолт `16 / 10` |
+
+При **Custom** появляются поля **Width** и **Height** (числитель / знаменатель).
+
+#### Box size
+
+Переключатель **Box size** → `box-sizing`.
+
+| Значение | CSS |
+|----------|-----|
+| border-box | `box-sizing: border-box` |
+| content-box | `box-sizing: content-box` |
+
+### Fit и Position (web)
+
+Для элементов с вложенным изображением / медиа.
+
+#### Fit
+
+Селект **Fit** → `object-fit`: Fill, Contain, Cover, None, Scale down.
+
+В UI до записи показывается **Fill**; первый клик по селекту записывает `object-fit: fill`, если свойство ещё не было задано.
+
+#### Position
+
+Кнопка **⋯** открывает popper **Position** → `object-position`:
+
+- сетка 3×3 (`BackgroundPositionNineGrid`);
+- поля **Left** и **Top** с единицами (`%`, `px`, …);
+- дефолт в UI при отсутствии свойства: `50% 50%`.
+
+### Поля с Reset
+
+| Поле | Поведение сброса |
+|------|------------------|
+| **Overflow** | Удаляет `overflow` из craft element |
+| **Ratio** | Удаляет `aspectRatio` (`labelReset`) |
+| **Box size** | Удаляет `boxSizing` |
+| **Fit** | Удаляет `objectFit` (`labelReset`) |
+| **Position** (popper) | Удаляет `objectPosition` (`labelReset`) |
+
+**Width**, **Height**, **Min W/H**, **Max W/H**, поля **Custom ratio** — без `labelReset`.
+
+---
+
+## SpacingAccordion — «Отступы»
+
+Визуальный редактор **margin** и **padding** в виде вложенных блоков (box model).
+
+### Поток работы
+
+1. Внешний блок — **margin** (Top / Right / Bottom / Left).
+2. Внутренний блок — **padding** (Top / Right / Bottom / Left).
+3. Каждая сторона — числовое поле `EdgeInput`; изменение сразу пишет в style class.
+
+### Поля
+
+| Поле | CSS |
+|------|-----|
+| margin Top / Right / Bottom / Left | `margin-top`, `margin-right`, `margin-bottom`, `margin-left` |
+| padding Top / Right / Bottom / Left | `padding-top`, `padding-right`, `padding-bottom`, `padding-left` |
+
+Значения — числа (в craft element записываются как number, в UI отображаются в px-контексте). Если свойство не задано, в поле показывается **0**; при вводе `0` свойство **остаётся** в craft element (не удаляется).
+
+### Поля с Reset
+
+Нет — ни одно поле не использует `labelReset`.
+
+---
+
+## BordersAccordion — «Границы»
+
+Управляет скруглением (`border-radius`) и обводкой (`border-*`).
+
+### Поток работы
+
+1. **Radius** — единый слайдер или по углам.
+2. **Borders** — выбор сторон на схеме, затем **Style**, **Width**, **Color**, **Opacity**.
+
+### Radius
+
+Два режима (переключатель иконками):
+
+| Режим | CSS | UI |
+|-------|-----|-----|
+| **Uniform** | `border-radius: N` (число px) | Слайдер 0–100% → 0–100 px |
+| **Corners** | `border-radius: TL TR BR BL` | Четыре поля px (сетка 2×2: TL, TR, BL, BR) |
+
+Переключение режима конвертирует текущее значение: uniform → среднее по углам; corners → shorthand из четырёх значений.
+
+### Borders
+
+#### Выбор сторон (`BorderSidesFrame`)
+
+Схема 2×2 + кнопка «все стороны». Определяет, на какие стороны применяется **Width** и **Color**:
+
+- **all** — все четыре стороны;
+- подмножество — только выбранные;
+- при переключении стороны снимаются через `border-*-width: 0`.
+
+Состояние сторон — UI-контрол (`useBorderSidesControl`), в craft element пишутся per-side `borderTopWidth` и т.д.
+
+#### Style
+
+Переключатель → `border-style`: `none`, `solid`, `dashed`, `dotted`.
+
+#### Width
+
+Число px → записывается в `borderTopWidth` / `borderRightWidth` / `borderBottomWidth` / `borderLeftWidth` для **активных** сторон.
+
+#### Color и Opacity
+
+- **Color** → `border-color` (hex + alpha, debounce ~200 ms);
+- **Opacity** → пересчитывает alpha в `border-color` (сразу, без debounce).
+
+### Поля с Reset
+
+Нет `labelReset`. Снятие обводки со стороны — через схему сторон (`width: 0`); `border-style: none` — через переключатель **Style**.
+
+---
+
+## TypographyAccordion — «Типографика»
+
+Управляет шрифтом, цветом, выравниванием, декорацией, колонками, переносами и тенью текста.
+
+### Поток работы
+
+1. Основной блок: **Font**, **Weight**, **Size** / **Height**, **Color**, **Align**, **Format**.
+2. Кнопка **More type options** раскрывает расширенные настройки.
+3. Popper'ы: расширенное подчёркивание (⋯ у Format), колонки (⋯ у Columns), text shadow.
+
+### Основной блок
+
+| Поле | CSS | Описание |
+|------|-----|----------|
+| **Font** | `font-family` | Список шрифтов; **system** удаляет свойство |
+| **Weight** | `font-weight` | `normal` (400) / `bold` (700); при выборе upload-шрифта может выставиться его дефолтный weight |
+| **Size** | `font-size` | `CraftSettingsValueWithUnit` (px, em, rem, …) |
+| **Height** | `line-height` | рядом с Size |
+| **Color** | `color` | Переменные (`withVariables`); debounce ~200 ms |
+| **Align** | `text-align` | left / center / right / justify |
+| **Format** | `text-decoration`, `font-style` | Быстрые кнопки + popper (см. ниже) |
+
+### Format (`TypographyFormatRow`)
+
+| Кнопка | CSS |
+|--------|-----|
+| ✕ (Clear) | Удаляет `text-decoration`, `text-decoration-skip-ink`, `font-style` |
+| Underline / Strikethrough / Overline | Toggle `text-decoration` (underline / line-through / overline) |
+| Italic | Toggle `font-style: italic` |
+| ⋯ | Popper **Настройки подчёркивания** |
+
+#### Popper подчёркивания (`TypographyDecorationSettingsPopper`)
+
+| Поле | CSS | Reset |
+|------|-----|-------|
+| **Line** | тип линии в `text-decoration` | ✓ → `none` |
+| **Style** | solid / double / dotted / dashed / wavy | ✓ → solid (удаляет override) |
+| **Thick** | толщина в `text-decoration` | ✓ → пусто |
+| **Color** | цвет декорации | ✓ → пусто |
+| **Skip ink** | `text-decoration-skip-ink` | ✓ → удаляет свойство (`auto` в UI) |
+
+### More type options
+
+Раскрывающаяся секция.
+
+#### Letter spacing / Text indent / Columns
+
+| Поле | CSS | Условие | Reset |
+|------|-----|---------|-------|
+| **Letter spacing** | `letter-spacing` | — | ✓ удаляет свойство |
+| **Text indent** | `text-indent` | px, commit на blur / Enter | ✓ удаляет свойство |
+| **Columns** | `column-count` | только при `display: grid` | ✓ удаляет свойство |
+| **⋯** (колонки) | popper настроек колонок | — | см. ниже |
+
+#### Capitalize
+
+Переключатель → `text-transform`: `none`, `uppercase`, `capitalize`, `lowercase`. Без Reset.
+
+#### Breaking (`TypographyBreakingRow`)
+
+| Поле | CSS | Reset |
+|------|-----|-------|
+| **Word** (`word-break`) | `normal` удаляет свойство | ✓ |
+| **Line** (`white-space`) | `normal` удаляет свойство | ✓ |
+
+#### Wrap / Truncate (`TypographyWrapTruncateSection`)
+
+| Поле | CSS | Reset |
+|------|-----|-------|
+| **Wrap** (`overflow-wrap`) | `normal` удаляет свойство | ✓ (`labelReset`) |
+| **Truncate** (`text-overflow`) | `clip` / `ellipsis` | ✓ |
+
+#### Stroke
+
+| Поле | CSS | Reset |
+|------|-----|-------|
+| **Width** | `-webkit-text-stroke-width` | ✓ удаляет (при ≠ 0) |
+| **Color** | `-webkit-text-stroke-color` | ✓ удаляет |
+
+#### Text shadows
+
+Аналог box-shadow из EffectsAccordion.
+
+**Тулбар:** Add / Hide / Show / Delete.  
+**Node prop** `textShadowDraft` — при Hide.  
+**Дефолт при добавлении:** `0px 2px 4px rgba(0, 0, 0, 0.25)`.
+
+**Popper:**
+
+| Поле | Reset |
+|------|-------|
+| **X, Y, Blur** | К дефолтным длинам |
+| **Color** | К `rgba(0, 0, 0, 0.25)` |
+
+> Reset в popper text shadow возвращает к дефолту конфигурации; полное удаление — **Delete** на тулбаре.
+
+### Popper колонок (`TypographyColumnsSettingsPopper`)
+
+Открывается кнопкой **⋯** рядом с **Columns**.
+
+| Поле | CSS | Условие | Reset |
+|------|-----|---------|-------|
+| **Gap** | `column-gap` | нужен `column-count` | ✓ удаляет |
+| **Style** (разделитель) | `column-rule-style` | нужны columns + gap | ✓ удаляет |
+| **Width** (разделитель) | `column-rule-width` | то же | ✓ удаляет |
+| **Color** (разделитель) | `column-rule-color` | то же | ✓ удаляет |
+| **Span** | `column-span` | `none` / `all`; нужен `column-gap` у родителя | ✓ удаляет |
+
+При записи split-свойств (`column-rule-width` и т.д.) shorthand `column-rule` очищается.
+
+### Поля с Reset (сводка)
+
+| Поле | Поведение |
+|------|-----------|
+| **Align** | Удаляет `textAlign` |
+| **Format → popper: Line, Style, Thick, Color, Skip ink** | См. таблицу popper |
+| **Letter spacing, Text indent, Columns** | Удаляют соответствующее свойство |
+| **Breaking → Word, Line** | Удаляют `wordBreak` / `whiteSpace` |
+| **Wrap, Truncate** | Удаляют `overflowWrap` / `textOverflow` |
+| **Stroke → Width, Color** | Удаляют stroke-свойства |
+| **Text shadows → X, Y, Blur, Color** | К дефолтам конфигурации |
+| **Columns popper → Gap, Style, Width, Color, Span** | Удаляют свойства |
+
+**Font** (неявный): **system** удаляет `fontFamily`. **Format → Clear** удаляет декорацию и italic. Без Reset: **Size**, **Height**, **Color**, **Weight**, **Capitalize**.
+
+---
+
 ## Структура папки
 
 ```
