@@ -27,11 +27,18 @@ import {
   parseOverlayGradientUiState,
   toCssBackgroundUrlValue,
 } from "../utils/backgroundImageLayersUtils.ts"
-
+import { normalizeStopsForUi } from "../utils/linearGradientEditorUtils.ts"
+import {
+  buildRadialGradientCss,
+  DEFAULT_TWO_STOP_RADIAL,
+} from "../utils/radialGradientEditorUtils.ts"
 
 const DEFAULT_LINEAR_GRADIENT = "linear-gradient(black, white)"
 
-const DEFAULT_RADIAL_GRADIENT = "radial-gradient(circle, black, white)"
+const DEFAULT_RADIAL_GRADIENT = buildRadialGradientCss({
+  ...DEFAULT_TWO_STOP_RADIAL,
+  stops: normalizeStopsForUi(DEFAULT_TWO_STOP_RADIAL.stops),
+})
 
 const OVERLAY_COLOR_COMMIT_DEBOUNCE_MS = 120
 

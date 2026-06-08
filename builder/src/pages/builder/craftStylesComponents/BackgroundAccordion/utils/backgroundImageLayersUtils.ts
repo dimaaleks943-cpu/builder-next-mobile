@@ -16,12 +16,30 @@ export const BACKGROUND_IMAGE_LAYER_POSITIONS_KEY = "backgroundImageLayerPositio
 export const BACKGROUND_IMAGE_LAYER_REPEATS_KEY = "backgroundImageLayerRepeats"
 export const BACKGROUND_IMAGE_LAYER_ATTACHMENTS_KEY = "backgroundImageLayerAttachments"
 
+/** Builder-only node props; must not leak to runtime SSR DOM. */
+export const BACKGROUND_LAYER_BUILDER_KEYS = [
+  BACKGROUND_IMAGE_LAYERS_KEY,
+  BACKGROUND_IMAGE_LAYER_VISIBLE_KEY,
+  BACKGROUND_IMAGE_LAYER_IDS_KEY,
+  BACKGROUND_IMAGE_LAYER_SIZES_KEY,
+  BACKGROUND_IMAGE_LAYER_POSITIONS_KEY,
+  BACKGROUND_IMAGE_LAYER_REPEATS_KEY,
+  BACKGROUND_IMAGE_LAYER_ATTACHMENTS_KEY,
+] as const
+
 export type BackgroundFillKind = "url" | "linear-gradient" | "radial-gradient" | "overlay"
 
-export type BackgroundLayersModel = {
+export interface BackgroundLayersModel {
   layers: string[]
   visible: boolean[]
   layerIds: string[]
+}
+
+export interface BackgroundLayerSlots {
+  sizes: string[]
+  positions: string[]
+  repeats: string[]
+  attachments: string[]
 }
 
 export type BackgroundCommaPropKey =
@@ -30,7 +48,14 @@ export type BackgroundCommaPropKey =
   | "backgroundRepeat"
   | "backgroundAttachment"
 
-const LAYER_STYLE_SLOT_KEYS: Record<BackgroundCommaPropKey, string> = {
+const SLOT_FIELD_BY_PROP: Record<BackgroundCommaPropKey, keyof BackgroundLayerSlots> = {
+  backgroundSize: "sizes",
+  backgroundPosition: "positions",
+  backgroundRepeat: "repeats",
+  backgroundAttachment: "attachments",
+}
+
+const SLOT_KEY_BY_PROP: Record<BackgroundCommaPropKey, string> = {
   backgroundSize: BACKGROUND_IMAGE_LAYER_SIZES_KEY,
   backgroundPosition: BACKGROUND_IMAGE_LAYER_POSITIONS_KEY,
   backgroundRepeat: BACKGROUND_IMAGE_LAYER_REPEATS_KEY,
@@ -100,52 +125,119 @@ export const padCommaPartsToLength = (
   return out.slice(0, len)
 }
 
-export const ensureCanonicalStyleSlots = (
-  props: Record<string, unknown>,
-  viewport: PreviewViewport,
+const emptyBackgroundLayerSlots = (): BackgroundLayerSlots => ({
+  sizes: [],
+  positions: [],
+  repeats: [],
+  attachments: [],
+})
+
+const readSlotArrayFromNode = (
+  nodeProps: Record<string, unknown>,
+  key: BackgroundCommaPropKey,
   layerCount: number,
-) => {
-  if (layerCount <= 0) return
-  ;(
-    Object.entries(LAYER_STYLE_SLOT_KEYS) as [
-      BackgroundCommaPropKey,
-      string,
-    ][]
-  ).forEach(([propKey, slotKey]) => {
-    const cur = props[slotKey]
-    if (Array.isArray(cur) && cur.length === layerCount) return
-    const filler = COMMA_PROP_FILLERS[propKey]
-    const raw = getResponsiveStyleProp(props, propKey, viewport)
-    const split = splitTopLevelCssCommas(typeof raw === "string" ? raw : "")
-    props[slotKey] = padCommaPartsToLength(split, layerCount, filler)
+  filler: string,
+): string[] | null => {
+  const slotKey = SLOT_KEY_BY_PROP[key]
+  const slots = nodeProps[slotKey]
+  if (!Array.isArray(slots) || slots.length !== layerCount) return null
+  return slots.map((x) => {
+    const s = String(x).trim()
+    return s || filler
   })
 }
 
-export const deleteCanonicalStyleSlots = (props: Record<string, unknown>) => {
-  delete props[BACKGROUND_IMAGE_LAYER_SIZES_KEY]
-  delete props[BACKGROUND_IMAGE_LAYER_POSITIONS_KEY]
-  delete props[BACKGROUND_IMAGE_LAYER_REPEATS_KEY]
-  delete props[BACKGROUND_IMAGE_LAYER_ATTACHMENTS_KEY]
-}
-
-export const getCommaPropParts = (
-  props: Record<string, unknown>,
+const readCommaPropPartsFromPainted = (
+  stylePropsForRead: Record<string, unknown> | undefined,
   viewport: PreviewViewport,
   key: BackgroundCommaPropKey,
   layerCount: number,
   filler: string,
 ): string[] => {
-  const slotKey = LAYER_STYLE_SLOT_KEYS[key]
-  const slots = props[slotKey]
-  if (Array.isArray(slots) && slots.length === layerCount) {
-    return slots.map((x) => {
-      const s = String(x).trim()
-      return s || filler
-    })
-  }
-  const raw = getResponsiveStyleProp(props, key, viewport)
+  const raw = stylePropsForRead
+    ? getResponsiveStyleProp(stylePropsForRead, key, viewport)
+    : undefined
   const split = splitTopLevelCssCommas(typeof raw === "string" ? raw : "")
   return padCommaPartsToLength(split, layerCount, filler)
+}
+
+export const ensureCanonicalSlots = (
+  slots: BackgroundLayerSlots,
+  stylePropsForRead: Record<string, unknown> | undefined,
+  viewport: PreviewViewport,
+  layerCount: number,
+): BackgroundLayerSlots => {
+  if (layerCount <= 0) return emptyBackgroundLayerSlots()
+  return (
+    Object.entries(SLOT_FIELD_BY_PROP) as [BackgroundCommaPropKey, keyof BackgroundLayerSlots][]
+  ).reduce<BackgroundLayerSlots>(
+    (acc, [propKey, field]) => {
+      const filler = COMMA_PROP_FILLERS[propKey]
+      const cur = acc[field]
+      if (cur.length === layerCount) return acc
+      const painted = readCommaPropPartsFromPainted(
+        stylePropsForRead,
+        viewport,
+        propKey,
+        layerCount,
+        filler,
+      )
+      return {
+        ...acc,
+        [field]: cur.length > 0 ? padCommaPartsToLength(cur, layerCount, filler) : painted,
+      }
+    },
+    { ...slots },
+  )
+}
+
+export const getBackgroundLayerSlots = (
+  nodeProps: Record<string, unknown>,
+  stylePropsForRead: Record<string, unknown> | undefined,
+  viewport: PreviewViewport,
+  layerCount: number,
+): BackgroundLayerSlots => {
+  if (layerCount <= 0) return emptyBackgroundLayerSlots()
+  const slots: BackgroundLayerSlots = {
+    sizes:
+      readSlotArrayFromNode(nodeProps, "backgroundSize", layerCount, "auto") ??
+      readCommaPropPartsFromPainted(stylePropsForRead, viewport, "backgroundSize", layerCount, "auto"),
+    positions:
+      readSlotArrayFromNode(nodeProps, "backgroundPosition", layerCount, "0px 0px") ??
+      readCommaPropPartsFromPainted(
+        stylePropsForRead,
+        viewport,
+        "backgroundPosition",
+        layerCount,
+        "0px 0px",
+      ),
+    repeats:
+      readSlotArrayFromNode(nodeProps, "backgroundRepeat", layerCount, "repeat") ??
+      readCommaPropPartsFromPainted(stylePropsForRead, viewport, "backgroundRepeat", layerCount, "repeat"),
+    attachments:
+      readSlotArrayFromNode(nodeProps, "backgroundAttachment", layerCount, "scroll") ??
+      readCommaPropPartsFromPainted(
+        stylePropsForRead,
+        viewport,
+        "backgroundAttachment",
+        layerCount,
+        "scroll",
+      ),
+  }
+  return ensureCanonicalSlots(slots, stylePropsForRead, viewport, layerCount)
+}
+
+export const getCommaPropParts = (
+  nodeProps: Record<string, unknown>,
+  stylePropsForRead: Record<string, unknown> | undefined,
+  viewport: PreviewViewport,
+  key: BackgroundCommaPropKey,
+  layerCount: number,
+  filler: string,
+): string[] => {
+  const fromNode = readSlotArrayFromNode(nodeProps, key, layerCount, filler)
+  if (fromNode) return fromNode
+  return readCommaPropPartsFromPainted(stylePropsForRead, viewport, key, layerCount, filler)
 }
 
 export const getBackgroundLayersModel = (
@@ -177,56 +269,76 @@ export const getBackgroundLayersModel = (
   return { layers, visible, layerIds }
 }
 
-export const syncPaintedBackgroundStack = (
-  props: Record<string, unknown>,
-  viewport: PreviewViewport,
+export const clearBackgroundLayerNodeMetadata = (nodeProps: Record<string, unknown>) => {
+  BACKGROUND_LAYER_BUILDER_KEYS.forEach((key) => {
+    delete nodeProps[key]
+  })
+}
+
+export const writeBackgroundLayerNodeMetadata = (
+  nodeProps: Record<string, unknown>,
   model: BackgroundLayersModel,
+  slots: BackgroundLayerSlots,
 ) => {
   const n = model.layers.length
   if (n === 0) {
-    setResponsiveStyleProp(props, "backgroundImage", undefined, viewport)
-    setResponsiveStyleProp(props, "backgroundSize", undefined, viewport)
-    setResponsiveStyleProp(props, "backgroundPosition", undefined, viewport)
-    setResponsiveStyleProp(props, "backgroundRepeat", undefined, viewport)
-    setResponsiveStyleProp(props, "backgroundAttachment", undefined, viewport)
+    clearBackgroundLayerNodeMetadata(nodeProps)
     return
   }
+  nodeProps[BACKGROUND_IMAGE_LAYERS_KEY] = model.layers
+  nodeProps[BACKGROUND_IMAGE_LAYER_VISIBLE_KEY] = model.visible
+  nodeProps[BACKGROUND_IMAGE_LAYER_IDS_KEY] = model.layerIds
+  nodeProps[BACKGROUND_IMAGE_LAYER_SIZES_KEY] = slots.sizes
+  nodeProps[BACKGROUND_IMAGE_LAYER_POSITIONS_KEY] = slots.positions
+  nodeProps[BACKGROUND_IMAGE_LAYER_REPEATS_KEY] = slots.repeats
+  nodeProps[BACKGROUND_IMAGE_LAYER_ATTACHMENTS_KEY] = slots.attachments
+}
 
-  ensureCanonicalStyleSlots(props, viewport, n)
+export const syncPaintedBackgroundStack = (
+  styleDraft: Record<string, unknown>,
+  viewport: PreviewViewport,
+  model: BackgroundLayersModel,
+  slots: BackgroundLayerSlots,
+) => {
+  const n = model.layers.length
+  if (n === 0) {
+    setResponsiveStyleProp(styleDraft, "backgroundImage", undefined, viewport)
+    setResponsiveStyleProp(styleDraft, "backgroundSize", undefined, viewport)
+    setResponsiveStyleProp(styleDraft, "backgroundPosition", undefined, viewport)
+    setResponsiveStyleProp(styleDraft, "backgroundRepeat", undefined, viewport)
+    setResponsiveStyleProp(styleDraft, "backgroundAttachment", undefined, viewport)
+    return
+  }
 
   const visibleIndices = model.layers.map((_, i) => i).filter((i) => model.visible[i])
 
   if (visibleIndices.length === 0) {
-    setResponsiveStyleProp(props, "backgroundImage", undefined, viewport)
-    setResponsiveStyleProp(props, "backgroundSize", undefined, viewport)
-    setResponsiveStyleProp(props, "backgroundPosition", undefined, viewport)
-    setResponsiveStyleProp(props, "backgroundRepeat", undefined, viewport)
-    setResponsiveStyleProp(props, "backgroundAttachment", undefined, viewport)
+    setResponsiveStyleProp(styleDraft, "backgroundImage", undefined, viewport)
+    setResponsiveStyleProp(styleDraft, "backgroundSize", undefined, viewport)
+    setResponsiveStyleProp(styleDraft, "backgroundPosition", undefined, viewport)
+    setResponsiveStyleProp(styleDraft, "backgroundRepeat", undefined, viewport)
+    setResponsiveStyleProp(styleDraft, "backgroundAttachment", undefined, viewport)
     return
   }
 
   const paintedImages = visibleIndices.map((i) => model.layers[i]!)
   setResponsiveStyleProp(
-    props,
+    styleDraft,
     "backgroundImage",
     joinCssCommaParts(paintedImages),
     viewport,
   )
 
   ;(
-    Object.entries(LAYER_STYLE_SLOT_KEYS) as [
-      BackgroundCommaPropKey,
-      string,
-    ][]
-  ).forEach(([propKey, slotKey]) => {
+    Object.entries(SLOT_FIELD_BY_PROP) as [BackgroundCommaPropKey, keyof BackgroundLayerSlots][]
+  ).forEach(([propKey, field]) => {
     const filler = COMMA_PROP_FILLERS[propKey]
-    const slots = props[slotKey] as string[]
-    const full = Array.isArray(slots) && slots.length === n
-      ? slots.map((x) => String(x).trim() || filler)
+    const full = slots[field].length === n
+      ? slots[field].map((x) => String(x).trim() || filler)
       : padCommaPartsToLength([], n, filler)
     const painted = visibleIndices.map((i) => full[i] ?? filler)
     setResponsiveStyleProp(
-      props,
+      styleDraft,
       propKey,
       joinCssCommaParts(painted),
       viewport,
@@ -234,106 +346,116 @@ export const syncPaintedBackgroundStack = (
   })
 }
 
-export const persistBackgroundLayersModel = (
-  props: Record<string, unknown>,
-  viewport: PreviewViewport,
-  model: BackgroundLayersModel,
-) => {
-  props[BACKGROUND_IMAGE_LAYERS_KEY] = model.layers
-  props[BACKGROUND_IMAGE_LAYER_VISIBLE_KEY] = model.visible
-  props[BACKGROUND_IMAGE_LAYER_IDS_KEY] = model.layerIds
-  const n = model.layers.length
-  if (n === 0) {
-    deleteCanonicalStyleSlots(props)
-    syncPaintedBackgroundStack(props, viewport, model)
-    return
-  }
-  ensureCanonicalStyleSlots(props, viewport, n)
-  syncPaintedBackgroundStack(props, viewport, model)
-}
-
-export const clearAllBackgroundLayers = (
-  props: Record<string, unknown>,
-  viewport: PreviewViewport,
-) => {
-  delete props[BACKGROUND_IMAGE_LAYERS_KEY]
-  delete props[BACKGROUND_IMAGE_LAYER_VISIBLE_KEY]
-  delete props[BACKGROUND_IMAGE_LAYER_IDS_KEY]
-  deleteCanonicalStyleSlots(props)
-  setResponsiveStyleProp(props, "backgroundImage", undefined, viewport)
-  setResponsiveStyleProp(props, "backgroundSize", undefined, viewport)
-  setResponsiveStyleProp(props, "backgroundPosition", undefined, viewport)
-  setResponsiveStyleProp(props, "backgroundRepeat", undefined, viewport)
-  setResponsiveStyleProp(props, "backgroundAttachment", undefined, viewport)
-}
-
-export const replaceCommaPropLayer = (
-  props: Record<string, unknown>,
-  viewport: PreviewViewport,
+export const replaceSlotInLayer = (
+  slots: BackgroundLayerSlots,
   key: BackgroundCommaPropKey,
   layerCount: number,
   layerIndex: number,
   next: string | undefined,
   filler: string,
 ) => {
-  ensureCanonicalStyleSlots(props, viewport, layerCount)
-  const slotKey = LAYER_STYLE_SLOT_KEYS[key]
-  const parts = [...(props[slotKey] as string[])]
+  const field = SLOT_FIELD_BY_PROP[key]
+  const parts = [...slots[field]]
+  while (parts.length < layerCount) {
+    parts.push(filler)
+  }
   const safe = layerIndex >= 0 && layerIndex < parts.length ? layerIndex : 0
   parts[safe] =
     next !== undefined && String(next).trim() !== ""
       ? String(next).trim()
       : filler
-  props[slotKey] = parts
-  const model = getBackgroundLayersModel(props, viewport)
-  syncPaintedBackgroundStack(props, viewport, model)
+  slots[field] = parts.slice(0, layerCount)
 }
 
-export const prependSlotToCommaProp = (
-  props: Record<string, unknown>,
-  viewport: PreviewViewport,
-  key: BackgroundCommaPropKey,
-  previousLayerCount: number,
-  newSlotValue: string,
-) => {
-  const slotKey = LAYER_STYLE_SLOT_KEYS[key]
-  if (previousLayerCount <= 0) {
-    props[slotKey] = [newSlotValue]
-    return
-  }
-  ensureCanonicalStyleSlots(props, viewport, previousLayerCount)
-  const prev = [...(props[slotKey] as string[])]
-  props[slotKey] = [newSlotValue, ...prev]
-}
-
-export const removeCommaPropLayerAt = (
-  props: Record<string, unknown>,
-  viewport: PreviewViewport,
-  key: BackgroundCommaPropKey,
+export const applyUrlFillLayerSlots = (
+  slots: BackgroundLayerSlots,
+  layerIndex: number,
   layerCount: number,
+  mode: "apply" | "clear" | undefined,
+) => {
+  if (mode !== "apply" && mode !== "clear") return
+  replaceSlotInLayer(slots, "backgroundSize", layerCount, layerIndex, "auto", "auto")
+  replaceSlotInLayer(slots, "backgroundPosition", layerCount, layerIndex, "0px 0px", "0px 0px")
+  replaceSlotInLayer(slots, "backgroundRepeat", layerCount, layerIndex, "repeat", "repeat")
+  replaceSlotInLayer(slots, "backgroundAttachment", layerCount, layerIndex, "scroll", "scroll")
+}
+
+export const prependSlotsForNewLayer = (
+  slots: BackgroundLayerSlots,
+): BackgroundLayerSlots => ({
+  sizes: ["auto", ...slots.sizes],
+  positions: ["0px 0px", ...slots.positions],
+  repeats: ["repeat", ...slots.repeats],
+  attachments: ["scroll", ...slots.attachments],
+})
+
+export const removeSlotsAtLayer = (
+  slots: BackgroundLayerSlots,
   removeIndex: number,
-) => {
-  const slotKey = LAYER_STYLE_SLOT_KEYS[key]
-  ensureCanonicalStyleSlots(props, viewport, layerCount)
-  const parts = [...(props[slotKey] as string[])]
-  if (removeIndex < 0 || removeIndex >= parts.length) return
-  parts.splice(removeIndex, 1)
-  props[slotKey] = parts
-}
+): BackgroundLayerSlots => ({
+  sizes: slots.sizes.filter((_, i) => i !== removeIndex),
+  positions: slots.positions.filter((_, i) => i !== removeIndex),
+  repeats: slots.repeats.filter((_, i) => i !== removeIndex),
+  attachments: slots.attachments.filter((_, i) => i !== removeIndex),
+})
 
-export const reorderCommaPropLayers = (
-  props: Record<string, unknown>,
-  viewport: PreviewViewport,
-  key: BackgroundCommaPropKey,
-  layerCount: number,
+export const reorderSlotsAllLayers = (
+  slots: BackgroundLayerSlots,
   fromIndex: number,
   toIndex: number,
-) => {
-  const slotKey = LAYER_STYLE_SLOT_KEYS[key]
-  ensureCanonicalStyleSlots(props, viewport, layerCount)
-  const parts = [...(props[slotKey] as string[])]
-  const moved = arrayMove(parts, fromIndex, toIndex)
-  props[slotKey] = moved
+): BackgroundLayerSlots => ({
+  sizes: arrayMove(slots.sizes, fromIndex, toIndex),
+  positions: arrayMove(slots.positions, fromIndex, toIndex),
+  repeats: arrayMove(slots.repeats, fromIndex, toIndex),
+  attachments: arrayMove(slots.attachments, fromIndex, toIndex),
+})
+
+export const bootstrapBackgroundLayersFromPaintedCss = (
+  nodeProps: Record<string, unknown>,
+  stylePropsForRead: Record<string, unknown>,
+  viewport: PreviewViewport,
+): { model: BackgroundLayersModel; slots: BackgroundLayerSlots } | null => {
+  const storedLayers = nodeProps[BACKGROUND_IMAGE_LAYERS_KEY]
+  if (Array.isArray(storedLayers) && storedLayers.length > 0) return null
+
+  const rawImage = getResponsiveStyleProp(stylePropsForRead, "backgroundImage", viewport)
+  if (typeof rawImage !== "string" || !rawImage.trim()) return null
+
+  const layers = splitTopLevelCssCommas(rawImage).filter(Boolean)
+  if (layers.length === 0) return null
+
+  const n = layers.length
+  return {
+    model: {
+      layers,
+      visible: layers.map(() => true),
+      layerIds: layers.map(() => newBackgroundLayerId()),
+    },
+    slots: {
+      sizes: readCommaPropPartsFromPainted(stylePropsForRead, viewport, "backgroundSize", n, "auto"),
+      positions: readCommaPropPartsFromPainted(
+        stylePropsForRead,
+        viewport,
+        "backgroundPosition",
+        n,
+        "0px 0px",
+      ),
+      repeats: readCommaPropPartsFromPainted(
+        stylePropsForRead,
+        viewport,
+        "backgroundRepeat",
+        n,
+        "repeat",
+      ),
+      attachments: readCommaPropPartsFromPainted(
+        stylePropsForRead,
+        viewport,
+        "backgroundAttachment",
+        n,
+        "scroll",
+      ),
+    },
+  }
 }
 
 export const parseCssUrl = (raw: string | undefined): string | null => {
