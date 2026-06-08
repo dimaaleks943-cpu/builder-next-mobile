@@ -234,10 +234,10 @@ export const CraftButton = (props: Props) => {
     style: {
       [PreviewViewport.DESKTOP]: {
         display: "inline-block",
-        paddingTop: "9px",
-        paddingBottom: "9px",
-        paddingRight: "15px",
-        paddingLeft: "15px",
+        paddingTop: 9,
+        paddingBottom: 9,
+        paddingRight: 15,
+        paddingLeft: 15,
         backgroundColor: COLORS.blue400,
         color: COLORS.white,
         border: 0,
