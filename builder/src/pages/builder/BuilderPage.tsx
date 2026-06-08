@@ -31,6 +31,8 @@ import { CraftContentListCell } from "../../craft/ContentListCell.tsx"
 import { CraftCategoryFilter } from "../../craft/CategoryFilter.tsx"
 import { CraftImage } from "../../craft/Image.tsx"
 import { CraftNavbar } from "../../craft/CraftNavbar.tsx"
+import { CraftNavbarMenuButton } from "../../craft/CraftNavbarMenuButton.tsx"
+import { CraftNavbarMenu } from "../../craft/CraftNavbarMenu.tsx"
 import { PageType, type IContentItem, type IContentTypeField } from "../../api/extranet"
 import {
   useGetContentItemsQuery,
@@ -361,6 +363,8 @@ export const BuilderPage = () => {
           CategoryFilter: CraftCategoryFilter, // filterScope должен совпадать с ContentList
           Image: CraftImage,
           Navbar: CraftNavbar,
+          NavbarMenuButton: CraftNavbarMenuButton,
+          NavbarMenu: CraftNavbarMenu,
         }}
       >
         <StyleClassProvider classes={styleClasses} setClasses={setStyleClasses}>

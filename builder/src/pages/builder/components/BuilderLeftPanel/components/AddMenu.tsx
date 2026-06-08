@@ -21,6 +21,8 @@ import { CraftContentList } from "../../../../../craft/ContentList.tsx"
 import { CraftCategoryFilter } from "../../../../../craft/CategoryFilter.tsx"
 import { CraftImage } from "../../../../../craft/Image.tsx"
 import { CraftNavbar } from "../../../../../craft/CraftNavbar.tsx"
+import { CraftNavbarMenuButton } from "../../../../../craft/CraftNavbarMenuButton.tsx"
+import { CraftNavbarMenu } from "../../../../../craft/CraftNavbarMenu.tsx"
 import { useBuilderModeContext } from "../../../context/BuilderModeContext"
 import { MODE_TYPE, PreviewViewport } from "../../../builder.enum"
 
@@ -86,9 +88,31 @@ export const useCategories = (): Category[] => {
                       display: "flex",
                       alignItems: "center",
                       gap: "16px",
+                      width: "100%",
                     },
                   }}
                 >
+                  <Element is={CraftNavbarMenuButton} />
+                  <Element
+                    is={CraftBlock}
+                    canvas
+                    style={{
+                      [PreviewViewport.DESKTOP]: {
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "16px",
+                      },
+                      [PreviewViewport.TABLET_LANDSCAPE]: {
+                        display: "none",
+                      },
+                    }}
+                  >
+                    <Element is={CraftLinkText} text="About" href="#" linkMode="url" />
+                    <Element is={CraftLinkText} text="Home" href="#" linkMode="url" />
+                    <Element is={CraftLinkText} text="Contact" href="#" linkMode="url" />
+                  </Element>
+                </Element>
+                <Element is={CraftNavbarMenu} canvas>
                   <Element is={CraftLinkText} text="About" href="#" linkMode="url" />
                   <Element is={CraftLinkText} text="Home" href="#" linkMode="url" />
                   <Element is={CraftLinkText} text="Contact" href="#" linkMode="url" />

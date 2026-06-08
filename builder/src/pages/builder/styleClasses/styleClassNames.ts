@@ -14,6 +14,8 @@ const DISPLAY_LABEL: Record<string, string> = {
   [CRAFT_DISPLAY_NAME.ContentListCell]: "List Cell",
   [CRAFT_DISPLAY_NAME.CategoryFilter]: "Category Filter",
   [CRAFT_DISPLAY_NAME.Navbar]: "Navbar",
+  [CRAFT_DISPLAY_NAME.NavbarMenuButton]: "Navbar Menu Button",
+  [CRAFT_DISPLAY_NAME.NavbarMenu]: "Navbar Menu",
 }
 
 const getStyleClassDisplayLabel = (resolvedName: string): string =>
