@@ -40,14 +40,17 @@ export const findNavbarLinkContainerIds = (
   let navbarMenuId: string | null = null
 
   try {
-    const descendants = query.node(navbarNodeId).descendants(true)
-    for (const descendantId of descendants) {
-      const node = query.node(descendantId).get()
+    const navbarNode = query.node(navbarNodeId).get() as {
+      data?: { nodes?: string[] }
+    }
+    const childIds = navbarNode?.data?.nodes ?? []
+    for (const childId of childIds) {
+      const node = query.node(childId).get()
       const displayName = resolveNodeDisplayName(node)
-      if (displayName === CRAFT_DISPLAY_NAME.NavbarLinks && !navbarLinksId) {
-        navbarLinksId = descendantId
-      } else if (displayName === CRAFT_DISPLAY_NAME.NavbarMenu && !navbarMenuId) {
-        navbarMenuId = descendantId
+      if (displayName === CRAFT_DISPLAY_NAME.NavbarLinks) {
+        navbarLinksId = childId
+      } else if (displayName === CRAFT_DISPLAY_NAME.NavbarMenu) {
+        navbarMenuId = childId
       }
     }
   } catch {

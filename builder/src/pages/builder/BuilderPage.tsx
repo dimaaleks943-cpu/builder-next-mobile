@@ -34,6 +34,7 @@ import { CraftNavbar } from "../../craft/CraftNavbar/CraftNavbar.tsx"
 import { CraftNavbarMenuButton } from "../../craft/CraftNavbar/components/CraftNavbarMenuButton.tsx"
 import { CraftNavbarMenu } from "../../craft/CraftNavbar/components/CraftNavbarMenu.tsx"
 import { CraftNavbarLinks } from "../../craft/CraftNavbar/components/CraftNavbarLinks.tsx"
+import { CraftIcon } from "../../craft/CraftIcon/CraftIcon.tsx"
 import { PageType, type IContentItem, type IContentTypeField } from "../../api/extranet"
 import {
   useGetContentItemsQuery,
@@ -367,6 +368,7 @@ export const BuilderPage = () => {
           NavbarMenuButton: CraftNavbarMenuButton,
           NavbarMenu: CraftNavbarMenu,
           NavbarLinks: CraftNavbarLinks,
+          Icon: CraftIcon,
         }}
       >
         <StyleClassProvider classes={styleClasses} setClasses={setStyleClasses}>

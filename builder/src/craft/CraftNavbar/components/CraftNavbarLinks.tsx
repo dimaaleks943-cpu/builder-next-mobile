@@ -59,7 +59,8 @@ export const CraftNavbarLinks = (props: Props) => {
     },
   },
   rules: {
-    canMoveIn: () => true,
+    canMoveIn: (nodes: { data: { type: { resolvedName?: string } } }[]) =>
+      nodes.every((n) => n.data?.type?.resolvedName === "LinkText"),
   },
   isCanvas: true,
 }

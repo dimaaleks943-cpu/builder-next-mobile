@@ -149,8 +149,10 @@ export const CraftNavbar = (props: Props) => {
     style: {
       [PreviewViewport.DESKTOP]: {
         display: "flex",
-        flexDirection: "column",
-        justifyContent: "flex-start",
+        flexDirection: "row",
+        flexWrap: "wrap",
+        alignItems: "center",
+        gap: "16px",
         width: "100%",
         boxSizing: "border-box",
         position: "relative",
@@ -163,9 +165,9 @@ export const CraftNavbar = (props: Props) => {
         const resolvedName = n.data?.type?.resolvedName
 
         return (
-          resolvedName === "Block" ||
-          resolvedName === "NavbarMenu" ||
-          resolvedName === "NavbarLinks"
+          resolvedName === "NavbarMenuButton" ||
+          resolvedName === "NavbarLinks" ||
+          resolvedName === "NavbarMenu"
         )
       }),
   },

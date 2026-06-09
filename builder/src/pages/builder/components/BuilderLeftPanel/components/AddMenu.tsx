@@ -24,6 +24,7 @@ import { CraftNavbar } from "../../../../../craft/CraftNavbar/CraftNavbar.tsx"
 import { CraftNavbarMenuButton } from "../../../../../craft/CraftNavbar/components/CraftNavbarMenuButton.tsx"
 import { CraftNavbarMenu } from "../../../../../craft/CraftNavbar/components/CraftNavbarMenu.tsx"
 import { CraftNavbarLinks } from "../../../../../craft/CraftNavbar/components/CraftNavbarLinks.tsx"
+import { CraftIcon } from "../../../../../craft/CraftIcon/CraftIcon.tsx"
 import { useBuilderModeContext } from "../../../context/BuilderModeContext"
 import { MODE_TYPE, PreviewViewport } from "../../../builder.enum"
 
@@ -81,34 +82,23 @@ export const useCategories = (): Category[] => {
             name: "Панель навигации",
             component: (
               <Element is={CraftNavbar} canvas>
+                <Element is={CraftNavbarMenuButton} canvas>
+                  <Element is={CraftIcon} icon="burger" />
+                </Element>
                 <Element
-                  is={CraftBlock}
+                  is={CraftNavbarLinks}
                   canvas
                   style={{
                     [PreviewViewport.DESKTOP]: {
                       display: "flex",
                       alignItems: "center",
                       gap: "16px",
-                      width: "100%",
                     },
                   }}
                 >
-                  <Element is={CraftNavbarMenuButton} />
-                  <Element
-                    is={CraftNavbarLinks}
-                    canvas
-                    style={{
-                      [PreviewViewport.DESKTOP]: {
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "16px",
-                      },
-                    }}
-                  >
-                    <Element is={CraftLinkText} text="About" href="#" linkMode="url" />
-                    <Element is={CraftLinkText} text="Home" href="#" linkMode="url" />
-                    <Element is={CraftLinkText} text="Contact" href="#" linkMode="url" />
-                  </Element>
+                  <Element is={CraftLinkText} text="About" href="#" linkMode="url" />
+                  <Element is={CraftLinkText} text="Home" href="#" linkMode="url" />
+                  <Element is={CraftLinkText} text="Contact" href="#" linkMode="url" />
                 </Element>
                 <Element is={CraftNavbarMenu} />
               </Element>

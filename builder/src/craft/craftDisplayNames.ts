@@ -18,4 +18,5 @@ export const CRAFT_DISPLAY_NAME = {
   NavbarMenuButton: "CraftNavbarMenuButton",
   NavbarMenu: "CraftNavbarMenu",
   NavbarLinks: "CraftNavbarLinks",
+  Icon: "CraftIcon",
 } as const

@@ -17,6 +17,7 @@ const DISPLAY_LABEL: Record<string, string> = {
   [CRAFT_DISPLAY_NAME.NavbarMenuButton]: "Navbar Menu Button",
   [CRAFT_DISPLAY_NAME.NavbarMenu]: "Navbar Menu",
   [CRAFT_DISPLAY_NAME.NavbarLinks]: "Navbar Links",
+  [CRAFT_DISPLAY_NAME.Icon]: "Icon",
 }
 
 const getStyleClassDisplayLabel = (resolvedName: string): string =>
