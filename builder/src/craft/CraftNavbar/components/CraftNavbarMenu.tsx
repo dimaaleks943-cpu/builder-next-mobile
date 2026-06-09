@@ -22,6 +22,7 @@ export const CraftNavbarMenu = (props: Props) => {
     easingOpen,
     easingClose,
     durationMs,
+    menuFillsPageHeight,
   } = useNavbarMenu()
   const {
     connectors: { connect, drag },
@@ -36,7 +37,7 @@ export const CraftNavbarMenu = (props: Props) => {
       ? {
           top: 0,
           right: 0,
-          height: "100%",
+          height: menuFillsPageHeight ? "100vh" : "max-content",
           width: "min(280px, 80%)",
           flexDirection: "column",
           transform: isMenuOpen ? "translateX(0)" : "translateX(100%)",
@@ -45,7 +46,7 @@ export const CraftNavbarMenu = (props: Props) => {
         ? {
             top: 0,
             left: 0,
-            height: "100%",
+            height: menuFillsPageHeight ? "100vh" : "max-content",
             width: "min(280px, 80%)",
             flexDirection: "column",
             transform: isMenuOpen ? "translateX(0)" : "translateX(-100%)",
@@ -54,6 +55,9 @@ export const CraftNavbarMenu = (props: Props) => {
             width: "100%",
             flexDirection: "column",
             transform: isMenuOpen ? "translateY(0)" : "translateY(-8px)",
+            ...(menuFillsPageHeight && isMenuOpen
+              ? { minHeight: "100vh", height: "100vh" }
+              : {}),
           }
 
   const mergedStyle: CSSProperties = {
@@ -68,7 +72,6 @@ export const CraftNavbarMenu = (props: Props) => {
             width: "100%",
             opacity: isMenuOpen ? 1 : 0,
             transition,
-            backgroundColor: COLORS.white,
             ...typeLayout,
           }
         : {
@@ -79,7 +82,6 @@ export const CraftNavbarMenu = (props: Props) => {
             opacity: isMenuOpen ? 1 : 0,
             pointerEvents: isMenuOpen ? "auto" : "none",
             transition,
-            backgroundColor: COLORS.white,
             ...typeLayout,
           }),
   }
@@ -107,10 +109,10 @@ export const CraftNavbarMenu = (props: Props) => {
         width: "100%",
         boxSizing: "border-box",
         backgroundColor: COLORS.white,
-        paddingTop: "8px",
-        paddingRight: "16px",
-        paddingBottom: "8px",
-        paddingLeft: "16px",
+        paddingTop: 8,
+        paddingRight: 16,
+        paddingBottom: 8,
+        paddingLeft: 16,
         gap: "8px",
       },
     },

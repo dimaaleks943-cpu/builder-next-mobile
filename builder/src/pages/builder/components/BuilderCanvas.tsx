@@ -22,6 +22,7 @@ import { MobileIcon } from "../../../icons/MobileIcon.tsx";
 import { useBuilderModeContext } from "../context/BuilderModeContext.tsx";
 import { OverlayGridManualEditor } from "../overlay/OverlayGridManualEditor/OverlayGridManualEditor.tsx"
 import { OverlayManager } from "../overlay/OverlayManager/OverlayManager.tsx"
+import { useNavbarAnchorScrollOffset } from "../hooks/useNavbarAnchorScrollOffset.ts"
 
 const MIN_PREVIEW_WIDTH = 320
 const MAX_WEB_PREVIEW_WIDTH = 3840
@@ -106,6 +107,8 @@ export const BuilderCanvas = ({
   const handleOverlayRootRef = useCallback((el: HTMLDivElement | null) => {
     setOverlayRootElement(el)
   }, [])
+
+  useNavbarAnchorScrollOffset(canvasElement, previewViewport)
 
   const appliedPreviewWidth = customPreviewWidth ?? getPreviewMaxWidth(previewViewport)
 

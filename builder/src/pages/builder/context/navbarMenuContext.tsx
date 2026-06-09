@@ -122,19 +122,22 @@ export interface NavbarMenuContextValue {
   easingOpen: NavbarEasingValue
   easingClose: NavbarEasingValue
   durationMs: number
+  menuFillsPageHeight: boolean
 }
 
 export const NavbarMenuContext = createContext<NavbarMenuContextValue | null>(
   null,
 )
 
-interface NavbarMenuProps {
+export interface NavbarMenuProps {
   menuPreview?: NavbarMenuPreviewValue
   menuType?: NavbarMenuTypeValue
   easingOpen?: NavbarEasingValue
   easingClose?: NavbarEasingValue
   durationMs?: number
   menuIconBreakpoint?: NavbarMenuIconBreakpointValue
+  menuFillsPageHeight?: boolean
+  disableScrollOffsetWhenFixed?: boolean
 }
 
 const noopSetIsMenuOpen = () => {}
@@ -158,6 +161,7 @@ export const buildNavbarMenuContextValue = (
     easingOpen: props.easingOpen ?? "ease",
     easingClose: props.easingClose ?? "ease",
     durationMs: props.durationMs ?? 400,
+    menuFillsPageHeight: props.menuFillsPageHeight ?? false,
   }
 }
 

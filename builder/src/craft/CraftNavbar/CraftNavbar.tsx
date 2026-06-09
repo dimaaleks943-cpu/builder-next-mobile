@@ -20,6 +20,7 @@ import {
   type NavbarMenuPreviewValue,
   type NavbarMenuTypeValue,
 } from "../../pages/builder/context/navbarMenuContext.tsx"
+import { NAVBAR_ROOT_DATA_ATTR } from "../../pages/builder/utils/navbarAnchorScroll.ts"
 import { NavbarSettingsFields } from "../../pages/builder/settingsCraftComponents/NavbarSettingsFields.tsx"
 import { InlineSettingsModal } from "../../components/InlineSettingsModal/InlineSettingsModal.tsx"
 
@@ -33,6 +34,8 @@ export interface Props {
   easingClose?: NavbarEasingValue
   durationMs?: number
   menuIconBreakpoint?: NavbarMenuIconBreakpointValue
+  menuFillsPageHeight?: boolean
+  disableScrollOffsetWhenFixed?: boolean
 }
 
 export const CraftNavbar = (props: Props) => {
@@ -98,6 +101,7 @@ export const CraftNavbar = (props: Props) => {
       props.easingClose,
       props.durationMs,
       props.menuIconBreakpoint,
+      props.menuFillsPageHeight,
       viewport,
     ],
   )
@@ -111,10 +115,8 @@ export const CraftNavbar = (props: Props) => {
             if (!ref) return
             connect(drag(ref))
           }}
-          style={{
-            ...(responsiveStyle as CSSProperties),
-            position: "relative",
-          }}
+          {...{ [NAVBAR_ROOT_DATA_ATTR]: id }}
+          style={responsiveStyle as CSSProperties}
         >
           {props.children}
         </div>
@@ -142,6 +144,8 @@ export const CraftNavbar = (props: Props) => {
     easingClose: "ease" as const,
     durationMs: 400,
     menuIconBreakpoint: PreviewViewport.TABLET_LANDSCAPE,
+    menuFillsPageHeight: false,
+    disableScrollOffsetWhenFixed: false,
     style: {
       [PreviewViewport.DESKTOP]: {
         display: "flex",

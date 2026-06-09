@@ -1,6 +1,7 @@
 import type { ChangeEvent } from "react"
-import { Box, Divider } from "@mui/material"
+import { Box, Checkbox, Divider, FormControlLabel, Typography } from "@mui/material"
 import { useEditor } from "@craftjs/core"
+import { COLORS } from "../../../theme/colors"
 import { SettingsAccordion } from "./components/SettingsAccordion/SettingsAccordion.tsx"
 import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
 import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSettingsInput.tsx"
@@ -23,6 +24,8 @@ interface SelectedNavbarProps {
   easingClose?: NavbarEasingValue
   durationMs?: number
   menuIconBreakpoint?: NavbarMenuIconBreakpointValue
+  menuFillsPageHeight?: boolean
+  disableScrollOffsetWhenFixed?: boolean
 }
 
 interface EditorSelection {
@@ -69,6 +72,9 @@ export const NavbarSettingsFields = ({ nodeId, asAccordion }: Props) => {
   const durationMs = nodeProps.durationMs ?? 400
   const menuIconBreakpoint =
     nodeProps.menuIconBreakpoint ?? DEFAULT_NAVBAR_MENU_ICON_BREAKPOINT
+  const menuFillsPageHeight = nodeProps.menuFillsPageHeight ?? false
+  const disableScrollOffsetWhenFixed =
+    nodeProps.disableScrollOffsetWhenFixed ?? false
 
   const handleMenuIconBreakpointChange = (value: NavbarMenuIconBreakpointValue) => {
     actions.setProp(nodeId, (props: SelectedNavbarProps) => {
@@ -105,6 +111,22 @@ export const NavbarSettingsFields = ({ nodeId, asAccordion }: Props) => {
     const parsed = raw === "" ? 0 : parseInt(raw, 10)
     actions.setProp(nodeId, (props: SelectedNavbarProps) => {
       props.durationMs = Number.isNaN(parsed) ? 0 : parsed
+    })
+  }
+
+  const handleMenuFillsPageHeightChange = (
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    actions.setProp(nodeId, (props: SelectedNavbarProps) => {
+      props.menuFillsPageHeight = event.target.checked
+    })
+  }
+
+  const handleDisableScrollOffsetWhenFixedChange = (
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    actions.setProp(nodeId, (props: SelectedNavbarProps) => {
+      props.disableScrollOffsetWhenFixed = event.target.checked
     })
   }
 
@@ -155,6 +177,52 @@ export const NavbarSettingsFields = ({ nodeId, asAccordion }: Props) => {
       <CraftSettingsMenuIconBreakpoint
         value={menuIconBreakpoint}
         onChange={handleMenuIconBreakpointChange}
+      />
+
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={menuFillsPageHeight}
+            onChange={handleMenuFillsPageHeightChange}
+            size="small"
+            sx={{
+              padding: 0,
+              color: COLORS.gray600,
+              marginLeft: "11px",
+              "&.Mui-checked": {
+                color: COLORS.purple400,
+              },
+            }}
+          />
+        }
+        label={
+          <Typography sx={{ color: COLORS.gray700, fontSize: "12px", marginLeft: "4px" }}>
+            Menu fills page height
+          </Typography>
+        }
+      />
+
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={disableScrollOffsetWhenFixed}
+            onChange={handleDisableScrollOffsetWhenFixedChange}
+            size="small"
+            sx={{
+              padding: 0,
+              color: COLORS.gray600,
+              marginLeft: "11px",
+              "&.Mui-checked": {
+                color: COLORS.purple400,
+              },
+            }}
+          />
+        }
+        label={
+          <Typography sx={{ color: COLORS.gray700, fontSize: "12px", marginLeft: "4px" }}>
+            Disable scroll offset when fixed
+          </Typography>
+        }
       />
     </Box>
   )
