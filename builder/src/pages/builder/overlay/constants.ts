@@ -16,6 +16,7 @@ export const CRAFT_INLINE_SETTINGS_RESOLVED_NAMES = new Set([
   "Image",
   "ContentList",
   "CategoryFilter",
+  "Navbar",
 ])
 
 /**
@@ -32,4 +33,5 @@ export const CRAFT_INLINE_SETTINGS_BADGE_LABELS = new Set<string>([
   CRAFT_DISPLAY_NAME.Image,
   CRAFT_DISPLAY_NAME.ContentList,
   CRAFT_DISPLAY_NAME.CategoryFilter,
+  CRAFT_DISPLAY_NAME.Navbar,
 ])

@@ -15,19 +15,73 @@ interface Props {
 
 export const CraftNavbarMenu = (props: Props) => {
   const responsiveStyle = useCraftNodeStyle(props.styleClassIds, props.style)
-  const { isMenuOpen, isCompact } = useNavbarMenu()
+  const {
+    isMenuOpen,
+    isCompact,
+    menuType,
+    easingOpen,
+    easingClose,
+    durationMs,
+  } = useNavbarMenu()
   const {
     connectors: { connect, drag },
   } = useNode()
+
+  const isDropDown = menuType === "dropDown"
+  const easing = isMenuOpen ? easingOpen : easingClose
+  const transition = `opacity ${durationMs}ms ${easing}, transform ${durationMs}ms ${easing}`
+
+  const typeLayout: CSSProperties =
+    menuType === "overRight"
+      ? {
+          top: 0,
+          right: 0,
+          height: "100%",
+          width: "min(280px, 80%)",
+          flexDirection: "column",
+          transform: isMenuOpen ? "translateX(0)" : "translateX(100%)",
+        }
+      : menuType === "overLeft"
+        ? {
+            top: 0,
+            left: 0,
+            height: "100%",
+            width: "min(280px, 80%)",
+            flexDirection: "column",
+            transform: isMenuOpen ? "translateX(0)" : "translateX(-100%)",
+          }
+        : {
+            width: "100%",
+            flexDirection: "column",
+            transform: isMenuOpen ? "translateY(0)" : "translateY(-8px)",
+          }
 
   const mergedStyle: CSSProperties = {
     ...(responsiveStyle as CSSProperties),
     ...(!isCompact
       ? { display: "none" }
-      : isMenuOpen
-        ? { display: "flex", flexDirection: "column" }
-        : { display: "none" }),
-    transition: "max-height 0.3s ease, opacity 0.2s ease",
+      : isDropDown
+        ? {
+            display: isMenuOpen ? "flex" : "none",
+            position: "relative",
+            boxSizing: "border-box",
+            width: "100%",
+            opacity: isMenuOpen ? 1 : 0,
+            transition,
+            backgroundColor: COLORS.white,
+            ...typeLayout,
+          }
+        : {
+            display: "flex",
+            position: "absolute",
+            boxSizing: "border-box",
+            zIndex: 10,
+            opacity: isMenuOpen ? 1 : 0,
+            pointerEvents: isMenuOpen ? "auto" : "none",
+            transition,
+            backgroundColor: COLORS.white,
+            ...typeLayout,
+          }),
   }
 
   return (

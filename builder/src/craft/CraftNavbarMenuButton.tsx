@@ -1,5 +1,5 @@
 import { useNode } from "@craftjs/core"
-import type { CSSProperties, KeyboardEvent, MouseEvent } from "react"
+import type { CSSProperties } from "react"
 import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
 import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
@@ -14,26 +14,14 @@ interface Props {
 
 export const CraftNavbarMenuButton = (props: Props) => {
   const responsiveStyle = useCraftNodeStyle(props.styleClassIds, props.style)
-  const { isMenuOpen, setIsMenuOpen, isCompact } = useNavbarMenu()
+  const { isMenuOpen, isCompact } = useNavbarMenu()
   const {
     connectors: { connect, drag },
   } = useNode()
 
-  const handleToggle = (event: MouseEvent | KeyboardEvent) => {
-    event.stopPropagation()
-    event.preventDefault()
-    setIsMenuOpen((prev) => !prev)
-  }
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "Enter" || event.key === " ") {
-      handleToggle(event)
-    }
-  }
-
   const mergedStyle: CSSProperties = {
     ...(responsiveStyle as CSSProperties),
-    ...(!isCompact ? { display: "none" } : {}),
+    ...(!isCompact ? { display: "none" } : { cursor: "default" }),
   }
 
   return (
@@ -46,10 +34,6 @@ export const CraftNavbarMenuButton = (props: Props) => {
       aria-label="menu"
       aria-haspopup="menu"
       aria-expanded={isMenuOpen}
-      tabIndex={0}
-      onMouseDown={(event) => event.stopPropagation()}
-      onClickCapture={handleToggle}
-      onKeyDown={handleKeyDown}
       style={mergedStyle}
     >
       <div>
@@ -71,7 +55,7 @@ export const CraftNavbarMenuButton = (props: Props) => {
         alignItems: "center",
         justifyContent: "center",
         padding: "8px",
-        cursor: "pointer",
+        cursor: "default",
         boxSizing: "border-box",
       },
     },
