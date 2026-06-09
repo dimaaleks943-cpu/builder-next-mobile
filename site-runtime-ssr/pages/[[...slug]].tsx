@@ -211,6 +211,7 @@ function resolveSystemLayoutComponents(pages: SitePage[], query: ParsedUrlQuery)
         styleClasses: {},
         orphanStyleNodes: [],
         stackedStyleClassIds: [],
+        navbarBehaviorNodes: [],
       }
   const footerCraft = footerPage?.content
     ? craftContentToComponents(footerPage.content, CRAFT_FRAGMENT_SCOPE.footer)
@@ -220,6 +221,7 @@ function resolveSystemLayoutComponents(pages: SitePage[], query: ParsedUrlQuery)
         styleClasses: {},
         orphanStyleNodes: [],
         stackedStyleClassIds: [],
+        navbarBehaviorNodes: [],
       }
 
   return {

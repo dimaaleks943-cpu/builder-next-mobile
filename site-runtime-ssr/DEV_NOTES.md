@@ -406,7 +406,36 @@
 
 ---
 
-### 12. Update protocol для DEV_NOTES (обязательный)
+### 13. Navbar SSR (Craft → runtime)
+
+**Проблема**: билдер сериализует дерево `Navbar` / `NavbarLinks` / `NavbarMenuButton` / `NavbarMenu` / `Icon`, но без рантайм-компонентов SSR показывал `Unknown component: Navbar`.
+
+**Компоненты** (`components/Navbar/`, `NavbarMenuButton/`, `NavbarLinks/`, `NavbarMenu/`, `Icon/`):
+
+- Зарегистрированы в `lib/renderer.tsx` (`Navbar`, `NavbarMenuButton`, `NavbarLinks`, `NavbarMenu`, `Icon`; ссылки — существующий `LinkText`).
+- `Navbar` оборачивает детей в `NavbarMenuProvider` (`lib/navbar/navbarMenuContext.tsx`), выставляет `data-craft-navbar-id` и `data-disable-scroll-offset`.
+- `NavbarMenuButton` переключает `isMenuOpen` по клику; `NavbarMenu` рендерит анимацию (`dropDown` / `overLeft` / `overRight`) как в билдере.
+- `Icon` + `BurgerIcon` используют `currentColor` (без `COLORS`).
+
+**Парсер** (`lib/craftContentToComponents.ts`):
+
+- После построения дерева для каждого `Navbar` копируются `LinkText`-дети из `NavbarLinks` в `NavbarMenu` (как динамический рендер в `CraftNavbarMenu`).
+- Собирается `navbarBehaviorNodes[]` (id узлов + `menuIconBreakpoint`) для CSS.
+
+**Стили**:
+
+- Визуальные стили — через `styleClassIds` → `className` + `buildStyleClassesCss` / orphan CSS (как у остальных блоков).
+- Поведение compact/desktop — `lib/navbar/buildNavbarBehaviorCss.ts`, подключается в `buildCraftFragmentCss`.
+- Брейкпоинт иконки меню: `none` → never compact; `desktop` → always compact; `tablet_landscape` → 1279px; `tablet` → 1023px; `phone_landscape` → 767px; `phone` → 567px.
+
+**Клиент**:
+
+- `hooks/useNavbarAnchorScroll.ts` — перехват кликов по `#hash`, смещение скролла под `position: fixed` navbar (`lib/navbar/navbarAnchorScroll.ts`); монтируется в `pages/_app.tsx`.
+- `menuPreview` игнорируется на SSR (только превью билдера); меню стартует закрытым.
+
+---
+
+### 14. Update protocol для DEV_NOTES (обязательный)
 
 - Все изменения runtime-контрактов и data-flow фиксируем здесь в рамках той же задачи.
 - При изменениях `ContentList`/collections обязательно проверяем parity с `builder` и `mobileAPP`:
@@ -417,5 +446,6 @@
   обновляем этот раздел и `site-runtime-ssr/README.md`, чтобы не было расхождений.
 - Любые изменения **template-маршрута** (`templateRoute`, выбор страницы по slug, загрузка записи, `templateContentData`, `LinkText` template-href) синхронизируем с **§7.2–7.3**, `builder/DEV_NOTES.md` и `mobileAPP/DEV_NOTES.md` §5.
 - При изменении **брейкпоинтов responsive CSS** (`lib/responsiveCss.ts`, `BRANCHES`, строки `max-width`) — обновляем **§1.1**, `builder/DEV_NOTES.md` §3.1 и `mobileAPP/DEV_NOTES.md` §4.
+- При изменении **navbar SSR** (парсер, behavior CSS, компоненты, anchor scroll) — обновляем **§13** и `builder/DEV_NOTES.md` при изменении контракта Craft props.
 
 

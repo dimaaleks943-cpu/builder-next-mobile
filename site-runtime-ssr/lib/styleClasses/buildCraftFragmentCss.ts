@@ -1,4 +1,5 @@
 import type { CraftContentParseResult } from "../craftContentToComponents"
+import { buildNavbarBehaviorCss } from "../navbar/buildNavbarBehaviorCss"
 import { buildComboClassId } from "./comboClassId"
 import { buildOrphanNodeCss } from "./buildOrphanNodeCss"
 import {
@@ -23,8 +24,13 @@ const dedupeStacks = (stacks: readonly (readonly string[])[]): string[][] => {
 export const buildCraftFragmentCss = (
   result: CraftContentParseResult,
 ): string => {
-  const { fragmentScope, styleClasses, orphanStyleNodes, stackedStyleClassIds } =
-    result
+  const {
+    fragmentScope,
+    styleClasses,
+    orphanStyleNodes,
+    stackedStyleClassIds,
+    navbarBehaviorNodes,
+  } = result
   const uniqueStacks = dedupeStacks([
     ...stackedStyleClassIds,
     ...collectStacksFromRegistry(styleClasses),
@@ -33,6 +39,7 @@ export const buildCraftFragmentCss = (
   return (
     buildStyleClassesCss(styleClasses, fragmentScope) +
     buildStackedClassesCss(uniqueStacks, styleClasses, fragmentScope) +
-    buildOrphanNodeCss(orphanStyleNodes)
+    buildOrphanNodeCss(orphanStyleNodes) +
+    buildNavbarBehaviorCss(navbarBehaviorNodes)
   )
 }

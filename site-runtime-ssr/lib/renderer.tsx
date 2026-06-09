@@ -9,6 +9,11 @@ import { Button } from "@/components/Button"
 import { Image } from "@/components/Image"
 import { ContentList } from "@/components/ContentList"
 import { CategoryFilter } from "@/components/CategoryFilter"
+import { Navbar } from "@/components/Navbar/Navbar"
+import { NavbarMenuButton } from "@/components/Navbar/components/NavbarMenuButton/NavbarMenuButton"
+import { NavbarLinks } from "@/components/Navbar/components/NavbarLinks/NavbarLinks"
+import { NavbarMenu } from "@/components/Navbar/components/NavbarMenu/NavbarMenu"
+import { Icon } from "@/components/Icon/Icon"
 import type { ComponentNode } from "./interface"
 
 const componentMap: Record<string, React.ComponentType<any>> = {
@@ -22,6 +27,11 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   Image,
   ContentList,
   CategoryFilter, // выбор категории в контексте для ContentList с тем же filterScope
+  Navbar,
+  NavbarMenuButton,
+  NavbarLinks,
+  NavbarMenu,
+  Icon,
 }
 
 export function renderComponent(

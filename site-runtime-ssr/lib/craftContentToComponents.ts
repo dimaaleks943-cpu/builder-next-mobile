@@ -14,6 +14,8 @@ import {
   resolveSerializedNodeStyle,
 } from "./styleClasses/resolveNodeStyle"
 import type { StyleClassesRegistry } from "./styleClasses/types"
+import { normalizeMenuIconBreakpoint } from "./navbar/navbarMenuContext"
+import type { NavbarBehaviorNode } from "./navbar/navbarTypes"
 
 export type CraftContentParseResult = {
   fragmentScope: CraftFragmentScopePrefix
@@ -22,6 +24,7 @@ export type CraftContentParseResult = {
   orphanStyleNodes: OrphanStyleNode[]
   /** Unique `styleClassIds` stacks (length >= 2) for compound CSS selectors. */
   stackedStyleClassIds: string[][]
+  navbarBehaviorNodes: NavbarBehaviorNode[]
 }
 
 type SerializedNodes = Record<
@@ -355,6 +358,92 @@ const buildNodeTree = (
   return component
 }
 
+const cloneComponentNode = (node: ComponentNode): ComponentNode => ({
+  ...node,
+  props: { ...node.props },
+  ...(node.children
+    ? { children: node.children.map(cloneComponentNode) }
+    : {}),
+})
+
+const findNavbarChild = (
+  children: ComponentNode[] | undefined,
+  type: string,
+): ComponentNode | undefined => children?.find((child) => child.type === type)
+
+const processNavbarNode = (
+  node: ComponentNode,
+  behaviorCollector: NavbarBehaviorNode[],
+): ComponentNode => {
+  if (node.type !== "Navbar") {
+    return {
+      ...node,
+      ...(node.children
+        ? {
+            children: node.children.map((child) =>
+              processNavbarNode(child, behaviorCollector),
+            ),
+          }
+        : {}),
+    }
+  }
+
+  const linksChild = findNavbarChild(node.children, "NavbarLinks")
+  const menuChild = findNavbarChild(node.children, "NavbarMenu")
+  const menuButtonChild = findNavbarChild(node.children, "NavbarMenuButton")
+
+  if (linksChild && menuChild) {
+    const linkTextChildren = (linksChild.children ?? [])
+      .filter((child) => child.type === "LinkText")
+      .map(cloneComponentNode)
+
+    behaviorCollector.push({
+      menuIconBreakpoint: normalizeMenuIconBreakpoint(
+        node.props.menuIconBreakpoint,
+      ),
+      linksNodeId: linksChild.nodeId,
+      menuButtonNodeId: menuButtonChild?.nodeId ?? null,
+      menuNodeId: menuChild.nodeId,
+    })
+
+    const updatedMenu: ComponentNode = {
+      ...menuChild,
+      children: linkTextChildren,
+    }
+
+    return {
+      ...node,
+      children: (node.children ?? []).map((child) => {
+        if (child.nodeId === menuChild.nodeId) {
+          return updatedMenu
+        }
+        return processNavbarNode(child, behaviorCollector)
+      }),
+    }
+  }
+
+  return {
+    ...node,
+    ...(node.children
+      ? {
+          children: node.children.map((child) =>
+            processNavbarNode(child, behaviorCollector),
+          ),
+        }
+      : {}),
+  }
+}
+
+const postProcessNavbarComponents = (
+  components: ComponentNode[],
+): { components: ComponentNode[]; navbarBehaviorNodes: NavbarBehaviorNode[] } => {
+  const navbarBehaviorNodes: NavbarBehaviorNode[] = []
+  const processed = components.map((node) =>
+    processNavbarNode(node, navbarBehaviorNodes),
+  )
+  return { components: processed, navbarBehaviorNodes }
+}
+
 export const craftContentToComponents = (
   content: string,
   fragmentScope: CraftFragmentScopePrefix,
@@ -369,6 +458,7 @@ export const craftContentToComponents = (
       styleClasses: {},
       orphanStyleNodes,
       stackedStyleClassIds: [],
+      navbarBehaviorNodes: [],
     }
   }
 
@@ -383,6 +473,7 @@ export const craftContentToComponents = (
       styleClasses,
       orphanStyleNodes,
       stackedStyleClassIds: [],
+      navbarBehaviorNodes: [],
     }
   }
 
@@ -411,15 +502,23 @@ export const craftContentToComponents = (
 
   const stackedStyleClassIds = Array.from(stackedCollector.values())
 
+  const finalizeParseResult = (
+    components: ComponentNode[],
+  ): CraftContentParseResult => {
+    const navbarProcessed = postProcessNavbarComponents(components)
+    return {
+      fragmentScope,
+      components: navbarProcessed.components,
+      styleClasses,
+      orphanStyleNodes,
+      stackedStyleClassIds,
+      navbarBehaviorNodes: navbarProcessed.navbarBehaviorNodes,
+    }
+  }
+
   if (rootIsBody) {
     if (result.length === 0) {
-      return {
-        fragmentScope,
-        components: [],
-        styleClasses,
-        orphanStyleNodes,
-        stackedStyleClassIds,
-      }
+      return finalizeParseResult([])
     }
 
     const rootProps = (root.props ?? {}) as Record<string, unknown>
@@ -435,37 +534,25 @@ export const craftContentToComponents = (
       stackedCollector,
     )
 
-    return {
-      fragmentScope,
-      components: [
-        {
-          nodeId: scopedNodeId("ROOT", fragmentScope),
-          ...classNameProp(
-            normalizeStyleClassIds(rootProps.styleClassIds),
-            styleClasses,
-            fragmentScope,
-          ),
-          type: "Body",
-          props: propsForRuntimeSsr(
-            rootProps,
-            "Body",
-            root.displayName,
-            styleClasses,
-          ),
-          children: result,
-        },
-      ],
-      styleClasses,
-      orphanStyleNodes,
-      stackedStyleClassIds: Array.from(stackedCollector.values()),
-    }
+    return finalizeParseResult([
+      {
+        nodeId: scopedNodeId("ROOT", fragmentScope),
+        ...classNameProp(
+          normalizeStyleClassIds(rootProps.styleClassIds),
+          styleClasses,
+          fragmentScope,
+        ),
+        type: "Body",
+        props: propsForRuntimeSsr(
+          rootProps,
+          "Body",
+          root.displayName,
+          styleClasses,
+        ),
+        children: result,
+      },
+    ])
   }
 
-  return {
-    fragmentScope,
-    components: result,
-    styleClasses,
-    orphanStyleNodes,
-    stackedStyleClassIds,
-  }
+  return finalizeParseResult(result)
 }
