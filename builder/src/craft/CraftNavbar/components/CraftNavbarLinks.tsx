@@ -32,7 +32,7 @@ export const CraftNavbarLinks = (props: Props) => {
       }}
       style={mergedStyle}
     >
-      {props.children}
+      {!isCompact ? props.children : null}
     </div>
   )
 };

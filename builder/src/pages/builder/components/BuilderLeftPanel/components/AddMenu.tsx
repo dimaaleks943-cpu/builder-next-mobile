@@ -110,11 +110,7 @@ export const useCategories = (): Category[] => {
                     <Element is={CraftLinkText} text="Contact" href="#" linkMode="url" />
                   </Element>
                 </Element>
-                <Element is={CraftNavbarMenu} canvas>
-                  <Element is={CraftLinkText} text="About" href="#" linkMode="url" />
-                  <Element is={CraftLinkText} text="Home" href="#" linkMode="url" />
-                  <Element is={CraftLinkText} text="Contact" href="#" linkMode="url" />
-                </Element>
+                <Element is={CraftNavbarMenu} />
               </Element>
             ),
           },

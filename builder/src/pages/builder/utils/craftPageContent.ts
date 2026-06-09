@@ -7,7 +7,6 @@ import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts"
 import { BODY_CRAFT_DEFAULT_PROPS } from "../../../craft/defaultDefaultCraftStyles.ts"
 import type { StyleClassesRegistry } from "../styleClasses/types.ts"
 import { pruneUnusedStyleClasses } from "../styleClasses/pruneUnusedStyleClasses.ts"
-
 const bodyCraftProps = structuredClone(BODY_CRAFT_DEFAULT_PROPS)
 
 /** Пустое дерево Craft (только ROOT + Body без детей). */
@@ -60,8 +59,9 @@ export const parsePageCraftContent = (raw: string): PageCraftContent => {
       }
     }
     if (isSerializedNodes(parsed)) {
+      const nodes = decodeSerializedNodesStyleProps(parsed)
       return {
-        nodes: decodeSerializedNodesStyleProps(parsed),
+        nodes,
         styleClasses: {},
       }
     }

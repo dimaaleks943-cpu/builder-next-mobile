@@ -1,14 +1,18 @@
-import { useNode } from "@craftjs/core"
-import type { CSSProperties, ReactNode } from "react"
+import { NodeElement, useEditor, useNode } from "@craftjs/core"
+import type { CSSProperties } from "react"
 import { CRAFT_DISPLAY_NAME } from "../../craftDisplayNames.ts"
 import type { ResponsiveStyle } from "../../../pages/builder/responsiveStyle.ts"
 import { useCraftNodeStyle } from "../../../pages/builder/hooks/useCraftNodeStyle.ts"
 import { PreviewViewport } from "../../../pages/builder/builder.enum.ts"
 import { COLORS } from "../../../theme/colors.ts"
 import { useNavbarMenu } from "../../../pages/builder/context/navbarMenuContext.tsx"
+import {
+  findNavbarAncestorId,
+  findNavbarLinkContainerIds,
+  getNavbarLinkTextChildIds,
+} from "../../../pages/builder/utils/navbarLinkUtils.ts"
 
 interface Props {
-  children?: ReactNode
   style?: ResponsiveStyle
   styleClassIds?: string[]
 }
@@ -26,7 +30,24 @@ export const CraftNavbarMenu = (props: Props) => {
   } = useNavbarMenu()
   const {
     connectors: { connect, drag },
+    id,
   } = useNode()
+
+  const { linkIds } = useEditor((_, query): { linkIds: string[] } => {
+    try {
+      const navbarId = findNavbarAncestorId(query, id)
+      if (!navbarId) {
+        return { linkIds: [] }
+      }
+      const { navbarLinksId } = findNavbarLinkContainerIds(query, navbarId)
+      if (!navbarLinksId) {
+        return { linkIds: [] }
+      }
+      return { linkIds: getNavbarLinkTextChildIds(query, navbarLinksId) }
+    } catch {
+      return { linkIds: [] }
+    }
+  })
 
   const isDropDown = menuType === "dropDown"
   const easing = isMenuOpen ? easingOpen : easingClose
@@ -95,7 +116,8 @@ export const CraftNavbarMenu = (props: Props) => {
       role="menu"
       style={mergedStyle}
     >
-      {props.children}
+      {isCompact &&
+        linkIds.map((linkId) => <NodeElement key={linkId} id={linkId} />)}
     </div>
   )
 };
@@ -118,8 +140,7 @@ export const CraftNavbarMenu = (props: Props) => {
     },
   },
   rules: {
-    canMoveIn: (nodes: { data: { type: { resolvedName?: string } } }[]) =>
-      nodes.every((n) => n.data?.type?.resolvedName === "LinkText"),
+    canMoveIn: () => false,
   },
-  isCanvas: true,
+  isCanvas: false,
 }

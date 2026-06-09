@@ -5,10 +5,8 @@ import { COLORS } from "../../../theme/colors"
 import { AddIcon } from "../../../icons/AddIcon.tsx"
 import { SettingsActionButton } from "../../../components/SettingsActionButton/SettingsActionButton.tsx"
 import { SettingsAccordion } from "./components/SettingsAccordion/SettingsAccordion.tsx"
-import {
-  addNavbarLink,
-  findNavbarLinkContainerIds,
-} from "../utils/addNavbarLink.ts"
+import { addNavbarLink } from "../utils/addNavbarLink.ts"
+import { findNavbarLinkContainerIds } from "../utils/navbarLinkUtils.ts"
 import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
 import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSettingsInput.tsx"
 import { CraftSettingsSelect } from "../components/craftSettingsControls/CraftSettingsSelect.tsx"
@@ -136,8 +134,8 @@ export const NavbarSettingsFields = ({ nodeId, asAccordion }: Props) => {
     })
   }
 
-  const { navbarLinksId, navbarMenuId } = findNavbarLinkContainerIds(query, nodeId)
-  const canAddLink = Boolean(navbarLinksId && navbarMenuId)
+  const { navbarLinksId } = findNavbarLinkContainerIds(query, nodeId)
+  const canAddLink = Boolean(navbarLinksId)
 
   const handleAddLink = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation()
