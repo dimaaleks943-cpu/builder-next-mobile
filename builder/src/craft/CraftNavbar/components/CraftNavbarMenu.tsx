@@ -49,9 +49,73 @@ export const CraftNavbarMenu = (props: Props) => {
     }
   })
 
-  const isDropDown = menuType === "dropDown"
   const easing = isMenuOpen ? easingOpen : easingClose
-  const transition = `opacity ${durationMs}ms ${easing}, transform ${durationMs}ms ${easing}`
+  const overlayTransition = `opacity ${durationMs}ms ${easing}, transform ${durationMs}ms ${easing}`
+  const dropDownClipTransition = `max-height ${durationMs}ms ${easing}`
+  const dropDownMenuTransition = `transform ${durationMs}ms ${easing}`
+
+  const renderMenuLinks = () =>
+    isCompact
+      ? linkIds.map((linkId) => <NodeElement key={linkId} id={linkId} />)
+      : null
+
+  if (!isCompact) {
+    return (
+      <div
+        ref={(ref) => {
+          if (!ref) return
+          connect(drag(ref))
+        }}
+        role="menu"
+        style={{ ...(responsiveStyle as CSSProperties), display: "none" }}
+      />
+    )
+  }
+
+  if (menuType === "dropDown") {
+    const clipStyle: CSSProperties = {
+      position: "absolute",
+      top: "100%",
+      left: 0,
+      width: "100%",
+      overflow: "hidden",
+      maxHeight: isMenuOpen
+        ? menuFillsPageHeight
+          ? "100vh"
+          : "2000px"
+        : 0,
+      transition: dropDownClipTransition,
+      zIndex: 10,
+      pointerEvents: isMenuOpen ? "auto" : "none",
+    }
+
+    const menuStyle: CSSProperties = {
+      ...(responsiveStyle as CSSProperties),
+      display: "flex",
+      flexDirection: "column",
+      width: "100%",
+      boxSizing: "border-box",
+      transform: isMenuOpen ? "translateY(0)" : "translateY(-100%)",
+      transition: dropDownMenuTransition,
+      ...(menuFillsPageHeight && isMenuOpen
+        ? { minHeight: "100vh", height: "100vh" }
+        : {}),
+    }
+
+    return (
+      <div
+        ref={(ref) => {
+          if (!ref) return
+          connect(drag(ref))
+        }}
+        style={clipStyle}
+      >
+        <div role="menu" style={menuStyle}>
+          {renderMenuLinks()}
+        </div>
+      </div>
+    )
+  }
 
   const typeLayout: CSSProperties =
     menuType === "overRight"
@@ -63,48 +127,25 @@ export const CraftNavbarMenu = (props: Props) => {
           flexDirection: "column",
           transform: isMenuOpen ? "translateX(0)" : "translateX(100%)",
         }
-      : menuType === "overLeft"
-        ? {
-            top: 0,
-            left: 0,
-            height: menuFillsPageHeight ? "100vh" : "max-content",
-            width: "min(280px, 80%)",
-            flexDirection: "column",
-            transform: isMenuOpen ? "translateX(0)" : "translateX(-100%)",
-          }
-        : {
-            width: "100%",
-            flexDirection: "column",
-            transform: isMenuOpen ? "translateY(0)" : "translateY(-8px)",
-            ...(menuFillsPageHeight && isMenuOpen
-              ? { minHeight: "100vh", height: "100vh" }
-              : {}),
-          }
+      : {
+          top: 0,
+          left: 0,
+          height: menuFillsPageHeight ? "100vh" : "max-content",
+          width: "min(280px, 80%)",
+          flexDirection: "column",
+          transform: isMenuOpen ? "translateX(0)" : "translateX(-100%)",
+        }
 
   const mergedStyle: CSSProperties = {
     ...(responsiveStyle as CSSProperties),
-    ...(!isCompact
-      ? { display: "none" }
-      : isDropDown
-        ? {
-            display: isMenuOpen ? "flex" : "none",
-            position: "relative",
-            boxSizing: "border-box",
-            width: "100%",
-            opacity: isMenuOpen ? 1 : 0,
-            transition,
-            ...typeLayout,
-          }
-        : {
-            display: "flex",
-            position: "absolute",
-            boxSizing: "border-box",
-            zIndex: 10,
-            opacity: isMenuOpen ? 1 : 0,
-            pointerEvents: isMenuOpen ? "auto" : "none",
-            transition,
-            ...typeLayout,
-          }),
+    display: "flex",
+    position: "absolute",
+    boxSizing: "border-box",
+    zIndex: 10,
+    opacity: isMenuOpen ? 1 : 0,
+    pointerEvents: isMenuOpen ? "auto" : "none",
+    transition: overlayTransition,
+    ...typeLayout,
   }
 
   return (
@@ -116,8 +157,7 @@ export const CraftNavbarMenu = (props: Props) => {
       role="menu"
       style={mergedStyle}
     >
-      {isCompact &&
-        linkIds.map((linkId) => <NodeElement key={linkId} id={linkId} />)}
+      {renderMenuLinks()}
     </div>
   )
 };

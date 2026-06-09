@@ -49,7 +49,6 @@ export const CraftNavbarMenuButton = (props: Props) => {
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "8px",
         cursor: "default",
         boxSizing: "border-box",
       },

@@ -56,6 +56,7 @@ export const DEFAULT_LINK_TEXT_CRAFT_PROPS: LinkTextProps = {
       paddingRight: 0,
       paddingBottom: 0,
       paddingLeft: 0,
+      textDecoration: "none",
     },
   },
 }
