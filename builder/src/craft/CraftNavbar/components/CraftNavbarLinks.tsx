@@ -1,13 +1,13 @@
-import { useNode } from "@craftjs/core"
-import type { CSSProperties, ReactNode } from "react"
+import { NodeElement, useEditor, useNode } from "@craftjs/core"
+import type { CSSProperties } from "react"
 import { CRAFT_DISPLAY_NAME } from "../../craftDisplayNames.ts"
 import type { ResponsiveStyle } from "../../../pages/builder/responsiveStyle.ts"
 import { useCraftNodeStyle } from "../../../pages/builder/hooks/useCraftNodeStyle.ts"
 import { PreviewViewport } from "../../../pages/builder/builder.enum.ts"
 import { useNavbarMenu } from "../../../pages/builder/context/navbarMenuContext.tsx"
+import { getNavbarLinkTextChildIds } from "../../../pages/builder/utils/navbarLinkUtils.ts"
 
 interface Props {
-  children?: ReactNode
   style?: ResponsiveStyle
   styleClassIds?: string[]
 }
@@ -17,7 +17,16 @@ export const CraftNavbarLinks = (props: Props) => {
   const { isCompact } = useNavbarMenu()
   const {
     connectors: { connect, drag },
+    id,
   } = useNode()
+
+  const { linkIds } = useEditor((_, query): { linkIds: string[] } => {
+    try {
+      return { linkIds: getNavbarLinkTextChildIds(query, id) }
+    } catch {
+      return { linkIds: [] }
+    }
+  })
 
   const mergedStyle: CSSProperties = {
     ...(responsiveStyle as CSSProperties),
@@ -32,7 +41,8 @@ export const CraftNavbarLinks = (props: Props) => {
       }}
       style={mergedStyle}
     >
-      {!isCompact ? props.children : null}
+      {!isCompact &&
+        linkIds.map((linkId) => <NodeElement key={linkId} id={linkId} />)}
     </div>
   )
 };
