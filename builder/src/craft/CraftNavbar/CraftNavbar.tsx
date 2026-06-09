@@ -1,26 +1,27 @@
 import { useNode } from "@craftjs/core"
 import type { CSSProperties, ReactNode } from "react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
-import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
-import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
-import { PreviewViewport } from "../pages/builder/builder.enum.ts"
-import { usePreviewViewport } from "../pages/builder/context/PreviewViewportContext.tsx"
-import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
+import { CRAFT_DISPLAY_NAME } from "../craftDisplayNames.ts"
+import type { ResponsiveStyle } from "../../pages/builder/responsiveStyle.ts"
+import { useCraftNodeStyle } from "../../pages/builder/hooks/useCraftNodeStyle.ts"
+import { PreviewViewport } from "../../pages/builder/builder.enum.ts"
+import { usePreviewViewport } from "../../pages/builder/context/PreviewViewportContext.tsx"
+import { useRightPanelContext } from "../../pages/builder/context/RightPanelContext.tsx"
 import {
   useCraftInlineSettingsBridge,
   useReactToInlineSettingsOpenRequest,
   type InlineSettingsViewportAnchor,
-} from "../pages/builder/context/CraftInlineSettingsBridgeContext.tsx"
+} from "../../pages/builder/context/CraftInlineSettingsBridgeContext.tsx"
 import {
   buildNavbarMenuContextValue,
   NavbarMenuContext,
   type NavbarEasingValue,
+  type NavbarMenuIconBreakpointValue,
   type NavbarMenuPreviewValue,
   type NavbarMenuTypeValue,
-} from "../pages/builder/context/navbarMenuContext.tsx"
-import { NavbarSettingsFields } from "../pages/builder/settingsCraftComponents/NavbarSettingsFields.tsx"
-import { InlineSettingsModal } from "../components/InlineSettingsModal/InlineSettingsModal.tsx"
+} from "../../pages/builder/context/navbarMenuContext.tsx"
+import { NavbarSettingsFields } from "../../pages/builder/settingsCraftComponents/NavbarSettingsFields.tsx"
+import { InlineSettingsModal } from "../../components/InlineSettingsModal/InlineSettingsModal.tsx"
 
 export interface Props {
   children?: ReactNode
@@ -31,6 +32,7 @@ export interface Props {
   easingOpen?: NavbarEasingValue
   easingClose?: NavbarEasingValue
   durationMs?: number
+  menuIconBreakpoint?: NavbarMenuIconBreakpointValue
 }
 
 export const CraftNavbar = (props: Props) => {
@@ -95,6 +97,7 @@ export const CraftNavbar = (props: Props) => {
       props.easingOpen,
       props.easingClose,
       props.durationMs,
+      props.menuIconBreakpoint,
       viewport,
     ],
   )
@@ -138,6 +141,7 @@ export const CraftNavbar = (props: Props) => {
     easingOpen: "ease" as const,
     easingClose: "ease" as const,
     durationMs: 400,
+    menuIconBreakpoint: PreviewViewport.TABLET_LANDSCAPE,
     style: {
       [PreviewViewport.DESKTOP]: {
         display: "flex",
@@ -153,7 +157,12 @@ export const CraftNavbar = (props: Props) => {
     canMoveIn: (nodes: { data: { type: { resolvedName?: string } } }[]) =>
       nodes.every((n) => {
         const resolvedName = n.data?.type?.resolvedName
-        return resolvedName === "Block" || resolvedName === "NavbarMenu"
+
+        return (
+          resolvedName === "Block" ||
+          resolvedName === "NavbarMenu" ||
+          resolvedName === "NavbarLinks"
+        )
       }),
   },
   isCanvas: true,

@@ -20,9 +20,10 @@ import { CraftLinkBlock } from "../../../../../craft/CraftLinkBlock.tsx"
 import { CraftContentList } from "../../../../../craft/ContentList.tsx"
 import { CraftCategoryFilter } from "../../../../../craft/CategoryFilter.tsx"
 import { CraftImage } from "../../../../../craft/Image.tsx"
-import { CraftNavbar } from "../../../../../craft/CraftNavbar.tsx"
-import { CraftNavbarMenuButton } from "../../../../../craft/CraftNavbarMenuButton.tsx"
-import { CraftNavbarMenu } from "../../../../../craft/CraftNavbarMenu.tsx"
+import { CraftNavbar } from "../../../../../craft/CraftNavbar/CraftNavbar.tsx"
+import { CraftNavbarMenuButton } from "../../../../../craft/CraftNavbar/components/CraftNavbarMenuButton.tsx"
+import { CraftNavbarMenu } from "../../../../../craft/CraftNavbar/components/CraftNavbarMenu.tsx"
+import { CraftNavbarLinks } from "../../../../../craft/CraftNavbar/components/CraftNavbarLinks.tsx"
 import { useBuilderModeContext } from "../../../context/BuilderModeContext"
 import { MODE_TYPE, PreviewViewport } from "../../../builder.enum"
 
@@ -94,16 +95,13 @@ export const useCategories = (): Category[] => {
                 >
                   <Element is={CraftNavbarMenuButton} />
                   <Element
-                    is={CraftBlock}
+                    is={CraftNavbarLinks}
                     canvas
                     style={{
                       [PreviewViewport.DESKTOP]: {
                         display: "flex",
                         alignItems: "center",
                         gap: "16px",
-                      },
-                      [PreviewViewport.TABLET_LANDSCAPE]: {
-                        display: "none",
                       },
                     }}
                   >

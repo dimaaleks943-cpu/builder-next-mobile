@@ -1,11 +1,11 @@
 import { useNode } from "@craftjs/core"
 import type { CSSProperties, ReactNode } from "react"
-import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
-import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
-import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
-import { PreviewViewport } from "../pages/builder/builder.enum.ts"
-import { COLORS } from "../theme/colors"
-import { useNavbarMenu } from "../pages/builder/context/navbarMenuContext.tsx"
+import { CRAFT_DISPLAY_NAME } from "../../craftDisplayNames.ts"
+import type { ResponsiveStyle } from "../../../pages/builder/responsiveStyle.ts"
+import { useCraftNodeStyle } from "../../../pages/builder/hooks/useCraftNodeStyle.ts"
+import { PreviewViewport } from "../../../pages/builder/builder.enum.ts"
+import { COLORS } from "../../../theme/colors.ts"
+import { useNavbarMenu } from "../../../pages/builder/context/navbarMenuContext.tsx"
 
 interface Props {
   children?: ReactNode
@@ -103,10 +103,6 @@ export const CraftNavbarMenu = (props: Props) => {
   props: {
     style: {
       [PreviewViewport.DESKTOP]: {
-        display: "none",
-      },
-      [PreviewViewport.TABLET_LANDSCAPE]: {
-        display: "none",
         flexDirection: "column",
         width: "100%",
         boxSizing: "border-box",

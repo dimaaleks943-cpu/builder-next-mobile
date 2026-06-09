@@ -2,8 +2,91 @@ import { useEditor, useNode } from "@craftjs/core"
 import { createContext, useContext, useMemo } from "react"
 import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
-import { PreviewViewport } from "../builder.enum.ts"
+import { getPreviewMaxWidth, PreviewViewport } from "../builder.enum.ts"
 import { usePreviewViewport } from "./PreviewViewportContext.tsx"
+
+export type NavbarMenuIconBreakpointValue = PreviewViewport | "none"
+
+export const NAVBAR_MENU_ICON_BREAKPOINT_STEPS_WEB: NavbarMenuIconBreakpointValue[] = [
+  PreviewViewport.DESKTOP,
+  PreviewViewport.TABLET_LANDSCAPE,
+  PreviewViewport.TABLET,
+  PreviewViewport.PHONE_LANDSCAPE,
+  PreviewViewport.PHONE,
+  "none",
+]
+
+export const NAVBAR_MENU_ICON_BREAKPOINT_STEPS_RN: NavbarMenuIconBreakpointValue[] = [
+  PreviewViewport.TABLET_LANDSCAPE,
+  PreviewViewport.TABLET,
+  PreviewViewport.PHONE_LANDSCAPE,
+  PreviewViewport.PHONE,
+  "none",
+]
+
+export const DEFAULT_NAVBAR_MENU_ICON_BREAKPOINT: NavbarMenuIconBreakpointValue =
+  PreviewViewport.TABLET_LANDSCAPE
+
+export const getNavbarMenuIconBreakpointSteps = (
+  isRn: boolean,
+): NavbarMenuIconBreakpointValue[] =>
+  isRn ? NAVBAR_MENU_ICON_BREAKPOINT_STEPS_RN : NAVBAR_MENU_ICON_BREAKPOINT_STEPS_WEB
+
+export const getNavbarMenuIconBreakpointLabel = (
+  value: NavbarMenuIconBreakpointValue,
+): string => {
+  switch (value) {
+    case PreviewViewport.DESKTOP:
+      return "Desktop and below"
+    case PreviewViewport.TABLET_LANDSCAPE:
+      return "Tablet landscape and below"
+    case PreviewViewport.TABLET:
+      return "Tablet and below"
+    case PreviewViewport.PHONE_LANDSCAPE:
+      return "Phone landscape and below"
+    case PreviewViewport.PHONE:
+      return "Phone and below"
+    case "none":
+      return "Never"
+    default:
+      return "Tablet and below"
+  }
+}
+
+export const menuIconBreakpointToSliderIndex = (
+  value: NavbarMenuIconBreakpointValue,
+  isRn: boolean,
+): number => {
+  const steps = getNavbarMenuIconBreakpointSteps(isRn)
+  const index = steps.indexOf(value)
+  if (index >= 0) {
+    return index
+  }
+  const fallbackIndex = steps.indexOf(DEFAULT_NAVBAR_MENU_ICON_BREAKPOINT)
+  return fallbackIndex >= 0 ? fallbackIndex : 0
+}
+
+export const sliderIndexToMenuIconBreakpoint = (
+  index: number,
+  isRn: boolean,
+): NavbarMenuIconBreakpointValue => {
+  const steps = getNavbarMenuIconBreakpointSteps(isRn)
+  const clamped = Math.min(Math.max(0, Math.round(index)), steps.length - 1)
+  return steps[clamped]
+}
+
+export const isNavbarMenuCompact = (
+  viewport: PreviewViewport,
+  menuIconBreakpoint: NavbarMenuIconBreakpointValue,
+): boolean => {
+  if (menuIconBreakpoint === "none") {
+    return false
+  }
+  if (menuIconBreakpoint === PreviewViewport.DESKTOP) {
+    return true
+  }
+  return getPreviewMaxWidth(viewport) <= getPreviewMaxWidth(menuIconBreakpoint)
+}
 
 export interface NavbarMenuPreview {
   show: "show"
@@ -51,6 +134,7 @@ interface NavbarMenuProps {
   easingOpen?: NavbarEasingValue
   easingClose?: NavbarEasingValue
   durationMs?: number
+  menuIconBreakpoint?: NavbarMenuIconBreakpointValue
 }
 
 const noopSetIsMenuOpen = () => {}
@@ -60,7 +144,9 @@ export const buildNavbarMenuContextValue = (
   viewport: PreviewViewport,
 ): NavbarMenuContextValue => {
   const menuPreview = props.menuPreview ?? "hide"
-  const isCompact = isCompactPreviewViewport(viewport)
+  const menuIconBreakpoint =
+    props.menuIconBreakpoint ?? DEFAULT_NAVBAR_MENU_ICON_BREAKPOINT
+  const isCompact = isNavbarMenuCompact(viewport, menuIconBreakpoint)
   const isMenuOpen = isCompact && menuPreview === "show"
 
   return {
@@ -107,6 +193,3 @@ export const useNavbarMenu = (): NavbarMenuContextValue => {
   const fromAncestor = useNavbarMenuFromAncestor()
   return context ?? fromAncestor
 }
-
-export const isCompactPreviewViewport = (viewport: PreviewViewport): boolean =>
-  viewport !== PreviewViewport.DESKTOP

@@ -1,11 +1,11 @@
 import { useNode } from "@craftjs/core"
 import type { CSSProperties } from "react"
-import { CRAFT_DISPLAY_NAME } from "./craftDisplayNames.ts"
-import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
-import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
-import { PreviewViewport } from "../pages/builder/builder.enum.ts"
-import { BurgerIcon } from "../icons/BurgerIcon.tsx"
-import { useNavbarMenu } from "../pages/builder/context/navbarMenuContext.tsx"
+import { CRAFT_DISPLAY_NAME } from "../../craftDisplayNames.ts"
+import type { ResponsiveStyle } from "../../../pages/builder/responsiveStyle.ts"
+import { useCraftNodeStyle } from "../../../pages/builder/hooks/useCraftNodeStyle.ts"
+import { PreviewViewport } from "../../../pages/builder/builder.enum.ts"
+import { BurgerIcon } from "../../../icons/BurgerIcon.tsx"
+import { useNavbarMenu } from "../../../pages/builder/context/navbarMenuContext.tsx"
 
 interface Props {
   style?: ResponsiveStyle
@@ -48,9 +48,6 @@ export const CraftNavbarMenuButton = (props: Props) => {
   props: {
     style: {
       [PreviewViewport.DESKTOP]: {
-        display: "none",
-      },
-      [PreviewViewport.TABLET_LANDSCAPE]: {
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",

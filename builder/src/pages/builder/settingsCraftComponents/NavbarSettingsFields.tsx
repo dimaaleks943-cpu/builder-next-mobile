@@ -1,14 +1,19 @@
 import type { ChangeEvent } from "react"
-import { Box } from "@mui/material"
+import { Box, Divider } from "@mui/material"
 import { useEditor } from "@craftjs/core"
 import { SettingsAccordion } from "./components/SettingsAccordion/SettingsAccordion.tsx"
 import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
 import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSettingsInput.tsx"
 import { CraftSettingsSelect } from "../components/craftSettingsControls/CraftSettingsSelect.tsx"
-import type {
-  NavbarEasingValue,
-  NavbarMenuPreviewValue,
-  NavbarMenuTypeValue,
+import {
+  CraftSettingsMenuIconBreakpoint
+} from "../components/craftSettingsControls/CraftSettingsMenuIconBreakpoint/CraftSettingsMenuIconBreakpoint.tsx"
+import {
+  DEFAULT_NAVBAR_MENU_ICON_BREAKPOINT,
+  type NavbarEasingValue,
+  type NavbarMenuIconBreakpointValue,
+  type NavbarMenuPreviewValue,
+  type NavbarMenuTypeValue,
 } from "../context/navbarMenuContext.tsx"
 
 interface SelectedNavbarProps {
@@ -17,6 +22,7 @@ interface SelectedNavbarProps {
   easingOpen?: NavbarEasingValue
   easingClose?: NavbarEasingValue
   durationMs?: number
+  menuIconBreakpoint?: NavbarMenuIconBreakpointValue
 }
 
 interface EditorSelection {
@@ -61,6 +67,14 @@ export const NavbarSettingsFields = ({ nodeId, asAccordion }: Props) => {
   const easingOpen = nodeProps.easingOpen ?? "ease"
   const easingClose = nodeProps.easingClose ?? "ease"
   const durationMs = nodeProps.durationMs ?? 400
+  const menuIconBreakpoint =
+    nodeProps.menuIconBreakpoint ?? DEFAULT_NAVBAR_MENU_ICON_BREAKPOINT
+
+  const handleMenuIconBreakpointChange = (value: NavbarMenuIconBreakpointValue) => {
+    actions.setProp(nodeId, (props: SelectedNavbarProps) => {
+      props.menuIconBreakpoint = value
+    })
+  }
 
   const handleMenuPreviewChange = (value: string) => {
     actions.setProp(nodeId, (props: SelectedNavbarProps) => {
@@ -134,6 +148,13 @@ export const NavbarSettingsFields = ({ nodeId, asAccordion }: Props) => {
         value={durationMs}
         onChange={handleDurationChange}
         min={0}
+      />
+
+      <Divider/>
+
+      <CraftSettingsMenuIconBreakpoint
+        value={menuIconBreakpoint}
+        onChange={handleMenuIconBreakpointChange}
       />
     </Box>
   )

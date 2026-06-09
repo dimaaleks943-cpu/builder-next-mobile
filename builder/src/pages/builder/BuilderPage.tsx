@@ -30,9 +30,10 @@ import { CraftContentList } from "../../craft/ContentList.tsx"
 import { CraftContentListCell } from "../../craft/ContentListCell.tsx"
 import { CraftCategoryFilter } from "../../craft/CategoryFilter.tsx"
 import { CraftImage } from "../../craft/Image.tsx"
-import { CraftNavbar } from "../../craft/CraftNavbar.tsx"
-import { CraftNavbarMenuButton } from "../../craft/CraftNavbarMenuButton.tsx"
-import { CraftNavbarMenu } from "../../craft/CraftNavbarMenu.tsx"
+import { CraftNavbar } from "../../craft/CraftNavbar/CraftNavbar.tsx"
+import { CraftNavbarMenuButton } from "../../craft/CraftNavbar/components/CraftNavbarMenuButton.tsx"
+import { CraftNavbarMenu } from "../../craft/CraftNavbar/components/CraftNavbarMenu.tsx"
+import { CraftNavbarLinks } from "../../craft/CraftNavbar/components/CraftNavbarLinks.tsx"
 import { PageType, type IContentItem, type IContentTypeField } from "../../api/extranet"
 import {
   useGetContentItemsQuery,
@@ -365,6 +366,7 @@ export const BuilderPage = () => {
           Navbar: CraftNavbar,
           NavbarMenuButton: CraftNavbarMenuButton,
           NavbarMenu: CraftNavbarMenu,
+          NavbarLinks: CraftNavbarLinks,
         }}
       >
         <StyleClassProvider classes={styleClasses} setClasses={setStyleClasses}>
