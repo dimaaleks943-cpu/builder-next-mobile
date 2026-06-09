@@ -18,6 +18,11 @@ import { LinkBlock } from "../components/LinkBlock";
 import { Button } from "../components/Button";
 import { CategoryFilter } from "../components/CategoryFilter";
 import { ContentList } from "../components/ContentList";
+import { Navbar } from "../components/Navbar/Navbar";
+import { NavbarLinks } from "../components/Navbar/components/NavbarLinks/NavbarLinks";
+import { NavbarMenuButton } from "../components/Navbar/components/NavbarMenuButton/NavbarMenuButton";
+import { NavbarMenu } from "../components/Navbar/components/NavbarMenu/NavbarMenu";
+import { Icon } from "../components/Icon/Icon";
 
 const componentMap = {
   Body,
@@ -30,6 +35,11 @@ const componentMap = {
   Button,
   CategoryFilter, // связка с ContentList по `filterScope` через CollectionFilterScope
   ContentList,
+  Navbar,
+  NavbarLinks,
+  NavbarMenuButton,
+  NavbarMenu,
+  Icon,
 } as Record<string, React.ComponentType<any>>;
 
 const nodeViewIds = (nodeId: string | undefined,): { nativeID?: string } => nodeId ? { nativeID: nodeId } : {};

@@ -202,6 +202,69 @@ const buildNodeTree = (
   return component;
 };
 
+const cloneComponentNode = (node: ComponentNode): ComponentNode => ({
+  ...node,
+  props: { ...node.props },
+  ...(node.children
+    ? { children: node.children.map(cloneComponentNode) }
+    : {}),
+});
+
+const findNavbarChild = (
+  children: ComponentNode[] | undefined,
+  type: string,
+): ComponentNode | undefined => children?.find((child) => child.type === type);
+
+const processNavbarNode = (node: ComponentNode): ComponentNode => {
+  if (node.type !== "Navbar") {
+    return {
+      ...node,
+      ...(node.children
+        ? {
+            children: node.children.map((child) => processNavbarNode(child)),
+          }
+        : {}),
+    };
+  }
+
+  const linksChild = findNavbarChild(node.children, "NavbarLinks");
+  const menuChild = findNavbarChild(node.children, "NavbarMenu");
+
+  if (linksChild && menuChild) {
+    const linkTextChildren = (linksChild.children ?? [])
+      .filter((child) => child.type === "LinkText")
+      .map(cloneComponentNode);
+
+    const updatedMenu: ComponentNode = {
+      ...menuChild,
+      children: linkTextChildren,
+    };
+
+    return {
+      ...node,
+      children: (node.children ?? []).map((child) => {
+        if (child.nodeId === menuChild.nodeId) {
+          return updatedMenu;
+        }
+        return processNavbarNode(child);
+      }),
+    };
+  }
+
+  return {
+    ...node,
+    ...(node.children
+      ? {
+          children: node.children.map((child) => processNavbarNode(child)),
+        }
+      : {}),
+  };
+};
+
+const postProcessNavbarComponents = (
+  components: ComponentNode[],
+): ComponentNode[] => components.map((node) => processNavbarNode(node));
+
 /**
  * Преобразует строку content (JSON из конструктора, `{ nodes, styleClasses }`) в ComponentNode[].
  */
@@ -237,7 +300,7 @@ export const craftContentToComponents = (content: string): ComponentNode[] => {
     if (result.length === 0) {
       return [];
     }
-    return [
+    return postProcessNavbarComponents([
       {
         nodeId: "ROOT",
         type: "Body",
@@ -249,8 +312,8 @@ export const craftContentToComponents = (content: string): ComponentNode[] => {
         ),
         children: result,
       },
-    ];
+    ]);
   }
 
-  return result;
+  return postProcessNavbarComponents(result);
 };

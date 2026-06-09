@@ -21,6 +21,7 @@ import {
 } from "../content/contentFieldValue";
 import { resolveCraftVisualEffectsRnStyle } from "../lib/craftVisualEffectsRn";
 import { useResolvedLinkHref } from "../hooks/useResolvedLinkHref";
+import { useNavbarMenuOptional } from "../lib/navbar/navbarMenuContext";
 
 interface LinkTextProps {
   style?: unknown;
@@ -46,6 +47,7 @@ export const LinkText = ({
   nativeID,
 }: LinkTextProps) => {
   const { viewport } = useResponsiveViewport();
+  const navbarMenu = useNavbarMenuOptional();
   const { resolveRnFontFamily } = useUploadedFonts();
   const rs = resolveResponsiveStyle(style, viewport);
   const navigation = useNavigation<any>();
@@ -54,7 +56,6 @@ export const LinkText = ({
   const textTransform =
     (rs.textTransform as "none" | "uppercase" | "lowercase" | "capitalize" | undefined) ??
     "none";
-  const isItalic = Boolean(rs.isItalic);
   const isUnderline = Boolean(rs.isUnderline);
   const isStrikethrough = Boolean(rs.isStrikethrough);
 
@@ -89,6 +90,10 @@ export const LinkText = ({
     const target =
       typeof resolvedHref === "string" ? resolvedHref.trim() : "";
     if (!target || target === "#") return;
+
+    if (navbarMenu?.isMenuOpen) {
+      navbarMenu.setIsMenuOpen(false);
+    }
 
     if (target.startsWith("/")) {
       navigation.navigate("Page", { slug: target, previewParams });
