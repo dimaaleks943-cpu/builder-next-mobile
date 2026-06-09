@@ -1,8 +1,14 @@
-import type { ChangeEvent } from "react"
+import type { ChangeEvent, MouseEvent } from "react"
 import { Box, Checkbox, Divider, FormControlLabel, Typography } from "@mui/material"
 import { useEditor } from "@craftjs/core"
 import { COLORS } from "../../../theme/colors"
+import { AddIcon } from "../../../icons/AddIcon.tsx"
+import { SettingsActionButton } from "../../../components/SettingsActionButton/SettingsActionButton.tsx"
 import { SettingsAccordion } from "./components/SettingsAccordion/SettingsAccordion.tsx"
+import {
+  addNavbarLink,
+  findNavbarLinkContainerIds,
+} from "../utils/addNavbarLink.ts"
 import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
 import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSettingsInput.tsx"
 import { CraftSettingsSelect } from "../components/craftSettingsControls/CraftSettingsSelect.tsx"
@@ -53,7 +59,7 @@ const MENU_TYPE_OPTIONS = [
 ]
 
 export const NavbarSettingsFields = ({ nodeId, asAccordion }: Props) => {
-  const { actions } = useEditor()
+  const { actions, query } = useEditor()
   const { nodeProps } = useEditor((state): EditorSelection => {
     const node = state.nodes[nodeId]
     return {
@@ -128,6 +134,14 @@ export const NavbarSettingsFields = ({ nodeId, asAccordion }: Props) => {
     actions.setProp(nodeId, (props: SelectedNavbarProps) => {
       props.disableScrollOffsetWhenFixed = event.target.checked
     })
+  }
+
+  const { navbarLinksId, navbarMenuId } = findNavbarLinkContainerIds(query, nodeId)
+  const canAddLink = Boolean(navbarLinksId && navbarMenuId)
+
+  const handleAddLink = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation()
+    addNavbarLink(actions, query, nodeId)
   }
 
   const content = (
@@ -224,6 +238,16 @@ export const NavbarSettingsFields = ({ nodeId, asAccordion }: Props) => {
           </Typography>
         }
       />
+
+      <Divider />
+
+      <SettingsActionButton
+        disabled={!canAddLink}
+        startIcon={<AddIcon height={10} width={10} fill={COLORS.black} />}
+        onClick={handleAddLink}
+      >
+        Добавить ссылку
+      </SettingsActionButton>
     </Box>
   )
 

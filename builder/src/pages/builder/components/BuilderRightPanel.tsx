@@ -16,6 +16,7 @@ import {
 import {
   ImageSettingsFields,
   LinkTextSettingsFields,
+  NavbarSettingsFields,
 } from "../settingsCraftComponents"
 import { useRightPanelContext } from "../context/RightPanelContext.tsx"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
@@ -37,7 +38,7 @@ export const BuilderRightPanel = ({
 }: Props) => {
   const rightPanelContext = useRightPanelContext()
   const tabIndex = rightPanelContext?.tabIndex ?? 0
-  const { hasSelection, selectedType } = useEditor((state) => {
+  const { hasSelection, selectedType, selectedId } = useEditor((state) => {
     const [id] = Array.from(state.events.selected)
     const node = id ? state.nodes[id] : null
 
@@ -56,6 +57,7 @@ export const BuilderRightPanel = ({
 
     return {
       hasSelection: Boolean(id),
+      selectedId: id ?? null,
       selectedType: isLinkBlock
         ? "LinkBlock"
         : isButton
@@ -185,6 +187,9 @@ export const BuilderRightPanel = ({
                 )}
                 {selectedType === "Image" && (
                   <ImageSettingsFields asAccordion />
+                )}
+                {selectedType === CRAFT_DISPLAY_NAME.Navbar && selectedId && (
+                  <NavbarSettingsFields nodeId={selectedId} asAccordion />
                 )}
               </Box>
             )}

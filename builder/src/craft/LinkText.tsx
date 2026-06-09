@@ -33,6 +33,33 @@ export interface LinkTextProps {
   style?: ResponsiveStyle
 }
 
+export const DEFAULT_LINK_TEXT_CRAFT_PROPS: LinkTextProps = {
+  text: "Ссылка",
+  i18nKey: null,
+  collectionField: null,
+  href: "#",
+  linkMode: "url",
+  collectionItemLinkTarget: "none",
+  collectionItemTemplatePageId: null,
+  openInNewTab: false,
+  style: {
+    [PreviewViewport.DESKTOP]: {
+      fontSize: "14px",
+      lineHeight: "20px",
+      fontWeight: "normal",
+      color: COLORS.green300,
+      marginTop: 0,
+      marginRight: 0,
+      marginBottom: 0,
+      marginLeft: 0,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+    },
+  },
+}
+
 export const CraftLinkText = (props: LinkTextProps) => {
   const responsiveStyle = useCraftNodeStyle(props.styleClassIds, props.style)
   const text = props.text ?? "Ссылка"
@@ -219,31 +246,5 @@ export const CraftLinkText = (props: LinkTextProps) => {
 
 (CraftLinkText as any).craft = {
   displayName: CRAFT_DISPLAY_NAME.LinkText,
-  props: {
-    text: "Ссылка",
-    i18nKey: null,
-    collectionField: null,
-    href: "http://www.google.com",
-    linkMode: "url" as const,
-    collectionItemLinkTarget: "none" as const,
-    collectionItemTemplatePageId: null,
-    openInNewTab: false,
-    style: {
-      [PreviewViewport.DESKTOP]: {
-        fontSize: "14px",
-        lineHeight: "20px",
-        fontWeight: "normal" as const,
-        color: COLORS.green300,
-
-        marginTop: 0,
-        marginRight: 0,
-        marginBottom: 0,
-        marginLeft: 0,
-        paddingTop: 0,
-        paddingRight: 0,
-        paddingBottom: 0,
-        paddingLeft: 0,
-      },
-    },
-  },
+  props: DEFAULT_LINK_TEXT_CRAFT_PROPS,
 }

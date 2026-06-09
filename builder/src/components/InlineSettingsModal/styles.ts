@@ -42,18 +42,3 @@ export const ShowAllSettingsWrapper = styled(Box)(() => ({
   padding: 8,
   paddingTop: 0,
 }))
-
-export const ShowAllSettingsButton = styled("button")(() => ({
-  width: "100%",
-  backgroundColor: COLORS.purple100,
-  borderRadius: 2,
-  padding: 4,
-  fontSize: 10,
-  lineHeight: "14px",
-  fontWeight: 400,
-  color: COLORS.black,
-  border: "none",
-  cursor: "pointer",
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-}))

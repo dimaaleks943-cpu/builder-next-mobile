@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { COLORS } from "../../theme/colors.ts"
 import { CloseIcon } from "../../icons/CloseIcon.tsx"
+import { SettingsActionButton } from "../SettingsActionButton/SettingsActionButton.tsx"
 import {
   ModalCloseButton,
   ModalContent,
@@ -10,7 +11,6 @@ import {
   ModalHeader,
   ModalRoot,
   ModalTitle,
-  ShowAllSettingsButton,
   ShowAllSettingsWrapper,
 } from "./styles.ts"
 
@@ -97,7 +97,7 @@ export const InlineSettingsModal = ({
 
       {onShowAllSettings && (
         <ShowAllSettingsWrapper>
-          <ShowAllSettingsButton
+          <SettingsActionButton
             type="button"
             onClick={(event) => {
               event.stopPropagation()
@@ -105,7 +105,7 @@ export const InlineSettingsModal = ({
             }}
           >
             Показать все настройки
-          </ShowAllSettingsButton>
+          </SettingsActionButton>
         </ShowAllSettingsWrapper>
       )}
     </ModalRoot>,
