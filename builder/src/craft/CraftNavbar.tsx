@@ -13,7 +13,7 @@ import {
   type InlineSettingsViewportAnchor,
 } from "../pages/builder/context/CraftInlineSettingsBridgeContext.tsx"
 import {
-  isCompactPreviewViewport,
+  buildNavbarMenuContextValue,
   NavbarMenuContext,
   type NavbarEasingValue,
   type NavbarMenuPreviewValue,
@@ -36,13 +36,6 @@ export interface Props {
 export const CraftNavbar = (props: Props) => {
   const responsiveStyle = useCraftNodeStyle(props.styleClassIds, props.style)
   const viewport = usePreviewViewport()
-  const isCompact = isCompactPreviewViewport(viewport)
-  const menuPreview = props.menuPreview ?? "hide"
-  const menuType = props.menuType ?? "dropDown"
-  const easingOpen = props.easingOpen ?? "ease"
-  const easingClose = props.easingClose ?? "ease"
-  const durationMs = props.durationMs ?? 400
-  const isMenuOpen = isCompact && menuPreview === "show"
 
   const navbarRef = useRef<HTMLDivElement | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -95,24 +88,14 @@ export const CraftNavbar = (props: Props) => {
   }
 
   const menuContextValue = useMemo(
-    () => ({
-      isMenuOpen,
-      setIsMenuOpen: () => {},
-      isCompact,
-      menuPreview,
-      menuType,
-      easingOpen,
-      easingClose,
-      durationMs,
-    }),
+    () => buildNavbarMenuContextValue(props, viewport),
     [
-      isMenuOpen,
-      isCompact,
-      menuPreview,
-      menuType,
-      easingOpen,
-      easingClose,
-      durationMs,
+      props.menuPreview,
+      props.menuType,
+      props.easingOpen,
+      props.easingClose,
+      props.durationMs,
+      viewport,
     ],
   )
 
