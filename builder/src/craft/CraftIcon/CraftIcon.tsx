@@ -5,6 +5,7 @@ import type { ResponsiveStyle } from "../../pages/builder/responsiveStyle.ts"
 import { useCraftNodeStyle } from "../../pages/builder/hooks/useCraftNodeStyle.ts"
 import { PreviewViewport } from "../../pages/builder/builder.enum.ts"
 import { BurgerIcon } from "../../icons/BurgerIcon.tsx"
+import { COLORS } from "../../theme/colors.ts"
 
 export type CraftIconVariant = "burger"
 
@@ -16,6 +17,7 @@ export interface Props {
 
 export const CraftIcon = (props: Props) => {
   const responsiveStyle = useCraftNodeStyle(props.styleClassIds, props.style)
+  const iconFill = (responsiveStyle.color as string | undefined) ?? COLORS.purple400
   const icon = props.icon ?? "burger"
   const {
     connectors: { connect, drag },
@@ -29,7 +31,7 @@ export const CraftIcon = (props: Props) => {
       }}
       style={responsiveStyle as CSSProperties}
     >
-      {icon === "burger" && <BurgerIcon />}
+      {icon === "burger" && <BurgerIcon fill={iconFill} />}
     </div>
   )
 };
