@@ -46,6 +46,7 @@ export const CraftIcon = (props: Props) => {
         alignItems: "center",
         justifyContent: "center",
         boxSizing: "border-box",
+        color: COLORS.purple400,
       },
     },
   },
