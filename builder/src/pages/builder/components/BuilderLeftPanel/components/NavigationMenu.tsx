@@ -1,6 +1,6 @@
 import { Box } from "@mui/material"
 import { COLORS } from "../../../../../theme/colors.ts"
-import { BuilderNavigator } from "../../BuilderNavigator.tsx"
+import { BuilderNavigator } from "../../BuilderNavigator/BuilderNavigator.tsx"
 
 export const NavigationMenu = () => {
   return (

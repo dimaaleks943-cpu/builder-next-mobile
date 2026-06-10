@@ -1,10 +1,11 @@
 import React, { useCallback, useState } from "react"
 import { Box, Typography } from "@mui/material"
 import { useEditor } from "@craftjs/core"
-import { COLORS } from "../../../theme/colors"
-import { ChevronRightIcon } from "../../../icons/ChevronRightIcon"
-import { DragIcon } from "../../../icons/DragIcon"
-import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
+import { COLORS } from "../../../../theme/colors.ts"
+import { ChevronRightIcon } from "../../../../icons/ChevronRightIcon.tsx"
+import { DragIcon } from "../../../../icons/DragIcon.tsx"
+import { resolveNodeDisplayName } from "../../../../utils/resolveNodeDisplayName.ts"
+import { TreeChildrenGroup } from "./styles.ts"
 
 interface TreeNode {
   id: string;
@@ -199,7 +200,7 @@ export const BuilderNavigator: React.FC = () => {
             lineHeight: "14px",
             paddingY: "4px",
             paddingRight: "4px",
-            paddingLeft: `${8 + depth * 12}px`,
+            paddingLeft: "8px",
             backgroundColor: isSelected ? COLORS.blue100 : "transparent",
             color: COLORS.gray700,
             userSelect: "none",
@@ -300,8 +301,11 @@ export const BuilderNavigator: React.FC = () => {
             <DragIcon size={14} fill={COLORS.gray500}/>
           </Box>
         </Box>
-        {hasChildren && isExpanded &&
-          node.children.map((child) => renderNode(child, depth + 1))}
+        {hasChildren && isExpanded && (
+          <TreeChildrenGroup>
+            {node.children.map((child) => renderNode(child, depth + 1))}
+          </TreeChildrenGroup>
+        )}
       </Box>
     )
   }
@@ -312,7 +316,6 @@ export const BuilderNavigator: React.FC = () => {
         borderTop: `1px solid ${COLORS.gray200}`,
         borderBottom: `1px solid ${COLORS.gray200}`,
         backgroundColor: COLORS.white,
-        maxHeight: 260,
         overflowY: "auto",
         scrollbarWidth: "thin",
         scrollbarColor: `${COLORS.gray300} transparent`,
