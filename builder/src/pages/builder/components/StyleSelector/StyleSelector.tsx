@@ -25,6 +25,7 @@ export const StyleSelector = () => {
   const fieldRef = useRef<HTMLDivElement>(null)
   const {
     selectedId,
+    isSelectedBody,
     styleClassIds,
     styleClassPills,
     appendStyleClass,
@@ -50,6 +51,10 @@ export const StyleSelector = () => {
   )
 
   if (!selectedId) {
+    return null
+  }
+
+  if (isSelectedBody) {
     return null
   }
 

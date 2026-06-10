@@ -19,6 +19,8 @@ import {
   NavbarSettingsFields,
 } from "../settingsCraftComponents"
 import { useRightPanelContext } from "../context/RightPanelContext.tsx"
+import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
+import { PreviewViewport } from "../builder.enum.ts"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
 import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts"
 import { CraftSettingsInput } from "./craftSettingsControls/CraftSettingsInput.tsx"
@@ -37,6 +39,7 @@ export const BuilderRightPanel = ({
   onTemplateItemPathPrefixChange,
 }: Props) => {
   const rightPanelContext = useRightPanelContext()
+  const previewViewport = usePreviewViewport()
   const tabIndex = rightPanelContext?.tabIndex ?? 0
   const { hasSelection, selectedType, selectedId } = useEditor((state) => {
     const [id] = Array.from(state.events.selected)
@@ -151,7 +154,10 @@ export const BuilderRightPanel = ({
                 <StyleSelector />
                 <LayoutAccordion />
                 <PositioningAccordion />
-                {selectedType !== CRAFT_DISPLAY_NAME.Body && <SizeAccordion />}
+                {(selectedType !== CRAFT_DISPLAY_NAME.Body ||
+                  previewViewport === PreviewViewport.DESKTOP) && (
+                  <SizeAccordion />
+                )}
 
                 <SpacingAccordion/>
 

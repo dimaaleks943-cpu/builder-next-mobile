@@ -27,10 +27,7 @@ export const CraftBody = (props: BodyProps) => {
         if (!ref) return
         connect(drag(ref))
       }}
-      style={{
-        ...responsiveStyle,
-        width: "100%",
-      }}
+      style={responsiveStyle}
     >
       {props.children}
     </div>

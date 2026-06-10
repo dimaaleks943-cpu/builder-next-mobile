@@ -1,4 +1,7 @@
-import { PreviewViewport } from "../pages/builder/builder.enum.ts"
+import {
+  PREVIEW_WIDTH_DESKTOP,
+  PreviewViewport,
+} from "../pages/builder/builder.enum.ts"
 import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 
 /** Дефолтные props Craft-ноды Body (ROOT холста и пустая страница). */
@@ -8,6 +11,11 @@ export const BODY_CRAFT_DEFAULT_PROPS: { style: ResponsiveStyle } = {
       display: "block",
       boxSizing: "border-box",
       position: "relative",
+      width: `${PREVIEW_WIDTH_DESKTOP}px`,
+      marginLeft: "auto",
+      marginRight: "auto",
+    },
+    [PreviewViewport.TABLET_LANDSCAPE]: {
       width: "100%",
     },
   },

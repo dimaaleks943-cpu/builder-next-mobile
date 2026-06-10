@@ -20,6 +20,7 @@ import type {
   StyleClassesRegistry,
 } from "../styleClasses/types.ts"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
+import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts"
 
 export const useStyleEditing = () => {
   const viewport = usePreviewViewport()
@@ -47,18 +48,24 @@ export const useStyleEditing = () => {
     },
   )
 
+  const isSelectedBody =
+    selectedId === "ROOT" || selectedResolvedName === CRAFT_DISPLAY_NAME.Body
+
   const nodeStyleForRead = useMemo(
     () =>
-      pickNodeResponsiveStyle(
-        styleClassIds,
-        selectedProps.style as ResponsiveStyle | undefined,
-        classes,
-      ),
-    [styleClassIds, selectedProps.style, classes],
+      isSelectedBody
+        ? ((selectedProps.style as ResponsiveStyle | undefined) ?? {})
+        : pickNodeResponsiveStyle(
+            styleClassIds,
+            selectedProps.style as ResponsiveStyle | undefined,
+            classes,
+          ),
+    [isSelectedBody, styleClassIds, selectedProps.style, classes],
   )
 
   const ensureFirstStyleClass = useCallback((): string | null => {
     if (!selectedId) return null
+    if (isSelectedBody) return null
     if (styleClassIds.length > 0 && classes[styleClassIds[0]]) {
       return styleClassIds[0]
     }
@@ -80,6 +87,7 @@ export const useStyleEditing = () => {
     return id
   }, [
     selectedId,
+    isSelectedBody,
     styleClassIds,
     classes,
     selectedProps.style,
@@ -90,6 +98,7 @@ export const useStyleEditing = () => {
 
   const ensureComboClass = useCallback((): string | null => {
     if (!selectedId || styleClassIds.length < 2) return null
+    if (isSelectedBody) return null
     const comboId = buildComboClassId(styleClassIds)
     if (classes[comboId]) return comboId
 
@@ -103,14 +112,15 @@ export const useStyleEditing = () => {
     }
     upsertClass(definition)
     return comboId
-  }, [selectedId, styleClassIds, classes, selectedResolvedName, upsertClass])
+  }, [selectedId, isSelectedBody, styleClassIds, classes, selectedResolvedName, upsertClass])
 
   const ensureEditTargetClassId = useCallback((): string | null => {
     if (!selectedId) return null
+    if (isSelectedBody) return null
     if (styleClassIds.length === 0) return ensureFirstStyleClass()
     if (styleClassIds.length === 1) return styleClassIds[0]
     return ensureComboClass()
-  }, [selectedId, styleClassIds, ensureFirstStyleClass, ensureComboClass])
+  }, [selectedId, isSelectedBody, styleClassIds, ensureFirstStyleClass, ensureComboClass])
 
   const getStyleProp = useCallback(
     (key: string, vp: PreviewViewport = viewport) =>
@@ -125,6 +135,13 @@ export const useStyleEditing = () => {
   const setStyleProp = useCallback(
     (key: string, value: unknown, vp: PreviewViewport = viewport) => {
       if (!selectedId) return
+      if (isSelectedBody) {
+        actions.setProp(selectedId, (props: Record<string, unknown>) => {
+          setResponsiveStyleProp(props, key, value, vp)
+          delete props.styleClassIds
+        })
+        return
+      }
       const classId = ensureEditTargetClassId()
       if (!classId) return
 
@@ -145,12 +162,23 @@ export const useStyleEditing = () => {
         }
       })
     },
-    [selectedId, ensureEditTargetClassId, setClasses, viewport],
+    [selectedId, isSelectedBody, actions, ensureEditTargetClassId, setClasses, viewport],
   )
 
   const mutateClassStyle = useCallback(
     (mutator: (draft: Record<string, unknown>) => void) => {
       if (!selectedId) return
+      if (isSelectedBody) {
+        actions.setProp(selectedId, (props: Record<string, unknown>) => {
+          const draft = {
+            style: structuredClone(props.style ?? {}),
+          } as Record<string, unknown>
+          mutator(draft)
+          props.style = draft.style
+          delete props.styleClassIds
+        })
+        return
+      }
       const classId = ensureEditTargetClassId()
       if (!classId) return
       setClasses((prev) => {
@@ -170,12 +198,13 @@ export const useStyleEditing = () => {
         }
       })
     },
-    [selectedId, ensureEditTargetClassId, setClasses],
+    [selectedId, isSelectedBody, actions, ensureEditTargetClassId, setClasses],
   )
 
   const setStyleClassIdsOnNode = useCallback(
     (nextIds: string[]) => {
       if (!selectedId) return
+      if (isSelectedBody) return
       actions.setProp(selectedId, (props: Record<string, unknown>) => {
         if (nextIds.length > 0) {
           props.styleClassIds = nextIds
@@ -186,7 +215,7 @@ export const useStyleEditing = () => {
       })
       pruneUnusedClasses()
     },
-    [selectedId, actions, pruneUnusedClasses],
+    [selectedId, isSelectedBody, actions, pruneUnusedClasses],
   )
 
   const appendStyleClass = useCallback(
@@ -286,6 +315,7 @@ export const useStyleEditing = () => {
     selectedId,
     selectedProps,
     selectedResolvedName,
+    isSelectedBody,
     styleClassIds,
     styleClassPills,
     nodeStyleForRead,

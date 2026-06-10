@@ -476,7 +476,7 @@ export const BuilderCanvas = ({
         tabIndex={-1}
         sx={{
           flex: 1,
-          padding: "0 8px 8px",
+          padding: "12px 8px 8px",
           display: "flex",
           position: "relative",
           outline: "none",
