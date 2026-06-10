@@ -9,15 +9,17 @@ const BADGE_HEIGHT = "18px";
 interface Props {
   geometry: OverlayGeometry
   label: string
-  showSettingsButton: boolean
-  onSettingsClick: (event: React.MouseEvent<HTMLButtonElement>) => void
+  showSettingsButton?: boolean
+  onSettingsClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
+  pointerEvents?: "none" | "auto"
 }
 
 export const OverlayBadge = ({
   geometry,
   label,
-  showSettingsButton,
+  showSettingsButton = false,
   onSettingsClick,
+  pointerEvents = "auto",
 }: Props) => {
   if (!geometry.isVisible) {
     return null
@@ -38,12 +40,16 @@ export const OverlayBadge = ({
         alignItems: "center",
         gap: OVERLAY_BADGE_GAP_Y,
         boxSizing: "border-box",
-        pointerEvents: "auto",
+        pointerEvents,
         height: BADGE_HEIGHT
       }}
-      onMouseDown={(event) => {
-        event.stopPropagation()
-      }}
+      onMouseDown={
+        pointerEvents === "auto"
+          ? (event) => {
+              event.stopPropagation()
+            }
+          : undefined
+      }
     >
       <Typography
         component="span"
@@ -79,7 +85,7 @@ export const OverlayBadge = ({
             onClick={(event) => {
               event.stopPropagation()
               event.preventDefault()
-              onSettingsClick(event)
+              onSettingsClick?.(event)
             }}
             sx={{ color: COLORS.white, padding: "2px 4px" }}
           >

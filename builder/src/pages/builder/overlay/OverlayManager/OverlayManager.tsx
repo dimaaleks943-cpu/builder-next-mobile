@@ -7,6 +7,7 @@ import { CRAFT_INLINE_SETTINGS_BADGE_LABELS } from "../constants.ts"
 import { computeInlineModalAnchorNearBadge } from "./inlineModalAnchor.ts"
 import { OverlayBadge } from "./components/OverlayBadge/OverlayBadge.tsx"
 import { OverlayOutline } from "./components/OverlayOutline/OverlayOutline.tsx"
+import { useHoverOverlayCollector } from "../hooks/useHoverOverlayCollector.ts"
 import { useOverlayGeometryObserver } from "../hooks/useOverlayGeometryObserver.ts"
 import { useSelectionHoverCollector } from "../hooks/useSelectionHoverCollector.ts"
 
@@ -23,11 +24,22 @@ export const OverlayManager = ({
 }: Props) => {
   const { activeNodeId: gridManualEditNodeId } = useCraftGridManualEditBridge()
   const selection = useSelectionHoverCollector()
+  const hover = useHoverOverlayCollector()
   const { requestInlineSettingsOpen } = useCraftInlineSettingsBridge()
   const { actions } = useEditor()
 
-  const geometry = useOverlayGeometryObserver({
+  const hoverAnchor =
+    hover && hover.nodeId !== selection?.nodeId ? hover.dom : null
+
+  const selectionGeometry = useOverlayGeometryObserver({
     anchorElement: selection?.dom ?? null,
+    overlayRootElement,
+    canvasElement,
+    updateKey: previewViewport,
+  })
+
+  const hoverGeometry = useOverlayGeometryObserver({
+    anchorElement: hoverAnchor,
     overlayRootElement,
     canvasElement,
     updateKey: previewViewport,
@@ -46,23 +58,42 @@ export const OverlayManager = ({
     return null
   }
 
-  if (!selection || !geometry.isVisible) {
+  const hasHoverOutline = Boolean(hoverAnchor && hoverGeometry.isVisible)
+  const hasSelectionOutline = Boolean(
+    selection && selectionGeometry.isVisible,
+  )
+
+  if (!hasHoverOutline && !hasSelectionOutline) {
     return null
   }
 
   return (
     <>
-      <OverlayOutline geometry={geometry} />
-      <OverlayBadge
-        geometry={geometry}
-        label={label}
-        showSettingsButton={showSettingsButton}
-        onSettingsClick={() => {
-          actions.selectNode(selection.nodeId)
-          const anchor = computeInlineModalAnchorNearBadge(selection.dom)
-          requestInlineSettingsOpen(selection.nodeId, anchor)
-        }}
-      />
+      {hasHoverOutline ? (
+        <>
+          <OverlayOutline geometry={hoverGeometry} />
+          <OverlayBadge
+            geometry={hoverGeometry}
+            label={hover!.label}
+            pointerEvents="none"
+          />
+        </>
+      ) : null}
+      {hasSelectionOutline ? (
+        <>
+          <OverlayOutline geometry={selectionGeometry} />
+          <OverlayBadge
+            geometry={selectionGeometry}
+            label={label}
+            showSettingsButton={showSettingsButton}
+            onSettingsClick={() => {
+              actions.selectNode(selection!.nodeId)
+              const anchor = computeInlineModalAnchorNearBadge(selection!.dom)
+              requestInlineSettingsOpen(selection!.nodeId, anchor)
+            }}
+          />
+        </>
+      ) : null}
     </>
   )
 }

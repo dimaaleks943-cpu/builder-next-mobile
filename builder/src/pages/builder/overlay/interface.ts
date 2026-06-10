@@ -5,6 +5,12 @@ export interface OverlaySelectionData {
   resolvedName: string | null
 }
 
+export interface OverlayHoverData {
+  nodeId: string
+  dom: HTMLElement
+  label: string
+}
+
 export interface OverlayGeometry {
   isVisible: boolean
   top: number
