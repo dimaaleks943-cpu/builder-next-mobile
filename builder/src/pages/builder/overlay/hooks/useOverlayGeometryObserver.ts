@@ -50,6 +50,18 @@ const areGeometriesEqual = (nextGeometry: OverlayGeometry, prevGeometry: Overlay
   )
 }
 
+const areRectsEqual = (
+  nextRect: { top: number; left: number; width: number; height: number },
+  prevRect: { top: number; left: number; width: number; height: number },
+) => {
+  return (
+    nextRect.top === prevRect.top &&
+    nextRect.left === prevRect.left &&
+    nextRect.width === prevRect.width &&
+    nextRect.height === prevRect.height
+  )
+}
+
 const hasPositionAffectingStyleMutation = (mutation: MutationRecord) => {
   if (mutation.type !== "attributes" || mutation.attributeName !== "style") {
     return false
@@ -154,6 +166,10 @@ export const useOverlayGeometryObserver = ({
 
     const mutationObserver = new MutationObserver((mutations) => {
       const shouldRecalculate = mutations.some((mutation) => {
+        if (mutation.type === "childList") {
+          return true
+        }
+
         if (mutation.type === "attributes" && mutation.attributeName === "class") {
           return true
         }
@@ -172,6 +188,7 @@ export const useOverlayGeometryObserver = ({
         attributes: true,
         attributeFilter: ["style", "class"],
         attributeOldValue: true,
+        childList: true,
       })
 
       if (currentObservedElement === canvasElement) {
@@ -181,9 +198,28 @@ export const useOverlayGeometryObserver = ({
       currentObservedElement = currentObservedElement.parentElement
     }
 
+    let pollRafId = 0
+    let lastAnchorRect = getAnchorRectForOverlay(anchorElement, geometryBox)
+
+    const pollAnchorGeometry = () => {
+      const currentRect = getAnchorRectForOverlay(anchorElement, geometryBox)
+
+      if (!areRectsEqual(currentRect, lastAnchorRect)) {
+        scheduleRecalculate()
+        lastAnchorRect = currentRect
+      }
+
+      pollRafId = requestAnimationFrame(pollAnchorGeometry)
+    }
+
+    pollRafId = requestAnimationFrame(pollAnchorGeometry)
+
     return () => {
       if (rafId) {
         cancelAnimationFrame(rafId)
+      }
+      if (pollRafId) {
+        cancelAnimationFrame(pollRafId)
       }
       window.removeEventListener("resize", scheduleRecalculate)
       window.removeEventListener("scroll", scheduleRecalculate, true)
