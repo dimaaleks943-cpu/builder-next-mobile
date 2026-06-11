@@ -8,7 +8,7 @@ import {
   Typography,
 } from "@mui/material"
 import type { ReactElement } from "react"
-import { Element, useEditor } from "@craftjs/core"
+import { Element, useEditor, type NodeTree } from "@craftjs/core"
 import { useMemo, useState } from "react"
 import { COLORS } from "../../../../../theme/colors"
 import { CraftBlock } from "../../../../../craft/Block.tsx"
@@ -117,7 +117,7 @@ interface Props {
 }
 
 export const AddMenu = ({ onClose, onDragStartHide }: Props) => {
-  const { connectors: { create } } = useEditor()
+  const { connectors: { create }, actions } = useEditor()
   const [tabIndex, setTabIndex] = useState(1)
   const categories = useCategories()
 
@@ -248,7 +248,11 @@ export const AddMenu = ({ onClose, onDragStartHide }: Props) => {
                   key={item.name}
                   ref={(ref: HTMLDivElement | null) => {
                     if (!ref) return
-                    create(ref, item.component)
+                    create(ref, item.component, {
+                      onCreate: (nodeTree: NodeTree) => {
+                        actions.selectNode(nodeTree.rootNodeId)
+                      },
+                    })
                   }}
                   onDragStart={handleDragStart}
                   onDragEnd={handleDragEnd}
