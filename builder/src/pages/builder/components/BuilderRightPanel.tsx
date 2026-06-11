@@ -26,6 +26,7 @@ import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
 import { PreviewViewport } from "../builder.enum.ts"
 import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts"
 import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts"
+import { findFormFormChildId } from "../../../craft/form/formNodeUtils.ts"
 import { CraftSettingsInput } from "./craftSettingsControls/CraftSettingsInput.tsx"
 import { StyleSelector } from "./StyleSelector/StyleSelector.tsx"
 import { TextSettingsFields } from "../settingsCraftComponents/TextSettingsFields/TextSettingsFields.tsx";
@@ -44,7 +45,7 @@ export const BuilderRightPanel = ({
   const rightPanelContext = useRightPanelContext()
   const previewViewport = usePreviewViewport()
   const tabIndex = rightPanelContext?.tabIndex ?? 0
-  const { hasSelection, selectedType, selectedId, isFormWrapper, isFormForm, isFormField } = useEditor((state) => {
+  const { hasSelection, selectedType, selectedId, isFormWrapper, isFormForm, isFormField, formFormChildId } = useEditor((state) => {
     const [id] = Array.from(state.events.selected)
     const node = id ? state.nodes[id] : null
 
@@ -67,6 +68,7 @@ export const BuilderRightPanel = ({
       displayName === CRAFT_DISPLAY_NAME.FormTextarea ||
       displayName === CRAFT_DISPLAY_NAME.FormBlockLabel ||
       displayName === CRAFT_DISPLAY_NAME.FormButton
+    const formFormChildId = isFormWrapper && id ? findFormFormChildId(id, state.nodes) : null
 
     return {
       hasSelection: Boolean(id),
@@ -74,6 +76,7 @@ export const BuilderRightPanel = ({
       isFormWrapper,
       isFormForm,
       isFormField,
+      formFormChildId,
       selectedType: isLinkBlock
         ? "LinkBlock"
         : isButton
@@ -211,6 +214,9 @@ export const BuilderRightPanel = ({
                   <NavbarSettingsFields nodeId={selectedId} asAccordion />
                 )}
                 {isFormWrapper && <FormWrapperSettingsFields asAccordion />}
+                {isFormWrapper && formFormChildId && (
+                  <FormSettingsFields nodeId={formFormChildId} asAccordion />
+                )}
                 {isFormForm && <FormSettingsFields asAccordion />}
                 {isFormField && <FormFieldSettingsFields asAccordion />}
               </Box>

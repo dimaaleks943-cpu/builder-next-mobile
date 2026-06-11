@@ -5,7 +5,7 @@
 ## Структура дерева
 
 ```
-FormWrapper          — внешняя обёртка; preview state (builder-only)
+FormWrapper          — внешняя обёртка формы
 ├── FormForm         — поля и submit (div role="form" в билдере)
 │   ├── FormInput    — обёртка поля
 │   │   ├── FormBlockLabel
@@ -15,11 +15,9 @@ FormWrapper          — внешняя обёртка; preview state (builder-o
 └── FormErrorMessage
 ```
 
-## Preview state (FormWrapper)
+## Preview state (builder session)
 
-| Prop | Где | Описание |
-|---|---|---|
-| `previewState` | **FormWrapper** | `"normal" \| "success" \| "error"` — builder-only |
+Переключатель **Normal / Success / Error** хранится только в сессии билдера (`FormPreviewSessionProvider`), не сериализуется в props узлов.
 
 Настройка: выбрать **FormWrapper** → Настройки → **Form preview** → Preview state.
 
@@ -28,6 +26,8 @@ FormWrapper          — внешняя обёртка; preview state (builder-o
 | normal | FormForm |
 | success | FormSuccessMessage |
 | error | FormForm + FormErrorMessage |
+
+При открытии страницы или после save + reload preview всегда **normal**.
 
 ## Submit settings (FormForm)
 

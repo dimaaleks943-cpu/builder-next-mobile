@@ -1,10 +1,6 @@
 import { PreviewViewport } from "../../pages/builder/builder.enum.ts"
 import { COLORS } from "../../theme/colors.ts"
-import {
-  DEFAULT_FORM_FIELD_PROPS,
-  DEFAULT_FORM_SUBMIT_SETTINGS,
-  DEFAULT_FORM_WRAPPER_SETTINGS,
-} from "./formTypes.ts"
+import { DEFAULT_FORM_FIELD_PROPS, DEFAULT_FORM_SUBMIT_SETTINGS } from "./formTypes.ts"
 
 export const FORM_WRAPPER_DEFAULT_STYLE = {
   [PreviewViewport.DESKTOP]: {
@@ -108,7 +104,6 @@ export const FORM_BUTTON_DEFAULT_STYLE = {
 }
 
 export const FORM_WRAPPER_DEFAULT_PROPS = {
-  ...DEFAULT_FORM_WRAPPER_SETTINGS,
   style: FORM_WRAPPER_DEFAULT_STYLE,
 }
 

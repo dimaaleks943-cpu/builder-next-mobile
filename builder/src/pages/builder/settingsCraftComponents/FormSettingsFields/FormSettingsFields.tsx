@@ -17,12 +17,13 @@ interface FormFormProps {
 }
 
 interface EditorSelection {
-  selectedId: string | null
+  targetId: string | null
   selectedProps: FormFormProps | null
 }
 
 interface Props {
   asAccordion?: boolean
+  nodeId?: string
 }
 
 const FORM_METHOD_OPTIONS = [
@@ -31,32 +32,32 @@ const FORM_METHOD_OPTIONS = [
 ]
 
 /** Submit settings for FormForm (name, action, method, redirect). */
-export const FormSettingsFields = ({ asAccordion }: Props) => {
+export const FormSettingsFields = ({ asAccordion, nodeId }: Props) => {
   const { actions } = useEditor()
-  const { selectedId, selectedProps } = useEditor((state): EditorSelection => {
-    const [id] = Array.from(state.events.selected)
+  const { targetId, selectedProps } = useEditor((state): EditorSelection => {
+    const id = nodeId ?? ((Array.from(state.events.selected)[0] as string | undefined) ?? null)
     const node = id ? state.nodes[id] : null
     const displayName = node ? resolveNodeDisplayName(node) : null
 
     if (displayName !== CRAFT_DISPLAY_NAME.FormForm || !node) {
-      return { selectedId: null, selectedProps: null }
+      return { targetId: null, selectedProps: null }
     }
 
     const raw = node.data.props as FormFormProps | undefined
 
     return {
-      selectedId: id ?? null,
+      targetId: id,
       selectedProps: raw ?? null,
     }
   })
 
-  if (!selectedId || !selectedProps) {
+  if (!targetId || !selectedProps) {
     return null
   }
 
   const setProp = (key: keyof FormFormProps, value: string) => {
-    actions.setProp(selectedId, (props: FormFormProps) => {
-      ;(props as Record<string, unknown>)[key] = value
+    actions.setProp(targetId, (props: FormFormProps) => {
+      (props as Record<string, unknown>)[key] = value
     })
   }
 

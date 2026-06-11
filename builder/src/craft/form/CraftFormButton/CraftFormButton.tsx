@@ -1,9 +1,12 @@
 import { useNode } from "@craftjs/core"
 import type { CSSProperties, MouseEvent } from "react"
+import { InlineSettingsModal } from "../../../components/InlineSettingsModal/InlineSettingsModal.tsx"
+import { FormFieldSettingsFields } from "../../../pages/builder/settingsCraftComponents/FormFieldSettingsFields/FormFieldSettingsFields.tsx"
 import { CRAFT_DISPLAY_NAME } from "../../craftDisplayNames.ts"
 import { useCraftNodeStyle } from "../../../pages/builder/hooks/useCraftNodeStyle.ts"
 import type { ResponsiveStyle } from "../../../pages/builder/responsiveStyle.ts"
 import { FORM_BUTTON_DEFAULT_PROPS } from "../formDefaults.ts"
+import { useFormInlineSettings } from "../useFormInlineSettings.ts"
 
 export interface Props {
   text?: string
@@ -19,24 +22,45 @@ export const CraftFormButton = (props: Props) => {
   const {
     connectors: { connect, drag },
   } = useNode()
+  const {
+    elementRef,
+    id,
+    isSettingsOpen,
+    modalPosition,
+    closeInlineSettings,
+    handleShowAllSettings,
+  } = useFormInlineSettings()
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
   }
 
   return (
-    <button
-      ref={(ref) => {
-        if (!ref) return
-        connect(drag(ref))
-      }}
-      data-craft-form-button=""
-      type="submit"
-      onClick={handleClick}
-      style={responsiveStyle as CSSProperties}
-    >
-      {buttonText}
-    </button>
+    <>
+      <button
+        ref={(ref) => {
+          elementRef.current = ref
+          if (!ref) return
+          connect(drag(ref))
+        }}
+        data-craft-form-button=""
+        type="submit"
+        onClick={handleClick}
+        style={responsiveStyle as CSSProperties}
+      >
+        {buttonText}
+      </button>
+      <InlineSettingsModal
+        open={isSettingsOpen}
+        title="Настройки кнопки"
+        top={modalPosition.top}
+        left={modalPosition.left}
+        onClose={closeInlineSettings}
+        onShowAllSettings={handleShowAllSettings}
+      >
+        <FormFieldSettingsFields nodeId={id} />
+      </InlineSettingsModal>
+    </>
   )
 };
 

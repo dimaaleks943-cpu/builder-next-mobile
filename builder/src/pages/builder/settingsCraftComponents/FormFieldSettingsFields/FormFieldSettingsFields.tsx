@@ -28,13 +28,14 @@ interface FieldProps {
 }
 
 interface EditorSelection {
-  selectedId: string | null
+  targetId: string | null
   kind: FieldSettingsKind | null
   selectedProps: FieldProps | null
 }
 
 interface Props {
   asAccordion?: boolean
+  nodeId?: string
 }
 
 const INPUT_TYPE_OPTIONS = [
@@ -55,33 +56,33 @@ const resolveFieldKind = (displayName: string | null): FieldSettingsKind | null 
 }
 
 /** Settings tab fields for form inputs, labels and submit button. */
-export const FormFieldSettingsFields = ({ asAccordion }: Props) => {
+export const FormFieldSettingsFields = ({ asAccordion, nodeId }: Props) => {
   const { actions } = useEditor()
-  const { selectedId, kind, selectedProps } = useEditor(
+  const { targetId, kind, selectedProps } = useEditor(
     (state): EditorSelection => {
-      const [id] = Array.from(state.events.selected)
+      const id = nodeId ?? ((Array.from(state.events.selected)[0] as string | undefined) ?? null)
       const node = id ? state.nodes[id] : null
       const displayName = node ? resolveNodeDisplayName(node) : null
       const fieldKind = resolveFieldKind(displayName)
 
       if (!fieldKind || !node) {
-        return { selectedId: null, kind: null, selectedProps: null }
+        return { targetId: null, kind: null, selectedProps: null }
       }
 
       return {
-        selectedId: id ?? null,
+        targetId: id,
         kind: fieldKind,
         selectedProps: (node.data.props as FieldProps) ?? null,
       }
     },
   )
 
-  if (!selectedId || !kind || !selectedProps) {
+  if (!targetId || !kind || !selectedProps) {
     return null
   }
 
   const setProp = <K extends keyof FieldProps>(key: K, value: FieldProps[K]) => {
-    actions.setProp(selectedId, (props: FieldProps) => {
+    actions.setProp(targetId, (props: FieldProps) => {
       props[key] = value
     })
   }

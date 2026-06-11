@@ -17,6 +17,10 @@ export const CRAFT_INLINE_SETTINGS_RESOLVED_NAMES = new Set([
   "ContentList",
   "CategoryFilter",
   "Navbar",
+  "FormBlockLabel",
+  "FormTextInput",
+  "FormTextarea",
+  "FormButton",
 ])
 
 /**
@@ -34,4 +38,8 @@ export const CRAFT_INLINE_SETTINGS_BADGE_LABELS = new Set<string>([
   CRAFT_DISPLAY_NAME.ContentList,
   CRAFT_DISPLAY_NAME.CategoryFilter,
   CRAFT_DISPLAY_NAME.Navbar,
+  CRAFT_DISPLAY_NAME.FormBlockLabel,
+  CRAFT_DISPLAY_NAME.FormTextInput,
+  CRAFT_DISPLAY_NAME.FormTextarea,
+  CRAFT_DISPLAY_NAME.FormButton,
 ])

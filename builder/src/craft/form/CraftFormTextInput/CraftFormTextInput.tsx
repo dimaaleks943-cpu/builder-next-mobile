@@ -1,10 +1,13 @@
 import { useNode } from "@craftjs/core"
 import type { CSSProperties } from "react"
+import { InlineSettingsModal } from "../../../components/InlineSettingsModal/InlineSettingsModal.tsx"
+import { FormFieldSettingsFields } from "../../../pages/builder/settingsCraftComponents/FormFieldSettingsFields/FormFieldSettingsFields.tsx"
 import { CRAFT_DISPLAY_NAME } from "../../craftDisplayNames.ts"
 import { useCraftNodeStyle } from "../../../pages/builder/hooks/useCraftNodeStyle.ts"
 import type { ResponsiveStyle } from "../../../pages/builder/responsiveStyle.ts"
 import { FORM_TEXT_INPUT_DEFAULT_PROPS } from "../formDefaults.ts"
 import type { FormTextInputType } from "../formTypes.ts"
+import { useFormInlineSettings } from "../useFormInlineSettings.ts"
 
 export interface Props {
   name?: string
@@ -27,23 +30,44 @@ export const CraftFormTextInput = (props: Props) => {
   const {
     connectors: { connect, drag },
   } = useNode()
+  const {
+    elementRef,
+    id,
+    isSettingsOpen,
+    modalPosition,
+    closeInlineSettings,
+    handleShowAllSettings,
+  } = useFormInlineSettings()
 
   return (
-    <input
-      ref={(ref) => {
-        if (!ref) return
-        connect(drag(ref))
-      }}
-      data-craft-form-text-input=""
-      type={inputType}
-      name={fieldName}
-      required={required}
-      placeholder={placeholder}
-      autoFocus={autofocus}
-      readOnly
-      tabIndex={-1}
-      style={responsiveStyle as CSSProperties}
-    />
+    <>
+      <input
+        ref={(ref) => {
+          elementRef.current = ref
+          if (!ref) return
+          connect(drag(ref))
+        }}
+        data-craft-form-text-input=""
+        type={inputType}
+        name={fieldName}
+        required={required}
+        placeholder={placeholder}
+        autoFocus={autofocus}
+        readOnly
+        tabIndex={-1}
+        style={responsiveStyle as CSSProperties}
+      />
+      <InlineSettingsModal
+        open={isSettingsOpen}
+        title="Настройки поля"
+        top={modalPosition.top}
+        left={modalPosition.left}
+        onClose={closeInlineSettings}
+        onShowAllSettings={handleShowAllSettings}
+      >
+        <FormFieldSettingsFields nodeId={id} />
+      </InlineSettingsModal>
+    </>
   )
 };
 

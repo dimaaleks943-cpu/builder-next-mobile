@@ -1,9 +1,12 @@
 import { useNode } from "@craftjs/core"
 import type { CSSProperties } from "react"
+import { InlineSettingsModal } from "../../../components/InlineSettingsModal/InlineSettingsModal.tsx"
+import { FormFieldSettingsFields } from "../../../pages/builder/settingsCraftComponents/FormFieldSettingsFields/FormFieldSettingsFields.tsx"
 import { CRAFT_DISPLAY_NAME } from "../../craftDisplayNames.ts"
 import { useCraftNodeStyle } from "../../../pages/builder/hooks/useCraftNodeStyle.ts"
 import type { ResponsiveStyle } from "../../../pages/builder/responsiveStyle.ts"
 import { FORM_BLOCK_LABEL_DEFAULT_PROPS } from "../formDefaults.ts"
+import { useFormInlineSettings } from "../useFormInlineSettings.ts"
 
 export interface Props {
   text?: string
@@ -18,18 +21,39 @@ export const CraftFormBlockLabel = (props: Props) => {
   const {
     connectors: { connect, drag },
   } = useNode()
+  const {
+    elementRef,
+    id,
+    isSettingsOpen,
+    modalPosition,
+    closeInlineSettings,
+    handleShowAllSettings,
+  } = useFormInlineSettings()
 
   return (
-    <label
-      ref={(ref) => {
-        if (!ref) return
-        connect(drag(ref))
-      }}
-      data-craft-form-label=""
-      style={responsiveStyle as CSSProperties}
-    >
-      {labelText}
-    </label>
+    <>
+      <label
+        ref={(ref) => {
+          elementRef.current = ref
+          if (!ref) return
+          connect(drag(ref))
+        }}
+        data-craft-form-label=""
+        style={responsiveStyle as CSSProperties}
+      >
+        {labelText}
+      </label>
+      <InlineSettingsModal
+        open={isSettingsOpen}
+        title="Настройки label"
+        top={modalPosition.top}
+        left={modalPosition.left}
+        onClose={closeInlineSettings}
+        onShowAllSettings={handleShowAllSettings}
+      >
+        <FormFieldSettingsFields nodeId={id} />
+      </InlineSettingsModal>
+    </>
   )
 };
 

@@ -18,6 +18,7 @@ import { PreviewViewportContext } from "./context/PreviewViewportContext.tsx"
 import { CraftGridManualEditBridgeProvider } from "./context/CraftGridManualEditBridgeContext.tsx"
 import { StyleClassProvider } from "./context/StyleClassContext.tsx"
 import { CraftInlineSettingsBridgeProvider } from "./context/CraftInlineSettingsBridgeContext.tsx"
+import { FormPreviewSessionProvider } from "./context/FormPreviewContext.tsx"
 import { COLORS } from "../../theme/colors"
 import { CraftBlock } from "../../craft/Block.tsx"
 import { CraftBody } from "../../craft/Body.tsx"
@@ -443,19 +444,21 @@ export const BuilderPage = () => {
                 }}
               >
                 <BuilderLeftPanel />
-                <BuilderCanvas
-                  initialContent={initialContent}
-                  previewViewport={previewViewport}
-                  pageType={pageMeta?.type ?? PageType.STATIC}
-                  collectionTypeId={pageMeta?.collection_type_id ?? null}
-                  templatePreviewItem={templatePreviewItem}
-                  onPreviewViewportChange={setPreviewViewport}
-                />
-                <BuilderRightPanel
-                  isTemplatePage={pageMeta?.type === PageType.TEMPLATE}
-                  templateItemPathPrefix={templateItemPathPrefix}
-                  onTemplateItemPathPrefixChange={setTemplateItemPathPrefix}
-                />
+                <FormPreviewSessionProvider resetKey={`${id ?? ""}-${loaded}`}>
+                  <BuilderCanvas
+                    initialContent={initialContent}
+                    previewViewport={previewViewport}
+                    pageType={pageMeta?.type ?? PageType.STATIC}
+                    collectionTypeId={pageMeta?.collection_type_id ?? null}
+                    templatePreviewItem={templatePreviewItem}
+                    onPreviewViewportChange={setPreviewViewport}
+                  />
+                  <BuilderRightPanel
+                    isTemplatePage={pageMeta?.type === PageType.TEMPLATE}
+                    templateItemPathPrefix={templateItemPathPrefix}
+                    onTemplateItemPathPrefixChange={setTemplateItemPathPrefix}
+                  />
+                </FormPreviewSessionProvider>
               </Box>
             </Box>
             </BuilderTemplatePageContext.Provider>

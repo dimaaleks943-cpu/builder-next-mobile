@@ -11,31 +11,11 @@ export interface FormSubmitSettings {
   method: FormMethod
 }
 
-/** Builder-only preview on FormWrapper. */
-export interface FormWrapperSettings {
-  previewState: FormState
-}
-
-/** @deprecated Use FormSubmitSettings + FormWrapperSettings */
-export interface FormSettings extends FormSubmitSettings {
-  state?: FormState
-}
-
 export const DEFAULT_FORM_SUBMIT_SETTINGS: FormSubmitSettings = {
   name: "Email Form",
   redirect: "",
   action: "",
   method: "post",
-}
-
-export const DEFAULT_FORM_WRAPPER_SETTINGS: FormWrapperSettings = {
-  previewState: "normal",
-}
-
-/** @deprecated */
-export const DEFAULT_FORM_SETTINGS: FormSettings = {
-  ...DEFAULT_FORM_SUBMIT_SETTINGS,
-  state: "normal",
 }
 
 export type FormTextInputType =

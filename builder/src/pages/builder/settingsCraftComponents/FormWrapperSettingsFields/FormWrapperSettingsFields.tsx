@@ -3,19 +3,13 @@ import { Box } from "@mui/material"
 import { useEditor } from "@craftjs/core"
 import { resolveNodeDisplayName } from "../../../../utils/resolveNodeDisplayName.ts"
 import { CRAFT_DISPLAY_NAME } from "../../../../craft/craftDisplayNames.ts"
-import { readPreviewStateForWrapper } from "../../../../craft/form/formPreviewState.ts"
-import { DEFAULT_FORM_WRAPPER_SETTINGS } from "../../../../craft/form/formTypes.ts"
 import type { FormState } from "../../../../craft/form/formTypes.ts"
+import { useFormPreviewSession } from "../../context/FormPreviewContext.tsx"
 import { CraftSettingsSelect } from "../../components/craftSettingsControls/CraftSettingsSelect.tsx"
 import { SettingsAccordion } from "../components/SettingsAccordion/SettingsAccordion.tsx"
 
-interface FormWrapperProps {
-  previewState?: FormState
-}
-
 interface EditorSelection {
   selectedId: string | null
-  previewState: FormState
 }
 
 interface Props {
@@ -30,28 +24,24 @@ const FORM_STATE_OPTIONS = [
 
 /** Builder-only preview switcher on FormWrapper. */
 export const FormWrapperSettingsFields = ({ asAccordion }: Props) => {
-  const { actions } = useEditor()
-  const { selectedId, previewState } = useEditor((state): EditorSelection => {
+  const { getPreviewState, setPreviewState } = useFormPreviewSession()
+  const { selectedId } = useEditor((state): EditorSelection => {
     const [id] = Array.from(state.events.selected)
     const node = id ? state.nodes[id] : null
     const displayName = node ? resolveNodeDisplayName(node) : null
 
     if (!id || displayName !== CRAFT_DISPLAY_NAME.FormWrapper || !node) {
-      return { selectedId: null, previewState: DEFAULT_FORM_WRAPPER_SETTINGS.previewState }
+      return { selectedId: null }
     }
 
-    return {
-      selectedId: id,
-      previewState: readPreviewStateForWrapper(
-        id,
-        state.nodes as Parameters<typeof readPreviewStateForWrapper>[1],
-      ),
-    }
+    return { selectedId: id }
   })
 
   if (!selectedId) {
     return null
   }
+
+  const previewState = getPreviewState(selectedId)
 
   const content = (
     <Box sx={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -59,9 +49,7 @@ export const FormWrapperSettingsFields = ({ asAccordion }: Props) => {
         label="Preview state"
         value={previewState}
         onChange={(event: ChangeEvent<HTMLSelectElement>) => {
-          actions.setProp(selectedId, (props: FormWrapperProps) => {
-            props.previewState = event.target.value as FormState
-          })
+          setPreviewState(selectedId, event.target.value as FormState)
         }}
         options={FORM_STATE_OPTIONS}
       />
