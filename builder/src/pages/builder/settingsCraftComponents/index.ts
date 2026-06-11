@@ -1,5 +1,8 @@
-export { ImageSettingsFields } from "./ImageSettingsFields.tsx";
-export { LinkTextSettingsFields } from "./LinkTextSettingsFields";
-export { NavbarSettingsFields } from "./NavbarSettingsFields.tsx";
+export { ImageSettingsFields } from "./ImageSettingsFields/ImageSettingsFields.tsx";
+export { LinkTextSettingsFields } from "./LinkTextSettingsFields/LinkTextSettingsFields.tsx";
+export { NavbarSettingsFields } from "./NavbarSettingsFields/NavbarSettingsFields.tsx";
+export { FormSettingsFields } from "./FormSettingsFields/FormSettingsFields.tsx";
+export { FormWrapperSettingsFields } from "./FormWrapperSettingsFields/FormWrapperSettingsFields.tsx";
+export { FormFieldSettingsFields } from "./FormFieldSettingsFields/FormFieldSettingsFields.tsx";
 export { SettingsAccordion } from "./components/SettingsAccordion/SettingsAccordion.tsx";
 

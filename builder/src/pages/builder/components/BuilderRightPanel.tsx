@@ -17,6 +17,9 @@ import {
   ImageSettingsFields,
   LinkTextSettingsFields,
   NavbarSettingsFields,
+  FormSettingsFields,
+  FormWrapperSettingsFields,
+  FormFieldSettingsFields,
 } from "../settingsCraftComponents"
 import { useRightPanelContext } from "../context/RightPanelContext.tsx"
 import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
@@ -41,7 +44,7 @@ export const BuilderRightPanel = ({
   const rightPanelContext = useRightPanelContext()
   const previewViewport = usePreviewViewport()
   const tabIndex = rightPanelContext?.tabIndex ?? 0
-  const { hasSelection, selectedType, selectedId } = useEditor((state) => {
+  const { hasSelection, selectedType, selectedId, isFormWrapper, isFormForm, isFormField } = useEditor((state) => {
     const [id] = Array.from(state.events.selected)
     const node = id ? state.nodes[id] : null
 
@@ -57,10 +60,20 @@ export const BuilderRightPanel = ({
     const isHeading = displayName === CRAFT_DISPLAY_NAME.Heading
     const isParagraph = displayName === CRAFT_DISPLAY_NAME.Paragraph
     const isImage = displayName === CRAFT_DISPLAY_NAME.Image
+    const isFormWrapper = displayName === CRAFT_DISPLAY_NAME.FormWrapper
+    const isFormForm = displayName === CRAFT_DISPLAY_NAME.FormForm
+    const isFormField =
+      displayName === CRAFT_DISPLAY_NAME.FormTextInput ||
+      displayName === CRAFT_DISPLAY_NAME.FormTextarea ||
+      displayName === CRAFT_DISPLAY_NAME.FormBlockLabel ||
+      displayName === CRAFT_DISPLAY_NAME.FormButton
 
     return {
       hasSelection: Boolean(id),
       selectedId: id ?? null,
+      isFormWrapper,
+      isFormForm,
+      isFormField,
       selectedType: isLinkBlock
         ? "LinkBlock"
         : isButton
@@ -197,6 +210,9 @@ export const BuilderRightPanel = ({
                 {selectedType === CRAFT_DISPLAY_NAME.Navbar && selectedId && (
                   <NavbarSettingsFields nodeId={selectedId} asAccordion />
                 )}
+                {isFormWrapper && <FormWrapperSettingsFields asAccordion />}
+                {isFormForm && <FormSettingsFields asAccordion />}
+                {isFormField && <FormFieldSettingsFields asAccordion />}
               </Box>
             )}
           </>

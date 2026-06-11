@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
 import { Box, Typography } from "@mui/material";
 import { useEditor } from "@craftjs/core";
-import { COLORS } from "../../../theme/colors.ts";
-import { useContentListData } from "../context/ContentListDataContext.tsx";
-import { useBuilderTemplatePage } from "../context/BuilderTemplatePageContext.tsx";
-import { useCollectionsContext } from "../context/CollectionsContext.tsx";
-import { resolveNodeDisplayName } from "../../../utils/resolveNodeDisplayName.ts";
-import { CRAFT_DISPLAY_NAME } from "../../../craft/craftDisplayNames.ts";
-import { SettingsAccordion } from "./components/SettingsAccordion/SettingsAccordion.tsx";
-import { useStyleEditing } from "../hooks/useStyleEditing.ts";
+import { COLORS } from "../../../../theme/colors.ts";
+import { useContentListData } from "../../context/ContentListDataContext.tsx";
+import { useBuilderTemplatePage } from "../../context/BuilderTemplatePageContext.tsx";
+import { useCollectionsContext } from "../../context/CollectionsContext.tsx";
+import { resolveNodeDisplayName } from "../../../../utils/resolveNodeDisplayName.ts";
+import { CRAFT_DISPLAY_NAME } from "../../../../craft/craftDisplayNames.ts";
+import { SettingsAccordion } from "../components/SettingsAccordion/SettingsAccordion.tsx";
+import { useStyleEditing } from "../../hooks/useStyleEditing.ts";
 
 interface SelectedImageProps {
   src?: string;

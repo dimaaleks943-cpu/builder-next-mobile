@@ -21,7 +21,7 @@ import {
   type NavbarMenuTypeValue,
 } from "../../pages/builder/context/navbarMenuContext.tsx"
 import { NAVBAR_ROOT_DATA_ATTR } from "../../pages/builder/utils/navbarAnchorScroll.ts"
-import { NavbarSettingsFields } from "../../pages/builder/settingsCraftComponents/NavbarSettingsFields.tsx"
+import { NavbarSettingsFields } from "../../pages/builder/settingsCraftComponents/NavbarSettingsFields/NavbarSettingsFields.tsx"
 import { InlineSettingsModal } from "../../components/InlineSettingsModal/InlineSettingsModal.tsx"
 
 export interface Props {

@@ -25,6 +25,12 @@ import { CraftNavbarMenuButton } from "../../../../../craft/CraftNavbar/componen
 import { CraftNavbarMenu } from "../../../../../craft/CraftNavbar/components/CraftNavbarMenu.tsx"
 import { CraftNavbarLinks } from "../../../../../craft/CraftNavbar/components/CraftNavbarLinks.tsx"
 import { CraftIcon } from "../../../../../craft/CraftIcon/CraftIcon.tsx"
+import { CraftFormButton } from "../../../../../craft/form/CraftFormButton/CraftFormButton.tsx"
+import {
+  buildFormTextFieldPreset,
+  buildFormTextareaFieldPreset,
+  buildFullFormPreset,
+} from "../../../../../craft/form/formPresets.tsx"
 import { useBuilderModeContext } from "../../../context/BuilderModeContext"
 import { MODE_TYPE, PreviewViewport } from "../../../builder.enum"
 
@@ -69,6 +75,30 @@ export const useCategories = (): Category[] => {
             // Пару с ContentList задаёт одинаковый filterScope в настройках блоков.
             component: <CraftCategoryFilter />,
           },
+        ],
+      },
+      {
+        title: "Форма",
+        items: [
+          {
+            name: "Форма",
+            component: buildFullFormPreset(),
+          },
+          {
+            name: "Text Input",
+            component: buildFormTextFieldPreset({
+              label: "Label",
+              name: "Field",
+            }),
+          },
+          {
+            name: "Textarea",
+            component: buildFormTextareaFieldPreset({
+              label: "Label",
+              name: "Message",
+            }),
+          },
+          { name: "Submit", component: <CraftFormButton /> },
         ],
       },
       {

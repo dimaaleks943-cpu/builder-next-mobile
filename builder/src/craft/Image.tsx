@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, useCallback } from "react"
 import { useNode } from "@craftjs/core"
-import { ImageSettingsFields } from "../pages/builder/settingsCraftComponents/ImageSettingsFields.tsx"
+import { ImageSettingsFields } from "../pages/builder/settingsCraftComponents/ImageSettingsFields/ImageSettingsFields.tsx"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import {
   useCraftInlineSettingsBridge,

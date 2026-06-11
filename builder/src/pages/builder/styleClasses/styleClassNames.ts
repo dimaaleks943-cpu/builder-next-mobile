@@ -18,6 +18,15 @@ const DISPLAY_LABEL: Record<string, string> = {
   [CRAFT_DISPLAY_NAME.NavbarMenu]: "Navbar Menu",
   [CRAFT_DISPLAY_NAME.NavbarLinks]: "Navbar Links",
   [CRAFT_DISPLAY_NAME.Icon]: "Icon",
+  [CRAFT_DISPLAY_NAME.FormWrapper]: "Form Wrapper",
+  [CRAFT_DISPLAY_NAME.FormForm]: "Form",
+  [CRAFT_DISPLAY_NAME.FormSuccessMessage]: "Form Success",
+  [CRAFT_DISPLAY_NAME.FormErrorMessage]: "Form Error",
+  [CRAFT_DISPLAY_NAME.FormInput]: "Form Input",
+  [CRAFT_DISPLAY_NAME.FormBlockLabel]: "Form Label",
+  [CRAFT_DISPLAY_NAME.FormTextInput]: "Text Input",
+  [CRAFT_DISPLAY_NAME.FormTextarea]: "Textarea",
+  [CRAFT_DISPLAY_NAME.FormButton]: "Form Button",
 }
 
 const getStyleClassDisplayLabel = (resolvedName: string): string =>

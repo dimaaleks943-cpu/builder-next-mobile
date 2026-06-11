@@ -1,25 +1,25 @@
 import type { ChangeEvent, MouseEvent } from "react"
 import { Box, Checkbox, Divider, FormControlLabel, Typography } from "@mui/material"
 import { useEditor } from "@craftjs/core"
-import { COLORS } from "../../../theme/colors"
-import { AddIcon } from "../../../icons/AddIcon.tsx"
-import { SettingsActionButton } from "../../../components/SettingsActionButton/SettingsActionButton.tsx"
-import { SettingsAccordion } from "./components/SettingsAccordion/SettingsAccordion.tsx"
-import { addNavbarLink } from "../utils/addNavbarLink.ts"
-import { findNavbarLinkContainerIds } from "../utils/navbarLinkUtils.ts"
-import { CraftSettingsButtonGroup } from "../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
-import { CraftSettingsInput } from "../components/craftSettingsControls/CraftSettingsInput.tsx"
-import { CraftSettingsSelect } from "../components/craftSettingsControls/CraftSettingsSelect.tsx"
+import { COLORS } from "../../../../theme/colors.ts"
+import { AddIcon } from "../../../../icons/AddIcon.tsx"
+import { SettingsActionButton } from "../../../../components/SettingsActionButton/SettingsActionButton.tsx"
+import { SettingsAccordion } from "../components/SettingsAccordion/SettingsAccordion.tsx"
+import { addNavbarLink } from "../../utils/addNavbarLink.ts"
+import { findNavbarLinkContainerIds } from "../../utils/navbarLinkUtils.ts"
+import { CraftSettingsButtonGroup } from "../../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
+import { CraftSettingsInput } from "../../components/craftSettingsControls/CraftSettingsInput.tsx"
+import { CraftSettingsSelect } from "../../components/craftSettingsControls/CraftSettingsSelect.tsx"
 import {
   CraftSettingsMenuIconBreakpoint
-} from "../components/craftSettingsControls/CraftSettingsMenuIconBreakpoint/CraftSettingsMenuIconBreakpoint.tsx"
+} from "../../components/craftSettingsControls/CraftSettingsMenuIconBreakpoint/CraftSettingsMenuIconBreakpoint.tsx"
 import {
   DEFAULT_NAVBAR_MENU_ICON_BREAKPOINT,
   type NavbarEasingValue,
   type NavbarMenuIconBreakpointValue,
   type NavbarMenuPreviewValue,
   type NavbarMenuTypeValue,
-} from "../context/navbarMenuContext.tsx"
+} from "../../context/navbarMenuContext.tsx"
 
 interface SelectedNavbarProps {
   menuPreview?: NavbarMenuPreviewValue

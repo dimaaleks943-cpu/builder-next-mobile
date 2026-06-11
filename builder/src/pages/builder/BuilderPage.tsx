@@ -35,6 +35,15 @@ import { CraftNavbarMenuButton } from "../../craft/CraftNavbar/components/CraftN
 import { CraftNavbarMenu } from "../../craft/CraftNavbar/components/CraftNavbarMenu.tsx"
 import { CraftNavbarLinks } from "../../craft/CraftNavbar/components/CraftNavbarLinks.tsx"
 import { CraftIcon } from "../../craft/CraftIcon/CraftIcon.tsx"
+import { CraftFormWrapper } from "../../craft/form/CraftFormWrapper/CraftFormWrapper.tsx"
+import { CraftFormForm } from "../../craft/form/CraftFormForm/CraftFormForm.tsx"
+import { CraftFormSuccessMessage } from "../../craft/form/CraftFormSuccessMessage/CraftFormSuccessMessage.tsx"
+import { CraftFormErrorMessage } from "../../craft/form/CraftFormErrorMessage/CraftFormErrorMessage.tsx"
+import { CraftFormInput } from "../../craft/form/CraftFormInput/CraftFormInput.tsx"
+import { CraftFormBlockLabel } from "../../craft/form/CraftFormBlockLabel/CraftFormBlockLabel.tsx"
+import { CraftFormTextInput } from "../../craft/form/CraftFormTextInput/CraftFormTextInput.tsx"
+import { CraftFormTextarea } from "../../craft/form/CraftFormTextarea/CraftFormTextarea.tsx"
+import { CraftFormButton } from "../../craft/form/CraftFormButton/CraftFormButton.tsx"
 import { PageType, type IContentItem, type IContentTypeField } from "../../api/extranet"
 import {
   useGetContentItemsQuery,
@@ -369,6 +378,15 @@ export const BuilderPage = () => {
           NavbarMenu: CraftNavbarMenu,
           NavbarLinks: CraftNavbarLinks,
           Icon: CraftIcon,
+          FormWrapper: CraftFormWrapper,
+          FormForm: CraftFormForm,
+          FormSuccessMessage: CraftFormSuccessMessage,
+          FormErrorMessage: CraftFormErrorMessage,
+          FormInput: CraftFormInput,
+          FormBlockLabel: CraftFormBlockLabel,
+          FormTextInput: CraftFormTextInput,
+          FormTextarea: CraftFormTextarea,
+          FormButton: CraftFormButton,
         }}
       >
         <StyleClassProvider classes={styleClasses} setClasses={setStyleClasses}>

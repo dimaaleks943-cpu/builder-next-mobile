@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useEditor, useNode } from "@craftjs/core"
-import { LinkTextSettingsFields } from "../pages/builder/settingsCraftComponents/LinkTextSettingsFields.tsx"
+import { LinkTextSettingsFields } from "../pages/builder/settingsCraftComponents/LinkTextSettingsFields/LinkTextSettingsFields.tsx"
 import { useRightPanelContext } from "../pages/builder/context/RightPanelContext.tsx"
 import {
   useCraftInlineSettingsBridge,

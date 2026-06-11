@@ -19,7 +19,7 @@ import {
 } from "../utils/craftLocalizedText.ts"
 import { InlineSettingsModal } from "../components/InlineSettingsModal/InlineSettingsModal.tsx"
 import { TextSettingsFields } from "../pages/builder/settingsCraftComponents/TextSettingsFields/TextSettingsFields.tsx"
-import { LinkTextSettingsFields } from "../pages/builder/settingsCraftComponents/LinkTextSettingsFields.tsx"
+import { LinkTextSettingsFields } from "../pages/builder/settingsCraftComponents/LinkTextSettingsFields/LinkTextSettingsFields.tsx"
 import { Box } from "@mui/material";
 
 interface Props {

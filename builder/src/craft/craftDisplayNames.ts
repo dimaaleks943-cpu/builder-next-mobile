@@ -19,4 +19,13 @@ export const CRAFT_DISPLAY_NAME = {
   NavbarMenu: "CraftNavbarMenu",
   NavbarLinks: "CraftNavbarLinks",
   Icon: "CraftIcon",
+  FormWrapper: "CraftFormWrapper",
+  FormForm: "CraftFormForm",
+  FormSuccessMessage: "CraftFormSuccessMessage",
+  FormErrorMessage: "CraftFormErrorMessage",
+  FormInput: "CraftFormInput",
+  FormBlockLabel: "CraftFormBlockLabel",
+  FormTextInput: "CraftFormTextInput",
+  FormTextarea: "CraftFormTextarea",
+  FormButton: "CraftFormButton",
 } as const
