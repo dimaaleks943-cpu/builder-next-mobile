@@ -6,8 +6,10 @@ import { resolveNodeDisplayName } from "../../../../utils/resolveNodeDisplayName
 import { CRAFT_DISPLAY_NAME } from "../../../../craft/craftDisplayNames.ts"
 import { collectFormFields } from "../../../../craft/form/collectFormFields.ts"
 import type { FormFieldSummary } from "../../../../craft/form/collectFormFields.ts"
+import { resolveFormSendToSettings } from "../../../../craft/form/formSendToUtils.ts"
+import type { FormSendToSettings } from "../../../../craft/form/formTypes.ts"
 import { DEFAULT_FORM_SUBMIT_SETTINGS } from "../../../../craft/form/formTypes.ts"
-import type { FormMethod, FormRedirectMode } from "../../../../craft/form/formTypes.ts"
+import type { FormRedirectMode } from "../../../../craft/form/formTypes.ts"
 import { PageType } from "../../../../api/extranet.ts"
 import { useGetExtranetPagesQuery } from "../../../../store/extranetApi.ts"
 import { CraftSettingsButtonGroup } from "../../components/craftSettingsControls/CraftSettingsButtonGroup.tsx"
@@ -15,13 +17,13 @@ import { CraftSettingsInput } from "../../components/craftSettingsControls/Craft
 import { CraftSettingsSelect } from "../../components/craftSettingsControls/CraftSettingsSelect.tsx"
 import { SettingsAccordion } from "../components/SettingsAccordion/SettingsAccordion.tsx"
 import { FormFieldsList } from "./FormFieldsList/FormFieldsList.tsx"
+import { FormSendTo } from "./FormSendTo/FormSendTo.tsx"
 
 interface FormFormProps {
   name?: string
   redirect?: string
   redirectMode?: FormRedirectMode
-  action?: string
-  method?: FormMethod
+  sendTo?: Partial<FormSendToSettings> | null
 }
 
 interface EditorSelection {
@@ -34,11 +36,6 @@ interface Props {
   asAccordion?: boolean
   nodeId?: string
 }
-
-const FORM_METHOD_OPTIONS = [
-  { id: "post", value: "POST" },
-  { id: "get", value: "GET" },
-]
 
 const REDIRECT_MODE_OPTIONS = [
   { id: "none", content: "None" },
@@ -94,8 +91,7 @@ export const FormSettingsFields = ({ asAccordion, nodeId }: Props) => {
   const name = selectedProps.name ?? DEFAULT_FORM_SUBMIT_SETTINGS.name
   const redirect = selectedProps.redirect ?? DEFAULT_FORM_SUBMIT_SETTINGS.redirect
   const redirectMode = selectedProps.redirectMode ?? DEFAULT_FORM_SUBMIT_SETTINGS.redirectMode
-  const action = selectedProps.action ?? DEFAULT_FORM_SUBMIT_SETTINGS.action
-  const method = selectedProps.method ?? DEFAULT_FORM_SUBMIT_SETTINGS.method
+  const sendTo = resolveFormSendToSettings(selectedProps.sendTo)
 
   const hasPageOptions = pageOptions.length > 0
   const safePageOptions = hasPageOptions
@@ -125,6 +121,7 @@ export const FormSettingsFields = ({ asAccordion, nodeId }: Props) => {
     })
   }
 
+  const handleSendToChange = (nextSendTo: FormSendToSettings) => setProp("sendTo", nextSendTo)
   const handlePageChange = (event: ChangeEvent<HTMLSelectElement>) => setProp("redirect", event.target.value)
 
   const content = (
@@ -137,22 +134,7 @@ export const FormSettingsFields = ({ asAccordion, nodeId }: Props) => {
         }
       />
       <FormFieldsList fields={formFields} />
-      <CraftSettingsInput
-        label="Action URL"
-        value={action}
-        placeholder="Platform default if empty"
-        onChange={(event: ChangeEvent<HTMLInputElement>) =>
-          setProp("action", event.target.value)
-        }
-      />
-      <CraftSettingsSelect
-        label="Method"
-        value={method}
-        onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-          setProp("method", event.target.value as FormMethod)
-        }
-        options={FORM_METHOD_OPTIONS}
-      />
+      <FormSendTo sendTo={sendTo} onChange={handleSendToChange} />
       <CraftSettingsButtonGroup
         label="Redirect"
         value={redirectMode}
