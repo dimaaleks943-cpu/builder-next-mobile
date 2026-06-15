@@ -6,7 +6,7 @@ import type { ResponsiveStyle } from "../../../pages/builder/responsiveStyle.ts"
 import { useFormPreviewState } from "../../../pages/builder/context/FormPreviewContext.tsx"
 import { canMoveIntoFormForm } from "../formCraftRules.ts"
 import { FORM_FORM_DEFAULT_PROPS } from "../formDefaults.ts"
-import type { FormMethod } from "../formTypes.ts"
+import type { FormMethod, FormRedirectMode } from "../formTypes.ts"
 
 export interface Props {
   children?: ReactNode
@@ -14,6 +14,7 @@ export interface Props {
   style?: ResponsiveStyle
   name?: string
   redirect?: string
+  redirectMode?: FormRedirectMode
   action?: string
   method?: FormMethod
 }
@@ -35,9 +36,9 @@ export const CraftFormForm = (props: Props) => {
   const previewState = useFormPreviewState()
   const formName = props.name ?? FORM_FORM_DEFAULT_PROPS.name
   const formMethod = props.method ?? FORM_FORM_DEFAULT_PROPS.method
-  const {
-    connectors: { connect, drag },
-  } = useNode()
+  const redirectMode = props.redirectMode ?? FORM_FORM_DEFAULT_PROPS.redirectMode
+  const redirect = props.redirect ?? FORM_FORM_DEFAULT_PROPS.redirect
+  const { connectors: { connect, drag } } = useNode()
 
   const isHidden = previewState === "success"
 
@@ -52,6 +53,8 @@ export const CraftFormForm = (props: Props) => {
       data-form-name={formName}
       data-form-action={props.action ?? FORM_FORM_DEFAULT_PROPS.action}
       data-form-method={formMethod}
+      data-form-redirect={redirect}
+      data-form-redirect-mode={redirectMode}
       style={{
         ...responsiveStyle,
         display: resolveCanvasDisplay(responsiveStyle, isHidden),

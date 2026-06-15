@@ -3,10 +3,13 @@ export type FormState = "normal" | "success" | "error"
 
 export type FormMethod = "get" | "post"
 
+export type FormRedirectMode = "none" | "page" | "url"
+
 /** Submit configuration for FormForm (runtime). */
 export interface FormSubmitSettings {
   name: string
   redirect: string
+  redirectMode: FormRedirectMode
   action: string
   method: FormMethod
 }
@@ -14,6 +17,7 @@ export interface FormSubmitSettings {
 export const DEFAULT_FORM_SUBMIT_SETTINGS: FormSubmitSettings = {
   name: "Email Form",
   redirect: "",
+  redirectMode: "none",
   action: "",
   method: "post",
 }
