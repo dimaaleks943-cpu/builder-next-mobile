@@ -3,11 +3,14 @@ import { Box } from "@mui/material"
 import { useEditor } from "@craftjs/core"
 import { resolveNodeDisplayName } from "../../../../utils/resolveNodeDisplayName.ts"
 import { CRAFT_DISPLAY_NAME } from "../../../../craft/craftDisplayNames.ts"
+import { collectFormFields } from "../../../../craft/form/collectFormFields.ts"
+import type { FormFieldSummary } from "../../../../craft/form/collectFormFields.ts"
 import { DEFAULT_FORM_SUBMIT_SETTINGS } from "../../../../craft/form/formTypes.ts"
 import type { FormMethod } from "../../../../craft/form/formTypes.ts"
 import { CraftSettingsInput } from "../../components/craftSettingsControls/CraftSettingsInput.tsx"
 import { CraftSettingsSelect } from "../../components/craftSettingsControls/CraftSettingsSelect.tsx"
 import { SettingsAccordion } from "../components/SettingsAccordion/SettingsAccordion.tsx"
+import { FormFieldsList } from "./FormFieldsList/FormFieldsList.tsx"
 
 interface FormFormProps {
   name?: string
@@ -19,6 +22,7 @@ interface FormFormProps {
 interface EditorSelection {
   targetId: string | null
   selectedProps: FormFormProps | null
+  formFields: FormFieldSummary[]
 }
 
 interface Props {
@@ -34,13 +38,17 @@ const FORM_METHOD_OPTIONS = [
 /** Submit settings for FormForm (name, action, method, redirect). */
 export const FormSettingsFields = ({ asAccordion, nodeId }: Props) => {
   const { actions } = useEditor()
-  const { targetId, selectedProps } = useEditor((state): EditorSelection => {
+  const { targetId, selectedProps, formFields } = useEditor((state): EditorSelection => {
     const id = nodeId ?? ((Array.from(state.events.selected)[0] as string | undefined) ?? null)
-    const node = id ? state.nodes[id] : null
+    if (!id) {
+      return { targetId: null, selectedProps: null, formFields: [] }
+    }
+
+    const node = state.nodes[id]
     const displayName = node ? resolveNodeDisplayName(node) : null
 
     if (displayName !== CRAFT_DISPLAY_NAME.FormForm || !node) {
-      return { targetId: null, selectedProps: null }
+      return { targetId: null, selectedProps: null, formFields: [] }
     }
 
     const raw = node.data.props as FormFormProps | undefined
@@ -48,6 +56,7 @@ export const FormSettingsFields = ({ asAccordion, nodeId }: Props) => {
     return {
       targetId: id,
       selectedProps: raw ?? null,
+      formFields: collectFormFields(id, state.nodes),
     }
   })
 
@@ -69,12 +78,13 @@ export const FormSettingsFields = ({ asAccordion, nodeId }: Props) => {
   const content = (
     <Box sx={{ display: "flex", flexDirection: "column", gap: "12px" }}>
       <CraftSettingsInput
-        label="Form name"
+        label="Name"
         value={name}
         onChange={(event: ChangeEvent<HTMLInputElement>) =>
           setProp("name", event.target.value)
         }
       />
+      <FormFieldsList fields={formFields} />
       <CraftSettingsInput
         label="Action URL"
         value={action}
