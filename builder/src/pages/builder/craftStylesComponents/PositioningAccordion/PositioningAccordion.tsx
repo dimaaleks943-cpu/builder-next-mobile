@@ -309,6 +309,7 @@ export const PositioningAccordion = () => {
                     label="z-Index"
                     value={zIndexValue}
                     onCommit={handleZIndexCommit}
+                    editKey={selectedId}
                     withoutLabel
                     unitless
                     inputWidth="100%"

@@ -288,6 +288,7 @@ export const SizeAccordion = () => {
                 label="Width"
                 value={getStyleProp("width")}
                 onCommit={handleSizeCommit("width")}
+                editKey={selectedId}
                 allowedUnits={CSS_SIZE_UNITS_RN}
                 mode="rn"
                 inputWidth={inputWidth}
@@ -296,6 +297,7 @@ export const SizeAccordion = () => {
                 label="Height"
                 value={getStyleProp("height")}
                 onCommit={handleSizeCommit("height")}
+                editKey={selectedId}
                 allowedUnits={CSS_SIZE_UNITS_RN}
                 mode="rn"
                 inputWidth={inputWidth}
@@ -305,6 +307,7 @@ export const SizeAccordion = () => {
                   label="Min H"
                   value={getStyleProp("minHeight")}
                   onCommit={handleSizeCommit("minHeight")}
+                  editKey={selectedId}
                   allowedUnits={CSS_SIZE_UNITS_RN}
                   mode="rn"
                   inputWidth={inputWidth}
@@ -324,6 +327,7 @@ export const SizeAccordion = () => {
                 label="Width"
                 value={getStyleProp("width")}
                 onCommit={handleSizeCommit("width")}
+                editKey={selectedId}
                 mode="web"
                 inputWidth={inputWidth}
               />
@@ -331,6 +335,7 @@ export const SizeAccordion = () => {
                 label="Height"
                 value={getStyleProp("height")}
                 onCommit={handleSizeCommit("height")}
+                editKey={selectedId}
                 mode="web"
                 inputWidth={inputWidth}
               />
@@ -338,6 +343,7 @@ export const SizeAccordion = () => {
                 label="Min W"
                 value={getStyleProp("minWidth")}
                 onCommit={handleSizeCommit("minWidth")}
+                editKey={selectedId}
                 mode="web"
                 inputWidth={inputWidth}
               />
@@ -352,6 +358,7 @@ export const SizeAccordion = () => {
                 label="Max W"
                 value={getStyleProp("maxWidth")}
                 onCommit={handleSizeCommit("maxWidth")}
+                editKey={selectedId}
                 mode="web"
                 placeholder="None"
                 inputWidth={inputWidth}
@@ -360,6 +367,7 @@ export const SizeAccordion = () => {
                 label="Max H"
                 value={getStyleProp("maxHeight")}
                 onCommit={handleSizeCommit("maxHeight")}
+                editKey={selectedId}
                 mode="web"
                 placeholder="None"
                 inputWidth={inputWidth}
@@ -634,6 +642,7 @@ export const SizeAccordion = () => {
                                 allowedUnits={BACKGROUND_POSITION_UNIT_MENU}
                                 value={positionDims.x}
                                 onCommit={handleObjectPositionXCommit}
+                                editKey={selectedId}
                                 mode="web"
                                 placeholder="50"
                                 inputWidth="100%"
@@ -652,6 +661,7 @@ export const SizeAccordion = () => {
                                 allowedUnits={BACKGROUND_POSITION_UNIT_MENU}
                                 value={positionDims.y}
                                 onCommit={handleObjectPositionYCommit}
+                                editKey={selectedId}
                                 mode="web"
                                 placeholder="50"
                                 inputWidth="100%"

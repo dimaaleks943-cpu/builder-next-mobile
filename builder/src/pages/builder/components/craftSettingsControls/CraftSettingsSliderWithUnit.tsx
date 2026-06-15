@@ -9,6 +9,7 @@ import { CraftSettingsValueWithUnit } from "./CraftSettingsValueWithUnit.tsx"
 type Props = {
   value: unknown
   onCommit: (next: string | number | undefined) => void
+  editKey?: string | null
   allowedUnits?: readonly CraftSizeMenuToken[]
   min?: number
   max?: number
@@ -45,6 +46,7 @@ const toNumericString = (value: number): string => {
 export const CraftSettingsSliderWithUnit = ({
   value,
   onCommit,
+  editKey = null,
   allowedUnits = ["px", "auto"],
   min = -100,
   max = 100,
@@ -154,6 +156,7 @@ export const CraftSettingsSliderWithUnit = ({
           withoutLabel
           value={value}
           onCommit={onCommit}
+          editKey={editKey}
           allowedUnits={allowedUnits}
           inputWidth="100%"
           disabled={disabled}

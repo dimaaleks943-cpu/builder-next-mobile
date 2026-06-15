@@ -141,6 +141,8 @@ interface Props {
   label: string;
   value: unknown;
   onCommit: (next: string | number | undefined) => void;
+  /** Resets local input when the edited craft node changes (even if `value` is identical). */
+  editKey?: string | null;
   allowedUnits?: readonly CraftSizeMenuToken[];
   /** CSS gradient angle units (`75deg`…); меню и парсинг как у размеров, но с wrap по кругу. */
   gradientAngleUnits?: readonly GradientAngleUnit[];
@@ -160,6 +162,7 @@ export const CraftSettingsValueWithUnit = ({
   label,
   value,
   onCommit,
+  editKey = null,
   allowedUnits,
   gradientAngleUnits,
   disabled = false,
@@ -190,9 +193,7 @@ export const CraftSettingsValueWithUnit = ({
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
   const menuPaperRef = useRef<HTMLDivElement | null>(null)
 
-  const blurCommitTimer = useRef<number | null>(null)
-
-  useEffect(() => {
+  const syncViewFromProp = () => {
     if (unitless) {
       if (value === undefined || value === null) {
         setInputText("")
@@ -210,7 +211,11 @@ export const CraftSettingsValueWithUnit = ({
     const next = viewStateFromProp(value, resolvedAllowed)
     setInputText(next.inputText)
     setMenuSelection(next.menuSelection)
-  }, [value, resolvedAllowed, unitless, isGradientAngleMode, resolvedAngleUnits])
+  }
+
+  useEffect(() => {
+    syncViewFromProp()
+  }, [value, editKey, resolvedAllowed, unitless, isGradientAngleMode, resolvedAngleUnits])
 
   useEffect(() => {
     if (!anchorEl) return
@@ -225,59 +230,63 @@ export const CraftSettingsValueWithUnit = ({
     return () => document.removeEventListener("mousedown", onDocMouseDown, true)
   }, [anchorEl])
 
-  const cancelBlurCommit = () => {
-    if (blurCommitTimer.current != null) {
-      window.clearTimeout(blurCommitTimer.current)
-      blurCommitTimer.current = null
+  const commitMatchesProp = (
+    next: string | number | undefined,
+    propValue: unknown = value,
+  ): boolean => {
+    if (unitless) {
+      if (next === undefined && (propValue === undefined || propValue === null)) return true
+      if (next === undefined || propValue === undefined || propValue === null) return false
+      return String(next) === String(propValue)
     }
+    const propFormatted = formatSizeProp(parseSizeProp(propValue), mode)
+    if (next === undefined && propFormatted === undefined) return true
+    if (next === undefined || propFormatted === undefined) return false
+    return String(next) === String(propFormatted)
   }
 
-  const commitParsed = (parsed: ReturnType<typeof parseInputWithUnit>) => {
+  const commitParsed = (
+    parsed: ReturnType<typeof parseInputWithUnit>,
+    propValue: unknown = value,
+  ) => {
     const next = formatSizeProp(parsed, mode)
+    if (commitMatchesProp(next, propValue)) return
     onCommit(next)
   }
 
-  const commitFromInput = () => {
+  const commitFromText = (
+    text: string,
+    selection: CraftSizeMenuSelection | GradientAngleUnit,
+    propValue: unknown = value,
+  ) => {
     if (unitless) {
-      const t = inputText.trim()
+      const t = text.trim()
+      let next: string | number | undefined
       if (t === "") {
-        onCommit(undefined)
-        return
-      }
-      if (/^auto$/i.test(t)) {
-        onCommit("auto")
-        return
-      }
-      if (/^-?(?:\d+\.?\d*|\.\d+)$/.test(t)) {
+        next = undefined
+      } else if (/^auto$/i.test(t)) {
+        next = "auto"
+      } else if (/^-?(?:\d+\.?\d*|\.\d+)$/.test(t)) {
         const n = Number(t)
-        onCommit(Number.isFinite(n) ? n : undefined)
-        return
+        next = Number.isFinite(n) ? n : undefined
+      } else {
+        next = t
       }
-      onCommit(t)
+      if (commitMatchesProp(next, propValue)) return
+      onCommit(next)
       return
     }
     if (isGradientAngleMode) {
-      const sel = menuSelection as GradientAngleUnit | "custom"
-      const out = commitGradientAngleFromInput(inputText, sel)
-      if (out !== undefined) onCommit(out)
+      const sel = selection as GradientAngleUnit | "custom"
+      const out = commitGradientAngleFromInput(text, sel)
+      if (out === undefined) return
+      if (typeof propValue === "string" && out === propValue.trim()) return
+      onCommit(out)
       return
     }
-    const parsed = parseInputWithUnit(
-      inputText,
-      menuSelection as CraftSizeMenuSelection,
-    )
-    commitParsed(parsed)
+    const parsed = parseInputWithUnit(text, selection as CraftSizeMenuSelection)
+    commitParsed(parsed, propValue)
   }
-
-  const queueBlurCommit = () => {
-    cancelBlurCommit()
-    blurCommitTimer.current = window.setTimeout(() => {
-      blurCommitTimer.current = null
-      commitFromInput()
-    }, 0)
-  }
-
-  useEffect(() => () => cancelBlurCommit(), [])
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (
@@ -287,33 +296,25 @@ export const CraftSettingsValueWithUnit = ({
     ) {
       return
     }
-    setInputText(event.target.value)
+    const nextText = event.target.value
+    setInputText(nextText)
+    commitFromText(nextText, menuSelection)
   }
 
   const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Escape") {
       event.stopPropagation()
       setAnchorEl(null)
-      if (isGradientAngleMode) {
-        const v = viewStateFromGradientAngleProp(value, resolvedAngleUnits)
-        setInputText(v.inputText)
-        setMenuSelection(v.menuSelection)
-        return
-      }
-      const v = viewStateFromProp(value, resolvedAllowed)
-      setInputText(v.inputText)
-      setMenuSelection(v.menuSelection)
+      syncViewFromProp()
       return
     }
     if (event.key === "Enter") {
       event.preventDefault()
-      cancelBlurCommit()
-      commitFromInput()
+      commitFromText(inputText, menuSelection)
     }
   }
 
   const handlePickUnit = (token: CraftSizeMenuToken | GradientAngleUnit) => {
-    cancelBlurCommit()
     setAnchorEl(null)
 
     if (unitless) return
@@ -440,7 +441,6 @@ export const CraftSettingsValueWithUnit = ({
           type="text"
           value={displayValue}
           onChange={handleInputChange}
-          onBlur={queueBlurCommit}
           onKeyDown={handleInputKeyDown}
           disabled={disabled}
           readOnly={isKeywordSizingUnit}
@@ -466,7 +466,6 @@ export const CraftSettingsValueWithUnit = ({
             disabled={disabled}
             onMouseDown={(e) => {
               e.preventDefault()
-              cancelBlurCommit()
             }}
             onClick={(e) => {
               const el = e.currentTarget

@@ -722,6 +722,7 @@ export const TypographyAccordion = () => {
                   unitAffixVariant="mutedLowercase"
                   value={getStyleProp("fontSize")}
                   onCommit={handleFontSizeCommit}
+                  editKey={selectedId}
                   allowedUnits={FONT_SIZE_UNIT_MENU}
                   placeholder=""
                   inputWidth="100%"
@@ -738,6 +739,7 @@ export const TypographyAccordion = () => {
                   unitAffixVariant="mutedLowercase"
                   value={getStyleProp("lineHeight")}
                   onCommit={handleLineHeightCommit}
+                  editKey={selectedId}
                   allowedUnits={FONT_SIZE_UNIT_MENU}
                   placeholder=""
                   inputWidth="100%"
@@ -892,6 +894,7 @@ export const TypographyAccordion = () => {
                     label="Letter spacing"
                     value={letterSpacingProp}
                     onCommit={handleLetterSpacingCommit}
+                    editKey={selectedId}
                     allowedUnits={LETTER_SPACING_UNIT_MENU}
                     withoutLabel
                     inputWidth="100%"
@@ -1000,6 +1003,7 @@ export const TypographyAccordion = () => {
                         label="Columns"
                         value={columnCountProp}
                         onCommit={handleColumnCountCommit}
+                        editKey={selectedId}
                         withoutLabel
                         unitless
                         inputWidth="100%"
