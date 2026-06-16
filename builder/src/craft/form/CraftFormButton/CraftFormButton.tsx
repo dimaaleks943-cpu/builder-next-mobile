@@ -13,6 +13,7 @@ export interface Props {
   loadingText?: string
   styleClassIds?: string[]
   style?: ResponsiveStyle
+  htmlId?: string
 }
 
 /** Submit button for the form (Webflow FormButton). */
@@ -43,6 +44,7 @@ export const CraftFormButton = (props: Props) => {
           if (!ref) return
           connect(drag(ref))
         }}
+        {...(props.htmlId ? { id: props.htmlId } : {})}
         data-craft-form-button=""
         type="submit"
         onClick={handleClick}

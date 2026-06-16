@@ -10,6 +10,7 @@ import type { FormTextInputType } from "../formTypes.ts"
 import { useFormInlineSettings } from "../useFormInlineSettings.ts"
 
 export interface Props {
+  htmlId?: string
   name?: string
   required?: boolean
   placeholder?: string
@@ -47,6 +48,7 @@ export const CraftFormTextInput = (props: Props) => {
           if (!ref) return
           connect(drag(ref))
         }}
+        {...(props.htmlId ? { id: props.htmlId } : {})}
         data-craft-form-text-input=""
         type={inputType}
         name={fieldName}

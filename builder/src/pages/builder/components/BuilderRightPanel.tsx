@@ -20,6 +20,7 @@ import {
   FormSettingsFields,
   FormWrapperSettingsFields,
   FormFieldSettingsFields,
+  HtmlIdSettingsFields,
 } from "../settingsCraftComponents"
 import { useRightPanelContext } from "../context/RightPanelContext.tsx"
 import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
@@ -189,13 +190,13 @@ export const BuilderRightPanel = ({
               <Box
                 sx={{
                   flex: 1,
-                  padding: "12px 16px",
                   display: "flex",
                   flexDirection: "column",
                   gap: "8px",
                   overflowY: "auto",
                 }}
               >
+                <HtmlIdSettingsFields />
                 {(selectedType === "Heading" ||
                   selectedType === "Paragraph" ||
                   selectedType === "LinkText" ||

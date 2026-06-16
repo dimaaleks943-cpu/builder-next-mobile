@@ -12,6 +12,7 @@ export interface Props {
   text?: string
   styleClassIds?: string[]
   style?: ResponsiveStyle
+  htmlId?: string
 }
 
 /** Label for a form field (Webflow FormBlockLabel). */
@@ -38,6 +39,7 @@ export const CraftFormBlockLabel = (props: Props) => {
           if (!ref) return
           connect(drag(ref))
         }}
+        {...(props.htmlId ? { id: props.htmlId } : {})}
         data-craft-form-label=""
         style={responsiveStyle as CSSProperties}
       >

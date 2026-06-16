@@ -5,10 +5,11 @@ import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
 import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 
-export type ContentListCellProps = {
+export interface ContentListCellProps {
   children?: ReactNode
   styleClassIds?: string[]
   style?: ResponsiveStyle
+  htmlId?: string
 }
 
 /**
@@ -31,6 +32,7 @@ export const CraftContentListCell = (props: ContentListCellProps) => {
         if (!ref) return
         connect(drag(ref))
       }}
+      {...(props.htmlId ? { id: props.htmlId } : {})}
       style={{
         ...(responsiveStyle as CSSProperties),
         flex: 1,

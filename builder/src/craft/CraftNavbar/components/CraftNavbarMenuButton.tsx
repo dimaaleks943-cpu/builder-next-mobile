@@ -7,6 +7,7 @@ import { PreviewViewport } from "../../../pages/builder/builder.enum.ts"
 import { useNavbarMenu } from "../../../pages/builder/context/navbarMenuContext.tsx"
 
 interface Props {
+  htmlId?: string
   children?: ReactNode;
   style?: ResponsiveStyle;
   styleClassIds?: string[];
@@ -30,6 +31,7 @@ export const CraftNavbarMenuButton = (props: Props) => {
         if (!ref) return
         connect(drag(ref))
       }}
+      {...(props.htmlId ? { id: props.htmlId } : {})}
       role="button"
       aria-label="menu"
       aria-haspopup="menu"

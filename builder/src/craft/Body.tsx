@@ -5,10 +5,11 @@ import { BODY_CRAFT_DEFAULT_PROPS } from "./defaultDefaultCraftStyles.ts"
 import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
 import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 
-export type BodyProps = {
+interface  BodyProps {
   children?: ReactNode
   styleClassIds?: string[]
   style?: ResponsiveStyle
+  htmlId?: string
 }
 
 // Root component используется только как стартовый элемент холста, не удаляется
@@ -27,6 +28,7 @@ export const CraftBody = (props: BodyProps) => {
         if (!ref) return
         connect(drag(ref))
       }}
+      {...(props.htmlId ? { id: props.htmlId } : {})}
       style={responsiveStyle}
     >
       {props.children}

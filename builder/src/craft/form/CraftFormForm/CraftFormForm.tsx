@@ -11,6 +11,7 @@ import type { FormRedirectMode } from "../formTypes.ts"
 import type { FormSendToSettings } from "../formTypes.ts"
 
 export interface Props {
+  htmlId?: string
   children?: ReactNode
   styleClassIds?: string[]
   style?: ResponsiveStyle
@@ -49,6 +50,7 @@ export const CraftFormForm = (props: Props) => {
         if (!ref) return
         connect(drag(ref))
       }}
+      {...(props.htmlId ? { id: props.htmlId } : {})}
       role="form"
       data-craft-form=""
       data-form-name={formName}

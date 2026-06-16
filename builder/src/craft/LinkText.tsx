@@ -21,6 +21,7 @@ import {
 import { InlineSettingsModal } from "../components/InlineSettingsModal/InlineSettingsModal.tsx";
 
 export interface LinkTextProps {
+  htmlId?: string
   text?: string
   i18nKey?: string | null
   collectionField?: string | null
@@ -198,6 +199,7 @@ export const CraftLinkText = (props: LinkTextProps) => {
       ref={(ref) => {
         anchorRef.current = ref
       }}
+      {...(props.htmlId ? { id: props.htmlId } : {})}
       href={href}
       target={openInNewTab ? "_blank" : "_self"}
       rel={openInNewTab ? "noopener noreferrer" : undefined}

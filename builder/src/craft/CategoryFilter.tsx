@@ -39,6 +39,7 @@ interface CategoryFilterProps {
   showAllLabel?: string
   styleClassIds?: string[]
   style?: ResponsiveStyle
+  htmlId?: string
 }
 
 const mapDistributorCategoryToContentCategory = (
@@ -270,6 +271,7 @@ export const CraftCategoryFilter = () => {
         if (!ref) return
         connect(drag(ref))
       }}
+      {...(props.htmlId ? { id: props.htmlId } : {})}
       style={{
         width: (responsiveStyle.width as string | number | undefined) ?? "100%",
         height: responsiveStyle.height as string | number | undefined,

@@ -36,7 +36,7 @@ import {
 } from "../pages/builder/responsiveStyle.ts"
 import { InlineSettingsModal } from "../components/InlineSettingsModal/InlineSettingsModal.tsx";
 
-export type ContentListProps = {
+export interface ContentListProps {
   selectedSource?: string
   /**
    * Строка группы с блоком «Фильтр категорий». Задаёт составной ключ кэша `scope::content_type_id`
@@ -45,6 +45,7 @@ export type ContentListProps = {
   filterScope?: string
   styleClassIds?: string[]
   style?: ResponsiveStyle
+  htmlId?: string
 }
 
 /**
@@ -538,6 +539,7 @@ export const CraftContentList = ({}: ContentListProps) => {
         if (!ref) return
         connect(drag(ref))
       }}
+      {...(props.htmlId ? { id: props.htmlId } : {})}
       style={{
         ...(responsiveStyle as CSSProperties),
         width: (responsiveStyle.width as string | number | undefined) ?? "100%",

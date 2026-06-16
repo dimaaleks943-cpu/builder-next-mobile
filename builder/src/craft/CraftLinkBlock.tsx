@@ -17,6 +17,7 @@ import { InlineSettingsModal } from "../components/InlineSettingsModal/InlineSet
 const LINK_CHILD_RESOLVED_NAMES = new Set(["LinkText", "LinkBlock"])
 
 export interface CraftLinkBlockProps {
+  htmlId?: string
   children?: ReactNode
   href?: string
   linkMode?: "url" | "page" | "collectionItemPage"
@@ -81,6 +82,7 @@ export const CraftLinkBlock = (props: CraftLinkBlockProps) => {
           if (!ref) return
           connect(drag(ref))
         }}
+        {...(props.htmlId ? { id: props.htmlId } : {})}
         href={href}
         target={openInNewTab ? "_blank" : "_self"}
         rel={openInNewTab ? "noopener noreferrer" : undefined}

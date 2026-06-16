@@ -25,6 +25,7 @@ import { NavbarSettingsFields } from "../../pages/builder/settingsCraftComponent
 import { InlineSettingsModal } from "../../components/InlineSettingsModal/InlineSettingsModal.tsx"
 
 export interface Props {
+  htmlId?: string
   children?: ReactNode
   style?: ResponsiveStyle
   styleClassIds?: string[]
@@ -115,6 +116,7 @@ export const CraftNavbar = (props: Props) => {
             if (!ref) return
             connect(drag(ref))
           }}
+          {...(props.htmlId ? { id: props.htmlId } : {})}
           {...{ [NAVBAR_ROOT_DATA_ATTR]: id }}
           style={responsiveStyle as CSSProperties}
         >

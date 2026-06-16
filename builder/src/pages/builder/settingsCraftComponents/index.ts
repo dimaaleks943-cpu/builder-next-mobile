@@ -1,3 +1,4 @@
+export { HtmlIdSettingsFields } from "./HtmlIdSettingsFields/HtmlIdSettingsFields.tsx";
 export { ImageSettingsFields } from "./ImageSettingsFields/ImageSettingsFields.tsx";
 export { LinkTextSettingsFields } from "./LinkTextSettingsFields/LinkTextSettingsFields.tsx";
 export { NavbarSettingsFields } from "./NavbarSettingsFields/NavbarSettingsFields.tsx";

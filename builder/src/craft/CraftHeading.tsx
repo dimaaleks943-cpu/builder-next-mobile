@@ -21,6 +21,7 @@ import { TextSettingsFields } from "../pages/builder/settingsCraftComponents/Tex
 import { InlineSettingsModal } from "../components/InlineSettingsModal/InlineSettingsModal.tsx";
 
 interface Props {
+  htmlId?: string
   text?: string
   i18nKey?: string | null
   collectionField?: string | null
@@ -178,6 +179,7 @@ export const CraftHeading = (props: Props) => {
               connect(drag(ref))
             }
           }}
+          {...(props.htmlId ? { id: props.htmlId } : {})}
           contentEditable={isEditing && !collectionField}
           suppressContentEditableWarning
           onDoubleClick={handleDoubleClick}

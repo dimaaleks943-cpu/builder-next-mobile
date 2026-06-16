@@ -9,6 +9,7 @@ import { FORM_TEXTAREA_DEFAULT_PROPS } from "../formDefaults.ts"
 import { useFormInlineSettings } from "../useFormInlineSettings.ts"
 
 export interface Props {
+  htmlId?: string
   name?: string
   required?: boolean
   placeholder?: string
@@ -44,6 +45,7 @@ export const CraftFormTextarea = (props: Props) => {
           if (!ref) return
           connect(drag(ref))
         }}
+        {...(props.htmlId ? { id: props.htmlId } : {})}
         data-craft-form-textarea=""
         name={fieldName}
         required={required}

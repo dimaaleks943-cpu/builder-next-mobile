@@ -10,6 +10,7 @@ import { COLORS } from "../../theme/colors.ts"
 export type CraftIconVariant = "burger"
 
 export interface Props {
+  htmlId?: string
   icon?: CraftIconVariant
   style?: ResponsiveStyle
   styleClassIds?: string[]
@@ -29,6 +30,7 @@ export const CraftIcon = (props: Props) => {
         if (!ref) return
         connect(drag(ref))
       }}
+      {...(props.htmlId ? { id: props.htmlId } : {})}
       style={responsiveStyle as CSSProperties}
     >
       {icon === "burger" && <BurgerIcon fill={iconFill} />}

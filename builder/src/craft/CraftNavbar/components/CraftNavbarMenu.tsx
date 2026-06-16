@@ -13,6 +13,7 @@ import {
 } from "../../../pages/builder/utils/navbarLinkUtils.ts"
 
 interface Props {
+  htmlId?: string
   style?: ResponsiveStyle
   styleClassIds?: string[]
 }
@@ -66,6 +67,7 @@ export const CraftNavbarMenu = (props: Props) => {
           if (!ref) return
           connect(drag(ref))
         }}
+        {...(props.htmlId ? { id: props.htmlId } : {})}
         role="menu"
         style={{ ...(responsiveStyle as CSSProperties), display: "none" }}
       />
@@ -108,6 +110,7 @@ export const CraftNavbarMenu = (props: Props) => {
           if (!ref) return
           connect(drag(ref))
         }}
+        {...(props.htmlId ? { id: props.htmlId } : {})}
         style={clipStyle}
       >
         <div role="menu" style={menuStyle}>
@@ -154,6 +157,7 @@ export const CraftNavbarMenu = (props: Props) => {
         if (!ref) return
         connect(drag(ref))
       }}
+      {...(props.htmlId ? { id: props.htmlId } : {})}
       role="menu"
       style={mergedStyle}
     >

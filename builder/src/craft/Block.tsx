@@ -5,10 +5,11 @@ import type { ResponsiveStyle } from "../pages/builder/responsiveStyle.ts"
 import { useCraftNodeStyle } from "../pages/builder/hooks/useCraftNodeStyle.ts"
 import { PreviewViewport } from "../pages/builder/builder.enum.ts"
 
-export type BlockProps = {
+interface BlockProps {
   children?: ReactNode
   style?: ResponsiveStyle
   styleClassIds?: string[]
+  htmlId?: string
 }
 
 export const CraftBlock = (props: BlockProps) => {
@@ -25,6 +26,7 @@ export const CraftBlock = (props: BlockProps) => {
         if (!ref) return
         connect(drag(ref))
       }}
+      {...(props.htmlId ? { id: props.htmlId } : {})}
       style={responsiveStyle as CSSProperties}
     >
       {props.children}

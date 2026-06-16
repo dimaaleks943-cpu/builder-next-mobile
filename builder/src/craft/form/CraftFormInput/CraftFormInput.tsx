@@ -7,6 +7,7 @@ import { canMoveIntoFormInput } from "../formCraftRules.ts"
 import { FORM_INPUT_DEFAULT_STYLE } from "../formDefaults.ts"
 
 export interface Props {
+  htmlId?: string
   children?: ReactNode
   styleClassIds?: string[]
   style?: ResponsiveStyle
@@ -25,6 +26,7 @@ export const CraftFormInput = (props: Props) => {
         if (!ref) return
         connect(drag(ref))
       }}
+      {...(props.htmlId ? { id: props.htmlId } : {})}
       data-craft-form-input=""
       style={responsiveStyle as CSSProperties}
     >

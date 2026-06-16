@@ -8,6 +8,7 @@ import { useNavbarMenu } from "../../../pages/builder/context/navbarMenuContext.
 import { getNavbarLinkTextChildIds } from "../../../pages/builder/utils/navbarLinkUtils.ts"
 
 interface Props {
+  htmlId?: string
   style?: ResponsiveStyle
   styleClassIds?: string[]
 }
@@ -39,6 +40,7 @@ export const CraftNavbarLinks = (props: Props) => {
         if (!ref) return
         connect(drag(ref))
       }}
+      {...(props.htmlId ? { id: props.htmlId } : {})}
       style={mergedStyle}
     >
       {!isCompact &&

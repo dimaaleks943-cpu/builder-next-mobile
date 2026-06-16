@@ -11,6 +11,7 @@ import { canMoveIntoFormWrapper } from "../formCraftRules.ts"
 import { FORM_WRAPPER_DEFAULT_PROPS } from "../formDefaults.ts"
 
 export interface Props {
+  htmlId?: string
   children?: ReactNode
   styleClassIds?: string[]
   style?: ResponsiveStyle
@@ -32,6 +33,7 @@ export const CraftFormWrapper = (props: Props) => {
         if (!ref) return
         connect(drag(ref))
       }}
+      {...(props.htmlId ? { id: props.htmlId } : {})}
       data-craft-form-wrapper=""
       data-form-preview-state={previewState}
       style={responsiveStyle as CSSProperties}

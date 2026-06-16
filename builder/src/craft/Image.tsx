@@ -16,6 +16,7 @@ import backgroundImage from "../assets/background-image.svg"
 import { InlineSettingsModal } from "../components/InlineSettingsModal/InlineSettingsModal.tsx";
 
 export interface CraftImageProps {
+  htmlId?: string
   src?: string
   alt?: string
   /** Поле коллекции, содержащее URL изображения (если компонент внутри ContentList). */
@@ -101,7 +102,12 @@ export const CraftImage = (props: CraftImageProps) => {
         }}
         style={{ position: "relative", width: "max-content", height: "max-content" }}
       >
-        <img src={effectiveSrc} alt={alt} style={{...responsiveStyle}}/>
+        <img
+          {...(props.htmlId ? { id: props.htmlId } : {})}
+          src={effectiveSrc}
+          alt={alt}
+          style={{...responsiveStyle}}
+        />
       </div>
       <InlineSettingsModal
         open={isSettingsOpen}

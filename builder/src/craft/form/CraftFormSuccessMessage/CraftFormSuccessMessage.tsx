@@ -8,6 +8,7 @@ import { FORM_MESSAGE_DEFAULT_STYLE } from "../formDefaults.ts"
 import { PreviewViewport } from "../../../pages/builder/builder.enum.ts"
 
 export interface Props {
+  htmlId?: string
   children?: ReactNode
   styleClassIds?: string[]
   style?: ResponsiveStyle
@@ -34,6 +35,7 @@ export const CraftFormSuccessMessage = (props: Props) => {
         if (!ref) return
         connect(drag(ref))
       }}
+      {...(props.htmlId ? { id: props.htmlId } : {})}
       data-craft-form-success=""
       role="status"
       aria-live="polite"

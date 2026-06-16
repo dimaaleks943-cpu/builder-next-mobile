@@ -33,6 +33,7 @@ interface Props {
   openInNewTab?: boolean
   styleClassIds?: string[]
   style?: ResponsiveStyle
+  htmlId?: string
 }
 
 export const CraftButton = (props: Props) => {
@@ -182,6 +183,7 @@ export const CraftButton = (props: Props) => {
             connect(drag(ref))
           }
         }}
+        {...(props.htmlId ? { id: props.htmlId } : {})}
         href={href}
         target={openInNewTab ? "_blank" : "_self"}
         rel={openInNewTab ? "noopener noreferrer" : undefined}
