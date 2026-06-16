@@ -4,6 +4,7 @@ import { useContentData } from "./ContentDataContext"
 interface ImageProps {
   className?: string
   "data-craft-node-id"?: string
+  htmlId?: string
   src?: string
   alt?: string
   collectionField?: string | null
@@ -15,6 +16,7 @@ const DEFAULT_PLACEHOLDER =
 export const Image = ({
   className,
   "data-craft-node-id": dataCraftNodeId,
+  htmlId,
   src,
   alt = "Изображение",
   collectionField = null,
@@ -36,6 +38,7 @@ export const Image = ({
     <img
       className={className}
       data-craft-node-id={dataCraftNodeId}
+      {...(htmlId ? { id: htmlId } : {})}
       src={effectiveSrc}
       alt={alt}
     />

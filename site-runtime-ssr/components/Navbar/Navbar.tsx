@@ -10,12 +10,14 @@ interface Props extends NavbarProps {
   children?: ReactNode;
   className?: string;
   "data-craft-node-id"?: string;
+  htmlId?: string;
 }
 
 export const Navbar = ({
   children,
   className,
   "data-craft-node-id": dataCraftNodeId,
+  htmlId,
   menuType,
   easingOpen,
   easingClose,
@@ -34,6 +36,7 @@ export const Navbar = ({
     <div
       className={className}
       data-craft-node-id={dataCraftNodeId}
+      {...(htmlId ? { id: htmlId } : {})}
       style={{ position: "relative" }}
       {...{ [NAVBAR_ROOT_DATA_ATTR]: dataCraftNodeId ?? "" }}
       data-disable-scroll-offset={

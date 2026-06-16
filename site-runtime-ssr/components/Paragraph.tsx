@@ -12,6 +12,7 @@ import { renderParagraphText } from "@/lib/renderParagraphText"
 interface Props {
   className?: string
   "data-craft-node-id"?: string
+  htmlId?: string
   text?: string
   i18nKey?: string | null
   collectionField?: string | null
@@ -20,6 +21,7 @@ interface Props {
 export const Paragraph = ({
   className,
   "data-craft-node-id": dataCraftNodeId,
+  htmlId,
   text,
   i18nKey = null,
   collectionField = null,
@@ -56,7 +58,11 @@ export const Paragraph = ({
   ])
 
   return (
-    <p className={className} data-craft-node-id={dataCraftNodeId}>
+    <p
+      className={className}
+      data-craft-node-id={dataCraftNodeId}
+      {...(htmlId ? { id: htmlId } : {})}
+    >
       {renderParagraphText(displayText)}
     </p>
   )

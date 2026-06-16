@@ -14,6 +14,7 @@ import { useStorefrontPage } from "@/components/StorefrontPageContext"
 export type CategoryFilterProps = {
   className?: string
   "data-craft-node-id"?: string
+  htmlId?: string
   filterScope: string
   /** Id типа контента или sentinel «Товары» (`PRODUCTS_SELECTED_SOURCE`). */
   contentCategoryRootId?: string
@@ -26,6 +27,7 @@ export type CategoryFilterProps = {
 const CategoryFilterComponent = ({
   className,
   "data-craft-node-id": dataCraftNodeId,
+  htmlId,
   filterScope,
   contentCategoryRootId = "",
   variant = "buttons",
@@ -195,6 +197,7 @@ const CategoryFilterComponent = ({
     <nav
       className={className}
       data-craft-node-id={dataCraftNodeId}
+      {...(htmlId ? { id: htmlId } : {})}
       aria-label="Фильтр категорий"
       style={{
         display: "flex",

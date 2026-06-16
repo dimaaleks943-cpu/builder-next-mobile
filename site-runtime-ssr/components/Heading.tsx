@@ -11,6 +11,7 @@ import { resolveTranslationText } from "@/lib/resolvePageTranslation"
 interface Props {
   className?: string
   "data-craft-node-id"?: string
+  htmlId?: string
   text?: string
   i18nKey?: string | null
   collectionField?: string | null
@@ -19,6 +20,7 @@ interface Props {
 export const Heading = ({
   className,
   "data-craft-node-id": dataCraftNodeId,
+  htmlId,
   text,
   i18nKey = null,
   collectionField = null,
@@ -55,7 +57,11 @@ export const Heading = ({
   ])
 
   return (
-    <span className={className} data-craft-node-id={dataCraftNodeId}>
+    <span
+      className={className}
+      data-craft-node-id={dataCraftNodeId}
+      {...(htmlId ? { id: htmlId } : {})}
+    >
       {displayText}
     </span>
   )

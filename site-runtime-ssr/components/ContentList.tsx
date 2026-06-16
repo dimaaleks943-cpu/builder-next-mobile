@@ -16,6 +16,7 @@ const CATEGORY_FETCH_INIT = Symbol("categoryFetchInit")
 interface ContentListProps {
   className?: string
   "data-craft-node-id"?: string
+  htmlId?: string
   /** Должен совпадать с `filterScope` на блоке фильтра категорий, если используется. */
   filterScope?: string
   selectedSource?: string
@@ -45,6 +46,7 @@ interface ContentListProps {
 export const ContentList = ({
   className,
   "data-craft-node-id": dataCraftNodeId,
+  htmlId,
   filterScope,
   selectedSource = "",
   itemsPerRow: itemsPerRowProp,
@@ -195,6 +197,7 @@ export const ContentList = ({
       <div
         className={className}
         data-craft-node-id={dataCraftNodeId}
+        {...(htmlId ? { id: htmlId } : {})}
         style={{
           width: "100%",
           display: "flex",
@@ -211,6 +214,7 @@ export const ContentList = ({
       <div
         className={className}
         data-craft-node-id={dataCraftNodeId}
+        {...(htmlId ? { id: htmlId } : {})}
         style={{
           width: "100%",
           display: "flex",
@@ -231,6 +235,7 @@ export const ContentList = ({
     <div
       className={className}
       data-craft-node-id={dataCraftNodeId}
+      {...(htmlId ? { id: htmlId } : {})}
       style={{
         position: "relative",
         width: "100%",

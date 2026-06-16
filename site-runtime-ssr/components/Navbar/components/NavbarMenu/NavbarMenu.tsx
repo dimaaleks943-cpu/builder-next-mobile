@@ -6,12 +6,14 @@ interface Props {
   children?: ReactNode;
   className?: string;
   "data-craft-node-id"?: string;
+  htmlId?: string;
 }
 
 export const NavbarMenu = ({
   children,
   className,
   "data-craft-node-id": dataCraftNodeId,
+  htmlId,
 }: Props) => {
   const {
     isMenuOpen,
@@ -65,7 +67,11 @@ export const NavbarMenu = ({
     }
 
     return (
-      <div style={clipStyle} onClick={handleMenuClick}>
+      <div
+        {...(htmlId ? { id: htmlId } : {})}
+        style={clipStyle}
+        onClick={handleMenuClick}
+      >
         <MenuShell
           className={className}
           data-craft-node-id={dataCraftNodeId}
@@ -112,6 +118,7 @@ export const NavbarMenu = ({
     <MenuShell
       className={className}
       data-craft-node-id={dataCraftNodeId}
+      {...(htmlId ? { id: htmlId } : {})}
       role="menu"
       style={mergedStyle}
       onClick={handleMenuClick}

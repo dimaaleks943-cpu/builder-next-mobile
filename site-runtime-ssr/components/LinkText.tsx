@@ -12,6 +12,7 @@ import { useResolvedLinkHref } from "@/hooks/useResolvedLinkHref";
 interface LinkTextProps {
   className?: string;
   "data-craft-node-id"?: string;
+  htmlId?: string;
   text?: string;
   i18nKey?: string | null;
   collectionField?: string | null;
@@ -25,6 +26,7 @@ interface LinkTextProps {
 export const LinkText = ({
   className,
   "data-craft-node-id": dataCraftNodeId,
+  htmlId,
   text = "Ссылка",
   i18nKey = null,
   collectionField = null,
@@ -76,6 +78,7 @@ export const LinkText = ({
     <a
       className={className}
       data-craft-node-id={dataCraftNodeId}
+      {...(htmlId ? { id: htmlId } : {})}
       href={resolvedHref}
       target={openInNewTab ? "_blank" : "_self"}
       rel={openInNewTab ? "noopener noreferrer" : undefined}

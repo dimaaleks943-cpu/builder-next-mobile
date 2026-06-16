@@ -5,12 +5,14 @@ interface Props {
   children?: ReactNode;
   className?: string;
   "data-craft-node-id"?: string;
+  htmlId?: string;
 }
 
 export const NavbarMenuButton = ({
   children,
   className,
   "data-craft-node-id": dataCraftNodeId,
+  htmlId,
 }: Props) => {
   const { isMenuOpen, toggleMenu } = useNavbarMenu()
 
@@ -18,6 +20,7 @@ export const NavbarMenuButton = ({
     <div
       className={className}
       data-craft-node-id={dataCraftNodeId}
+      {...(htmlId ? { id: htmlId } : {})}
       role="button"
       tabIndex={0}
       aria-label="menu"
