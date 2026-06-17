@@ -14,6 +14,7 @@ import { NavbarMenuButton } from "@/components/Navbar/components/NavbarMenuButto
 import { NavbarLinks } from "@/components/Navbar/components/NavbarLinks/NavbarLinks"
 import { NavbarMenu } from "@/components/Navbar/components/NavbarMenu/NavbarMenu"
 import { Icon } from "@/components/Icon/Icon"
+import { ConditionalVisibilityGate } from "@/components/ConditionalVisibilityGate/ConditionalVisibilityGate"
 import type { ComponentNode } from "./interface"
 
 const componentMap: Record<string, React.ComponentType<any>> = {
@@ -34,9 +35,9 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   Icon,
 }
 
-export function renderComponent(
+export const renderComponent = (
   node: ComponentNode,
-): React.ReactElement {
+): React.ReactElement => {
   // В рантайме Craft/SSR сюда иногда попадает либо строковое имя компонента,
   // либо сам React-компонент (function). Если обрабатывать только строку,
   // часть узлов (например, потомков ContentList) рендерится неправильно,
@@ -69,35 +70,34 @@ export function renderComponent(
 
   const Component = componentMap[componentType]
 
-  if (!Component) {
-    return React.createElement(
-      "div",
-      null,
-      `Unknown component: ${componentType}`,
-    )
-  }
-
   const children = node.children
-    ? node.children.map((child, index) =>
-        renderComponent(child),
-      )
+    ? node.children.map((child) => renderComponent(child))
     : undefined
 
-  return React.createElement(
-    Component,
-    {
-      ...node.props,
-      key: node.nodeId,
-      ...(node.className ? { className: node.className } : {}),
-      "data-craft-node-id": node.nodeId,
-    },
-    children,
+  const renderedNode = Component
+    ? React.createElement(
+        Component,
+        {
+          ...node.props,
+          ...(node.className ? { className: node.className } : {}),
+          "data-craft-node-id": node.nodeId,
+        },
+        children,
+      )
+    : React.createElement("div", null, `Unknown component: ${componentType}`)
+
+  return (
+    <ConditionalVisibilityGate
+      key={node.nodeId}
+      rawConfig={node.conditionalVisibility}
+      componentProps={node.props}
+    >
+      {renderedNode}
+    </ConditionalVisibilityGate>
   )
 }
 
-export function renderPage(
-  components: ComponentNode[],
-): React.ReactElement {
+export const renderPage = (components: ComponentNode[]): React.ReactElement => {
   return (
     <>
       {components.map((component, index) => (

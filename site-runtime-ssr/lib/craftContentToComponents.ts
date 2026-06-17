@@ -94,10 +94,22 @@ const classNameProp = (
   return className ? { className } : {}
 }
 
-const scopedNodeId = (
-  nodeId: string,
-  fragmentScope: CraftFragmentScopePrefix,
-): string => prefixCraftNodeId(nodeId, fragmentScope)
+const scopedNodeId = (nodeId: string, fragmentScope: CraftFragmentScopePrefix): string =>
+  prefixCraftNodeId(nodeId, fragmentScope)
+
+const extractConditionalVisibility = (
+  rawProps: Record<string, unknown>,
+): unknown => rawProps.conditionalVisibility
+
+/** Next.js GSSP rejects `undefined` in serialized props — omit empty conditionalVisibility. */
+const conditionalVisibilityProp = (
+  rawProps: Record<string, unknown>,
+): Pick<ComponentNode, "conditionalVisibility"> | Record<string, never> => {
+  const conditionalVisibility = extractConditionalVisibility(rawProps)
+  return typeof conditionalVisibility === "undefined"
+    ? {}
+    : { conditionalVisibility }
+}
 
 const collectOrphanStyle = (
   nodeId: string,
@@ -178,6 +190,7 @@ const buildNodeTree = (
           fragmentScope,
         ),
         type: "ContentList",
+        ...conditionalVisibilityProp(rawNodeProps),
         props: propsForRuntimeSsr(
           rawNodeProps,
           "ContentList",
@@ -197,6 +210,7 @@ const buildNodeTree = (
           fragmentScope,
         ),
         type: "ContentList",
+        ...conditionalVisibilityProp(rawNodeProps),
         props: propsForRuntimeSsr(
           rawNodeProps,
           "ContentList",
@@ -299,6 +313,7 @@ const buildNodeTree = (
         fragmentScope,
       ),
       type: "ContentList",
+      ...conditionalVisibilityProp(rawNodeProps),
       props: contentListProps,
       ...(safeChildren.length > 0 ? { children: safeChildren } : {}),
     }
@@ -343,6 +358,7 @@ const buildNodeTree = (
       fragmentScope,
     ),
     type: String(componentType),
+    ...conditionalVisibilityProp(rawNodeProps),
     props: propsForRuntimeSsr(
       rawNodeProps,
       componentType,
@@ -543,6 +559,7 @@ export const craftContentToComponents = (
           fragmentScope,
         ),
         type: "Body",
+        ...conditionalVisibilityProp(rootProps),
         props: propsForRuntimeSsr(
           rootProps,
           "Body",
