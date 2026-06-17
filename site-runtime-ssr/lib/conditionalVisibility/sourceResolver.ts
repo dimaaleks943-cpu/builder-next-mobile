@@ -56,7 +56,7 @@ export const resolveConditionalVisibilitySourceValue = (
 
   if (source.kind === "collectionField") {
     const item = (context.collectionItem ?? null) as IContentItem | null
-    if (!item || !source.fieldId) {
+    if (!item) {
       return undefined
     }
 
@@ -65,7 +65,7 @@ export const resolveConditionalVisibilitySourceValue = (
   }
 
   if (source.kind === "componentProp") {
-    if (!context.componentProps || !source.propKey) {
+    if (!context.componentProps) {
       return undefined
     }
 

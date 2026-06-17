@@ -4,12 +4,13 @@ import { usePageLocale } from "@/components/PageLocaleContext"
 import {
   evaluateConditionalVisibility,
   resolveConditionalVisibilitySourceValue,
+  type ConditionalVisibilityConfig,
   type ConditionalVisibilityEvaluationResult,
 } from "@/lib/conditionalVisibility"
 
 interface Props {
-  rawConfig: unknown
-  componentProps: Record<string, unknown> | null | undefined
+  rawConfig: ConditionalVisibilityConfig | null | undefined
+  componentProps: Record<string, unknown> | null
 }
 
 export const useConditionalVisibilityRuntime = ({

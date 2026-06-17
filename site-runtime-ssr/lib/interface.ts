@@ -3,7 +3,6 @@ export interface ComponentNode {
   className?: string;
   type: string;
   props: Record<string, any>;
-  conditionalVisibility?: unknown;
   children?: ComponentNode[];
 }
 

@@ -51,7 +51,6 @@ export const propsForRuntimeSsr = (
   const props = { ...rawProps }
   delete props.styleClassIds
   delete props.style
-  delete props.conditionalVisibility
   BACKGROUND_LAYER_BUILDER_KEYS.forEach((key) => {
     delete props[key]
   })

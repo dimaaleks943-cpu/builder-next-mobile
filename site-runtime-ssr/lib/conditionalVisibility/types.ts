@@ -64,9 +64,9 @@ export interface ConditionalVisibilityConfig {
 }
 
 export interface ConditionalVisibilitySourceResolverContext {
-  collectionItem: unknown
-  locale: SsrLocale | string | null | undefined
-  componentProps: Record<string, unknown> | null | undefined
+  collectionItem: unknown | null
+  locale: SsrLocale | string | null
+  componentProps: Record<string, unknown> | null
 }
 
 export interface ConditionalVisibilityEvaluationContext {

@@ -69,6 +69,10 @@ export const renderComponent = (
   }
 
   const Component = componentMap[componentType]
+  const {
+    conditionalVisibility: rawConfig,
+    ...componentProps
+  } = node.props
 
   const children = node.children
     ? node.children.map((child) => renderComponent(child))
@@ -78,7 +82,7 @@ export const renderComponent = (
     ? React.createElement(
         Component,
         {
-          ...node.props,
+          ...componentProps,
           ...(node.className ? { className: node.className } : {}),
           "data-craft-node-id": node.nodeId,
         },
@@ -89,8 +93,8 @@ export const renderComponent = (
   return (
     <ConditionalVisibilityGate
       key={node.nodeId}
-      rawConfig={node.conditionalVisibility}
-      componentProps={node.props}
+      rawConfig={rawConfig}
+      componentProps={componentProps}
     >
       {renderedNode}
     </ConditionalVisibilityGate>

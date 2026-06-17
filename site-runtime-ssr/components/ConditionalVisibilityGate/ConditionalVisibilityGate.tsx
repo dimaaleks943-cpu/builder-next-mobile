@@ -1,9 +1,10 @@
 import React from "react"
 import { useConditionalVisibilityRuntime } from "@/hooks/useConditionalVisibilityRuntime"
+import type { ConditionalVisibilityConfig } from "@/lib/conditionalVisibility"
 
 interface Props {
-  rawConfig: unknown
-  componentProps: Record<string, unknown> | null | undefined
+  rawConfig: ConditionalVisibilityConfig | null | undefined
+  componentProps: Record<string, unknown> | null
   children: React.ReactNode
 }
 

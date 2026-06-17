@@ -1,4 +1,3 @@
-import { normalizeConditionalVisibilityConfig } from "./normalizer"
 import type {
   ConditionalVisibilityCondition,
   ConditionalVisibilityConfig,
@@ -122,14 +121,12 @@ const evaluateCondition = (
 }
 
 export const evaluateConditionalVisibility = (params: {
-  rawConfig: unknown
+  rawConfig: ConditionalVisibilityConfig | null | undefined
   context: ConditionalVisibilityEvaluationContext
 }): ConditionalVisibilityEvaluationResult => {
-  const config: ConditionalVisibilityConfig = normalizeConditionalVisibilityConfig(
-    params.rawConfig,
-  )
+  const config = params.rawConfig
 
-  if (!config.enabled) {
+  if (!config || !config.enabled) {
     return {
       isVisible: true,
       matchedGroupId: null,
