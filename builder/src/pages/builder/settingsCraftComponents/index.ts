@@ -5,5 +5,6 @@ export { NavbarSettingsFields } from "./NavbarSettingsFields/NavbarSettingsField
 export { FormSettingsFields } from "./FormSettingsFields/FormSettingsFields.tsx";
 export { FormWrapperSettingsFields } from "./FormWrapperSettingsFields/FormWrapperSettingsFields.tsx";
 export { FormFieldSettingsFields } from "./FormFieldSettingsFields/FormFieldSettingsFields.tsx";
+export { ConditionalVisibilitySettingsFields } from "./ConditionalVisibilitySettingsFields/ConditionalVisibilitySettingsFields.tsx";
 export { SettingsAccordion } from "./components/SettingsAccordion/SettingsAccordion.tsx";
 

@@ -21,6 +21,7 @@ import {
   FormWrapperSettingsFields,
   FormFieldSettingsFields,
   HtmlIdSettingsFields,
+  ConditionalVisibilitySettingsFields,
 } from "../settingsCraftComponents"
 import { useRightPanelContext } from "../context/RightPanelContext.tsx"
 import { usePreviewViewport } from "../context/PreviewViewportContext.tsx"
@@ -197,6 +198,7 @@ export const BuilderRightPanel = ({
                 }}
               >
                 <HtmlIdSettingsFields />
+                <ConditionalVisibilitySettingsFields asAccordion />
                 {(selectedType === "Heading" ||
                   selectedType === "Paragraph" ||
                   selectedType === "LinkText" ||
