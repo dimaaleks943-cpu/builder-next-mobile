@@ -37,6 +37,7 @@ import {
 } from "./src/lib/previewQuery"
 import { ContentDataProvider } from "./src/contexts/ContentDataContext"
 import { CollectionFilterScopeProvider } from "./src/contexts/CollectionFilterScopeContext"
+import { PageLocaleProvider } from "./src/contexts/PageLocaleContext"
 import { StorefrontPageProvider } from "./src/contexts/StorefrontPageContext"
 import { SiteCollectionsProvider } from "./src/contexts/SiteCollectionsContext"
 import { ResponsiveViewportProvider } from "./src/contexts/ResponsiveViewportContext"
@@ -46,6 +47,7 @@ import {
 } from "./src/contexts/UploadedFontsContext/UploadedFontsContext"
 import { craftContentToComponents } from "./src/content/craftContentToComponents"
 import { renderPage } from "./src/content/renderer"
+import { parseLocaleFromSlugPath } from "./src/lib/localeFromPath"
 
 type RootStackParamList = {
   Page: { slug: string; previewParams?: PreviewParams }
@@ -62,6 +64,10 @@ type PageScreenProps = NativeStackScreenProps<RootStackParamList, "Page">
  */
 const PageScreen = ({ route }: PageScreenProps) => {
   const slug = route.params?.slug ?? "/"
+  const { locale, slugPathWithoutLocale } = useMemo(
+    () => parseLocaleFromSlugPath(slug),
+    [slug],
+  )
   const previewKey = useMemo(
     () => JSON.stringify(route.params?.previewParams ?? EMPTY_PREVIEW_PARAMS),
     [route.params?.previewParams],
@@ -123,7 +129,7 @@ const PageScreen = ({ route }: PageScreenProps) => {
       const resolved = await resolveStorefrontRoute(
         SITE_DOMAIN,
         pages,
-        slug,
+        slugPathWithoutLocale,
         previewParams,
       )
       if (cancelled) return
@@ -159,7 +165,7 @@ const PageScreen = ({ route }: PageScreenProps) => {
     return () => {
       cancelled = true
     }
-  }, [slug, previewKey])
+  }, [slugPathWithoutLocale, previewKey])
 
   const templateNeedsItem =
     page != null &&
@@ -247,7 +253,7 @@ const PageScreen = ({ route }: PageScreenProps) => {
         {!loading && useNativeRender ? (
           <ResponsiveViewportProvider>
             <SiteCollectionsProvider
-              key={`${SITE_DOMAIN}:${slug}`}
+              key={`${SITE_DOMAIN}:${slugPathWithoutLocale}`}
               domain={SITE_DOMAIN}
               sitePages={sitePages}
               collectionItemsByKey={collectionItemsByKey}
@@ -261,7 +267,9 @@ const PageScreen = ({ route }: PageScreenProps) => {
                   categorySlugTrailFromUrl={categorySlugTrailFromUrl}
                   previewParams={previewParams}
                 >
-                  {nativeTree}
+                  <PageLocaleProvider locale={locale}>
+                    {nativeTree}
+                  </PageLocaleProvider>
                 </StorefrontPageProvider>
               </CollectionFilterScopeProvider>
             </SiteCollectionsProvider>

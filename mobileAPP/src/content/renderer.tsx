@@ -23,6 +23,8 @@ import { NavbarLinks } from "../components/Navbar/components/NavbarLinks/NavbarL
 import { NavbarMenuButton } from "../components/Navbar/components/NavbarMenuButton/NavbarMenuButton";
 import { NavbarMenu } from "../components/Navbar/components/NavbarMenu/NavbarMenu";
 import { Icon } from "../components/Icon/Icon";
+import { ConditionalVisibilityGate } from "../components/ConditionalVisibilityGate/ConditionalVisibilityGate";
+import type { ConditionalVisibilityConfig } from "../lib/conditionalVisibility";
 
 const componentMap = {
   Body,
@@ -64,17 +66,24 @@ export const renderComponent = (
     componentType = String(rawType);
   }
 
+  const rawProps = ((node as any).props ?? {}) as Record<string, unknown> & {
+    children?: unknown;
+    conditionalVisibility?: unknown;
+  };
+
   /**
    *  Для ContentList нужно передать внутрь "сырые" ComponentNode-дети (шаблон ячейки из конструктора),
    *  а не уже отрендеренные React-элементы.
    *  */
   if (componentType === "ContentList") {
     const templateChildren = (node as any).children as ComponentNode[] | undefined;
-    const rawProps = ((node as any).props ?? {}) as Record<string, unknown> & {
-      children?: unknown;
-    };
-    const { children: _omitChildrenFromProps, ...contentListProps } = rawProps;
-    return (
+    const {
+      children: _omitChildrenFromProps,
+      conditionalVisibility: rawConfig,
+      ...contentListProps
+    } = rawProps;
+
+    const renderedContentList = (
       <ContentList
         {...(contentListProps as Omit<
           React.ComponentProps<typeof ContentList>,
@@ -83,6 +92,15 @@ export const renderComponent = (
         {...nodeViewIds(node.nodeId)}
         children={templateChildren}
       />
+    );
+
+    return (
+      <ConditionalVisibilityGate
+        rawConfig={rawConfig as ConditionalVisibilityConfig | null | undefined}
+        componentProps={contentListProps}
+      >
+        {renderedContentList}
+      </ConditionalVisibilityGate>
     );
   }
 
@@ -98,7 +116,15 @@ export const renderComponent = (
 
   /** узлы-обёртки React.Fragment из сериализованного дерева просто разворачиваем, не пытаясь искать их в componentMap. */
   if (componentType.toLowerCase().includes("fragment")) {
-    return <>{children}</>;
+    const { conditionalVisibility: rawConfig, ...componentProps } = rawProps;
+    return (
+      <ConditionalVisibilityGate
+        rawConfig={rawConfig as ConditionalVisibilityConfig | null | undefined}
+        componentProps={componentProps}
+      >
+        <>{children}</>
+      </ConditionalVisibilityGate>
+    );
   }
 
   const Component = componentMap[componentType];
@@ -109,24 +135,49 @@ export const renderComponent = (
      *  В идеале мы должны знать все комопоенты, сделано только для того что не ломать при добавление новых комп. в констркутор
      *  */
     if (children) {
-      return <>{children}</>;
+      const { conditionalVisibility: rawConfig, ...componentProps } = rawProps;
+      return (
+        <ConditionalVisibilityGate
+          rawConfig={rawConfig as ConditionalVisibilityConfig | null | undefined}
+          componentProps={componentProps}
+        >
+          <>{children}</>
+        </ConditionalVisibilityGate>
+      );
     }
 
-    return (
+    const unknownComponent = (
       <View>
         <RNText>{`Unknown component: ${componentType}`}</RNText>
       </View>
     );
+
+    const { conditionalVisibility: rawConfig, ...componentProps } = rawProps;
+
+    return (
+      <ConditionalVisibilityGate
+        rawConfig={rawConfig as ConditionalVisibilityConfig | null | undefined}
+        componentProps={componentProps}
+      >
+        {unknownComponent}
+      </ConditionalVisibilityGate>
+    );
   }
 
-  const nodeProps = ((node as any).props ?? {}) as Record<string, unknown>;
+  const { conditionalVisibility: rawConfig, ...componentProps } = rawProps;
+
   return (
-    <Component
-      {...nodeProps}
-      {...nodeViewIds(node.nodeId)}
+    <ConditionalVisibilityGate
+      rawConfig={rawConfig as ConditionalVisibilityConfig | null | undefined}
+      componentProps={componentProps}
     >
-      {children}
-    </Component>
+      <Component
+        {...componentProps}
+        {...nodeViewIds(node.nodeId)}
+      >
+        {children}
+      </Component>
+    </ConditionalVisibilityGate>
   );
 };
 
